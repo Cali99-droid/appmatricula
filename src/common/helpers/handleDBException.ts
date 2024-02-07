@@ -4,8 +4,9 @@ import {
   Logger,
 } from '@nestjs/common';
 
-export const handleDBExceptions = (error: any) => {
-  const logger = new Logger('DBError');
+export const handleDBExceptions = (error: any, logger: Logger) => {
+  // console.log(error);
+  // const logger = new Logger('DBError');
   if (error.errno === 1062) {
     throw new BadRequestException(error.sqlMessage);
   }

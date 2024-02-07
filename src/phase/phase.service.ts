@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreatePhaseDto } from './dto/create-phase.dto';
 import { UpdatePhaseDto } from './dto/update-phase.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +9,7 @@ import { Year } from 'src/years/entities/year.entity';
 
 @Injectable()
 export class PhaseService {
+  private readonly logger = new Logger('PhaseService');
   constructor(
     @InjectRepository(Phase)
     private readonly phaseRepository: Repository<Phase>,
@@ -31,7 +32,7 @@ export class PhaseService {
 
       return { ...values, yearId: year.id };
     } catch (error) {
-      handleDBExceptions(error);
+      handleDBExceptions(error, this.logger);
     }
   }
 

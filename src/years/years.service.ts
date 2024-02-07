@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateYearDto } from './dto/create-year.dto';
 import { UpdateYearDto } from './dto/update-year.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,6 +8,7 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 
 @Injectable()
 export class YearsService {
+  private readonly logger = new Logger('YearsService');
   constructor(
     @InjectRepository(Year)
     private readonly yearRepository: Repository<Year>,
@@ -20,7 +21,7 @@ export class YearsService {
       return year;
     } catch (error) {
       // this.logger.error(error);
-      handleDBExceptions(error);
+      handleDBExceptions(error, this.logger);
     }
   }
 
@@ -60,7 +61,9 @@ export class YearsService {
 
   async remove(id: number) {
     const year = await this.yearRepository.findOneBy({ id });
+    if (!year) throw new NotFoundException(`Year by id: '${id}' not found`);
     await this.yearRepository.remove(year);
+
     // return `This action removes a #${id} year`;
   }
 }
