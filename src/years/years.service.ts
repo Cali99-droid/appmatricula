@@ -45,6 +45,7 @@ export class YearsService {
       .leftJoinAndSelect('year.phase', 'yearPhase')
       .getOne();
     if (!year) throw new NotFoundException(`Year with term ${term} not found`);
+
     return year;
   }
 
@@ -53,7 +54,7 @@ export class YearsService {
       id: id,
       ...updateYearDto,
     });
-    if (!year) throw new NotFoundException(`Product with id: ${id} no found`);
+    if (!year) throw new NotFoundException(`Year with id: ${id} not found`);
 
     await this.yearRepository.save(year);
     return year;
@@ -62,6 +63,7 @@ export class YearsService {
   async remove(id: number) {
     const year = await this.yearRepository.findOneBy({ id });
     if (!year) throw new NotFoundException(`Year by id: '${id}' not found`);
+
     await this.yearRepository.remove(year);
 
     // return `This action removes a #${id} year`;
