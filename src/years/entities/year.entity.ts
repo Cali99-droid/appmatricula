@@ -1,25 +1,57 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Phase } from 'src/phase/entities/phase.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Year {
+  @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty({
+    example: '2023',
+    description: 'Name of year',
+    uniqueItems: true,
+  })
   @Column('varchar', {
     unique: true,
   })
   name: string;
 
+  @ApiProperty({
+    example: '2023-01-01',
+    description: 'start of the year',
+  })
   @Column('date')
   startDate: string;
 
+  @ApiProperty({
+    example: '2023-12-31',
+    description: 'end of the year',
+  })
   @Column('date')
   endDate: string;
 
+  @ApiProperty({
+    // example: [
+    //   {
+    //     id: 31,
+    //     startDate: '2024-06-01',
+    //     endDate: '2024-08-31',
+    //     type: 'REGULAR',
+    //   },
+    //   {
+    //     id: 32,
+    //     startDate: '2024-06-01',
+    //     endDate: '2024-08-31',
+    //     type: 'RECUPERACION',
+    //   },
+    // ],
+    description: 'array of phases ',
+  })
   @OneToMany(() => Phase, (phase) => phase.year, {
-    cascade: true,
-    eager: true,
+    // cascade: true,
+    // eager: true,
   })
   phase?: Phase[];
 }

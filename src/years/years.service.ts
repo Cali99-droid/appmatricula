@@ -26,9 +26,17 @@ export class YearsService {
   }
 
   async findAll() {
-    const years = await this.yearRepository.find({});
+    const years = await this.yearRepository.find({
+      select: {
+        id: true,
+        name: true,
+      },
+      // relations: {
+      //   phase: true,
+      // },
+    });
 
-    return years.map((year) => year.name);
+    return years;
   }
 
   async findOne(term: string) {
@@ -55,16 +63,23 @@ export class YearsService {
       ...updateYearDto,
     });
     if (!year) throw new NotFoundException(`Year with id: ${id} not found`);
-
-    await this.yearRepository.save(year);
-    return year;
+    try {
+      await this.yearRepository.save(year);
+      return year;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
   async remove(id: number) {
     const year = await this.yearRepository.findOneBy({ id });
     if (!year) throw new NotFoundException(`Year by id: '${id}' not found`);
-
-    await this.yearRepository.remove(year);
+    try {
+      await this.yearRepository.remove(year);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+      // console.log(error);
+    }
 
     // return `This action removes a #${id} year`;
   }

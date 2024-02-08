@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePhaseDto } from './dto/create-phase.dto';
 import { UpdatePhaseDto } from './dto/update-phase.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -35,20 +40,44 @@ export class PhaseService {
       handleDBExceptions(error, this.logger);
     }
   }
-
-  findAll() {
-    return `This action returns all phase`;
+  /**En caso se requiera el año descomentar */
+  async findAll() {
+    const phases = await this.phaseRepository.find({
+      // relations: {
+      //   year: true,
+      // },
+    });
+    return phases;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} phase`;
+  async findOne(id: number) {
+    const phase = await this.phaseRepository.findOneBy({ id });
+    if (!phase) throw new NotFoundException(`Phase with id ${id} not found`);
+    return phase;
   }
 
-  update(id: number, updatePhaseDto: UpdatePhaseDto) {
-    return `This action updates a #${updatePhaseDto} phase`;
+  async update(id: number, updatePhaseDto: UpdatePhaseDto) {
+    const phase = await this.phaseRepository.preload({
+      id: id,
+      ...updatePhaseDto,
+    });
+    if (!phase) throw new NotFoundException(`Phase with id: ${id} not found`);
+    try {
+      await this.phaseRepository.save(phase);
+      return phase;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} phase`;
+  async remove(id: number) {
+    const phase = await this.phaseRepository.findOneBy({ id });
+    if (!phase) throw new NotFoundException(`Phase with id: ${id} not found`);
+    try {
+      await this.phaseRepository.remove(phase);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+      // console.log(error);
+    }
   }
 }
