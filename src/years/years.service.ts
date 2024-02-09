@@ -30,6 +30,8 @@ export class YearsService {
       select: {
         id: true,
         name: true,
+        startDate: true,
+        endDate: true,
       },
       // relations: {
       //   phase: true,
