@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LevelModule } from './level/level.module';
+import { GradeModule } from './grade/grade.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { LevelModule } from './level/level.module';
       synchronize: true,
     }),
     LevelModule,
+    GradeModule,
   ],
 })
 export class AppModule {}

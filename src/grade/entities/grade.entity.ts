@@ -5,8 +5,8 @@ import {
   //   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-@Entity('level')
-export class Level {
+@Entity('grade')
+export class Grade {
   @PrimaryGeneratedColumn()
   id: number;
 
