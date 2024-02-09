@@ -21,31 +21,31 @@ export class CampusXLevelGradeService {
     @InjectRepository(CampusXLevelGrade)
     private readonly campusXLevelGradeRepository: Repository<CampusXLevelGrade>,
   ) {}
+
   async create(createCampusXLevelGradeDto: CreateCampusXLevelGradeDto) {
-    const numberPhases = await this.campusXLevelGradeRepository.exists({
-      where: {
+    try {
+      const numberPhases = await this.campusXLevelGradeRepository.exists({
+        where: {
+          campus: { id: createCampusXLevelGradeDto.campusId },
+          level: { id: createCampusXLevelGradeDto.levelId },
+          grade: { id: createCampusXLevelGradeDto.gradeId },
+        },
+      });
+
+      if (numberPhases)
+        throw new BadRequestException(
+          `There is already a location(campus) with the same level and grade`,
+        );
+
+      const newEntry = this.campusXLevelGradeRepository.create({
         campus: { id: createCampusXLevelGradeDto.campusId },
         level: { id: createCampusXLevelGradeDto.levelId },
         grade: { id: createCampusXLevelGradeDto.gradeId },
-      },
-    });
+      });
 
-    if (numberPhases)
-      throw new BadRequestException(
-        `There is already a location(campus) with the same level and grade`,
-      );
-    try {
-      const data = this.campusXLevelGradeRepository.create(
-        createCampusXLevelGradeDto
-      );
+      const createEntry = await this.campusXLevelGradeRepository.save(newEntry);
 
-      data.campus = { id: createCampusXLevelGradeDto.campusId } as Campus;
-      data.level = { id: createCampusXLevelGradeDto.levelId } as Level;
-      data.grade = { id: createCampusXLevelGradeDto.gradeId } as Grade;
-      const dataCreated = await this.campusXLevelGradeRepository.save(data);
-      const { ...values } = dataCreated;
-
-      return { ...values };
+      return createEntry;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }

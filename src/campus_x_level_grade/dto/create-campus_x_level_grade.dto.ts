@@ -32,6 +32,7 @@ export class CreateCampusXLevelGradeDto {
   //     { message: 'Grade has to be an id' },
   //   )
   //   gradeId: number;
+
   @ApiProperty({
     example: 1,
     description: 'id of the year',
