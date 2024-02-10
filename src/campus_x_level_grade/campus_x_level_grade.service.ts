@@ -10,9 +10,6 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateCampusXLevelGradeDto } from './dto/create-campus_x_level_grade.dto';
 import { UpdateCampusXLevelGradeDto } from './dto/update-campus_x_level_grade.dto';
 import { CampusXLevelGrade } from './entities/campus_x_level_grade.entity';
-import { Campus } from 'src/campus/entities/campus.entity';
-import { Level } from 'src/level/entities/level.entity';
-import { Grade } from 'src/grade/entities/grade.entity';
 
 @Injectable()
 export class CampusXLevelGradeService {
@@ -24,15 +21,16 @@ export class CampusXLevelGradeService {
 
   async create(createCampusXLevelGradeDto: CreateCampusXLevelGradeDto) {
     try {
-      const numberPhases = await this.campusXLevelGradeRepository.exists({
-        where: {
-          campus: { id: createCampusXLevelGradeDto.campusId },
-          level: { id: createCampusXLevelGradeDto.levelId },
-          grade: { id: createCampusXLevelGradeDto.gradeId },
-        },
-      });
+      const numbercampusXLevelGrades =
+        await this.campusXLevelGradeRepository.exists({
+          where: {
+            campus: { id: createCampusXLevelGradeDto.campusId },
+            level: { id: createCampusXLevelGradeDto.levelId },
+            grade: { id: createCampusXLevelGradeDto.gradeId },
+          },
+        });
 
-      if (numberPhases)
+      if (numbercampusXLevelGrades)
         throw new BadRequestException(
           `There is already a location(campus) with the same level and grade`,
         );
@@ -51,19 +49,58 @@ export class CampusXLevelGradeService {
     }
   }
 
-  findAll() {
-    return `This action returns all campusXLevelGrade`;
+  async findAll() {
+    const campusXLevelGrades = await this.campusXLevelGradeRepository.find({
+      relations: {
+        campus: true,
+        level: true,
+        grade: true,
+      },
+    });
+    return campusXLevelGrades;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} campusXLevelGrade`;
+  async findOne(id: number) {
+    const campusXLevelGrade = await this.campusXLevelGradeRepository.findOneBy({
+      id,
+    });
+    if (!campusXLevelGrade)
+      throw new NotFoundException(
+        `CampusXLevelGradeRepository with id ${id} not found`,
+      );
+    return campusXLevelGrade;
   }
 
-  update(id: number, updateCampusXLevelGradeDto: UpdateCampusXLevelGradeDto) {
-    return `This action updates a #${id} campusXLevelGrade`;
+  async update(
+    id: number,
+    updateCampusXLevelGradeDto: UpdateCampusXLevelGradeDto,
+  ) {
+    const campusXLevelGrade = await this.campusXLevelGradeRepository.preload({
+      id: id,
+      ...updateCampusXLevelGradeDto,
+    });
+    if (!campusXLevelGrade)
+      throw new NotFoundException(`CampusXLevelGrade with id: ${id} not found`);
+    try {
+      await this.campusXLevelGradeRepository.save(campusXLevelGrade);
+      return campusXLevelGrade;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} campusXLevelGrade`;
+  async remove(id: number) {
+    const campusXLevelGrade = await this.campusXLevelGradeRepository.findOneBy({
+      id,
+    });
+    console.log(campusXLevelGrade);
+    if (!campusXLevelGrade)
+      throw new NotFoundException(`CampusXLevelGrade with id: ${id} not found`);
+    try {
+      await this.campusXLevelGradeRepository.remove(campusXLevelGrade);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+      // console.log(error);
+    }
   }
 }

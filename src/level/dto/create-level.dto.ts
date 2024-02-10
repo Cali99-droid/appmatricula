@@ -10,4 +10,12 @@ export class CreateLevelDto {
   @IsString()
   @MinLength(2)
   name: string;
+  @ApiProperty({
+    description: 'modularCode of the level (unique)',
+    nullable: false,
+    minLength: 4,
+  })
+  @IsString()
+  @MinLength(2)
+  modularCode: string;
 }

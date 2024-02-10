@@ -32,10 +32,12 @@ export class CampusService {
   async findOne(term: string) {
     const queryBuilder = this.campussRepository.createQueryBuilder('campus');
     const campus = await queryBuilder
-      .where(`name=:name or campus.modularCode=modularCode or campus.id=:id`, {
+      .where(`name=:name or campus.id=:id`, {
         id: term,
-        ugelLocalCode: term,
         name: term,
+      })
+      .orWhere(`campus.ugelLocalCode  = :ugelLocalCode `, {
+        ugelLocalCode: term,
       })
       // .leftJoinAndSelect('campus.phase', 'campusPhase')
       .getOne();

@@ -15,8 +15,12 @@ export class LevelService {
 
   async create(createLevelDto: CreateLevelDto) {
     try {
+      console.log(createLevelDto);
       const level = this.levelRepository.create(createLevelDto);
-      await this.levelRepository.save(level);
+      console.log(level);
+      const data = await this.levelRepository.save(level);
+      console.log(data);
+
       return level;
     } catch (error) {
       // this.logger.error(error);
@@ -37,11 +41,11 @@ export class LevelService {
   async findOne(term: string) {
     const queryBuilder = this.levelRepository.createQueryBuilder('level');
     const level = await queryBuilder
-      .where(`name=:name or level.modularCode=modularCode or level.id=:id`, {
+      .where(`name=:name OR level.id=:id`, {
         id: term,
-        modularCode: term,
         name: term,
       })
+      .orWhere(`level.modularCode  = :modularCode `, { modularCode: term })
       // .leftJoinAndSelect('level.phase', 'levelPhase')
       .getOne();
     if (!level)
