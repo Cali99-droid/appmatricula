@@ -4,9 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { YearsModule } from './years/years.module';
 import { PhaseModule } from './phase/phase.module';
 import { LevelModule } from './level/level.module';
-import { CampusXLevelGradeModule } from './campus_x_level_grade/campus_x_level_grade.module';
 import { GradeModule } from './grade/grade.module';
 import { CampusModule } from './campus/campus.module';
+import { CampusDetailModule } from './campus_detail/campus_detail.module';
 
 @Module({
   imports: [
@@ -24,9 +24,9 @@ import { CampusModule } from './campus/campus.module';
     YearsModule,
     PhaseModule,
     LevelModule,
-    CampusXLevelGradeModule,
     GradeModule,
     CampusModule,
+    CampusDetailModule,
   ],
 })
 export class AppModule {}

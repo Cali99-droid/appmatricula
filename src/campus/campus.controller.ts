@@ -37,12 +37,12 @@ export class CampusController {
     return this.campusService.findAll();
   }
 
-  @Get(':term')
+  @Get(':id')
   @ApiParam({
-    name: 'term',
+    name: 'id',
     required: true,
     description:
-      'El término de búsqueda utilizado para encontrar grados específicos, puedes enviar el id,nombre o codigo de local de UGEL del campus ',
+      'El término de búsqueda utilizado para encontrar grados específicos, puedes enviar el id ',
     type: String,
   })
   @ApiResponse({ status: 200, description: 'Detail campus', type: Campus })
@@ -50,8 +50,8 @@ export class CampusController {
     status: 404,
     description: 'campus  not found ',
   })
-  findOne(@Param('term') term: string) {
-    return this.campusService.findOne(term);
+  findOne(@Param('id') id: string) {
+    return this.campusService.findOne(+id);
   }
 
   @Patch(':id')
