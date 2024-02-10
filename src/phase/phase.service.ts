@@ -63,6 +63,7 @@ export class PhaseService {
     });
     if (!phase) throw new NotFoundException(`Phase with id: ${id} not found`);
     try {
+      phase.year = { id: updatePhaseDto.yearId } as Year;
       await this.phaseRepository.save(phase);
       return phase;
     } catch (error) {
