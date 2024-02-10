@@ -3,6 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { YearsModule } from './years/years.module';
 import { PhaseModule } from './phase/phase.module';
+import { LevelModule } from './level/level.module';
+import { CampusXLevelGradeModule } from './campus_x_level_grade/campus_x_level_grade.module';
+import { GradeModule } from './grade/grade.module';
+import { CampusModule } from './campus/campus.module';
 
 @Module({
   imports: [
@@ -19,6 +23,10 @@ import { PhaseModule } from './phase/phase.module';
     }),
     YearsModule,
     PhaseModule,
+    LevelModule,
+    CampusXLevelGradeModule,
+    GradeModule,
+    CampusModule,
   ],
 })
 export class AppModule {}
