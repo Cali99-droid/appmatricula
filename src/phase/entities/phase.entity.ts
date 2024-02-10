@@ -39,7 +39,9 @@ export class Phase {
   })
   type: TypePhase;
 
-  @ManyToOne(() => Year, (year) => year.phase)
+  @ManyToOne(() => Year, (year) => year.phase, {
+    eager: true,
+  })
   @JoinColumn({ name: 'yearId' })
   year?: Year;
 }
