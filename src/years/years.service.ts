@@ -85,4 +85,8 @@ export class YearsService {
 
     // return `This action removes a #${id} year`;
   }
+  async exist(id: number) {
+    const existCampus = await this.yearRepository.findOneBy({ id });
+    return !!existCampus;
+  }
 }

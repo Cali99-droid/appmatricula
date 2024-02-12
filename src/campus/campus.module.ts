@@ -5,10 +5,25 @@ import { CampusController } from './campus.controller';
 import { Campus } from './entities/campus.entity';
 import { CampusDetailService } from 'src/campus_detail/campus_detail.service';
 import { CampusDetailModule } from 'src/campus_detail/campus_detail.module';
+import { LevelModule } from 'src/level/level.module';
+import { YearsModule } from 'src/years/years.module';
+import { LevelService } from 'src/level/level.service';
+import { YearsService } from 'src/years/years.service';
 
 @Module({
   controllers: [CampusController],
-  providers: [CampusService, CampusDetailService],
-  imports: [TypeOrmModule.forFeature([Campus]), CampusDetailModule],
+  providers: [
+    CampusService,
+    CampusDetailService,
+    CampusService,
+    LevelService,
+    YearsService,
+  ],
+  imports: [
+    TypeOrmModule.forFeature([Campus]),
+    CampusDetailModule,
+    LevelModule,
+    YearsModule,
+  ],
 })
 export class CampusModule {}

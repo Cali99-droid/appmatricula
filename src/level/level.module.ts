@@ -8,5 +8,6 @@ import { Level } from './entities/level.entity';
   controllers: [LevelController],
   providers: [LevelService],
   imports: [TypeOrmModule.forFeature([Level])],
+  exports: [TypeOrmModule],
 })
 export class LevelModule {}

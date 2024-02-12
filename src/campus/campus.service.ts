@@ -1,16 +1,10 @@
 import { Repository } from 'typeorm';
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateCampusDto } from './dto/create-campus.dto';
 import { UpdateCampusDto } from './dto/update-campus.dto';
 import { Campus } from './entities/campus.entity';
-import { CampusDetailService } from 'src/campus_detail/campus_detail.service';
 
 @Injectable()
 export class CampusService {
@@ -18,34 +12,24 @@ export class CampusService {
   constructor(
     @InjectRepository(Campus)
     private readonly campusRepository: Repository<Campus>,
-    private readonly campusDetailService: CampusDetailService,
   ) {}
+  async validateCampusExists(
+    idCampus: number,
+    idLevel: number,
+    idyear: number,
+  ) {
+    const existCampus = await this.campusRepository.exists({
+      where: {
+        campusDetail: { id: idCampus },
+        level: { id: idLevel },
+        year: { id: idyear },
+      },
+    });
+    return !!existCampus;
+  }
   async create(createCampussDto: CreateCampusDto) {
-    console.log(createCampussDto);
     try {
       const { levelId, ...rest } = createCampussDto;
-      const existcampus = await this.campusDetailService.exist(
-        rest.campusDetailId,
-      );
-
-      if (!existcampus) {
-        throw new NotFoundException(
-          `No level found with ID ${rest.campusDetailId}`,
-        );
-      }
-      levelId.forEach(async (levelId) => {
-        const numbercampus = await this.campusRepository.exists({
-          where: {
-            campusDetail: { id: rest.campusDetailId },
-            level: { id: levelId },
-            year: { id: rest.yearId },
-          },
-        });
-        if (numbercampus)
-          throw new BadRequestException(
-            `There is already a campus with the same level(${levelId}) and year`,
-          );
-      });
       levelId.forEach(async (levelId) => {
         const newEntry = this.campusRepository.create({
           campusDetail: { id: rest.campusDetailId },
@@ -114,5 +98,9 @@ export class CampusService {
       handleDBExceptions(error, this.logger);
       // console.log(error);
     }
+  }
+  async exist(id: number) {
+    const existCampus = await this.campusRepository.findOneBy({ id });
+    return !!existCampus;
   }
 }

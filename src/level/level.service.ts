@@ -77,4 +77,8 @@ export class LevelService {
       handleDBExceptions(error, this.logger);
     }
   }
+  async exist(id: number) {
+    const existCampus = await this.levelRepository.findOneBy({ id });
+    return !!existCampus;
+  }
 }
