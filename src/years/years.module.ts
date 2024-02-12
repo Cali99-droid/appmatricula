@@ -8,5 +8,6 @@ import { Year } from './entities/year.entity';
   controllers: [YearsController],
   providers: [YearsService],
   imports: [TypeOrmModule.forFeature([Year])],
+  exports: [TypeOrmModule],
 })
 export class YearsModule {}
