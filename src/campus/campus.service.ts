@@ -45,11 +45,6 @@ export class CampusService {
           throw new BadRequestException(
             `There is already a campus with the same level(${levelId}) and year`,
           );
-        // const { id, ...rest } = orderDetail;
-
-        // orderDetail.id === undefined
-        //   ? await this.ordersService.createOrderDetail({ ...rest, order })
-        //   : await this.ordersService.updateOrderDetail(id, { ...rest, order });
       });
       levelId.forEach(async (levelId) => {
         const newEntry = this.campusRepository.create({
