@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MinLength } from 'class-validator';
+import { IsString, MinLength, IsNumber } from 'class-validator';
 
 export class CreateGradeDto {
   @ApiProperty({
@@ -10,4 +10,11 @@ export class CreateGradeDto {
   @IsString()
   @MinLength(2)
   name: string;
+  @ApiProperty({
+    example: 1,
+    description: 'id of the level',
+    nullable: false,
+  })
+  @IsNumber()
+  levelId: number;
 }

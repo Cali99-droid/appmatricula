@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Campus } from 'src/campus/entities/campus.entity';
 import { Phase } from 'src/phase/entities/phase.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -54,4 +55,13 @@ export class Year {
     // eager: true,
   })
   phase?: Phase[];
+
+  @ApiProperty({
+    description: 'array of Campus by Year ',
+  })
+  @OneToMany(() => Campus, (campus) => campus.year, {
+    // cascade: true,
+    // eager: true,
+  })
+  campus?: Campus[];
 }

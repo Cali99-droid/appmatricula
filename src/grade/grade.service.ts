@@ -16,8 +16,11 @@ export class GradeService {
 
   async create(createGradeDto: CreateGradeDto) {
     try {
-      const grade = this.gradeRepository.create(createGradeDto);
-      await this.gradeRepository.save(grade);
+      const newEntry = this.gradeRepository.create({
+        name: createGradeDto.name,
+        level: { id: createGradeDto.levelId },
+      });
+      const grade = await this.gradeRepository.save(newEntry);
       return grade;
     } catch (error) {
       // this.logger.error(error);
@@ -30,6 +33,9 @@ export class GradeService {
       select: {
         id: true,
         name: true,
+      },
+      relations: {
+        level: true,
       },
     });
     return grades;
@@ -51,9 +57,11 @@ export class GradeService {
   }
 
   async update(id: number, updateGradeDto: UpdateGradeDto) {
+    const { levelId, ...rest } = updateGradeDto;
     const grade = await this.gradeRepository.preload({
       id: id,
-      ...updateGradeDto,
+      level: { id: levelId },
+      ...rest,
     });
     if (!grade) throw new NotFoundException(`Grade with id: ${id} not found`);
     try {
