@@ -123,7 +123,7 @@ export class CampusController {
     );
   }
 
-  @Patch(':id')
+  @Patch('/')
   @ApiResponse({ status: 200, description: 'Campus was updated', type: Campus })
   @ApiResponse({
     status: 400,
