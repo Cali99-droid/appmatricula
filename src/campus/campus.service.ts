@@ -133,4 +133,17 @@ export class CampusService {
     const existCampus = await this.campusRepository.findOneBy({ id });
     return !!existCampus;
   }
+  async findOneByCampusandYear(idCampusDetail: number, idYear: number) {
+    const campus = await this.campusRepository.find({
+      where: {
+        campusDetail: { id: idCampusDetail },
+        year: { id: idYear },
+      },
+    });
+    if (!campus)
+      throw new NotFoundException(
+        `campusRepository with idCampusDetail ${idCampusDetail} or idYear ${idYear}  not found`,
+      );
+    return campus.length > 0 ? campus[0].year : null;
+  }
 }

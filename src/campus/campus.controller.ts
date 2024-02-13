@@ -111,16 +111,27 @@ export class CampusController {
     status: 404,
     description: 'campus  not found ',
   })
-  findOne(
+  async findOne(
     // @Query('idCampusDetail') idcampusDetail: string,
     // @Query('idYear') idYear: string,
     @Param('idCampusDetail') idcampusDetail: string,
     @Param('idYear') idYear: string,
   ) {
-    return this.campusDetailService.findOneByCampusDetailandYear(
+    const yearId = await this.campusService.findOneByCampusandYear(
       +idcampusDetail,
       +idYear,
     );
+    console.log(yearId);
+    const campusDetail =
+      await this.campusDetailService.findOneByCampusDetailandYear(
+        +idcampusDetail,
+        +idYear,
+      );
+    const campusWithFirstYearId = {
+      ...campusDetail,
+      yearId: yearId.id,
+    };
+    return campusWithFirstYearId;
   }
 
   @Patch('/')
