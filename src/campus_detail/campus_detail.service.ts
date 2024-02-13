@@ -25,7 +25,11 @@ export class CampusDetailService {
   }
 
   async findAll() {
-    const campuss = await this.campusDetailRepository.find();
+    const campuss = await this.campusDetailRepository.find({
+      relations: {
+        campus: true,
+      },
+    });
     return campuss;
   }
 

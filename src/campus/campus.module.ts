@@ -12,18 +12,13 @@ import { YearsService } from 'src/years/years.service';
 
 @Module({
   controllers: [CampusController],
-  providers: [
-    CampusService,
-    CampusDetailService,
-    CampusService,
-    LevelService,
-    YearsService,
-  ],
+  providers: [CampusService, CampusDetailService, LevelService, YearsService],
   imports: [
     TypeOrmModule.forFeature([Campus]),
     CampusDetailModule,
     LevelModule,
     YearsModule,
   ],
+  exports: [TypeOrmModule],
 })
 export class CampusModule {}

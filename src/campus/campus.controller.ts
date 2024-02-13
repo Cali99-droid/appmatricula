@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Res,
+  Query,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -98,9 +99,9 @@ export class CampusController {
     return this.campusService.findAll();
   }
 
-  @Get(':id')
+  @Get('/')
   @ApiParam({
-    name: 'id',
+    name: 'idCampusDetail',
     required: true,
     description:
       'El término de búsqueda utilizado para encontrar grados específicos, puedes enviar el id ',
@@ -111,8 +112,13 @@ export class CampusController {
     status: 404,
     description: 'campus  not found ',
   })
-  findOne(@Param('id') id: string) {
-    return this.campusService.findOne(+id);
+  findOne(
+    @Query('idCampusDetail') idcampusDetail: string,
+    @Query('idYear') idYear: string,
+    // @Param('idCampusDetail') idcampusDetail: string,
+    // @Param('idYear') idYear: string,
+  ) {
+    return this.campusService.findOne(+idcampusDetail, +idYear);
   }
 
   @Patch(':id')

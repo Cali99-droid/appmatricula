@@ -15,6 +15,7 @@ export class CampusService {
   constructor(
     @InjectRepository(Campus)
     private readonly campusRepository: Repository<Campus>,
+    private readonly campusDetailRepository: Repository<CampusDetail>,
   ) {}
   async validateCampusExists(
     idCampus: number,
@@ -69,19 +70,19 @@ export class CampusService {
     return campus;
   }
 
-  async findOne(id: number) {
-    const campus = await this.campusRepository.findOne({
+  async findOne(idCampusDetail: number, idYear: number) {
+    const campus = await this.campusDetailRepository.findOne({
       relations: {
-        campusDetail: true,
-        level: true,
-        year: true,
+        campus: true,
       },
       where: {
-        id: id,
+        campus: { id: idCampusDetail, year: { id: idYear } },
       },
     });
     if (!campus)
-      throw new NotFoundException(`campusRepository with id ${id} not found`);
+      throw new NotFoundException(
+        `campusRepository with idCampusDetail ${idCampusDetail} or idYear ${idYear}  not found`,
+      );
     return campus;
   }
 
