@@ -5,9 +5,6 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateCampusDto } from './dto/create-campus.dto';
 import { UpdateCampusDto } from './dto/update-campus.dto';
 import { Campus } from './entities/campus.entity';
-import { Year } from 'src/years/entities/year.entity';
-import { Level } from 'src/level/entities/level.entity';
-import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 
 @Injectable()
 export class CampusService {
@@ -15,7 +12,7 @@ export class CampusService {
   constructor(
     @InjectRepository(Campus)
     private readonly campusRepository: Repository<Campus>,
-    private readonly campusDetailRepository: Repository<CampusDetail>,
+    // private readonly campusDetailRepository: CampusService,
   ) {}
   async validateCampusExists(
     idCampus: number,
@@ -70,35 +67,52 @@ export class CampusService {
     return campus;
   }
 
-  async findOne(idCampusDetail: number, idYear: number) {
-    const campus = await this.campusDetailRepository.findOne({
-      relations: {
-        campus: true,
-      },
-      where: {
-        campus: { id: idCampusDetail, year: { id: idYear } },
-      },
-    });
-    if (!campus)
-      throw new NotFoundException(
-        `campusRepository with idCampusDetail ${idCampusDetail} or idYear ${idYear}  not found`,
-      );
-    return campus;
-  }
+  // async findOne(idCampusDetail: number, idYear: number) {
+  //   const campus = await this.campusDetailRepository.({
+  //     relations: {
+  //       campus: true,
+  //     },
+  //     where: {
+  //       campus: { id: idCampusDetail, year: { id: idYear } },
+  //     },
+  //   });
+  //   if (!campus)
+  //     throw new NotFoundException(
+  //       `campusRepository with idCampusDetail ${idCampusDetail} or idYear ${idYear}  not found`,
+  //     );
+  //   return campus;
+  // }
 
-  async update(id: number, updateCampussDto: UpdateCampusDto) {
-    const campus = await this.campusRepository.preload({
-      id: id,
-      ...updateCampussDto,
-    });
-    if (!campus) throw new NotFoundException(`campus with id: ${id} not found`);
+  async update(updateCampussDto: UpdateCampusDto) {
     try {
-      campus.year = { id: updateCampussDto.yearId } as Year;
-      campus.level = { id: updateCampussDto.levelId } as Level;
-      campus.campusDetail = {
-        id: updateCampussDto.campusDetailId,
-      } as CampusDetail;
-      await this.campusRepository.save(campus);
+      const { levelId, ...rest } = updateCampussDto;
+      const data = await this.campusRepository.find({
+        where: {
+          campusDetail: { id: updateCampussDto.campusDetailId },
+          year: { id: updateCampussDto.yearId },
+        },
+      });
+      console.log(data);
+      await this.campusRepository.remove(data);
+      levelId.forEach(async (levelId) => {
+        const newEntry = this.campusRepository.create({
+          campusDetail: { id: rest.campusDetailId },
+          level: { id: levelId },
+          year: { id: rest.yearId },
+        });
+        await this.campusRepository.save(newEntry);
+      });
+      const campus = await this.campusRepository.find({
+        where: {
+          campusDetail: { id: rest.campusDetailId },
+          year: { id: rest.yearId },
+        },
+        relations: {
+          campusDetail: true,
+          level: true,
+          year: true,
+        },
+      });
       return campus;
     } catch (error) {
       handleDBExceptions(error, this.logger);

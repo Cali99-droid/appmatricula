@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Res,
-  Query,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -99,7 +98,7 @@ export class CampusController {
     return this.campusService.findAll();
   }
 
-  @Get('/')
+  @Get(':idCampusDetail/:idYear')
   @ApiParam({
     name: 'idCampusDetail',
     required: true,
@@ -113,12 +112,15 @@ export class CampusController {
     description: 'campus  not found ',
   })
   findOne(
-    @Query('idCampusDetail') idcampusDetail: string,
-    @Query('idYear') idYear: string,
-    // @Param('idCampusDetail') idcampusDetail: string,
-    // @Param('idYear') idYear: string,
+    // @Query('idCampusDetail') idcampusDetail: string,
+    // @Query('idYear') idYear: string,
+    @Param('idCampusDetail') idcampusDetail: string,
+    @Param('idYear') idYear: string,
   ) {
-    return this.campusService.findOne(+idcampusDetail, +idYear);
+    return this.campusDetailService.findOneByCampusDetailandYear(
+      +idcampusDetail,
+      +idYear,
+    );
   }
 
   @Patch(':id')
@@ -132,11 +134,11 @@ export class CampusController {
     description: 'campus  not found ',
   })
   async update(
-    @Param('id') id: string,
+    // @Param('id') id: string,
     @Body() updateCampusDto: UpdateCampusDto,
     @Res() res: Response,
   ) {
-    const { levelId, campusDetailId, yearId } = updateCampusDto;
+    const { campusDetailId, yearId } = updateCampusDto;
     const existcampus = await this.campusDetailService.exist(campusDetailId);
     if (!existcampus)
       return res.status(404).json({
@@ -149,23 +151,7 @@ export class CampusController {
         status: 404,
         description: `yearId: ${yearId} incorrect and/or not exist`,
       });
-    const existLevel = await this.levelService.exist(levelId);
-    if (!existLevel)
-      return res.status(404).json({
-        status: 404,
-        description: `levelId: ${levelId} incorrect and/or not exist`,
-      });
-    const existCampus = await this.campusService.validateCampusExists(
-      campusDetailId,
-      levelId,
-      yearId,
-    );
-    if (existCampus)
-      return res.status(404).json({
-        status: 404,
-        description: `campusId: ${campusDetailId},levelId: ${levelId},yearId: ${yearId}, already exist`,
-      });
-    await this.campusService.update(+id, updateCampusDto);
+    await this.campusService.update(updateCampusDto);
     return res.status(200).json({
       status: 200,
       description: 'Campus was updated',

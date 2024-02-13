@@ -80,4 +80,21 @@ export class CampusDetailService {
     const existCampus = await this.campusDetailRepository.findOneBy({ id });
     return !!existCampus;
   }
+
+  async findOneByCampusDetailandYear(idCampusDetail: number, idYear: number) {
+    const campus = await this.campusDetailRepository.findOne({
+      relations: {
+        campus: true,
+      },
+      where: {
+        campus: { campusDetail: { id: idCampusDetail }, year: { id: idYear } },
+      },
+    });
+    console.log(campus);
+    if (!campus)
+      throw new NotFoundException(
+        `campusRepository with idCampusDetail ${idCampusDetail} or idYear ${idYear}  not found`,
+      );
+    return campus;
+  }
 }
