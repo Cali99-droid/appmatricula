@@ -38,7 +38,6 @@ export class CampusController {
     const existcampus = await this.campusDetailService.exist(
       rest.campusDetailId,
     );
-    console.log(existcampus);
     if (!existcampus)
       return res.status(404).json({
         status: 404,
@@ -84,7 +83,7 @@ export class CampusController {
     }
     await this.campusService.create(createCampusDto);
     return res.status(200).json({
-      status: 201,
+      status: 200,
       description: 'Campus was created',
     });
   }
@@ -126,8 +125,45 @@ export class CampusController {
     status: 404,
     description: 'campus  not found ',
   })
-  update(@Param('id') id: string, @Body() updateCampusDto: UpdateCampusDto) {
-    return this.campusService.update(+id, updateCampusDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateCampusDto: UpdateCampusDto,
+    @Res() res: Response,
+  ) {
+    const { levelId, campusDetailId, yearId } = updateCampusDto;
+    const existcampus = await this.campusDetailService.exist(campusDetailId);
+    if (!existcampus)
+      return res.status(404).json({
+        status: 404,
+        description: `campusDetailId: ${campusDetailId} incorrect and/or not exist`,
+      });
+    const existyear = await this.yearService.exist(yearId);
+    if (!existyear)
+      return res.status(404).json({
+        status: 404,
+        description: `yearId: ${yearId} incorrect and/or not exist`,
+      });
+    const existLevel = await this.levelService.exist(levelId);
+    if (!existLevel)
+      return res.status(404).json({
+        status: 404,
+        description: `levelId: ${levelId} incorrect and/or not exist`,
+      });
+    const existCampus = await this.campusService.validateCampusExists(
+      campusDetailId,
+      levelId,
+      yearId,
+    );
+    if (existCampus)
+      return res.status(404).json({
+        status: 404,
+        description: `campusId: ${campusDetailId},levelId: ${levelId},yearId: ${yearId}, already exist`,
+      });
+    await this.campusService.update(+id, updateCampusDto);
+    return res.status(200).json({
+      status: 200,
+      description: 'Campus was updated',
+    });
   }
 
   @Delete(':id')

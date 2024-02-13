@@ -5,6 +5,9 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateCampusDto } from './dto/create-campus.dto';
 import { UpdateCampusDto } from './dto/update-campus.dto';
 import { Campus } from './entities/campus.entity';
+import { Year } from 'src/years/entities/year.entity';
+import { Level } from 'src/level/entities/level.entity';
+import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 
 @Injectable()
 export class CampusService {
@@ -67,8 +70,15 @@ export class CampusService {
   }
 
   async findOne(id: number) {
-    const campus = await this.campusRepository.findOneBy({
-      id,
+    const campus = await this.campusRepository.findOne({
+      relations: {
+        campusDetail: true,
+        level: true,
+        year: true,
+      },
+      where: {
+        id: id,
+      },
     });
     if (!campus)
       throw new NotFoundException(`campusRepository with id ${id} not found`);
@@ -82,6 +92,11 @@ export class CampusService {
     });
     if (!campus) throw new NotFoundException(`campus with id: ${id} not found`);
     try {
+      campus.year = { id: updateCampussDto.yearId } as Year;
+      campus.level = { id: updateCampussDto.levelId } as Level;
+      campus.campusDetail = {
+        id: updateCampussDto.campusDetailId,
+      } as CampusDetail;
       await this.campusRepository.save(campus);
       return campus;
     } catch (error) {

@@ -1,11 +1,14 @@
 import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { ApiProperty } from '@nestjs/swagger';
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 import { Level } from 'src/level/entities/level.entity';
 import { Year } from 'src/years/entities/year.entity';
+import { ApiProperty } from '@nestjs/swagger';
 @Entity()
 export class Campus {
-  @ApiProperty()
+  @ApiProperty({
+    example: '1',
+    description: 'end of the phase',
+  })
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -13,11 +16,15 @@ export class Campus {
   @JoinColumn({ name: 'campusDetailId' })
   campusDetail?: CampusDetail;
 
-  @ManyToOne(() => Level, (level) => level.campus)
+  @ManyToOne(() => Level, (level) => level.campus, {
+    eager: true,
+  })
   @JoinColumn({ name: 'levelId' })
   level?: Level;
 
-  @ManyToOne(() => Year, (grade) => grade.campus)
+  @ManyToOne(() => Year, (grade) => grade.campus, {
+    eager: true,
+  })
   @JoinColumn({ name: 'yearId' })
   year?: Year;
 }
