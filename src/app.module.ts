@@ -8,6 +8,7 @@ import { GradeModule } from './grade/grade.module';
 import { CampusModule } from './campus/campus.module';
 import { CampusDetailModule } from './campus_detail/campus_detail.module';
 import { ClassroomModule } from './classroom/classroom.module';
+import { SchoolShiftsModule } from './school_shifts/school_shifts.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ClassroomModule } from './classroom/classroom.module';
     CampusModule,
     CampusDetailModule,
     ClassroomModule,
+    SchoolShiftsModule,
   ],
 })
 export class AppModule {}

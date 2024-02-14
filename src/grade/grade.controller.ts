@@ -38,12 +38,12 @@ export class GradeController {
     return this.gradeService.findAll();
   }
 
-  @Get(':term')
+  @Get(':id')
   @ApiParam({
-    name: 'term',
+    name: 'id',
     required: true,
     description:
-      'El término de búsqueda utilizado para encontrar grados específicos, puedes enviar el id o el nombre del grado',
+      'El término de búsqueda utilizado para encontrar grados específicos, puedes enviar el solo el id',
     type: String,
   })
   @ApiResponse({ status: 200, description: 'Detail grade', type: Grade })
@@ -51,8 +51,8 @@ export class GradeController {
     status: 404,
     description: 'grade  not found ',
   })
-  findOne(@Param('term') term: string) {
-    return this.gradeService.findOne(term);
+  findOne(@Param('id') id: string) {
+    return this.gradeService.findOne(+id);
   }
 
   @Patch(':id')
