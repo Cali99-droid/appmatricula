@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateClassroomDto } from './dto/create-classroom.dto';
 import { UpdateClassroomDto } from './dto/update-classroom.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +12,7 @@ import { Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Grade } from 'src/grade/entities/grade.entity';
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
+import { SchoolShift } from 'src/school_shifts/entities/school_shift.entity';
 
 @Injectable()
 export class ClassroomService {
@@ -18,6 +24,9 @@ export class ClassroomService {
   async create(createClassroomDto: CreateClassroomDto) {
     const classroom = this.classroomRepository.create(createClassroomDto);
     classroom.grade = { id: createClassroomDto.gradeId } as Grade;
+    classroom.schoolShift = {
+      id: createClassroomDto.schoolShiftId,
+    } as SchoolShift;
     classroom.campusDetail = {
       id: createClassroomDto.campusDetailId,
     } as CampusDetail;
@@ -35,19 +44,63 @@ export class ClassroomService {
     }
   }
 
-  findAll() {
-    return this.classroomRepository.find({});
+  async findAll() {
+    const classrooms = await this.classroomRepository.find({});
+    return classrooms.map((classroom) => {
+      return {
+        id: classroom.id,
+        capacity: classroom.capacity,
+        code: classroom.code,
+        section: classroom.section,
+        modality: classroom.modality,
+        status: classroom.status,
+        campusDetailId: classroom.campusDetail.id, // Extraer solo el campusDetailId
+        grade: classroom.grade,
+        schoolShift: classroom.schoolShift,
+      };
+    });
   }
 
   findOne(id: number) {
     return this.classroomRepository.findBy({ id });
   }
 
-  update(id: number, updateClassroomDto: UpdateClassroomDto) {
+  async update(id: number, updateClassroomDto: UpdateClassroomDto) {
+    const classroom = await this.classroomRepository.preload({
+      id: id,
+      ...updateClassroomDto,
+    });
+    if (!classroom)
+      throw new NotFoundException(`Classroom with id: ${id} not found`);
+    try {
+      if (updateClassroomDto.gradeId)
+        classroom.grade = { id: updateClassroomDto.gradeId } as Grade;
+      if (updateClassroomDto.campusDetailId)
+        classroom.campusDetail = {
+          id: updateClassroomDto.campusDetailId,
+        } as CampusDetail;
+
+      if (updateClassroomDto.schoolShiftId)
+        classroom.schoolShift = {
+          id: updateClassroomDto.schoolShiftId,
+        } as SchoolShift;
+      await this.classroomRepository.save(classroom);
+      return classroom;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
     return `This action updates a #${updateClassroomDto} classroom`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} classroom`;
+  async remove(id: number) {
+    const classroom = await this.classroomRepository.findOneBy({ id });
+    if (!classroom)
+      throw new NotFoundException(`Classroom with id: ${id} not found`);
+    try {
+      await this.classroomRepository.remove(classroom);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+      // console.log(error);
+    }
   }
 }

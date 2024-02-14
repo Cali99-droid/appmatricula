@@ -9,6 +9,8 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Section } from '../enum/section.enum';
+import { SchoolShift } from 'src/school_shifts/entities/school_shift.entity';
 
 @Entity()
 export class Classroom {
@@ -16,20 +18,39 @@ export class Classroom {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty()
   @Column('int')
   capacity: number;
 
+  @ApiProperty()
   @Column('varchar', { nullable: true, unique: true })
   code?: string;
 
-  @Column('varchar')
-  section: string;
+  @ApiProperty({
+    example: 'A',
+    description:
+      'optional, section of classroom, must be a letter uppercase of alphabet',
+  })
+  @Column({
+    type: 'enum',
+    enum: Section,
+  })
+  section: Section;
 
+  @ApiProperty({
+    example: 'P (presencial)',
+    description:
+      'optional, type of classroom, must be P (presencial) or V (virtual)',
+  })
   @Column('varchar', {
     default: 'P',
   })
   modality: string;
 
+  @ApiProperty({
+    example: '1',
+    description: 'optional, 1: active, 0 inactive',
+  })
   @Column('boolean', { default: '1' })
   status?: boolean;
 
@@ -37,11 +58,17 @@ export class Classroom {
     eager: true,
   })
   @JoinColumn({ name: 'campusDetailId' })
-  campusDetail?: CampusDetail;
+  campusDetail: CampusDetail;
 
   @ManyToOne(() => Grade, (grade) => grade.classroom, {
     eager: true,
   })
   @JoinColumn({ name: 'gradeId' })
-  grade?: Grade;
+  grade: Grade;
+
+  @ManyToOne(() => SchoolShift, (shift) => shift.classroom, {
+    eager: true,
+  })
+  @JoinColumn({ name: 'schoolShiftId' })
+  schoolShift: SchoolShift;
 }

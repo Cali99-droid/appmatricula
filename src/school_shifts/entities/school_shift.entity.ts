@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Classroom } from 'src/classroom/entities/classroom.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 @Entity()
 export class SchoolShift {
   @ApiProperty()
@@ -28,4 +29,10 @@ export class SchoolShift {
   })
   @Column({ type: 'time' })
   endTime: string;
+
+  @OneToMany(() => Classroom, (classroom) => classroom.schoolShift, {
+    // cascade: true,
+    // eager: true,
+  })
+  classroom?: Classroom[];
 }
