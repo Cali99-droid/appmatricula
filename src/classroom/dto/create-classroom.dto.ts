@@ -81,4 +81,12 @@ export class CreateClassroomDto {
   })
   @IsNumber()
   schoolShiftId: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'id of the phase',
+    nullable: false,
+  })
+  @IsNumber()
+  phaseId: number;
 }

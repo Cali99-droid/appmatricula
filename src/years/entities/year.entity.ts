@@ -24,14 +24,14 @@ export class Year {
     description: 'start of the year',
   })
   @Column('date')
-  startDate: string;
+  startDate: Date;
 
   @ApiProperty({
     example: '2023-12-31',
     description: 'end of the year',
   })
   @Column('date')
-  endDate: string;
+  endDate: Date;
 
   @ApiProperty({
     // example: [

@@ -12,6 +12,8 @@ import {
 import { Section } from '../enum/section.enum';
 import { SchoolShift } from 'src/school_shifts/entities/school_shift.entity';
 
+import { Phase } from 'src/phase/entities/phase.entity';
+
 @Entity()
 export class Classroom {
   @ApiProperty()
@@ -71,4 +73,7 @@ export class Classroom {
   })
   @JoinColumn({ name: 'schoolShiftId' })
   schoolShift: SchoolShift;
+
+  @ManyToOne(() => Phase, (phase) => phase.classroom, { eager: true })
+  phase: Phase;
 }

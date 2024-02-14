@@ -18,6 +18,8 @@ export class PhaseService {
   constructor(
     @InjectRepository(Phase)
     private readonly phaseRepository: Repository<Phase>,
+    @InjectRepository(Year)
+    private readonly yearRespository: Repository<Year>,
   ) {}
   async create(createPhaseDto: CreatePhaseDto) {
     const numberPhases = await this.phaseRepository.count({
@@ -28,6 +30,18 @@ export class PhaseService {
       throw new BadRequestException(
         `the year should only have two phases, you have exceeded the amount`,
       );
+
+    // const year = await this.yearRespository.findOneBy({
+    //   id: createPhaseDto.yearId,
+    // });
+    // if (
+    //   year.startDate < createPhaseDto.startDate ||
+    //   year.endDate > createPhaseDto.endDate
+    // ) {
+    //   throw new BadRequestException(
+    //     'La fecha debe estar dentro del rango permitido.',
+    //   );
+    // }
     try {
       const phase = this.phaseRepository.create(createPhaseDto);
 

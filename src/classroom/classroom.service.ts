@@ -13,6 +13,7 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Grade } from 'src/grade/entities/grade.entity';
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 import { SchoolShift } from 'src/school_shifts/entities/school_shift.entity';
+import { Phase } from 'src/phase/entities/phase.entity';
 
 @Injectable()
 export class ClassroomService {
@@ -30,6 +31,9 @@ export class ClassroomService {
     classroom.campusDetail = {
       id: createClassroomDto.campusDetailId,
     } as CampusDetail;
+    classroom.phase = {
+      id: createClassroomDto.phaseId,
+    } as Phase;
     const existClassroom = await this.classroomRepository.findOne({
       where: classroom,
     });
@@ -57,6 +61,7 @@ export class ClassroomService {
         campusDetailId: classroom.campusDetail.id, // Extraer solo el campusDetailId
         grade: classroom.grade,
         schoolShift: classroom.schoolShift,
+        phase: classroom.phase,
       };
     });
   }
@@ -84,12 +89,17 @@ export class ClassroomService {
         classroom.schoolShift = {
           id: updateClassroomDto.schoolShiftId,
         } as SchoolShift;
+
+      if (updateClassroomDto.phaseId)
+        classroom.phase = {
+          id: updateClassroomDto.phaseId,
+        } as Phase;
       await this.classroomRepository.save(classroom);
+
       return classroom;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
-    return `This action updates a #${updateClassroomDto} classroom`;
   }
 
   async remove(id: number) {
