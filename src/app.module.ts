@@ -7,6 +7,7 @@ import { LevelModule } from './level/level.module';
 import { GradeModule } from './grade/grade.module';
 import { CampusModule } from './campus/campus.module';
 import { CampusDetailModule } from './campus_detail/campus_detail.module';
+import { ClassroomModule } from './classroom/classroom.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CampusDetailModule } from './campus_detail/campus_detail.module';
     GradeModule,
     CampusModule,
     CampusDetailModule,
+    ClassroomModule,
   ],
 })
 export class AppModule {}
