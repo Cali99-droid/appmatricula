@@ -41,18 +41,12 @@ export class GradeService {
     return grades;
   }
 
-  async findOne(term: string) {
-    const queryBuilder = this.gradeRepository.createQueryBuilder('grade');
-    const grade = await queryBuilder
-      .where(`name=:name or grade.id=:id`, {
-        id: term,
-        name: term,
-      })
-      // .leftJoinAndSelect('grade.phase', 'gradePhase')
-      .getOne();
-    if (!grade)
-      throw new NotFoundException(`Grade with term ${term} not found`);
-
+  async findOne(id: number) {
+    const grade = await this.gradeRepository.findOne({
+      where: { id: id },
+      relations: { level: true },
+    });
+    if (!grade) throw new NotFoundException(`Grade with id ${id} not found`);
     return grade;
   }
 
