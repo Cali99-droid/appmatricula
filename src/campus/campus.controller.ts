@@ -144,7 +144,6 @@ export class CampusController {
         break;
       }
     }
-    console.log('stop');
     if (levelIdNotFound !== null) {
       return res.status(400).json({
         message: `LevelId: ${levelIdNotFound} incorrect and/or not exist`,
