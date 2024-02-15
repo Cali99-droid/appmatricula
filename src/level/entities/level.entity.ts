@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Grade } from 'src/grade/entities/grade.entity';
-import { Campus } from 'src/campus/entities/campus.entity';
+import { CampusXLevel } from 'src/campus_x_level/entities/campus_x_level.entity';
 @Entity()
 export class Level {
   @ApiProperty()
@@ -29,11 +29,11 @@ export class Level {
   @ApiProperty({
     description: 'array of Campus by Level and Grade ',
   })
-  @OneToMany(() => Campus, (campus) => campus.level, {
+  @OneToMany(() => CampusXLevel, (campus) => campus.level, {
     // cascade: true,
     // eager: true,
   })
-  campus?: Campus[];
+  campusXlevel?: CampusXLevel[];
 
   @ApiProperty({
     description: 'array of Grade by Level ',
