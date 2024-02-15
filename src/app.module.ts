@@ -8,6 +8,7 @@ import { GradeModule } from './grade/grade.module';
 import { CampusModule } from './campus/campus.module';
 import { CampusDetailModule } from './campus_detail/campus_detail.module';
 import { SchoolShiftsModule } from './school_shifts/school_shifts.module';
+import { CampusXLevelModule } from './campus_x_level/campus_x_level.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { SchoolShiftsModule } from './school_shifts/school_shifts.module';
     CampusModule,
     CampusDetailModule,
     SchoolShiftsModule,
+    CampusXLevelModule,
   ],
 })
 export class AppModule {}
