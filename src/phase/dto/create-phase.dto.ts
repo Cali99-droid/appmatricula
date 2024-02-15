@@ -1,4 +1,4 @@
-import { IsDateString, IsEnum, IsNumber } from 'class-validator';
+import { IsDateString, IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { TypePhase } from '../enum/type-phase.enum';
 import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';
 import { ApiProperty } from '@nestjs/swagger';
@@ -36,5 +36,6 @@ export class CreatePhaseDto {
     nullable: false,
   })
   @IsNumber()
+  @IsOptional()
   yearId: number;
 }

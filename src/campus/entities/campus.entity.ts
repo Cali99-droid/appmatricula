@@ -8,7 +8,9 @@ import {
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 import { Year } from 'src/years/entities/year.entity';
 import { ApiProperty } from '@nestjs/swagger';
+
 import { CampusXLevel } from 'src/campus_x_level/entities/campus_x_level.entity';
+
 @Entity()
 export class Campus {
   @ApiProperty({

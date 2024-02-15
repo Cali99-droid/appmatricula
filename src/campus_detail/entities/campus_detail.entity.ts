@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Campus } from 'src/campus/entities/campus.entity';
+import { Classroom } from 'src/classroom/entities/classroom.entity';
 
 @Entity()
 export class CampusDetail {
@@ -80,4 +81,10 @@ export class CampusDetail {
     // eager: true,
   })
   campus?: Campus[];
+
+  @OneToMany(() => Classroom, (classroom) => classroom.campusDetail, {
+    // cascade: true,
+    // eager: true,
+  })
+  classroom?: Classroom[];
 }

@@ -5,8 +5,10 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Level } from 'src/level/entities/level.entity';
+import { Classroom } from 'src/classroom/entities/classroom.entity';
 @Entity()
 export class Grade {
   @ApiProperty()
@@ -25,4 +27,10 @@ export class Grade {
   @ManyToOne(() => Level, (level) => level.grade)
   @JoinColumn({ name: 'levelId' })
   level?: Level;
+
+  @OneToMany(() => Classroom, (classroom) => classroom.grade, {
+    // cascade: true,
+    // eager: true,
+  })
+  classroom?: Classroom[];
 }
