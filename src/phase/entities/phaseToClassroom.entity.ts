@@ -23,6 +23,8 @@ export class PhaseToClassroom {
 
   @ManyToOne(() => Phase, (phase) => phase.phaseToClassroom, {
     cascade: true,
+
+    eager: true,
   })
   phase?: Phase;
 }

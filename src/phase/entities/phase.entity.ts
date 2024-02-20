@@ -54,12 +54,6 @@ export class Phase {
 
   //   description: "is array of id's from classrooms, is optional",
   // })
-  @OneToMany(
-    () => PhaseToClassroom,
-    (phaseToClassrom) => phaseToClassrom.phase,
-    {
-      eager: true,
-    },
-  )
+  @OneToMany(() => PhaseToClassroom, (phaseToClassrom) => phaseToClassrom.phase)
   phaseToClassroom: PhaseToClassroom[];
 }

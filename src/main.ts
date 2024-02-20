@@ -14,6 +14,9 @@ async function bootstrap() {
       transform: true,
       // whitelist: true,
       forbidNonWhitelisted: true,
+      // transformOptions: {
+      //   enableImplicitConversion: true,
+      // },
     }),
   );
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
