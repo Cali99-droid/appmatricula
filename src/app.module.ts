@@ -9,7 +9,6 @@ import { CampusModule } from './campus/campus.module';
 import { CampusDetailModule } from './campus_detail/campus_detail.module';
 import { ClassroomModule } from './classroom/classroom.module';
 import { SchoolShiftsModule } from './school_shifts/school_shifts.module';
-import { CampusXLevelModule } from './campus_x_level/campus_x_level.module';
 import { ExistIdConstraint } from './common/validation/exist-id-constraint';
 
 @Module({
@@ -33,7 +32,6 @@ import { ExistIdConstraint } from './common/validation/exist-id-constraint';
     CampusDetailModule,
     ClassroomModule,
     SchoolShiftsModule,
-    CampusXLevelModule,
   ],
   providers: [ExistIdConstraint],
 })
