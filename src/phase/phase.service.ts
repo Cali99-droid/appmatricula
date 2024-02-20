@@ -85,9 +85,34 @@ export class PhaseService {
   }
 
   async findOne(id: number) {
-    const phase = await this.phaseRepository.findOneBy({ id });
+    const phase = await this.phaseRepository.findOne({
+      where: {
+        id,
+      },
+      relations: {
+        phaseToClassroom: {
+          classroom: {
+            grade: {
+              level: true,
+            },
+          },
+        },
+      },
+    });
     if (!phase) throw new NotFoundException(`Phase with id ${id} not found`);
-    return phase;
+    const { phaseToClassroom = [], ...phaseDetails } = phase;
+    const classrooms = phaseToClassroom.map(({ classroom }) => {
+      return {
+        id: classroom.id,
+        capacity: classroom.capacity,
+        section: classroom.section,
+        campus: classroom.campusDetail.name,
+        grade: classroom.grade.name,
+        level: classroom.grade.level.name,
+        turn: classroom.schoolShift,
+      };
+    });
+    return { ...phaseDetails, classrooms };
   }
 
   async update(id: number, updatePhaseDto: UpdatePhaseDto) {
