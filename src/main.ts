@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { useContainer } from 'class-validator';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
@@ -11,10 +12,11 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
-      whitelist: true,
+      // whitelist: true,
       forbidNonWhitelisted: true,
     }),
   );
+  useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const config = new DocumentBuilder()
     .setTitle('Matrículas RESTFul API')
     .setDescription('Matriculas endpoints')

@@ -12,11 +12,17 @@ import { CreateClassroomDto } from './dto/create-classroom.dto';
 import { UpdateClassroomDto } from './dto/update-classroom.dto';
 import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Classroom } from './entities/classroom.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @ApiTags('Classroom')
 @Controller('classroom')
 export class ClassroomController {
-  constructor(private readonly classroomService: ClassroomService) {}
+  constructor(
+    private readonly classroomService: ClassroomService,
+    @InjectRepository(Classroom)
+    private readonly classroomRepository: Repository<Classroom>,
+  ) {}
 
   @Post()
   @ApiResponse({
@@ -29,6 +35,7 @@ export class ClassroomController {
     description: 'exist classroom ',
   })
   create(@Body() createClassroomDto: CreateClassroomDto) {
+    console.log('repostoroi', this.classroomRepository);
     return this.classroomService.create(createClassroomDto);
   }
 

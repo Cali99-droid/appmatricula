@@ -7,10 +7,12 @@ import {
 import { CreatePhaseDto } from './dto/create-phase.dto';
 import { UpdatePhaseDto } from './dto/update-phase.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Phase } from './entities/phase.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Year } from 'src/years/entities/year.entity';
+
+import { PhaseToClassroom } from './entities/phaseToClassroom.entity';
 
 @Injectable()
 export class PhaseService {
@@ -18,8 +20,9 @@ export class PhaseService {
   constructor(
     @InjectRepository(Phase)
     private readonly phaseRepository: Repository<Phase>,
-    @InjectRepository(Year)
-    private readonly yearRespository: Repository<Year>,
+    @InjectRepository(PhaseToClassroom)
+    private readonly phaseToClassroomRepository: Repository<PhaseToClassroom>,
+    private readonly dataSource: DataSource,
   ) {}
   async create(createPhaseDto: CreatePhaseDto) {
     const numberPhases = await this.phaseRepository.count({
@@ -43,10 +46,27 @@ export class PhaseService {
     //   );
     // }
     try {
-      const phase = this.phaseRepository.create(createPhaseDto);
+      const { classrooms = [], ...phaseDetails } = createPhaseDto;
+
+      // const phase = this.phaseRepository.create(createPhaseDto);
+      const phase = this.phaseRepository.create({
+        ...phaseDetails,
+      });
 
       phase.year = { id: createPhaseDto.yearId } as Year;
+
       const phaseCreated = await this.phaseRepository.save(phase);
+
+      const phaseToClassroomPromises = classrooms.map(async (classroomId) => {
+        const phaseToClassroom = this.phaseToClassroomRepository.create({
+          phaseId: phase.id,
+          classroomId,
+        });
+        await this.phaseToClassroomRepository.save(phaseToClassroom);
+      });
+
+      // Esperamos a que todas las promesas de guardar en PhaseToClassroom se resuelvan.
+      await Promise.all(phaseToClassroomPromises);
       const { year, ...values } = phaseCreated;
 
       return { ...values, yearId: year.id };
@@ -71,19 +91,41 @@ export class PhaseService {
   }
 
   async update(id: number, updatePhaseDto: UpdatePhaseDto) {
+    const { classrooms, ...toUpdate } = updatePhaseDto;
+
     const phase = await this.phaseRepository.preload({
       id: id,
-      ...updatePhaseDto,
+      ...toUpdate,
     });
     if (!phase) throw new NotFoundException(`Phase with id: ${id} not found`);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
       if (updatePhaseDto.yearId) {
         phase.year = { id: updatePhaseDto.yearId } as Year;
       }
+      if (classrooms) {
+        // Elimina las relaciones existentes para evitar duplicados
+        await queryRunner.manager.delete(PhaseToClassroom, { phaseId: id });
 
-      await this.phaseRepository.save(phase);
+        // Crea y guarda las nuevas relaciones
+        const phaseToClassrooms = classrooms.map((classroomId) =>
+          queryRunner.manager.create(PhaseToClassroom, {
+            phaseId: id,
+            classroomId,
+          }),
+        );
+        await queryRunner.manager.save(phaseToClassrooms);
+      }
+
+      await queryRunner.manager.save(phase);
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
       return phase;
     } catch (error) {
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
       handleDBExceptions(error, this.logger);
     }
   }
@@ -97,5 +139,23 @@ export class PhaseService {
       handleDBExceptions(error, this.logger);
       // console.log(error);
     }
+  }
+
+  async findClassroomsByPhase(id: number) {
+    const phaseToClassrooms = await this.phaseToClassroomRepository.findBy({
+      phaseId: id,
+    });
+    const classrooms = phaseToClassrooms.map(({ classroom }) => {
+      return {
+        id: classroom.id,
+        capacity: classroom.capacity,
+        section: classroom.section,
+        campus: classroom.campusDetail.name,
+        grade: classroom.grade.name,
+        level: classroom.grade.level.name,
+        turn: classroom.schoolShift,
+      };
+    });
+    return classrooms;
   }
 }

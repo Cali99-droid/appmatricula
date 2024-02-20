@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateYearDto } from './dto/create-year.dto';
 import { UpdateYearDto } from './dto/update-year.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -74,13 +79,14 @@ export class YearsService {
   }
 
   async remove(id: number) {
-    const year = await this.yearRepository.findOneBy({ id });
-    if (!year) throw new NotFoundException(`Year by id: '${id}' not found`);
+    // if (!year) throw new NotFoundException(`Year by id: '${id}' not found`);
     try {
+      const year = await this.yearRepository.findOneByOrFail({ id });
       await this.yearRepository.remove(year);
     } catch (error) {
-      handleDBExceptions(error, this.logger);
-      // console.log(error);
+      // handleDBExceptions(error, this.logger);
+      // this.logger.error(error);
+      throw new BadRequestException(error.message);
     }
 
     // return `This action removes a #${id} year`;

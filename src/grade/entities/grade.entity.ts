@@ -24,7 +24,9 @@ export class Grade {
   })
   name: string;
 
-  @ManyToOne(() => Level, (level) => level.grade)
+  @ManyToOne(() => Level, (level) => level.grade, {
+    eager: true,
+  })
   @JoinColumn({ name: 'levelId' })
   level?: Level;
 

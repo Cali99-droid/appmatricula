@@ -7,12 +7,12 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Section } from '../enum/section.enum';
 import { SchoolShift } from 'src/school_shifts/entities/school_shift.entity';
-
-import { Phase } from 'src/phase/entities/phase.entity';
+import { PhaseToClassroom } from 'src/phase/entities/phaseToClassroom.entity';
 
 @Entity()
 export class Classroom {
@@ -74,6 +74,9 @@ export class Classroom {
   @JoinColumn({ name: 'schoolShiftId' })
   schoolShift: SchoolShift;
 
-  @ManyToOne(() => Phase, (phase) => phase.classroom, { eager: true })
-  phase: Phase;
+  @OneToMany(
+    () => PhaseToClassroom,
+    (phaseToClassrom) => phaseToClassrom.classroom,
+  )
+  phaseToClassroom: PhaseToClassroom[];
 }
