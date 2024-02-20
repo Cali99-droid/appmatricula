@@ -33,7 +33,7 @@ export class PhaseService {
       throw new BadRequestException(
         `the year should only have two phases, you have exceeded the amount`,
       );
-
+    // TODO validar fechas dentro de un rango
     // const year = await this.yearRespository.findOneBy({
     //   id: createPhaseDto.yearId,
     // });
@@ -131,12 +131,13 @@ export class PhaseService {
   }
 
   async remove(id: number) {
-    const phase = await this.phaseRepository.findOneBy({ id });
-    if (!phase) throw new NotFoundException(`Phase with id: ${id} not found`);
+    // if (!phase) throw new NotFoundException(`Phase with id: ${id} not found`);
     try {
+      const phase = await this.phaseRepository.findOneByOrFail({ id });
       await this.phaseRepository.remove(phase);
     } catch (error) {
-      handleDBExceptions(error, this.logger);
+      throw new BadRequestException(error.message);
+      // handleDBExceptions(error, this.logger);
       // console.log(error);
     }
   }

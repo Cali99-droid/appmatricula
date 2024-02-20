@@ -64,8 +64,8 @@ export class ClassroomService {
     });
   }
 
-  findOne(id: number) {
-    return this.classroomRepository.findBy({ id });
+  async findOne(id: number) {
+    return await this.classroomRepository.findOneBy({ id });
   }
 
   async update(id: number, updateClassroomDto: UpdateClassroomDto) {
