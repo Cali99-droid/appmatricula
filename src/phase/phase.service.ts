@@ -20,6 +20,8 @@ export class PhaseService {
   constructor(
     @InjectRepository(Phase)
     private readonly phaseRepository: Repository<Phase>,
+    @InjectRepository(Year)
+    private readonly yearRepository: Repository<Year>,
     @InjectRepository(PhaseToClassroom)
     private readonly phaseToClassroomRepository: Repository<PhaseToClassroom>,
     private readonly dataSource: DataSource,
@@ -33,18 +35,43 @@ export class PhaseService {
       throw new BadRequestException(
         `the year should only have two phases, you have exceeded the amount`,
       );
+
+    //validar que solo exista un solo tipo por cada fase
+    const phaseExist = await this.phaseRepository.findOne({
+      where: { year: { id: createPhaseDto.yearId }, type: createPhaseDto.type },
+    });
+
+    if (phaseExist) {
+      throw new BadRequestException('this type of phase exists');
+    }
+
     // TODO validar fechas dentro de un rango
-    // const year = await this.yearRespository.findOneBy({
-    //   id: createPhaseDto.yearId,
-    // });
-    // if (
-    //   year.startDate < createPhaseDto.startDate ||
-    //   year.endDate > createPhaseDto.endDate
-    // ) {
-    //   throw new BadRequestException(
-    //     'La fecha debe estar dentro del rango permitido.',
-    //   );
-    // }
+    const year = await this.yearRepository.findOneBy({
+      id: createPhaseDto.yearId,
+    });
+    if (
+      year.startDate > createPhaseDto.startDate ||
+      year.endDate < createPhaseDto.endDate
+    ) {
+      throw new BadRequestException(
+        'start or end date must be within the year range',
+      );
+    }
+
+    const otherPhase = await this.phaseRepository.findOne({
+      where: { year: { id: createPhaseDto.yearId } },
+    });
+    if (otherPhase) {
+      console.log(otherPhase);
+      if (
+        otherPhase.startDate < createPhaseDto.startDate &&
+        otherPhase.endDate > createPhaseDto.startDate
+      ) {
+        throw new BadRequestException(
+          'The start date cannot be within the range of the other phase',
+        );
+      }
+    }
     try {
       const { classrooms = [], ...phaseDetails } = createPhaseDto;
 
