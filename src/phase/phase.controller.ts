@@ -43,7 +43,7 @@ export class PhaseController {
     name: 'id',
     required: true,
     description:
-      'El término de búsqueda utilizado para encontrar campus específico, puedes enviar el id del año ',
+      'El término de búsqueda utilizado para encontrar fases específicas, puedes enviar el id del año ',
     type: String,
   })
   @ApiResponse({ status: 200, description: 'Detail Phase', type: Phase })

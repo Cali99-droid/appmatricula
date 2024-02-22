@@ -41,7 +41,7 @@ export class YearsController {
     name: 'id',
     required: true,
     description:
-      'El término de búsqueda utilizado para encontrar campus específico, puedes enviar el id del año ',
+      'El término de búsqueda utilizado para encontrar el años específico, puedes enviar el id del año ',
     type: String,
   })
   @ApiResponse({ status: 200, description: 'Detail Year', type: Year })
