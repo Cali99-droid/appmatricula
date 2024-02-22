@@ -45,7 +45,21 @@ export class YearsService {
 
     return years;
   }
+  async findAllByYear(id: number) {
+    const years = await this.yearRepository.find({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        name: true,
+        startDate: true,
+        endDate: true,
+      },
+    });
 
+    return years;
+  }
   async findOne(term: string) {
     // const year = await this.yearRepository.findOneBy({
     //   name: term,

@@ -110,7 +110,17 @@ export class PhaseService {
     });
     return phases;
   }
-
+  async findAllByYear(id: number) {
+    const phases = await this.phaseRepository.find({
+      where: {
+        year: { id: id },
+      },
+      order: {
+        type: 'ASC',
+      },
+    });
+    return phases;
+  }
   async findOne(id: number) {
     const phase = await this.phaseRepository.findOne({
       where: {

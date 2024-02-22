@@ -39,7 +39,22 @@ export class PhaseController {
   findAll() {
     return this.phaseService.findAll();
   }
-
+  @Get('year/:id')
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description:
+      'El término de búsqueda utilizado para encontrar fases específicas, puedes enviar el id del año ',
+    type: String,
+  })
+  @ApiResponse({ status: 200, description: 'Detail Phase', type: Phase })
+  @ApiResponse({
+    status: 404,
+    description: 'years  not found ',
+  })
+  async findAllByYear(@Param('id') id: string) {
+    return this.phaseService.findAllByYear(+id);
+  }
   @Get(':id')
   @ApiParam({
     name: 'id',

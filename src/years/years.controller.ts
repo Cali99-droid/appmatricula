@@ -36,7 +36,22 @@ export class YearsController {
   findAll() {
     return this.yearsService.findAll();
   }
-
+  @Get('year/:id')
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description:
+      'El término de búsqueda utilizado para encontrar el años específico, puedes enviar el id del año ',
+    type: String,
+  })
+  @ApiResponse({ status: 200, description: 'Detail Year', type: Year })
+  @ApiResponse({
+    status: 404,
+    description: 'years  not found ',
+  })
+  async findAllByYear(@Param('id') id: string) {
+    return this.yearsService.findAllByYear(+id);
+  }
   @Get(':term')
   @ApiParam({
     name: 'term',

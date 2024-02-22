@@ -26,8 +26,8 @@ export class CampusDetailService {
 
   async findAll() {
     const campuss = await this.campusDetailRepository.find({
-      relations: {
-        campus: true,
+      order: {
+        name: 'ASC',
       },
     });
     return campuss;

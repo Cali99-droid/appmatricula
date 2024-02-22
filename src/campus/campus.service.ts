@@ -80,6 +80,9 @@ export class CampusService {
         year: true,
         campusToLevel: true,
       },
+      order: {
+        campusDetail: { name: 'ASC' },
+      },
     });
     return campus;
   }
