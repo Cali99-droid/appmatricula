@@ -34,6 +34,9 @@ export class LevelService {
         modularCode: true,
         name: true,
       },
+      order: {
+        name: 'ASC',
+      },
     });
     return levels;
   }

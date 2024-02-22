@@ -83,7 +83,17 @@ export class PhaseService {
     });
     return phases;
   }
-
+  async findAllByYear(id: number) {
+    const phases = await this.phaseRepository.find({
+      where: {
+        year: { id: id },
+      },
+      order: {
+        type: 'ASC',
+      },
+    });
+    return phases;
+  }
   async findOne(id: number) {
     const phase = await this.phaseRepository.findOneBy({ id });
     if (!phase) throw new NotFoundException(`Phase with id ${id} not found`);
