@@ -72,6 +72,7 @@ export class YearsService {
         name: term,
       })
       .leftJoinAndSelect('year.phase', 'yearPhase')
+      .addOrderBy('id', 'DESC')
       .getOne();
     if (!year) throw new NotFoundException(`Year with term ${term} not found`);
 

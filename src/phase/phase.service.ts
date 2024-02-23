@@ -261,7 +261,8 @@ export class PhaseService {
       createPhaseDto.startDate,
       createPhaseDto.endDate,
     );
-    return conflictingPhase
+
+    return !conflictingPhase
       ? `The start date cannot be within the range of the other phase`
       : true;
   }
