@@ -7,7 +7,7 @@ import {
 import { CreatePhaseDto } from './dto/create-phase.dto';
 import { UpdatePhaseDto } from './dto/update-phase.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { Brackets, DataSource, Repository } from 'typeorm';
 import { Phase } from './entities/phase.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Year } from 'src/years/entities/year.entity';
@@ -27,51 +27,7 @@ export class PhaseService {
     private readonly dataSource: DataSource,
   ) {}
   async create(createPhaseDto: CreatePhaseDto) {
-    const numberPhases = await this.phaseRepository.count({
-      where: { year: { id: createPhaseDto.yearId } },
-    });
-
-    if (numberPhases >= 2)
-      throw new BadRequestException(
-        `the year should only have two phases, you have exceeded the amount`,
-      );
-
-    //validar que solo exista un solo tipo por cada fase
-    const phaseExist = await this.phaseRepository.findOne({
-      where: { year: { id: createPhaseDto.yearId }, type: createPhaseDto.type },
-    });
-
-    if (phaseExist) {
-      throw new BadRequestException('this type of phase exists');
-    }
-
-    // TODO validar fechas dentro de un rango
-    const year = await this.yearRepository.findOneBy({
-      id: createPhaseDto.yearId,
-    });
-    if (
-      year.startDate > createPhaseDto.startDate ||
-      year.endDate < createPhaseDto.endDate
-    ) {
-      throw new BadRequestException(
-        'start or end date must be within the year range',
-      );
-    }
-
-    const otherPhase = await this.phaseRepository.findOne({
-      where: { year: { id: createPhaseDto.yearId } },
-    });
-    if (otherPhase) {
-      console.log(otherPhase);
-      if (
-        otherPhase.startDate < createPhaseDto.startDate &&
-        otherPhase.endDate > createPhaseDto.startDate
-      ) {
-        throw new BadRequestException(
-          'The start date cannot be within the range of the other phase',
-        );
-      }
-    }
+    await this.validatePhase(createPhaseDto);
     try {
       const { classrooms = [], ...phaseDetails } = createPhaseDto;
 
@@ -94,9 +50,8 @@ export class PhaseService {
 
       // Esperamos a que todas las promesas de guardar en PhaseToClassroom se resuelvan.
       await Promise.all(phaseToClassroomPromises);
-      const { year, ...values } = phaseCreated;
 
-      return { ...values, yearId: year.id };
+      return this.transformPhaseResponse(phaseCreated);
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
@@ -154,6 +109,37 @@ export class PhaseService {
 
   async update(id: number, updatePhaseDto: UpdatePhaseDto) {
     const { classrooms, ...toUpdate } = updatePhaseDto;
+    const numberPhases = await this.phaseRepository.count({
+      where: { year: { id: updatePhaseDto.yearId } },
+    });
+    if (numberPhases > 2)
+      throw new BadRequestException(
+        `The year should only have two phases, you have exceeded the amount.`,
+      );
+
+    const year = await this.yearRepository.findOneBy({
+      id: updatePhaseDto.yearId,
+    });
+
+    if (
+      year.startDate >= updatePhaseDto.startDate ||
+      year.endDate <= updatePhaseDto.endDate
+    )
+      throw new BadRequestException(
+        `start or end date must be within the year range`,
+      );
+
+    const conflictingPhase = await this.validatePhaseDates(
+      updatePhaseDto.startDate,
+      updatePhaseDto.endDate,
+      id,
+    );
+
+    if (!conflictingPhase) {
+      throw new BadRequestException(
+        `The start date cannot be within the range of the other phase`,
+      );
+    }
 
     const phase = await this.phaseRepository.preload({
       id: id,
@@ -220,5 +206,126 @@ export class PhaseService {
       };
     });
     return classrooms;
+  }
+
+  /**Funciones auxiliares validaciones */
+  async validatePhase(createPhaseDto: CreatePhaseDto) {
+    const validations = await Promise.all([
+      this.validateNumberPhases(createPhaseDto),
+      this.validatePhaseTypeExists(createPhaseDto),
+      this.validateDateWithinYearRange(createPhaseDto),
+      this.validateDateNotWithinOtherPhases(createPhaseDto),
+    ]);
+    // Lanza excepción si alguna validación falla
+    const validationErrors = validations.filter((result) => result !== true);
+    if (validationErrors.length > 0) {
+      throw new BadRequestException(validationErrors.join(' '));
+    }
+  }
+
+  async validateNumberPhases(
+    createPhaseDto: CreatePhaseDto | UpdatePhaseDto,
+  ): Promise<boolean | string> {
+    const numberPhases = await this.phaseRepository.count({
+      where: { year: { id: createPhaseDto.yearId } },
+    });
+    return numberPhases >= 2
+      ? `The year should only have two phases, you have exceeded the amount.`
+      : true;
+  }
+  async validatePhaseTypeExists(
+    createPhaseDto: CreatePhaseDto | UpdatePhaseDto,
+  ): Promise<boolean | string> {
+    const phaseExist = await this.phaseRepository.findOne({
+      where: { year: { id: createPhaseDto.yearId }, type: createPhaseDto.type },
+    });
+
+    return phaseExist ? `this type of phase exists` : true;
+  }
+  async validateDateWithinYearRange(
+    createPhaseDto: CreatePhaseDto | UpdatePhaseDto,
+  ): Promise<boolean | string> {
+    const year = await this.yearRepository.findOneBy({
+      id: createPhaseDto.yearId,
+    });
+
+    return year.startDate >= createPhaseDto.startDate ||
+      year.endDate <= createPhaseDto.endDate
+      ? `start or end date must be within the year range`
+      : true;
+  }
+  async validateDateNotWithinOtherPhases(
+    createPhaseDto: CreatePhaseDto,
+  ): Promise<boolean | string> {
+    const conflictingPhase = this.validatePhaseDates(
+      createPhaseDto.startDate,
+      createPhaseDto.endDate,
+    );
+    return conflictingPhase
+      ? `The start date cannot be within the range of the other phase`
+      : true;
+  }
+
+  transformPhaseResponse(phase: any) {
+    const { year, ...values } = phase;
+    return { ...values, yearId: year.id };
+  }
+
+  async validatePhaseDates(
+    startDate: Date,
+    endDate: Date,
+    id?: number,
+  ): Promise<boolean> {
+    // Encuentra si existe alguna fase en el mismo año con fechas que se solapen
+    if (id) {
+      const conflictingPhase = await this.phaseRepository
+        .createQueryBuilder('phase')
+        .where('phase.id != :id', { id })
+        .andWhere(
+          new Brackets((qb) => {
+            qb.where('phase.startDate BETWEEN :startDate AND :endDate', {
+              startDate,
+              endDate,
+            })
+              .orWhere('phase.endDate BETWEEN :startDate AND :endDate', {
+                startDate,
+                endDate,
+              })
+              // También considera casos donde la nueva fase envuelve completamente a una existente
+              .orWhere(
+                'phase.startDate <= :startDate AND phase.endDate >= :endDate',
+                { startDate, endDate },
+              );
+          }),
+        )
+        .getOne();
+
+      // Si existe una fase conflictiva, retorna falso
+      return !conflictingPhase;
+    } else {
+      const conflictingPhase = await this.phaseRepository
+        .createQueryBuilder('phase')
+        .where(
+          new Brackets((qb) => {
+            qb.where('phase.startDate BETWEEN :startDate AND :endDate', {
+              startDate,
+              endDate,
+            })
+              .orWhere('phase.endDate BETWEEN :startDate AND :endDate', {
+                startDate,
+                endDate,
+              })
+              // También considera casos donde la nueva fase envuelve completamente a una existente
+              .orWhere(
+                'phase.startDate <= :startDate AND phase.endDate >= :endDate',
+                { startDate, endDate },
+              );
+          }),
+        )
+        .getOne();
+
+      // Si existe una fase conflictiva, retorna falso
+      return !conflictingPhase;
+    }
   }
 }
