@@ -40,6 +40,10 @@ export class Phase {
     enum: TypePhase,
   })
   type: TypePhase;
+  @Column('bool', {
+    default: true,
+  })
+  status: boolean;
 
   @ManyToOne(() => Year, (year) => year.phase, {
     eager: true,

@@ -11,6 +11,9 @@ import { ClassroomModule } from './classroom/classroom.module';
 import { SchoolShiftsModule } from './school_shifts/school_shifts.module';
 import { ExistIdConstraint } from './common/validation/exist-id-constraint';
 import { ActivityClassroomModule } from './activity_classroom/activity_classroom.module';
+import { YearSubscriber } from './years/subscribers/year.subscriber';
+import { PhaseSubscriber } from './phase/subscribers/phase.subscriber';
+
 
 @Module({
   imports: [
@@ -24,7 +27,9 @@ import { ActivityClassroomModule } from './activity_classroom/activity_classroom
       database: process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: true,
+      subscribers: [YearSubscriber, PhaseSubscriber],
     }),
+
     YearsModule,
     PhaseModule,
     LevelModule,
