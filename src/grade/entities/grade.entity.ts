@@ -8,7 +8,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Level } from 'src/level/entities/level.entity';
-import { Classroom } from 'src/classroom/entities/classroom.entity';
+import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 @Entity()
 export class Grade {
   @ApiProperty()
@@ -30,9 +30,13 @@ export class Grade {
   @JoinColumn({ name: 'levelId' })
   level?: Level;
 
-  @OneToMany(() => Classroom, (classroom) => classroom.grade, {
-    // cascade: true,
-    // eager: true,
-  })
-  classroom?: Classroom[];
+  @OneToMany(
+    () => ActivityClassroom,
+    (activityClassroom) => activityClassroom.grade,
+    {
+      // cascade: true,
+      // eager: true,
+    },
+  )
+  activityClassroom?: ActivityClassroom[];
 }

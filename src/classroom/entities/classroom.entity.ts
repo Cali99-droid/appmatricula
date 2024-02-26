@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
-import { Grade } from 'src/grade/entities/grade.entity';
 import {
   Column,
   Entity,
@@ -10,9 +9,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Section } from '../enum/section.enum';
-import { SchoolShift } from 'src/school_shifts/entities/school_shift.entity';
-import { PhaseToClassroom } from 'src/phase/entities/phaseToClassroom.entity';
+import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 
 @Entity()
 export class Classroom {
@@ -27,18 +24,6 @@ export class Classroom {
   @ApiProperty()
   @Column('varchar', { nullable: true, unique: true })
   code?: string;
-
-  @ApiProperty({
-    example: 'A',
-    description:
-      'optional, section of classroom, must be a letter uppercase of alphabet',
-  })
-  @Column({
-    type: 'enum',
-    enum: Section,
-  })
-  section: Section;
-
   @ApiProperty({
     example: 'P (presencial)',
     description:
@@ -62,21 +47,9 @@ export class Classroom {
   @JoinColumn({ name: 'campusDetailId' })
   campusDetail: CampusDetail;
 
-  @ManyToOne(() => Grade, (grade) => grade.classroom, {
-    eager: true,
-  })
-  @JoinColumn({ name: 'gradeId' })
-  grade: Grade;
-
-  @ManyToOne(() => SchoolShift, (shift) => shift.classroom, {
-    eager: true,
-  })
-  @JoinColumn({ name: 'schoolShiftId' })
-  schoolShift: SchoolShift;
-
   @OneToMany(
-    () => PhaseToClassroom,
-    (phaseToClassrom) => phaseToClassrom.classroom,
+    () => ActivityClassroom,
+    (activityClassroom) => activityClassroom.classroom,
   )
-  phaseToClassroom: PhaseToClassroom[];
+  activityClassroom: ActivityClassroom[];
 }

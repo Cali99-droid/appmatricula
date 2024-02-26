@@ -1,14 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
-  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
-  IsUppercase,
   MinLength,
 } from 'class-validator';
-import { Section } from '../enum/section.enum';
 
 export class CreateClassroomDto {
   @ApiProperty({
@@ -65,22 +62,6 @@ export class CreateClassroomDto {
   })
   @IsNumber()
   campusDetailId: number;
-
-  @ApiProperty({
-    example: 1,
-    description: 'id of the grade',
-    nullable: false,
-  })
-  @IsNumber()
-  gradeId: number;
-
-  @ApiProperty({
-    example: 1,
-    description: 'id of the schoolShiftId(turno)',
-    nullable: false,
-  })
-  @IsNumber()
-  schoolShiftId: number;
 
   // @ApiProperty({
   //   example: 1,

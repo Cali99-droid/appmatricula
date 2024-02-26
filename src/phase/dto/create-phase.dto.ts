@@ -1,12 +1,6 @@
-import {
-  IsArray,
-  IsBoolean,
-  IsDateString,
-  IsEnum,
-  IsInt,
-  IsNumber,
-  IsOptional,
-} from 'class-validator';
+
+import { IsDateString, IsEnum, IsNumber, IsOptional,IsBoolean } from 'class-validator';
+
 import { TypePhase } from '../enum/type-phase.enum';
 import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';
 import { ApiProperty } from '@nestjs/swagger';
@@ -56,15 +50,4 @@ export class CreatePhaseDto {
   @IsOptional()
   @ExistId({ tableName: 'year' })
   yearId: number;
-
-  @ApiProperty({
-    example: [1, 2, 3],
-    description: 'array of classrooms for this phase',
-    required: false,
-  })
-  @IsArray()
-  @IsOptional()
-  @IsInt({ each: true })
-  @ExistId({ tableName: 'classroom', isArray: true })
-  classrooms?: number[];
 }

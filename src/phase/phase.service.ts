@@ -7,12 +7,10 @@ import {
 import { CreatePhaseDto } from './dto/create-phase.dto';
 import { UpdatePhaseDto } from './dto/update-phase.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { Phase } from './entities/phase.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Year } from 'src/years/entities/year.entity';
-
-import { PhaseToClassroom } from './entities/phaseToClassroom.entity';
 
 @Injectable()
 export class PhaseService {
@@ -22,34 +20,17 @@ export class PhaseService {
     private readonly phaseRepository: Repository<Phase>,
     @InjectRepository(Year)
     private readonly yearRepository: Repository<Year>,
-    @InjectRepository(PhaseToClassroom)
-    private readonly phaseToClassroomRepository: Repository<PhaseToClassroom>,
-    private readonly dataSource: DataSource,
   ) {}
   async create(createPhaseDto: CreatePhaseDto) {
     await this.validatePhase(createPhaseDto);
     try {
-      const { classrooms = [], ...phaseDetails } = createPhaseDto;
-
-      // const phase = this.phaseRepository.create(createPhaseDto);
       const phase = this.phaseRepository.create({
-        ...phaseDetails,
+        ...createPhaseDto,
       });
 
       phase.year = { id: createPhaseDto.yearId } as Year;
 
       const phaseCreated = await this.phaseRepository.save(phase);
-
-      const phaseToClassroomPromises = classrooms.map(async (classroomId) => {
-        const phaseToClassroom = this.phaseToClassroomRepository.create({
-          phaseId: phase.id,
-          classroomId,
-        });
-        await this.phaseToClassroomRepository.save(phaseToClassroom);
-      });
-
-      // Esperamos a que todas las promesas de guardar en PhaseToClassroom se resuelvan.
-      await Promise.all(phaseToClassroomPromises);
 
       return this.transformPhaseResponse(phaseCreated);
     } catch (error) {
@@ -81,34 +62,13 @@ export class PhaseService {
       where: {
         id,
       },
-      relations: {
-        phaseToClassroom: {
-          classroom: {
-            grade: {
-              level: true,
-            },
-          },
-        },
-      },
     });
     if (!phase) throw new NotFoundException(`Phase with id ${id} not found`);
-    const { phaseToClassroom = [], ...phaseDetails } = phase;
-    const classrooms = phaseToClassroom.map(({ classroom }) => {
-      return {
-        id: classroom.id,
-        capacity: classroom.capacity,
-        section: classroom.section,
-        campus: classroom.campusDetail.name,
-        grade: classroom.grade.name,
-        level: classroom.grade.level.name,
-        turn: classroom.schoolShift,
-      };
-    });
-    return { ...phaseDetails, classrooms };
+    return phase;
   }
 
   async update(id: number, updatePhaseDto: UpdatePhaseDto) {
-    const { classrooms, ...toUpdate } = updatePhaseDto;
+    const { ...toUpdate } = updatePhaseDto;
     const numberPhases = await this.phaseRepository.count({
       where: { year: { id: updatePhaseDto.yearId } },
     });
@@ -140,40 +100,18 @@ export class PhaseService {
         `The start date cannot be within the range of the other phase`,
       );
     }
-
     const phase = await this.phaseRepository.preload({
       id: id,
       ...toUpdate,
     });
     if (!phase) throw new NotFoundException(`Phase with id: ${id} not found`);
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
     try {
       if (updatePhaseDto.yearId) {
         phase.year = { id: updatePhaseDto.yearId } as Year;
       }
-      if (classrooms) {
-        // Elimina las relaciones existentes para evitar duplicados
-        await queryRunner.manager.delete(PhaseToClassroom, { phaseId: id });
-
-        // Crea y guarda las nuevas relaciones
-        const phaseToClassrooms = classrooms.map((classroomId) =>
-          queryRunner.manager.create(PhaseToClassroom, {
-            phaseId: id,
-            classroomId,
-          }),
-        );
-        await queryRunner.manager.save(phaseToClassrooms);
-      }
-
-      await queryRunner.manager.save(phase);
-      await queryRunner.commitTransaction();
-      await queryRunner.release();
+      await this.phaseRepository.save(phase);
       return phase;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      await queryRunner.release();
       handleDBExceptions(error, this.logger);
     }
   }
@@ -190,23 +128,23 @@ export class PhaseService {
     }
   }
 
-  async findClassroomsByPhase(id: number) {
-    const phaseToClassrooms = await this.phaseToClassroomRepository.findBy({
-      phaseId: id,
-    });
-    const classrooms = phaseToClassrooms.map(({ classroom }) => {
-      return {
-        id: classroom.id,
-        capacity: classroom.capacity,
-        section: classroom.section,
-        campus: classroom.campusDetail.name,
-        grade: classroom.grade.name,
-        level: classroom.grade.level.name,
-        turn: classroom.schoolShift,
-      };
-    });
-    return classrooms;
-  }
+  // async findClassroomsByPhase(id: number) {
+  //   const phaseToClassrooms = await this.phaseToClassroomRepository.findBy({
+  //     phaseId: id,
+  //   });
+  //   const classrooms = phaseToClassrooms.map(({ classroom }) => {
+  //     return {
+  //       id: classroom.id,
+  //       capacity: classroom.capacity,
+  //       section: classroom.section,
+  //       campus: classroom.campusDetail.name,
+  //       grade: classroom.grade.name,
+  //       level: classroom.grade.level.name,
+  //       turn: classroom.schoolShift,
+  //     };
+  //   });
+  //   return classrooms;
+  // }
 
   /**Funciones auxiliares validaciones */
   async validatePhase(createPhaseDto: CreatePhaseDto) {

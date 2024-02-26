@@ -28,8 +28,11 @@ export class GradeService {
     }
   }
 
-  async findAll() {
+  async findAll(idLevel: number) {
     const grades = await this.gradeRepository.find({
+      where: {
+        level: !isNaN(idLevel) ? { id: idLevel } : {},
+      },
       select: {
         id: true,
         name: true,

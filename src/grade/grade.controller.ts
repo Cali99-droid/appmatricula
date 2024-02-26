@@ -28,14 +28,21 @@ export class GradeController {
     return this.gradeService.create(createGradeDto);
   }
 
-  @Get()
+  @Get('level/:id')
+  @ApiParam({
+    name: 'id',
+    required: false,
+    description:
+      'El término de búsqueda utilizado para encontrar grados específicos por nivel, puedes enviar el solo el id del nivel o nada para traer todos los grados',
+    type: String,
+  })
   @ApiOkResponse({
     status: 200,
     description: 'Array of grades',
     type: [Grade],
   })
-  findAll() {
-    return this.gradeService.findAll();
+  findAll(@Param('id') id: string) {
+    return this.gradeService.findAll(+id);
   }
 
   @Get(':id')
