@@ -12,7 +12,7 @@ import { CreatePhaseDto } from './dto/create-phase.dto';
 import { UpdatePhaseDto } from './dto/update-phase.dto';
 import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Phase } from './entities/phase.entity';
-import { Classroom } from 'src/classroom/entities/classroom.entity';
+// import { Classroom } from 'src/classroom/entities/classroom.entity';
 
 @ApiTags('Phase')
 @Controller('phase')
@@ -98,13 +98,13 @@ export class PhaseController {
     return this.phaseService.remove(+id);
   }
 
-  @Get(':id/classrooms')
-  @ApiOkResponse({
-    status: 200,
-    description: 'Array of classrooms from phase',
-    type: [Classroom],
-  })
-  findClassroomsByPhase(@Param('id') id: string) {
-    return this.phaseService.findClassroomsByPhase(+id);
-  }
+  // @Get(':id/classrooms')
+  // @ApiOkResponse({
+  //   status: 200,
+  //   description: 'Array of classrooms from phase',
+  //   type: [Classroom],
+  // })
+  // findClassroomsByPhase(@Param('id') id: string) {
+  //   return this.phaseService.findClassroomsByPhase(+id);
+  // }
 }

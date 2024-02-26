@@ -10,6 +10,7 @@ import { CampusDetailModule } from './campus_detail/campus_detail.module';
 import { ClassroomModule } from './classroom/classroom.module';
 import { SchoolShiftsModule } from './school_shifts/school_shifts.module';
 import { ExistIdConstraint } from './common/validation/exist-id-constraint';
+import { ActivityClassroomModule } from './activity_classroom/activity_classroom.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ExistIdConstraint } from './common/validation/exist-id-constraint';
     CampusDetailModule,
     ClassroomModule,
     SchoolShiftsModule,
+    ActivityClassroomModule,
   ],
   providers: [ExistIdConstraint],
 })

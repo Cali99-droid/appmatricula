@@ -9,8 +9,7 @@ import {
 import { TypePhase } from '../enum/type-phase.enum';
 import { Year } from 'src/years/entities/year.entity';
 import { ApiProperty } from '@nestjs/swagger';
-
-import { PhaseToClassroom } from './phaseToClassroom.entity';
+import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 
 @Entity()
 export class Phase {
@@ -54,6 +53,9 @@ export class Phase {
 
   //   description: "is array of id's from classrooms, is optional",
   // })
-  @OneToMany(() => PhaseToClassroom, (phaseToClassrom) => phaseToClassrom.phase)
-  phaseToClassroom: PhaseToClassroom[];
+  @OneToMany(
+    () => ActivityClassroom,
+    (activityClassroom) => activityClassroom.phase,
+  )
+  activityClassroom: ActivityClassroom[];
 }
