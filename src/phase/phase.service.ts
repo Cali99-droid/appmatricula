@@ -257,11 +257,11 @@ export class PhaseService {
   async validateDateNotWithinOtherPhases(
     createPhaseDto: CreatePhaseDto,
   ): Promise<boolean | string> {
-    const conflictingPhase = this.validatePhaseDates(
+    const conflictingPhase = await this.validatePhaseDates(
       createPhaseDto.startDate,
       createPhaseDto.endDate,
     );
-
+    // console.log(conflictingPhase);
     return !conflictingPhase
       ? `The start date cannot be within the range of the other phase`
       : true;

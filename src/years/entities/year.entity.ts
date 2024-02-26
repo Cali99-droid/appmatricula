@@ -34,6 +34,15 @@ export class Year {
   endDate: Date;
 
   @ApiProperty({
+    example: 'true',
+    description: 'status of the year',
+  })
+  @Column('bool', {
+    default: true,
+  })
+  status: boolean;
+
+  @ApiProperty({
     // example: [
     //   {
     //     id: 31,
@@ -64,4 +73,12 @@ export class Year {
     // eager: true,
   })
   campus?: Campus[];
+
+  // @BeforeInsert()
+  // async changeStatus() {
+  //   if (this.status) {
+  //     const years =
+  //     console.log('se interso verdadero');
+  //   }
+  // }
 }

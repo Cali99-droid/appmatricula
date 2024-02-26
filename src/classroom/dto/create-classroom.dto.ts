@@ -42,7 +42,7 @@ export class CreateClassroomDto {
   section: Section;
 
   @ApiProperty({
-    example: 'P (presencial)',
+    example: 'P',
     description:
       'optional, type of classroom, must be P (presencial) or V (virtual)',
   })

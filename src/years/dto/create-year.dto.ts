@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsString, MinLength } from 'class-validator';
 import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';
 
 export class CreateYearDto {
@@ -26,4 +26,12 @@ export class CreateYearDto {
   @IsDateString()
   @IsDateBefore('startDate', { message: 'endDate must be after startDate' })
   endDate: string;
+
+  @ApiProperty({
+    example: 'true',
+    description: 'status of year, must be true or false',
+    nullable: false,
+  })
+  @IsBoolean()
+  status: boolean;
 }

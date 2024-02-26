@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -37,6 +38,14 @@ export class CreatePhaseDto {
     message: 'type value must be some values: [REGULAR, RECUPERACION] ',
   })
   type: TypePhase;
+
+  @ApiProperty({
+    example: 'true',
+    description: 'status of phase, must be true or false',
+    nullable: false,
+  })
+  @IsBoolean()
+  status: boolean;
 
   @ApiProperty({
     example: 1,
