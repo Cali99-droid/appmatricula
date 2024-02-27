@@ -58,13 +58,12 @@ export class PhaseService {
     return phases;
   }
   async findOne(id: number) {
-    const phase = await this.phaseRepository.findOne({
-      where: {
-        id,
-      },
-    });
-    if (!phase) throw new NotFoundException(`Phase with id ${id} not found`);
-    return phase;
+    try {
+      const phase = await this.phaseRepository.findOneByOrFail({ id });
+      return phase;
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async update(id: number, updatePhaseDto: UpdatePhaseDto) {
@@ -124,7 +123,7 @@ export class PhaseService {
       const phase = await this.phaseRepository.findOneByOrFail({ id });
       await this.phaseRepository.remove(phase);
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new NotFoundException(error.message);
       // handleDBExceptions(error, this.logger);
       // console.log(error);
     }

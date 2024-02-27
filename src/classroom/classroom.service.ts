@@ -57,7 +57,12 @@ export class ClassroomService {
   }
 
   async findOne(id: number) {
-    return await this.classroomRepository.findOneBy({ id });
+    try {
+      const classroom = await this.classroomRepository.findOneByOrFail({ id });
+      return classroom;
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async update(id: number, updateClassroomDto: UpdateClassroomDto) {

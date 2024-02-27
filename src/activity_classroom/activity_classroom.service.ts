@@ -65,7 +65,13 @@ export class ActivityClassroomService {
   }
 
   async findOne(id: number) {
-    return await this.activityClassroomRepository.findOneBy({ id });
+    try {
+      const activityClassroom =
+        await this.activityClassroomRepository.findOneByOrFail({ id });
+      return activityClassroom;
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async update(
@@ -98,7 +104,7 @@ export class ActivityClassroomService {
       });
       await this.activityClassroomRepository.remove(classroom);
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new NotFoundException(error.message);
     }
   }
   async searchClassrooms(searchClassroomsDto: SearchClassroomsDto) {

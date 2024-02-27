@@ -14,7 +14,6 @@ import { ActivityClassroomModule } from './activity_classroom/activity_classroom
 import { YearSubscriber } from './years/subscribers/year.subscriber';
 import { PhaseSubscriber } from './phase/subscribers/phase.subscriber';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot(),
