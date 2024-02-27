@@ -69,13 +69,15 @@ export class PhaseService {
 
   async update(id: number, updatePhaseDto: UpdatePhaseDto) {
     const { ...toUpdate } = updatePhaseDto;
-    const numberPhases = await this.phaseRepository.count({
-      where: { year: { id: updatePhaseDto.yearId } },
-    });
-    if (numberPhases > 2)
-      throw new BadRequestException(
-        `The year should only have two phases, you have exceeded the amount.`,
-      );
+    if (updatePhaseDto.yearId) {
+      const numberPhases = await this.phaseRepository.count({
+        where: { year: { id: updatePhaseDto.yearId } },
+      });
+      if (numberPhases > 2)
+        throw new BadRequestException(
+          `The year should only have two phases, you have exceeded the amount.`,
+        );
+    }
 
     const year = await this.yearRepository.findOneBy({
       id: updatePhaseDto.yearId,
