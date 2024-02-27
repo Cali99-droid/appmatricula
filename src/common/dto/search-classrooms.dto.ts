@@ -5,7 +5,7 @@ export class SearchClassroomsDto {
   // @IsPositive()
   // @IsNumber()
   // @Min(1)
-  @ExistId({ tableName: 'Year' })
+  @ExistId({ tableName: 'year' })
   yearId: string;
 
   @IsOptional()
