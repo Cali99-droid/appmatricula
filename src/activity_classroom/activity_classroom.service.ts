@@ -110,12 +110,11 @@ export class ActivityClassroomService {
   async searchClassrooms(searchClassroomsDto: SearchClassroomsDto) {
     // let classrooms: ActivityClassroom[];
     const { yearId, phaseId, campusId } = searchClassroomsDto;
-
     const classrooms = await this.activityClassroomRepository.find({
       where: {
         phase: {
           id: !isNaN(+phaseId) ? +phaseId : undefined,
-          year: !yearId ? { id: +yearId } : {},
+          year: { id: +yearId },
         },
         classroom: {
           campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},

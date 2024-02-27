@@ -139,6 +139,7 @@ export class ActivityClassroomController {
     type: [ActivityClassroom],
   })
   searchClassrooms(@Query() searchClassroomsDto: SearchClassroomsDto) {
+    console.log(searchClassroomsDto);
     return this.activityClassroomService.searchClassrooms(searchClassroomsDto);
   }
 }

@@ -1,12 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
   IsUppercase,
   MinLength,
 } from 'class-validator';
+import { Section } from 'src/activity_classroom/enum/section.enum';
 
 export class CreateClassroomDto {
   @ApiProperty({
