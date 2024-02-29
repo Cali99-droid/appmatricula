@@ -114,7 +114,7 @@ export class ActivityClassroomService {
       where: {
         phase: {
           id: !isNaN(+phaseId) ? +phaseId : undefined,
-          year: { id: +yearId },
+          year: { id: !isNaN(+yearId) ? +yearId : undefined },
         },
         classroom: {
           campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},

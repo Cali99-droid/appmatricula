@@ -2,6 +2,7 @@ import { IsOptional } from 'class-validator';
 import { ExistId } from '../validation/exist-id';
 
 export class SearchClassroomsDto {
+  @IsOptional()
   // @IsPositive()
   // @IsNumber()
   // @Min(1)
