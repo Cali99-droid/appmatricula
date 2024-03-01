@@ -86,19 +86,15 @@ export class CampusService {
     });
     return campus;
   }
-  async findOne(id: number) {
-    const campus = await this.campusRepository.findOne({
-      where: {
-        id: id,
-      },
-      relations: {
-        campusDetail: true,
-        year: true,
-        campusToLevel: true,
-      },
-    });
-    if (!campus) throw new NotFoundException(`campus with id ${id} not found`);
-    return campus;
+  async findOne(id: string) {
+    try {
+      const classroom = await this.campusRepository.findOneByOrFail({
+        id: +id,
+      });
+      return classroom;
+    } catch (error) {
+      throw new NotFoundException(`Cannot GET /api/v1/campus/${id}`);
+    }
   }
 
   async update(id: number, updateCampussDto: UpdateCampusDto) {
