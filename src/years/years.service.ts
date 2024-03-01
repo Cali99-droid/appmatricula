@@ -76,7 +76,7 @@ export class YearsService {
       .getOne();
     if (!year) throw new NotFoundException(`Year with term ${term} not found`);
 
-    return year;
+    return [year];
   }
 
   async update(id: number, updateYearDto: UpdateYearDto) {

@@ -91,7 +91,7 @@ export class CampusController {
     description: 'campus  not found ',
   })
   async findOne(@Param('id') id: string) {
-    return this.campusService.findOne(+id);
+    return this.campusService.findOne(id);
   }
 
   @Patch(':id')
