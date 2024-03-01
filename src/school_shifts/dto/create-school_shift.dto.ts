@@ -17,7 +17,7 @@ export class CreateSchoolShiftDto {
     description: 'start of the school shift',
     nullable: false,
   })
-  @Matches(/^(1[0-2]|0?[1-9]):([0-5]?[0-9]):([0-5]?[0-9])$/)
+  @Matches(/^(0?[0-9]|1[0-9]|2[0-3]):([0-5]?[0-9]):([0-5]?[0-9])$/)
   startTime: string;
 
   @ApiProperty({
