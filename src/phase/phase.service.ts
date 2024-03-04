@@ -78,18 +78,6 @@ export class PhaseService {
         );
     }
 
-    const year = await this.yearRepository.findOneBy({
-      id: updatePhaseDto.yearId,
-    });
-
-    if (
-      year.startDate >= updatePhaseDto.startDate ||
-      year.endDate <= updatePhaseDto.endDate
-    )
-      throw new BadRequestException(
-        `start or end date must be within the year range`,
-      );
-
     const conflictingPhase = await this.validatePhaseDates(
       updatePhaseDto.startDate,
       updatePhaseDto.endDate,
@@ -106,6 +94,20 @@ export class PhaseService {
       ...toUpdate,
     });
     if (!phase) throw new NotFoundException(`Phase with id: ${id} not found`);
+    //Validar que este dentro del rango del año
+
+    const phaseYear = await this.findOne(phase.id);
+    const year = await this.yearRepository.findOneBy({
+      id: phaseYear.year.id,
+    });
+
+    if (
+      year.startDate > updatePhaseDto.startDate ||
+      year.endDate < updatePhaseDto.endDate
+    )
+      throw new BadRequestException(
+        `start or end date must be within the year range`,
+      );
     try {
       if (updatePhaseDto.yearId) {
         phase.year = { id: updatePhaseDto.yearId } as Year;
@@ -188,8 +190,8 @@ export class PhaseService {
       id: createPhaseDto.yearId,
     });
 
-    return year.startDate >= createPhaseDto.startDate ||
-      year.endDate <= createPhaseDto.endDate
+    return year.startDate > createPhaseDto.startDate ||
+      year.endDate < createPhaseDto.endDate
       ? `start or end date must be within the year range`
       : true;
   }
@@ -217,6 +219,7 @@ export class PhaseService {
     id?: number,
   ): Promise<boolean> {
     // Encuentra si existe alguna fase en el mismo año con fechas que se solapen
+
     if (id) {
       const conflictingPhase = await this.phaseRepository
         .createQueryBuilder('phase')
