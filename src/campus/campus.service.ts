@@ -88,10 +88,15 @@ export class CampusService {
   }
   async findOne(id: string) {
     try {
-      const classroom = await this.campusRepository.findOneByOrFail({
+      const campus = await this.campusRepository.findOneByOrFail({
         id: +id,
       });
-      return classroom;
+
+      return {
+        id: campus.id,
+        campusDetailId: campus.campusDetail.id,
+        campusToLevel: campus.campusToLevel,
+      };
     } catch (error) {
       throw new NotFoundException(`Cannot GET /api/v1/campus/${id}`);
     }

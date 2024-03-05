@@ -19,7 +19,9 @@ export class Campus {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => CampusDetail, (campusDetail) => campusDetail.campus)
+  @ManyToOne(() => CampusDetail, (campusDetail) => campusDetail.campus, {
+    eager: true,
+  })
   @JoinColumn({ name: 'campusDetailId' })
   campusDetail?: CampusDetail;
 
