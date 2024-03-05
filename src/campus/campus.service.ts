@@ -95,6 +95,7 @@ export class CampusService {
       return {
         id: campus.id,
         campusDetailId: campus.campusDetail.id,
+        yearId: campus.year.id,
         campusToLevel: campus.campusToLevel,
       };
     } catch (error) {
