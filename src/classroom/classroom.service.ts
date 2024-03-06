@@ -11,6 +11,7 @@ import { Classroom } from './entities/classroom.entity';
 import { Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
+import { SearchClassroomsDto } from './dto/search-classrooms.dto';
 
 // import { Phase } from 'src/phase/entities/phase.entity';
 
@@ -92,5 +93,15 @@ export class ClassroomService {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
+  }
+  async searchClassrooms(searchClassroomsDto: SearchClassroomsDto) {
+    // let classrooms: ActivityClassroom[];
+    const { campusId } = searchClassroomsDto;
+    const classrooms = await this.classroomRepository.find({
+      where: {
+        campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
+      },
+    });
+    return classrooms;
   }
 }

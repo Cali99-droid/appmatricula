@@ -23,6 +23,21 @@ export class ActivityClassroomService {
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
   ) {}
   async create(createActivityClassroomDto: CreateActivityClassroomDto) {
+    const existClass = await this.activityClassroomRepository.exists({
+      where: {
+        classroom: {
+          id: createActivityClassroomDto.classroomId,
+        },
+        phase: {
+          id: createActivityClassroomDto.phaseId,
+        },
+        schoolShift: {
+          id: createActivityClassroomDto.schoolShiftId,
+        },
+      },
+    });
+    if (existClass)
+      throw new BadRequestException('activityClassroom not available');
     const activityClassroom = this.activityClassroomRepository.create(
       createActivityClassroomDto,
     );
@@ -109,7 +124,7 @@ export class ActivityClassroomService {
   }
   async searchClassrooms(searchClassroomsDto: SearchClassroomsDto) {
     // let classrooms: ActivityClassroom[];
-    const { yearId, phaseId, campusId } = searchClassroomsDto;
+    const { yearId, phaseId, campusId, levelId } = searchClassroomsDto;
     const classrooms = await this.activityClassroomRepository.find({
       where: {
         phase: {
@@ -118,6 +133,9 @@ export class ActivityClassroomService {
         },
         classroom: {
           campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
+        },
+        grade: {
+          level: !isNaN(+levelId) ? { id: +levelId } : {},
         },
       },
       relations: {

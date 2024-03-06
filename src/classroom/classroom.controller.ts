@@ -6,14 +6,22 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ClassroomService } from './classroom.service';
 import { CreateClassroomDto } from './dto/create-classroom.dto';
 import { UpdateClassroomDto } from './dto/update-classroom.dto';
-import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Classroom } from './entities/classroom.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { SearchClassroomsDto } from './dto/search-classrooms.dto';
 
 @ApiTags('Classroom')
 @Controller('classroom')
@@ -102,5 +110,20 @@ export class ClassroomController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.classroomService.remove(+id);
+  }
+  @Get('search/params')
+  @ApiQuery({
+    name: 'campusId',
+    required: false,
+    description: 'Id of the campus',
+    type: Number,
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: 'Array of classrooms from  campus',
+    type: [Classroom],
+  })
+  searchClassrooms(@Query() searchClassroomsDto: SearchClassroomsDto) {
+    return this.classroomService.searchClassrooms(searchClassroomsDto);
   }
 }
