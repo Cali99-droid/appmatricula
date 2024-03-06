@@ -133,13 +133,18 @@ export class ActivityClassroomController {
     description: 'Id of the campus',
     type: Number,
   })
+  @ApiQuery({
+    name: 'levelId',
+    required: false,
+    description: 'Id of the level',
+    type: Number,
+  })
   @ApiOkResponse({
     status: 200,
-    description: 'Array of classrooms from phase, year or campus',
+    description: 'Array of classrooms from phase, year, campus or level',
     type: [ActivityClassroom],
   })
   searchClassrooms(@Query() searchClassroomsDto: SearchClassroomsDto) {
-    console.log(searchClassroomsDto);
     return this.activityClassroomService.searchClassrooms(searchClassroomsDto);
   }
 }
