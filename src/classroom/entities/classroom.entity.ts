@@ -25,7 +25,7 @@ export class Classroom {
   @Column('varchar', { nullable: true, unique: true })
   code?: string;
   @ApiProperty({
-    example: 'P (presencial)',
+    example: 'P',
     description:
       'optional, type of classroom, must be P (presencial) or V (virtual)',
   })
