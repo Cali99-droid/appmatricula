@@ -9,7 +9,6 @@ import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/person/entities/student.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Status } from './enum/status.enum';
-import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 
 @Injectable()
 export class EnrollmentService {
@@ -30,35 +29,29 @@ export class EnrollmentService {
     const { persons, activityClassroomId } = createManyEnrollmentDto;
 
     try {
-      const personsToCreate = this.personRepository.create(persons);
-      const personsCreated = await this.personRepository.save(personsToCreate);
+      // Crear y guardar personas
+      const personsCreated = await this.personRepository.save(
+        this.personRepository.create(persons),
+      );
 
-      const dataStudent = personsCreated.map((person) => {
-        return {
-          person,
-        };
-      });
-      console.log(dataStudent);
-      const studentCreate = this.studentRepository.create(dataStudent);
-      const studentCreated = await this.studentRepository.save(studentCreate);
-      const dataEnrollment = studentCreated.map((student) => {
-        return {
+      // Crear y guardar estudiantes
+      const studentsCreated = await this.studentRepository.save(
+        personsCreated.map((person) => ({ person })),
+      );
+
+      // Crear y guardar inscripciones con status por defecto
+      const enrollments = await this.enrollmentRepository.save(
+        studentsCreated.map((student) => ({
           status: Status.DEFINITIVA,
-          activityClassroom: { id: activityClassroomId } as ActivityClassroom,
-          student: student,
-        };
-      });
+          activityClassroom: { id: activityClassroomId },
+          student,
+        })),
+      );
 
-      const enrollmentCreate = this.enrollmentRepository.create(dataEnrollment);
-      const enrollmentCreated =
-        await this.enrollmentRepository.save(enrollmentCreate);
-
-      return enrollmentCreated;
+      return enrollments;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
-    console.log(createManyEnrollmentDto);
-    return 'This action adds many enrollment';
   }
 
   findAll() {
