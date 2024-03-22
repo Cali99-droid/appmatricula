@@ -39,7 +39,7 @@ export class EnrollmentService {
         personsCreated.map((person) => ({ person })),
       );
 
-      // Crear y guardar inscripciones con status por defecto
+      // Crear y guardar inscripciones con status por defecto test commit
       const enrollments = await this.enrollmentRepository.save(
         studentsCreated.map((student) => ({
           status: Status.DEFINITIVA,
