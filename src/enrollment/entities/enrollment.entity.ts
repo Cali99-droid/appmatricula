@@ -35,8 +35,8 @@ export class Enrollment {
 
   @ApiProperty({
     example: 'EN PROCESO',
-    description: 'gender, must be EN PROCESO, TRASLADADO  or DEFINITIVA',
+    description: 'status, must be EN PROCESO, TRASLADADO  or DEFINITIVA',
   })
-  @Column({ enum: Status })
-  status: string;
+  @Column({ type: 'enum', enum: Status })
+  status: Status;
 }

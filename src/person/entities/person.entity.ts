@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from 'typeorm';
-import { Gener } from '../enum/gener.enum';
+import { Gender } from '../enum/gender.enum';
 import { Student } from './student.entity';
 @Entity()
 export class Person {
@@ -17,15 +17,13 @@ export class Person {
     length: 8,
     unique: true,
   })
-  doc_number: string;
+  docNumber: string;
 
   @ApiProperty({
     example: 'Jose',
     description: 'name of person',
   })
-  @Column('varchar', {
-    unique: true,
-  })
+  @Column('varchar')
   name: string;
 
   @ApiProperty({
@@ -33,21 +31,21 @@ export class Person {
     description: 'lastName of person',
   })
   @Column('varchar')
-  lastName: string;
+  lastname: string;
 
   @ApiProperty({
     example: 'Ramirez',
     description: 'mLastName of person',
   })
   @Column('varchar')
-  mLastName: string;
+  mLastname: string;
 
   @ApiProperty({
     example: 'M',
     description: 'gender, must be M or F',
   })
-  @Column({ enum: Gener })
-  gender: string;
+  @Column({ type: 'enum', enum: Gender })
+  gender: Gender;
 
   @OneToOne(() => Student, (student) => student.person)
   student?: Student;

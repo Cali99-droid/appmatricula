@@ -10,6 +10,7 @@ import {
 import { EnrollmentService } from './enrollment.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
+import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
 
 @Controller('enrollment')
 export class EnrollmentController {
@@ -18,6 +19,10 @@ export class EnrollmentController {
   @Post()
   create(@Body() createEnrollmentDto: CreateEnrollmentDto) {
     return this.enrollmentService.create(createEnrollmentDto);
+  }
+  @Post('many')
+  createMany(@Body() createManyEnrollmentDto: CreateManyEnrollmentDto) {
+    return this.enrollmentService.createMany(createManyEnrollmentDto);
   }
 
   @Get()

@@ -21,7 +21,7 @@ export class Student {
     eager: true,
   })
   @JoinColumn({ name: 'personId' })
-  person?: Person;
+  person: Person;
 
   @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
   enrollment?: Enrollment[];
