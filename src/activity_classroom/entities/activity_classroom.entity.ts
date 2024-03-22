@@ -6,11 +6,13 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Phase } from 'src/phase/entities/phase.entity';
 import { Section } from '../../activity_classroom/enum/section.enum';
 import { Grade } from 'src/grade/entities/grade.entity';
 import { SchoolShift } from 'src/school_shifts/entities/school_shift.entity';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 @Entity()
 export class ActivityClassroom {
   @ApiProperty()
@@ -52,4 +54,6 @@ export class ActivityClassroom {
   })
   @JoinColumn({ name: 'schoolShiftId' })
   schoolShift: SchoolShift;
+  @OneToMany(() => Enrollment, (enrollment) => enrollment.activityClassroom)
+  enrollment?: Enrollment[];
 }
