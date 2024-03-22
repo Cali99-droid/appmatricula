@@ -13,6 +13,8 @@ import { ExistIdConstraint } from './common/validation/exist-id-constraint';
 import { ActivityClassroomModule } from './activity_classroom/activity_classroom.module';
 import { YearSubscriber } from './years/subscribers/year.subscriber';
 import { PhaseSubscriber } from './phase/subscribers/phase.subscriber';
+import { EnrollmentModule } from './enrollment/enrollment.module';
+import { PersonModule } from './person/person.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { PhaseSubscriber } from './phase/subscribers/phase.subscriber';
     ClassroomModule,
     SchoolShiftsModule,
     ActivityClassroomModule,
+    EnrollmentModule,
+    PersonModule,
   ],
   providers: [ExistIdConstraint],
 })
