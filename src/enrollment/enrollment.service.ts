@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
@@ -9,7 +9,6 @@ import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/person/entities/student.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Status } from './enum/status.enum';
-
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -21,8 +20,18 @@ export class EnrollmentService {
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
   ) {}
-  create(createEnrollmentDto: CreateEnrollmentDto) {
-    return 'This action adds a new enrollment' + createEnrollmentDto;
+  async create(createEnrollmentDto: CreateEnrollmentDto) {
+    try {
+      const enrollment = this.enrollmentRepository.create({
+        student: { id: createEnrollmentDto.studentId },
+        activityClassroom: { id: createEnrollmentDto.activityClassroomId },
+        status: createEnrollmentDto.status,
+      });
+      await this.enrollmentRepository.save(enrollment);
+      return enrollment;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
   async createMany(createManyEnrollmentDto: CreateManyEnrollmentDto) {
@@ -53,19 +62,43 @@ export class EnrollmentService {
     }
   }
 
-  findAll() {
-    return `This action returns all enrollment`;
+  async findAll() {
+    const enrollments = await this.enrollmentRepository.find();
+    return enrollments;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} enrollment`;
+  async findOne(id: number) {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: { id: id },
+    });
+    if (!enrollment)
+      throw new NotFoundException(`Enrollment with id ${id} not found`);
+    return enrollment;
   }
 
-  update(id: number, updateEnrollmentDto: UpdateEnrollmentDto) {
-    return `This action updates a #${updateEnrollmentDto} enrollment`;
+  async update(id: number, updateEnrollmentDto: UpdateEnrollmentDto) {
+    const enrollment = await this.enrollmentRepository.preload({
+      id: id,
+      ...updateEnrollmentDto,
+    });
+    if (!enrollment)
+      throw new NotFoundException(`Enrollment with id: ${id} not found`);
+    try {
+      await this.enrollmentRepository.save(enrollment);
+      return enrollment;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} enrollment`;
+  async remove(id: number) {
+    const enrollment = await this.enrollmentRepository.findOneBy({ id });
+    if (!enrollment)
+      throw new NotFoundException(`Enrollment by id: '${id}' not found`);
+    try {
+      await this.enrollmentRepository.remove(enrollment);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 }
