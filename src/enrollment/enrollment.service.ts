@@ -38,7 +38,6 @@ export class EnrollmentService {
       const studentsCreated = await this.studentRepository.save(
         personsCreated.map((person) => ({ person })),
       );
-      //comment
 
       const enrollments = await this.enrollmentRepository.save(
         studentsCreated.map((student) => ({
