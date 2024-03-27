@@ -4,7 +4,7 @@ import { Gender } from '../enum/gender.enum';
 import { Student } from './student.entity';
 @Entity()
 export class Person {
-  @ApiProperty()
+  // @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
 

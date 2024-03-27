@@ -5,7 +5,7 @@ import { Person } from 'src/person/entities/person.entity';
 
 export class CreateManyEnrollmentDto {
   @ApiProperty({
-    description: 'array of  Id levels for this campus',
+    description: 'array of  persons',
     nullable: false,
     required: false,
     type: [Person],
