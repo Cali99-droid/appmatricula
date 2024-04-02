@@ -47,5 +47,5 @@ export class ResponseEnrrollDto {
   student: StudentDto;
 
   @ApiProperty({ type: ClassroomDto })
-  classroom: ClassroomDto;
+  activityClassroom: ClassroomDto;
 }

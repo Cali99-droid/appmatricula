@@ -136,6 +136,7 @@ export class EnrollmentService {
       ({ id, status, student, activityClassroom }) => ({
         id,
         status,
+
         student: {
           id: student.id,
           name: student.person.name,
@@ -145,11 +146,13 @@ export class EnrollmentService {
           docNumber: student.person.docNumber,
           studentCode: student.person.studentCode,
         },
-        classroom: {
+        activityClassroom: {
           id: activityClassroom.classroom.id,
           code: activityClassroom.classroom.code,
           grade: activityClassroom.grade.name,
           level: activityClassroom.grade.level.name,
+          section: activityClassroom.section,
+          gradeId: activityClassroom.grade.id,
         },
       }),
     );
