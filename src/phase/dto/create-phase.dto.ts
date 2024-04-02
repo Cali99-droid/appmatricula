@@ -1,5 +1,10 @@
-
-import { IsDateString, IsEnum, IsNumber, IsOptional,IsBoolean } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+} from 'class-validator';
 
 import { TypePhase } from '../enum/type-phase.enum';
 import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';

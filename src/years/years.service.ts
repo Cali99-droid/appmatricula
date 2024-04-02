@@ -38,13 +38,11 @@ export class YearsService {
         startDate: true,
         endDate: true,
       },
-      // relations: {
-      //   phase: true,
-      // },
     });
 
     return years;
   }
+  // TODO revisar utilidad
   async findAllByYear(id: number) {
     const years = await this.yearRepository.find({
       where: {

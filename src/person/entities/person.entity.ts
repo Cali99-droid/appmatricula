@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from 'typeorm';
 import { Gender } from '../enum/gender.enum';
 import { Student } from './student.entity';
+
 @Entity()
 export class Person {
   // @ApiProperty()

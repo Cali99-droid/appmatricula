@@ -4,16 +4,13 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Equal, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateActivityClassroomDto } from './dto/create-activity_classroom.dto';
 import { UpdateActivityClassroomDto } from './dto/update-activity_classroom.dto';
 import { ActivityClassroom } from './entities/activity_classroom.entity';
-import { Classroom } from 'src/classroom/entities/classroom.entity';
-import { Phase } from 'src/phase/entities/phase.entity';
-import { Grade } from 'src/grade/entities/grade.entity';
-import { SchoolShift } from 'src/school_shifts/entities/school_shift.entity';
+
 import { SearchClassroomsDto } from 'src/common/dto/search-classrooms.dto';
 @Injectable()
 export class ActivityClassroomService {
@@ -23,46 +20,41 @@ export class ActivityClassroomService {
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
   ) {}
   async create(createActivityClassroomDto: CreateActivityClassroomDto) {
-    const existClass = await this.activityClassroomRepository.exists({
-      where: {
-        classroom: {
-          id: createActivityClassroomDto.classroomId,
+    // Combinando las condiciones en un único objeto de consulta
+    const exists = await this.activityClassroomRepository.findOne({
+      where: [
+        {
+          section: createActivityClassroomDto.section,
+          classroom: { id: createActivityClassroomDto.classroomId },
         },
-        phase: {
-          id: createActivityClassroomDto.phaseId,
+        {
+          schoolShift: { id: createActivityClassroomDto.schoolShiftId },
+          classroom: { id: createActivityClassroomDto.classroomId },
         },
-        schoolShift: {
-          id: createActivityClassroomDto.schoolShiftId,
-        },
-      },
-    });
-    if (existClass)
-      throw new BadRequestException('activityClassroom not available');
-    const activityClassroom = this.activityClassroomRepository.create(
-      createActivityClassroomDto,
-    );
-    activityClassroom.classroom = {
-      id: createActivityClassroomDto.classroomId,
-    } as Classroom;
-    activityClassroom.phase = {
-      id: createActivityClassroomDto.phaseId,
-    } as Phase;
-    activityClassroom.grade = {
-      id: createActivityClassroomDto.gradeId,
-    } as Grade;
-    activityClassroom.schoolShift = {
-      id: createActivityClassroomDto.schoolShiftId,
-    } as SchoolShift;
-
-    const existClassroom = await this.activityClassroomRepository.findOne({
-      where: activityClassroom,
+      ],
     });
 
-    if (existClassroom)
-      throw new BadRequestException('activityClassroom exists');
+    if (exists) {
+      throw new BadRequestException(
+        'ActivityClassroom not available, existing section or shift',
+      );
+    }
+
     try {
-      return this.activityClassroomRepository.save(activityClassroom);
+      // Creación directa y guardado de la entidad con relaciones en un paso
+      const activityClassroom = this.activityClassroomRepository.create({
+        ...createActivityClassroomDto,
+        classroom: { id: createActivityClassroomDto.classroomId },
+        phase: { id: createActivityClassroomDto.phaseId },
+        grade: { id: createActivityClassroomDto.gradeId },
+        schoolShift: { id: createActivityClassroomDto.schoolShiftId },
+      });
+
+      await this.activityClassroomRepository.save(activityClassroom);
+      return activityClassroom;
     } catch (error) {
+      // Asumiendo que handleDBExceptions es una función adecuadamente definida
+      // para manejar y re-lanzar excepciones específicas de la DB.
       handleDBExceptions(error, this.logger);
     }
   }
@@ -93,6 +85,32 @@ export class ActivityClassroomService {
     id: number,
     updateActivityClassroomDto: UpdateActivityClassroomDto,
   ) {
+    //**Validate exist section or turn */
+    const existingActivityClassroom =
+      await this.activityClassroomRepository.findOne({
+        where: [
+          {
+            section: updateActivityClassroomDto.section,
+            classroom: { id: updateActivityClassroomDto.classroomId },
+            grade: { id: updateActivityClassroomDto.gradeId },
+            id: Not(Equal(id)),
+          },
+          {
+            schoolShift: { id: updateActivityClassroomDto.schoolShiftId },
+            classroom: { id: updateActivityClassroomDto.classroomId },
+            grade: { id: updateActivityClassroomDto.gradeId },
+            id: Not(Equal(id)),
+          },
+        ],
+      });
+
+    if (existingActivityClassroom) {
+      console.log(existingActivityClassroom.id);
+      throw new BadRequestException(
+        `An ActivityClassroom with the section "${updateActivityClassroomDto.section}" and schoolShiftId "${updateActivityClassroomDto.schoolShiftId}" for the gradeId "${updateActivityClassroomDto.gradeId}" already exists.`,
+      );
+    }
+
     const classroom = await this.activityClassroomRepository.preload({
       id: id,
       section: updateActivityClassroomDto.section,

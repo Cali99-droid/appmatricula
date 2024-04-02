@@ -1,15 +1,36 @@
 version: '1'
 
 services:
+  backend:
+    build: ./
+    container_name: api_school
+    environment:
+      - PORT=${PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+      - DB_HOST=mysql_db
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql-server
+    networks:
+      - api_network  
   mysql-server:
     image: mysql:8.0
-    # container_name: mi_mysql_server
+    container_name: mysql_db
     ports:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_ROOT_USER: ${DB_USER}
+      MYSQL_ROOT_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./datos_mysql:/var/lib/mysql
+    networks:
+      - api_network
+networks:
+  api_network:
+    driver: bridge

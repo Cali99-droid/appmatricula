@@ -3,6 +3,7 @@
 /node_modules
 /datos_mysql
 .env 
+docker-compose.yaml
 # Logs
 logs
 *.log

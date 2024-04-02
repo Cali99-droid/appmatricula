@@ -36,6 +36,7 @@ export class YearsController {
   findAll() {
     return this.yearsService.findAll();
   }
+  // TODO revisar utilidad
   @Get('year/:id')
   @ApiParam({
     name: 'id',

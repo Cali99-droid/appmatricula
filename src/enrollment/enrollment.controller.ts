@@ -11,7 +11,8 @@ import { EnrollmentService } from './enrollment.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -30,6 +31,18 @@ export class EnrollmentController {
   @Get()
   findAll() {
     return this.enrollmentService.findAll();
+  }
+
+  @Get('activity-classroom/:id')
+  @ApiOkResponse({
+    status: 200,
+    description: 'Array of enrolled per classroom',
+    type: [ResponseEnrrollDto],
+  })
+  findByActivityClassroom(
+    @Param('id') id: string,
+  ): Promise<ResponseEnrrollDto[]> {
+    return this.enrollmentService.findByActivityClassroom(+id);
   }
 
   @Get(':id')

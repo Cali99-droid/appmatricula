@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
@@ -9,6 +14,8 @@ import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/person/entities/student.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Status } from './enum/status.enum';
+import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
+import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -19,9 +26,28 @@ export class EnrollmentService {
     private readonly personRepository: Repository<Person>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(ActivityClassroom)
+    private readonly activityClassroomRepository: Repository<ActivityClassroom>,
   ) {}
   async create(createEnrollmentDto: CreateEnrollmentDto) {
     try {
+      const classroom = await this.activityClassroomRepository.findOneBy({
+        id: createEnrollmentDto.activityClassroomId,
+      });
+      const capacity = classroom.classroom.capacity;
+      const enrollmentsByActivityClassroom =
+        await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              id: createEnrollmentDto.activityClassroomId,
+            },
+          },
+        });
+      if (enrollmentsByActivityClassroom.length >= capacity) {
+        throw new BadRequestException(
+          'those enrolled exceed the capacity of the classroom ',
+        );
+      }
       const enrollment = this.enrollmentRepository.create({
         student: { id: createEnrollmentDto.studentId },
         activityClassroom: { id: createEnrollmentDto.activityClassroomId },
@@ -36,7 +62,18 @@ export class EnrollmentService {
 
   async createMany(createManyEnrollmentDto: CreateManyEnrollmentDto) {
     const { persons, activityClassroomId } = createManyEnrollmentDto;
+    // validar capacidad de aula
 
+    const classroom = await this.activityClassroomRepository.findOneBy({
+      id: activityClassroomId,
+    });
+    const capacity = classroom.classroom.capacity;
+
+    if (persons.length > capacity) {
+      throw new BadRequestException(
+        'those enrolled exceed the capacity of the classroom ',
+      );
+    }
     try {
       // Crear y guardar personas
       const personsCreated = await this.personRepository.save(
@@ -65,6 +102,41 @@ export class EnrollmentService {
   async findAll() {
     const enrollments = await this.enrollmentRepository.find();
     return enrollments;
+  }
+
+  // ** matriculados por aula
+  async findByActivityClassroom(id: number): Promise<ResponseEnrrollDto[]> {
+    const enrollmentsByActivityClassroom = await this.enrollmentRepository.find(
+      {
+        where: {
+          activityClassroom: {
+            id,
+          },
+        },
+      },
+    );
+    const data = enrollmentsByActivityClassroom.map(
+      ({ id, status, student, activityClassroom }) => ({
+        id,
+        status,
+        student: {
+          id: student.id,
+          name: student.person.name,
+          lastname: student.person.lastname,
+          mLastname: student.person.mLastname,
+          gender: student.person.gender,
+          docNumber: student.person.docNumber,
+        },
+        classroom: {
+          id: activityClassroom.classroom.id,
+          code: activityClassroom.classroom.code,
+          grade: activityClassroom.grade.name,
+          level: activityClassroom.grade.level.name,
+        },
+      }),
+    );
+
+    return data;
   }
 
   async findOne(id: number) {
