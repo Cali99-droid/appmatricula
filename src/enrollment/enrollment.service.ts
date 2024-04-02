@@ -147,12 +147,13 @@ export class EnrollmentService {
           studentCode: student.person.studentCode,
         },
         activityClassroom: {
-          id: activityClassroom.classroom.id,
+          id: activityClassroom.id,
           code: activityClassroom.classroom.code,
           grade: activityClassroom.grade.name,
           level: activityClassroom.grade.level.name,
           section: activityClassroom.section,
           gradeId: activityClassroom.grade.id,
+          campusDetailId: activityClassroom.classroom.campusDetail.id,
         },
       }),
     );
