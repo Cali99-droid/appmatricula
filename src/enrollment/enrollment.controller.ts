@@ -11,7 +11,7 @@ import { EnrollmentService } from './enrollment.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
 
 @ApiTags('Enrollment')
@@ -24,6 +24,14 @@ export class EnrollmentController {
     return this.enrollmentService.create(createEnrollmentDto);
   }
   @Post('many')
+  @ApiResponse({
+    status: 200,
+    description: 'ActivityClassroom was created',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'those enrolled exceed the capacity of the classroom ',
+  })
   createMany(@Body() createManyEnrollmentDto: CreateManyEnrollmentDto) {
     return this.enrollmentService.createMany(createManyEnrollmentDto);
   }

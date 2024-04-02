@@ -38,7 +38,7 @@ export class ActivityClassroomController {
   })
   @ApiResponse({
     status: 400,
-    description: 'exist ActivityClassroom ',
+    description: 'ActivityClassroom not available, existing section or shift ',
   })
   create(@Body() createActivityClassroomDto: CreateActivityClassroomDto) {
     return this.activityClassroomService.create(createActivityClassroomDto);
@@ -84,7 +84,11 @@ export class ActivityClassroomController {
   })
   @ApiResponse({
     status: 400,
-    description: 'exist activity classroom ',
+    description: 'ActivityClassroom not available, existing section or shift ',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'ActivityClassroom not found ',
   })
   update(
     @Param('id') id: string,

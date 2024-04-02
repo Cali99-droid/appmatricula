@@ -85,6 +85,16 @@ export class ActivityClassroomService {
     id: number,
     updateActivityClassroomDto: UpdateActivityClassroomDto,
   ) {
+    const classroom = await this.activityClassroomRepository.preload({
+      id: id,
+      section: updateActivityClassroomDto.section,
+      classroom: { id: updateActivityClassroomDto.classroomId },
+      grade: { id: updateActivityClassroomDto.gradeId },
+      phase: { id: updateActivityClassroomDto.phaseId },
+      schoolShift: { id: updateActivityClassroomDto.schoolShiftId },
+    });
+    if (!classroom)
+      throw new NotFoundException(`ActivityClassroom with id: ${id} not found`);
     //**Validate exist section or turn */
     const existingActivityClassroom =
       await this.activityClassroomRepository.findOne({
@@ -110,17 +120,6 @@ export class ActivityClassroomService {
         `An ActivityClassroom with the section "${updateActivityClassroomDto.section}" and schoolShiftId "${updateActivityClassroomDto.schoolShiftId}" for the gradeId "${updateActivityClassroomDto.gradeId}" already exists.`,
       );
     }
-
-    const classroom = await this.activityClassroomRepository.preload({
-      id: id,
-      section: updateActivityClassroomDto.section,
-      classroom: { id: updateActivityClassroomDto.classroomId },
-      grade: { id: updateActivityClassroomDto.gradeId },
-      phase: { id: updateActivityClassroomDto.phaseId },
-      schoolShift: { id: updateActivityClassroomDto.schoolShiftId },
-    });
-    if (!classroom)
-      throw new NotFoundException(`ActivityClassroom with id: ${id} not found`);
     try {
       await this.activityClassroomRepository.save(classroom);
 
