@@ -48,6 +48,14 @@ export class Person {
   @Column({ type: 'enum', enum: Gender })
   gender: Gender;
 
+  @ApiProperty({
+    description: 'studentCode',
+  })
+  @Column('varchar', {
+    nullable: true,
+  })
+  studentCode: string;
+
   @OneToOne(() => Student, (student) => student.person)
   student?: Student;
 }

@@ -6,13 +6,15 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { EnrollmentService } from './enrollment.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
-import { ApiOkResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
+import { SearchEnrolledDto } from './dto/searchEnrollmet-dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -41,16 +43,28 @@ export class EnrollmentController {
     return this.enrollmentService.findAll();
   }
 
-  @Get('activity-classroom/:id')
+  @Get('activity-classroom')
+  @ApiQuery({
+    name: 'campusId',
+    required: true,
+    description: 'Id of the campus',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'levelId',
+    required: false,
+    description: 'Id of the level',
+    type: Number,
+  })
   @ApiOkResponse({
     status: 200,
     description: 'Array of enrolled per classroom',
     type: [ResponseEnrrollDto],
   })
   findByActivityClassroom(
-    @Param('id') id: string,
+    @Query() searchEnrolledDto: SearchEnrolledDto,
   ): Promise<ResponseEnrrollDto[]> {
-    return this.enrollmentService.findByActivityClassroom(+id);
+    return this.enrollmentService.findByActivityClassroom(searchEnrolledDto);
   }
 
   @Get(':id')

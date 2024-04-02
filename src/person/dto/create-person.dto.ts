@@ -44,4 +44,10 @@ export class CreatePersonDto {
     message: 'Gender value must be some values: [M, F] ',
   })
   gender: Gender;
+
+  @ApiProperty({
+    description: 'studentCode',
+  })
+  @IsString()
+  studentCode: string;
 }

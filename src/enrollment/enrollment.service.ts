@@ -9,13 +9,14 @@ import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
 import { Enrollment } from './entities/enrollment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/person/entities/student.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Status } from './enum/status.enum';
 import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import { SearchEnrolledDto } from './dto/searchEnrollmet-dto';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -87,7 +88,7 @@ export class EnrollmentService {
 
       const enrollments = await this.enrollmentRepository.save(
         studentsCreated.map((student) => ({
-          status: Status.DEFINITIVA,
+          status: Status.EN_PROCESO,
           activityClassroom: { id: activityClassroomId },
           student,
         })),
@@ -105,12 +106,28 @@ export class EnrollmentService {
   }
 
   // ** matriculados por aula
-  async findByActivityClassroom(id: number): Promise<ResponseEnrrollDto[]> {
+  async findByActivityClassroom(
+    searchEnrolledDto: SearchEnrolledDto,
+  ): Promise<ResponseEnrrollDto[]> {
+    const { campusId, levelId } = searchEnrolledDto;
+    const classrooms = await this.activityClassroomRepository.find({
+      where: {
+        classroom: {
+          campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
+        },
+        grade: {
+          level: !isNaN(+levelId) ? { id: +levelId } : {},
+        },
+      },
+    });
+    const classroomsIds = classrooms.map((classroom) => {
+      return classroom.id;
+    });
     const enrollmentsByActivityClassroom = await this.enrollmentRepository.find(
       {
         where: {
           activityClassroom: {
-            id,
+            id: In(classroomsIds),
           },
         },
       },
@@ -126,6 +143,7 @@ export class EnrollmentService {
           mLastname: student.person.mLastname,
           gender: student.person.gender,
           docNumber: student.person.docNumber,
+          studentCode: student.person.studentCode,
         },
         classroom: {
           id: activityClassroom.classroom.id,
