@@ -34,6 +34,10 @@ class ClassroomDto {
 
   @ApiProperty()
   level: string;
+  @ApiProperty()
+  gradeId: number;
+  @ApiProperty()
+  campusDetailId: number;
 }
 
 export class ResponseEnrrollDto {

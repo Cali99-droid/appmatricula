@@ -53,8 +53,6 @@ export class ActivityClassroomService {
       await this.activityClassroomRepository.save(activityClassroom);
       return activityClassroom;
     } catch (error) {
-      // Asumiendo que handleDBExceptions es una función adecuadamente definida
-      // para manejar y re-lanzar excepciones específicas de la DB.
       handleDBExceptions(error, this.logger);
     }
   }
@@ -66,6 +64,9 @@ export class ActivityClassroomService {
         phase: true,
         grade: true,
         schoolShift: true,
+      },
+      order: {
+        grade: { name: 'ASC' },
       },
     });
     return activityClassrooms;
