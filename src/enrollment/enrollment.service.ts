@@ -76,16 +76,47 @@ export class EnrollmentService {
       );
     }
     try {
-      // Crear y guardar personas
+      //Validar Personas
+      const dataExist: any[] = [];
+      const dataNoExist: any[] = [];
+      const dataEnrollment: any[] = [];
+      for (const person of persons) {
+        const existPerson = await this.personRepository.findOne({
+          where: { docNumber: person.docNumber },
+        });
+
+        if (existPerson) {
+          dataExist.push(existPerson);
+          const student = await this.studentRepository.findOne({
+            where: { person: { id: existPerson.id } },
+          });
+          const existEnrollment = await this.enrollmentRepository.findOne({
+            where: { student: { id: student.id } },
+          });
+          if (!existEnrollment) {
+            const enrollment = this.enrollmentRepository.create({
+              student: { id: student.id },
+              activityClassroom: { id: activityClassroomId },
+              status: Status.EN_PROCESO,
+            });
+            const saveEnrollment =
+              await this.enrollmentRepository.save(enrollment);
+            dataEnrollment.push(saveEnrollment);
+          }
+        } else {
+          dataNoExist.push(person);
+        }
+      }
+      // Crear y guardar personas que no existen
       const personsCreated = await this.personRepository.save(
-        this.personRepository.create(persons),
+        this.personRepository.create(dataNoExist),
       );
 
-      // Crear y guardar estudiantes
+      // Crear y guardar estudiantes que no existen
       const studentsCreated = await this.studentRepository.save(
         personsCreated.map((person) => ({ person })),
       );
-
+      // Crear y guardar matriculas
       const enrollments = await this.enrollmentRepository.save(
         studentsCreated.map((student) => ({
           status: Status.EN_PROCESO,
@@ -93,7 +124,7 @@ export class EnrollmentService {
           student,
         })),
       );
-
+      dataEnrollment.push(enrollments);
       return enrollments;
     } catch (error) {
       handleDBExceptions(error, this.logger);
