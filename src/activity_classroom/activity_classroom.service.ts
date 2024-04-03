@@ -162,6 +162,9 @@ export class ActivityClassroomService {
         grade: true,
         schoolShift: true,
       },
+      order: {
+        grade: { name: 'ASC' },
+      },
     });
     return classrooms;
   }
