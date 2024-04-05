@@ -29,7 +29,7 @@ export class ActivityClassroomService {
         },
         {
           schoolShift: { id: createActivityClassroomDto.schoolShiftId },
-          classroom: { id: createActivityClassroomDto.classroomId },
+          phase: { id: createActivityClassroomDto.phaseId },
         },
       ],
     });
