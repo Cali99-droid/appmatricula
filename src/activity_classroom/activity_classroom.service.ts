@@ -26,9 +26,11 @@ export class ActivityClassroomService {
         {
           section: createActivityClassroomDto.section,
           classroom: { id: createActivityClassroomDto.classroomId },
+          phase: { id: createActivityClassroomDto.phaseId },
         },
         {
           schoolShift: { id: createActivityClassroomDto.schoolShiftId },
+          classroom: { id: createActivityClassroomDto.classroomId },
           phase: { id: createActivityClassroomDto.phaseId },
         },
       ],
