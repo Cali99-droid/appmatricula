@@ -5,7 +5,7 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { Enrollment } from '../../enrollment/entities/enrollment.entity';
 import { Person } from './person.entity';
 import { ApiProperty } from '@nestjs/swagger';
 @Entity()

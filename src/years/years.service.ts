@@ -9,7 +9,7 @@ import { UpdateYearDto } from './dto/update-year.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Year } from './entities/year.entity';
-import { handleDBExceptions } from 'src/common/helpers/handleDBException';
+import { handleDBExceptions } from '../common/helpers/handleDBException';
 
 @Injectable()
 export class YearsService {
@@ -22,8 +22,8 @@ export class YearsService {
   async create(createYearDto: CreateYearDto) {
     try {
       const year = this.yearRepository.create(createYearDto);
-      await this.yearRepository.save(year);
-      return year;
+      return await this.yearRepository.save(year);
+      // return year;
     } catch (error) {
       // this.logger.error(error);
       handleDBExceptions(error, this.logger);

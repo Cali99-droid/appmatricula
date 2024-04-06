@@ -15,6 +15,7 @@ import { YearSubscriber } from './years/subscribers/year.subscriber';
 import { PhaseSubscriber } from './phase/subscribers/phase.subscriber';
 import { EnrollmentModule } from './enrollment/enrollment.module';
 import { PersonModule } from './person/person.module';
+import { AttendanceModule } from './attendance/attendance.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { PersonModule } from './person/person.module';
     ActivityClassroomModule,
     EnrollmentModule,
     PersonModule,
+    AttendanceModule,
   ],
   providers: [ExistIdConstraint],
 })

@@ -1,6 +1,6 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Level } from 'src/level/entities/level.entity';
-import { Campus } from 'src/campus/entities/campus.entity';
+import { Level } from '../../level/entities/level.entity';
+import { Campus } from '../../campus/entities/campus.entity';
 @Entity()
 export class CampusToLevel {
   @PrimaryGeneratedColumn()

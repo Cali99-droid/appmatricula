@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsDateString, IsString, MinLength } from 'class-validator';
-import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
+import { IsDateBefore } from '../../common/decorators/is-date-before.decorator';
 
 export class CreateYearDto {
   @ApiProperty({
@@ -33,5 +39,6 @@ export class CreateYearDto {
     nullable: false,
   })
   @IsBoolean()
-  status: boolean;
+  @IsOptional()
+  status?: boolean;
 }

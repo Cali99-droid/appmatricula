@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
+import { CampusDetail } from '../../campus_detail/entities/campus_detail.entity';
 import {
   Column,
   Entity,
@@ -9,7 +9,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
 
 @Entity()
 export class Classroom {

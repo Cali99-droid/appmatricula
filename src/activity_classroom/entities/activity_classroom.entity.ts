@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Classroom } from 'src/classroom/entities/classroom.entity';
+
 import {
   Entity,
   Column,
@@ -8,11 +8,12 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { Phase } from 'src/phase/entities/phase.entity';
+import { Classroom } from '../../classroom/entities/classroom.entity';
+import { Phase } from '../../phase/entities/phase.entity';
 import { Section } from '../../activity_classroom/enum/section.enum';
-import { Grade } from 'src/grade/entities/grade.entity';
-import { SchoolShift } from 'src/school_shifts/entities/school_shift.entity';
-import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { Grade } from '../../grade/entities/grade.entity';
+import { SchoolShift } from '../../school_shifts/entities/school_shift.entity';
+import { Enrollment } from '../../enrollment/entities/enrollment.entity';
 @Entity()
 export class ActivityClassroom {
   @ApiProperty()

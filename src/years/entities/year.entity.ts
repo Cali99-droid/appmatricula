@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Campus } from 'src/campus/entities/campus.entity';
-import { Phase } from 'src/phase/entities/phase.entity';
+import { Campus } from '../../campus/entities/campus.entity';
+import { Phase } from '../../phase/entities/phase.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()

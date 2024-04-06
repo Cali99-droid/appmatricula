@@ -7,8 +7,8 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { Level } from 'src/level/entities/level.entity';
-import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import { Level } from '../../level/entities/level.entity';
+import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
 @Entity()
 export class Grade {
   @ApiProperty()

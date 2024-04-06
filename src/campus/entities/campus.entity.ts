@@ -5,11 +5,11 @@ import {
   PrimaryGeneratedColumn,
   OneToMany,
 } from 'typeorm';
-import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
-import { Year } from 'src/years/entities/year.entity';
-import { ApiProperty } from '@nestjs/swagger';
-import { CampusToLevel } from './campusToLevel.entity';
+import { CampusDetail } from '../../campus_detail/entities/campus_detail.entity';
+import { Year } from '../../years/entities/year.entity';
 
+import { CampusToLevel } from './campusToLevel.entity';
+import { ApiProperty } from '@nestjs/swagger';
 @Entity()
 export class Campus {
   @ApiProperty({

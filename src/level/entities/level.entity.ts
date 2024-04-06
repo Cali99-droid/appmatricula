@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Grade } from 'src/grade/entities/grade.entity';
-import { CampusToLevel } from 'src/campus/entities/campusToLevel.entity';
+import { Grade } from '../../grade/entities/grade.entity';
+import { CampusToLevel } from '../../campus/entities/campusToLevel.entity';
 @Entity()
 export class Level {
   @ApiProperty()

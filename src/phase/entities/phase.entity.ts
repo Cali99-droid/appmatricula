@@ -7,9 +7,9 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { TypePhase } from '../enum/type-phase.enum';
-import { Year } from 'src/years/entities/year.entity';
+import { Year } from '../../years/entities/year.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
 
 @Entity()
 export class Phase {
