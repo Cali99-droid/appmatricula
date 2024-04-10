@@ -45,6 +45,12 @@ export class EnrollmentController {
 
   @Get('activity-classroom')
   @ApiQuery({
+    name: 'yearId',
+    required: true,
+    description: 'Id of the year',
+    type: Number,
+  })
+  @ApiQuery({
     name: 'campusId',
     required: true,
     description: 'Id of the campus',
