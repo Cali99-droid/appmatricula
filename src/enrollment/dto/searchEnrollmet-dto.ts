@@ -20,6 +20,9 @@ export class SearchEnrolledDto {
   // @IsPositive()
   // @IsNumber()
   //@Min(1)
+  @ExistId({ tableName: 'year' })
+  yearId?: string;
+
   @ExistId({ tableName: 'CampusDetail' })
   campusId?: string;
 
