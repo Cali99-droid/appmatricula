@@ -40,6 +40,9 @@ export class GradeService {
       relations: {
         level: true,
       },
+      order: {
+        name: 'ASC',
+      },
     });
     return grades;
   }

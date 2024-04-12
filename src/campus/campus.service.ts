@@ -67,6 +67,12 @@ export class CampusService {
         year: true,
         campusToLevel: true,
       },
+      order: {
+        campusDetail: { name: 'ASC' },
+        campusToLevel: {
+          level: { name: 'ASC' },
+        },
+      },
     });
     return campus;
   }
@@ -82,6 +88,9 @@ export class CampusService {
       },
       order: {
         campusDetail: { name: 'ASC' },
+        campusToLevel: {
+          level: { name: 'ASC' },
+        },
       },
     });
     return campus;
