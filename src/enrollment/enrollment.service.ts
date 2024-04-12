@@ -143,12 +143,10 @@ export class EnrollmentService {
     const { campusId, levelId, yearId } = searchEnrolledDto;
     const classrooms = await this.activityClassroomRepository.find({
       where: {
+        phase: {
+          year: !isNaN(+yearId) ? { id: +yearId } : {},
+        },
         classroom: {
-          activityClassroom: {
-            phase: {
-              year: !isNaN(+yearId) ? { id: +yearId } : {},
-            },
-          },
           campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
         },
         grade: {
