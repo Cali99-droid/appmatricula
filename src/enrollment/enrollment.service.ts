@@ -114,7 +114,10 @@ export class EnrollmentService {
 
       // Crear y guardar estudiantes que no existen
       const studentsCreated = await this.studentRepository.save(
-        personsCreated.map((person) => ({ person })),
+        personsCreated.map((person) => ({
+          person,
+          studentCode: person.studentCode,
+        })),
       );
       // Crear y guardar matriculas
       const enrollments = await this.enrollmentRepository.save(
@@ -166,6 +169,7 @@ export class EnrollmentService {
         },
       },
     );
+    //**TODO: se debe utilizar el atributo  student.studentCode el temporal es student.person.studentCode */
     const data = enrollmentsByActivityClassroom.map(
       ({ id, status, student, activityClassroom }) => ({
         id,
@@ -178,7 +182,10 @@ export class EnrollmentService {
           mLastname: student.person.mLastname,
           gender: student.person.gender,
           docNumber: student.person.docNumber,
-          studentCode: student.person.studentCode,
+          studentCode:
+            student.studentCode === null
+              ? student.person.studentCode
+              : student.studentCode,
         },
         activityClassroom: {
           id: activityClassroom.id,

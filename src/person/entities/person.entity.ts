@@ -49,6 +49,7 @@ export class Person {
   @Column({ type: 'enum', enum: Gender })
   gender: Gender;
 
+  //**TODO:  atributo de uso temporal, para la subida en bloque de estudiantes */
   @ApiProperty({
     description: 'studentCode',
   })

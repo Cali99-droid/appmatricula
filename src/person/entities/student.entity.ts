@@ -1,4 +1,5 @@
 import {
+  Column,
   Entity,
   JoinColumn,
   OneToMany,
@@ -14,6 +15,10 @@ export class Student {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column('varchar', {
+    nullable: true,
+  })
+  studentCode: string;
   @ApiProperty({
     description: 'Id of Person',
   })
