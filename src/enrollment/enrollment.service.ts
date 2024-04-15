@@ -98,6 +98,7 @@ export class EnrollmentService {
             },
           });
           if (!existEnrollment) {
+            console.log('exist enrrollment ');
             const enrollment = this.enrollmentRepository.create({
               student: { id: student.id },
               activityClassroom: { id: activityClassroomId },
