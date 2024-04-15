@@ -90,8 +90,12 @@ export class EnrollmentService {
           const student = await this.studentRepository.findOne({
             where: { person: { id: existPerson.id } },
           });
+
           const existEnrollment = await this.enrollmentRepository.findOne({
-            where: { student: { id: student.id } },
+            where: {
+              student: { id: student.id },
+              activityClassroom: { id: activityClassroomId },
+            },
           });
           if (!existEnrollment) {
             const enrollment = this.enrollmentRepository.create({
