@@ -1,6 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Campus } from 'src/campus/entities/campus.entity';
+import { Level } from 'src/level/entities/level.entity';
 @Entity()
 export class SchoolShift {
   @ApiProperty()
@@ -13,7 +22,7 @@ export class SchoolShift {
     uniqueItems: true,
   })
   @Column('varchar', {
-    unique: true,
+    // unique: true,
   })
   name: string;
 
@@ -29,6 +38,18 @@ export class SchoolShift {
   })
   @Column({ type: 'time' })
   endTime: string;
+
+  @ManyToOne(() => Campus, (campus) => campus.schoolShift, {
+    eager: true,
+  })
+  @JoinColumn({ name: 'campusId' })
+  campus?: Campus;
+
+  @ManyToOne(() => Level, (level) => level.schoolShift, {
+    eager: true,
+  })
+  @JoinColumn({ name: 'levelId' })
+  level?: Level;
 
   @OneToMany(
     () => ActivityClassroom,

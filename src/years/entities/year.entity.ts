@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Campus } from '../../campus/entities/campus.entity';
 import { Phase } from '../../phase/entities/phase.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Holiday } from 'src/holiday/entities/holiday.entity';
 
 @Entity()
 export class Year {
@@ -81,4 +82,8 @@ export class Year {
   //     console.log('se interso verdadero');
   //   }
   // }
+  @OneToMany(() => Holiday, (holiday) => holiday.year, {
+    // eager: true,
+  })
+  holiday?: Holiday[];
 }
