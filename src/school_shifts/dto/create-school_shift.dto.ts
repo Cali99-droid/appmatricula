@@ -1,7 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Validate, IsString, MinLength, Matches } from 'class-validator';
+import {
+  Validate,
+  IsString,
+  MinLength,
+  Matches,
+  IsNumber,
+} from 'class-validator';
 // import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';
 import { IsEndTimeAfterStartTimeConstraint } from 'src/common/decorators/is-time-before.decorator';
+import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreateSchoolShiftDto {
   @ApiProperty({
@@ -28,4 +35,20 @@ export class CreateSchoolShiftDto {
   @Validate(IsEndTimeAfterStartTimeConstraint, ['startTime'])
   // @IsDateBefore('startDate', { message: 'endDate must be after startDate' })
   endTime: string;
+  @ApiProperty({
+    example: 1,
+    description: 'id of the campus',
+    nullable: false,
+  })
+  @IsNumber()
+  @ExistId({ tableName: 'campus' })
+  campusId: number;
+  @ApiProperty({
+    example: 1,
+    description: 'id of the level',
+    nullable: false,
+  })
+  @IsNumber()
+  @ExistId({ tableName: 'level' })
+  levelId: number;
 }

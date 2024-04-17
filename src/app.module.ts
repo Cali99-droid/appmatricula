@@ -16,6 +16,7 @@ import { PhaseSubscriber } from './phase/subscribers/phase.subscriber';
 import { EnrollmentModule } from './enrollment/enrollment.module';
 import { PersonModule } from './person/person.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { HolidayModule } from './holiday/holiday.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AttendanceModule } from './attendance/attendance.module';
     EnrollmentModule,
     PersonModule,
     AttendanceModule,
+    HolidayModule,
   ],
   providers: [ExistIdConstraint],
 })
