@@ -12,12 +12,14 @@ import { UpdateActivityClassroomDto } from './dto/update-activity_classroom.dto'
 import { ActivityClassroom } from './entities/activity_classroom.entity';
 
 import { SearchClassroomsDto } from 'src/common/dto/search-classrooms.dto';
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class ActivityClassroomService {
   private readonly logger = new Logger('ActivityClassroomService');
   constructor(
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
+    private readonly configService: ConfigService,
   ) {}
   async create(createActivityClassroomDto: CreateActivityClassroomDto) {
     // Combinando las condiciones en un único objeto de consulta
@@ -169,5 +171,45 @@ export class ActivityClassroomService {
       },
     });
     return classrooms;
+  }
+
+  async findStudents(id: number) {
+    try {
+      const urlS3 = this.configService.getOrThrow('AWS_URL_BUCKET');
+      const folderName = this.configService.getOrThrow('FOLDER_IMG_NAME');
+      const defaultAvatar = this.configService.getOrThrow(
+        'AVATAR_NAME_DEFAULT',
+      );
+      const urlPhoto = `${urlS3}${folderName}`;
+      const activityClassroom = await this.activityClassroomRepository.findOne({
+        relations: {
+          enrollment: {
+            student: {
+              person: true,
+            },
+          },
+        },
+        where: {
+          id,
+        },
+      });
+      const formatData = activityClassroom.enrollment.map(({ student }) => ({
+        id: student.id,
+        name: student.person.name,
+        lastname: student.person.lastname,
+        mLastname: student.person.mLastname,
+        docNumber: student.person.docNumber,
+        studentCode:
+          student.studentCode === null
+            ? student.person.studentCode
+            : student.studentCode,
+        photo: student.photo
+          ? `${urlPhoto}/${student.photo}`
+          : `${urlPhoto}/${defaultAvatar}`,
+      }));
+      return formatData;
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 }

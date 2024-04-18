@@ -17,6 +17,10 @@ import { EnrollmentModule } from './enrollment/enrollment.module';
 import { PersonModule } from './person/person.module';
 import { AttendanceModule } from './attendance/attendance.module';
 
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
+import { StudentModule } from './student/student.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -44,6 +48,9 @@ import { AttendanceModule } from './attendance/attendance.module';
     EnrollmentModule,
     PersonModule,
     AttendanceModule,
+    AuthModule,
+    UserModule,
+    StudentModule,
   ],
   providers: [ExistIdConstraint],
 })

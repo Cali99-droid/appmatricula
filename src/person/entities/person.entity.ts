@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from 'typeorm';
 import { Gender } from '../enum/gender.enum';
-import { Student } from './student.entity';
+import { Student } from '../../student/entities/student.entity';
+import { User } from '../../user/entities/user.entity';
 //test
 
 @Entity()
@@ -60,4 +61,7 @@ export class Person {
 
   @OneToOne(() => Student, (student) => student.person)
   student?: Student;
+
+  @OneToOne(() => User, (user) => user.person)
+  user?: User;
 }

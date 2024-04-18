@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Enrollment } from '../../enrollment/entities/enrollment.entity';
-import { Person } from './person.entity';
+import { Person } from '../../person/entities/person.entity';
 import { ApiProperty } from '@nestjs/swagger';
 @Entity()
 export class Student {
@@ -19,6 +19,10 @@ export class Student {
     nullable: true,
   })
   studentCode: string;
+  @Column('varchar', {
+    nullable: true,
+  })
+  photo: string;
   @ApiProperty({
     description: 'Id of Person',
   })

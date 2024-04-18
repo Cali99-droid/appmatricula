@@ -11,7 +11,7 @@ import { Enrollment } from './entities/enrollment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Person } from 'src/person/entities/person.entity';
-import { Student } from 'src/person/entities/student.entity';
+import { Student } from 'src/student/entities/student.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Status } from './enum/status.enum';
 import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
@@ -77,7 +77,7 @@ export class EnrollmentService {
     }
     try {
       //Validar Personas
-      const dataExist: any[] = [];
+
       const dataNoExist: any[] = [];
       const dataEnrollment: any[] = [];
       for (const person of persons) {
@@ -86,7 +86,6 @@ export class EnrollmentService {
         });
 
         if (existPerson) {
-          dataExist.push(existPerson);
           const student = await this.studentRepository.findOne({
             where: { person: { id: existPerson.id } },
           });
@@ -94,11 +93,13 @@ export class EnrollmentService {
           const existEnrollment = await this.enrollmentRepository.findOne({
             where: {
               student: { id: student.id },
-              activityClassroom: { id: activityClassroomId },
+              activityClassroom: {
+                phase: { id: classroom.phase.id },
+              },
             },
           });
+
           if (!existEnrollment) {
-            console.log('exist enrrollment ');
             const enrollment = this.enrollmentRepository.create({
               student: { id: student.id },
               activityClassroom: { id: activityClassroomId },
