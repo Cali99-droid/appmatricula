@@ -16,6 +16,7 @@ import { PhaseSubscriber } from './phase/subscribers/phase.subscriber';
 import { EnrollmentModule } from './enrollment/enrollment.module';
 import { PersonModule } from './person/person.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { HolidayModule } from './holiday/holiday.module';
 
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
@@ -51,6 +52,7 @@ import { StudentModule } from './student/student.module';
     AuthModule,
     UserModule,
     StudentModule,
+    HolidayModule,
   ],
   providers: [ExistIdConstraint],
 })
