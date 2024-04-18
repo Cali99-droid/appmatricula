@@ -65,7 +65,7 @@ export class StudentController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'File to upload',
-    type: 'multipart/form-data',
+    // type: 'multipart/form-data',
     required: true,
     schema: {
       type: 'object',
