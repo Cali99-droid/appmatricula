@@ -9,19 +9,13 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 export class DocsController {
   constructor(private readonly pdfService: PdfService) {}
 
-  @Get('download-carnets/:activityClassroomId')
+  @Get('download-carnets/:  ')
   @ApiOperation({
     summary: 'download pdf with carnets students of Activity classrom',
   })
   @ApiResponse({
     status: 200,
     description: 'Pdf with carnets of de classroom',
-  })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'Id of the activity classroom to find',
-    type: String,
   })
   async downloadCarnets(
     @Res() res: Response,
@@ -38,12 +32,6 @@ export class DocsController {
   @ApiResponse({
     status: 200,
     description: 'Pdf with carnet of the student',
-  })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'Id of the enrollment',
-    type: String,
   })
   async downloadCarnet(
     @Res() res: Response,
