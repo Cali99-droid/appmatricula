@@ -5,6 +5,7 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateSchoolShiftDto } from './dto/create-school_shift.dto';
 import { UpdateSchoolShiftDto } from './dto/update-school_shift.dto';
 import { SchoolShift } from './entities/school_shift.entity';
+import { SearchSchoolShiftsDto } from './dto/search-school_shift.dto';
 
 @Injectable()
 export class SchoolShiftsService {
@@ -24,8 +25,20 @@ export class SchoolShiftsService {
       handleDBExceptions(error, this.logger);
     }
   }
-  async findAll() {
-    const schoolShifts = await this.schoolShiftRepository.find();
+  async findAll(searchSchoolShiftDto: SearchSchoolShiftsDto) {
+    const { yearId, campusId, levelId } = searchSchoolShiftDto;
+    const schoolShifts = await this.schoolShiftRepository.find({
+      where: {
+        campus: {
+          campusDetail: { id: !isNaN(+campusId) ? +campusId : undefined },
+          year: { id: !isNaN(+yearId) ? +yearId : undefined },
+        },
+        level: { id: !isNaN(+levelId) ? +levelId : undefined },
+      },
+      order: {
+        name: 'ASC',
+      },
+    });
     return schoolShifts;
   }
 

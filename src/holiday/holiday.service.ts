@@ -41,8 +41,12 @@ export class HolidayService {
     }
   }
 
-  async findAll() {
-    const holidays = await this.holidayRepository.find();
+  async findAll(yearId: number) {
+    const holidays = await this.holidayRepository.find({
+      where: {
+        year: { id: !isNaN(+yearId) ? +yearId : undefined },
+      },
+    });
 
     return holidays;
   }
