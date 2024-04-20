@@ -279,7 +279,9 @@ export class PdfService {
       // //http://localhost:3000/api/v1/docs/download-carnets/3
       // // Generar código QR
 
-      const qr = await QRCode.toDataURL(`${student.studentCode}`);
+      const qr = await QRCode.toDataURL(
+        `${student.studentCode ? student.studentCode : student.person.studentCode}`,
+      );
       doc.image(qr, 6, 186, { width: 50, height: 50 });
       doc
         .lineJoin('round')
