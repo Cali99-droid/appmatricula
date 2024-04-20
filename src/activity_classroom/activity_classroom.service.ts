@@ -193,19 +193,20 @@ export class ActivityClassroomService {
           id,
         },
       });
-      const formatData = activityClassroom.enrollment.map(({ student }) => ({
-        id: student.id,
-        name: student.person.name,
-        lastname: student.person.lastname,
-        mLastname: student.person.mLastname,
-        docNumber: student.person.docNumber,
+      const formatData = activityClassroom.enrollment.map((e) => ({
+        id: e.student.id,
+        name: e.student.person.name,
+        lastname: e.student.person.lastname,
+        mLastname: e.student.person.mLastname,
+        docNumber: e.student.person.docNumber,
         studentCode:
-          student.studentCode === null
-            ? student.person.studentCode
-            : student.studentCode,
-        photo: student.photo
-          ? `${urlPhoto}/${student.photo}`
+          e.student.studentCode === null
+            ? e.student.person.studentCode
+            : e.student.studentCode,
+        photo: e.student.photo
+          ? `${urlPhoto}/${e.student.photo}`
           : `${urlPhoto}/${defaultAvatar}`,
+        enrollmentId: e.id,
       }));
       return formatData;
     } catch (error) {

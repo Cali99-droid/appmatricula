@@ -21,6 +21,7 @@ import { HolidayModule } from './holiday/holiday.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { StudentModule } from './student/student.module';
+import { DocsModule } from './docs/docs.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { StudentModule } from './student/student.module';
     UserModule,
     StudentModule,
     HolidayModule,
+    DocsModule,
   ],
   providers: [ExistIdConstraint],
 })
