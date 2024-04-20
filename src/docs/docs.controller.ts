@@ -9,7 +9,7 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 export class DocsController {
   constructor(private readonly pdfService: PdfService) {}
 
-  @Get('download-carnets/:  ')
+  @Get('download-carnets/:activityClassroomId')
   @ApiOperation({
     summary: 'download pdf with carnets students of Activity classrom',
   })
