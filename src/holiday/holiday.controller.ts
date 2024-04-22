@@ -6,11 +6,18 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { HolidayService } from './holiday.service';
 import { CreateHolidayDto } from './dto/create-holiday.dto';
 import { UpdateHolidayDto } from './dto/update-holiday.dto';
-import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Holiday } from './entities/holiday.entity';
 
 @ApiTags('Holiday')
@@ -33,6 +40,12 @@ export class HolidayController {
   }
 
   @Get()
+  @ApiQuery({
+    name: 'yearId',
+    required: true,
+    description: 'Id of the year',
+    type: Number,
+  })
   @ApiOkResponse({
     status: 200,
     description: 'Array of Holidays',
@@ -43,8 +56,8 @@ export class HolidayController {
     status: 404,
     description: 'Holidays  not found ',
   })
-  findAll() {
-    return this.holidayService.findAll();
+  findAll(@Query('yearId') yearId: number) {
+    return this.holidayService.findAll(yearId);
   }
 
   @Get(':id')
