@@ -24,10 +24,12 @@ export class HolidayService {
   async create(createHolidayDto: CreateHolidayDto) {
     try {
       const holiday = this.holidayRepository.create(createHolidayDto);
+
       holiday.year = { id: createHolidayDto.yearId } as Year;
       const year = await this.yearRepository.findOne({
         where: { id: createHolidayDto.yearId },
       });
+
       if (
         createHolidayDto.date < year.startDate ||
         createHolidayDto.date > year.endDate
@@ -40,7 +42,6 @@ export class HolidayService {
       handleDBExceptions(error, this.logger);
     }
   }
-
   async findAll(yearId: number) {
     const holidays = await this.holidayRepository.find({
       where: {

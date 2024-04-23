@@ -17,6 +17,8 @@ import { EnrollmentModule } from './enrollment/enrollment.module';
 import { PersonModule } from './person/person.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { HolidayModule } from './holiday/holiday.module';
+import { DayOfWeekModule } from './day_of_week/day_of_week.module';
+import { BimesterModule } from './bimester/bimester.module';
 
 @Module({
   imports: [
@@ -46,6 +48,8 @@ import { HolidayModule } from './holiday/holiday.module';
     PersonModule,
     AttendanceModule,
     HolidayModule,
+    DayOfWeekModule,
+    BimesterModule,
   ],
   providers: [ExistIdConstraint],
 })
