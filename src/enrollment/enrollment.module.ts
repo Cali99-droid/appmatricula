@@ -4,7 +4,7 @@ import { EnrollmentController } from './enrollment.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Enrollment } from './entities/enrollment.entity';
 import { Person } from 'src/person/entities/person.entity';
-import { Student } from 'src/person/entities/student.entity';
+import { Student } from 'src/student/entities/student.entity';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 
 @Module({

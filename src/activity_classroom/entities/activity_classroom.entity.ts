@@ -55,6 +55,7 @@ export class ActivityClassroom {
   })
   @JoinColumn({ name: 'schoolShiftId' })
   schoolShift: SchoolShift;
+
   @OneToMany(() => Enrollment, (enrollment) => enrollment.activityClassroom)
   enrollment?: Enrollment[];
 }

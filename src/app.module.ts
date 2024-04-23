@@ -20,6 +20,11 @@ import { HolidayModule } from './holiday/holiday.module';
 import { DayOfWeekModule } from './day_of_week/day_of_week.module';
 import { BimesterModule } from './bimester/bimester.module';
 
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
+import { StudentModule } from './student/student.module';
+import { DocsModule } from './docs/docs.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -47,9 +52,14 @@ import { BimesterModule } from './bimester/bimester.module';
     EnrollmentModule,
     PersonModule,
     AttendanceModule,
+    AuthModule,
+    UserModule,
+    StudentModule,
     HolidayModule,
     DayOfWeekModule,
     BimesterModule,
+    DocsModule,
+
   ],
   providers: [ExistIdConstraint],
 })

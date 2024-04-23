@@ -151,4 +151,20 @@ export class ActivityClassroomController {
   searchClassrooms(@Query() searchClassroomsDto: SearchClassroomsDto) {
     return this.activityClassroomService.searchClassrooms(searchClassroomsDto);
   }
+
+  @Get('students/:id')
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Id of the activity classroom to find students',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Detail students of Activity Classroom',
+    type: ActivityClassroom,
+  })
+  findStudents(@Param('id') id: string) {
+    return this.activityClassroomService.findStudents(+id);
+  }
 }
