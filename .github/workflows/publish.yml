@@ -35,7 +35,7 @@ jobs:
       - name: SSH into Server and Deploy
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.HOSTNAME }} <<EOF
-          cd /matdocker
+          cd matdocker
           docker login ghcr.io -u cali99-droid -p ${{ secrets.TOKEN_APIENROLL }}
           docker pull ghcr.io/cali99-droid/appmatricula:latest
           docker stop api-mat || true
