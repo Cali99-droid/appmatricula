@@ -45,10 +45,10 @@ jobs:
             --name appmatricula \
             -p 3000:4000 \
             -v /home/ubuntu/matdocker/api_vol:/app/api-vol \
-            -w /app \  
+            -w /app \
             -e NODE_ENV=${{ secrets.NODE_ENV }} \
             -e PORT=${{ secrets.PORT }} \
-            -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
+            -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
             -e DB_NAME=${{ secrets.DB_NAME }} \
             -e DB_HOST=${{ secrets.DB_HOST }} \
             -e DB_PORT=${{ secrets.DB_PORT }} \
