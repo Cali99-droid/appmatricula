@@ -19,7 +19,7 @@ jobs:
           password: ${{secrets.TOKEN_APIENROLL}}
       - name: Build the image
         run: |
-          ddocker build --target prod . --tag ghcr.io/Cali99-droid/appmatricula:latest --tag ghcr.io/Cali99-droid/appmatricula:${GITHUB_SHA}Cali99-droid/appmatricula:latest
+          docker build --target prod . --tag ghcr.io/Cali99-droid/appmatricula:latest --tag ghcr.io/Cali99-droid/appmatricula:${GITHUB_SHA}Cali99-droid/appmatricula:latest
           docker push ghcr.io/Cali99-droid/appmatricula:latest
           docker push ghcr.io/Cali99-droid/appmatricula:${GITHUB_SHA}
 
