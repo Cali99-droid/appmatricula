@@ -34,12 +34,31 @@ jobs:
           chmod 644 ~/.ssh/known_hosts
       - name: SSH into Server and Deploy
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.HOSTNAME }} <<EOF
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.HOSTNAME }} <<-EOF
+          set -e
           cd matdocker
+          echo "Environment Variables:"
+          echo "NODE_ENV: ${{ secrets.NODE_ENV }}"
+          echo "PORT: ${{ secrets.PORT }}"
+          echo "DB_PASSWORD: [PROTECTED]"
+          echo "DB_NAME: ${{ secrets.DB_NAME }}"
+          echo "DB_HOST: ${{ secrets.DB_HOST }}"
+          echo "DB_PORT: ${{ secrets.DB_PORT }}"
+          echo "DB_USERNAME: ${{ secrets.DB_USERNAME }}"
+          echo "JWT_SECRET: [PROTECTED]"
+          echo "BUCKET_NAME: ${{ secrets.BUCKET_NAME }}"
+          echo "FOLDER_IMG_NAME: ${{ secrets.FOLDER_IMG_NAME }}"
+          echo "AVATAR_NAME_DEFAULT: ${{ secrets.AVATAR_NAME_DEFAULT }}"
+          echo "AWS_URL_BUCKET: ${{ secrets.AWS_URL_BUCKET }}"
+          echo "AWS_ACCESS_KEY_ID: [PROTECTED]"
+          echo "AWS_SECRET_ACCESS_KEY: [PROTECTED]"
+          echo "AWS_REGION: ${{ secrets.AWS_REGION }}"
+          echo "FULL_URL_S3: ${{ secrets.FULL_URL_S3 }}"
+
           docker login ghcr.io -u cali99-droid -p ${{ secrets.TOKEN_APIENROLL }}
-          docker pull ghcr.io/cali99-droid/appmatricula:latest
           docker stop appmatricula || true
           docker rm appmatricula || true
+          docker pull ghcr.io/cali99-droid/appmatricula:latest
           docker run -d \
             --name appmatricula \
             -p 3000:4000 \
