@@ -1,5 +1,4 @@
 name: publish
-
 on:
   push:
     branches: ['dev']
@@ -22,7 +21,6 @@ jobs:
           docker build --target prod . --tag ghcr.io/cali99-droid/appmatricula:latest --tag ghcr.io/cali99-droid/appmatricula:${GITHUB_SHA}
           docker push ghcr.io/cali99-droid/appmatricula:latest
           docker push ghcr.io/cali99-droid/appmatricula:${GITHUB_SHA}
-
   deploy:
     needs: create-docker-image
     runs-on: ubuntu-20.04
@@ -34,20 +32,19 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.HOSTNAME }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
-
-          - name: SSH into Server and Deploy
-          run: |
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.HOSTNAME }} <<EOF
-            cd /root/appmatricula/
-            docker login ghcr.io -u cali99-droid -p ${{ secrets.TOKEN_APIENROLL }}
-            docker pull ghcr.io/cali99-droid/appmatricula:latest
-            docker stop api-mat || true
-            docker rm api-mat || true
-            docker run -d \
-              --name api-mat \
-              -p 3000:4000 \
-              --env AWS_REGION=${{ secrets.AWS_REGION }}\
-              -v /root/appmatricula/api_vol:/app/api-vol \
-              -w /app \
-              --restart always
-            EOF
+      - name: SSH into Server and Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.HOSTNAME }} <<EOF
+          cd /root/appmatricula/
+          docker login ghcr.io -u cali99-droid -p ${{ secrets.TOKEN_APIENROLL }}
+          docker pull ghcr.io/cali99-droid/appmatricula:latest
+          docker stop api-mat || true
+          docker rm api-mat || true
+          docker run -d \
+            --name api-mat \
+            -p 3000:4000 \
+            --env AWS_REGION=${{ secrets.AWS_REGION }}\
+            -v /root/appmatricula/api_vol:/app/api-vol \
+            -w /app \
+            --restart always
+          EOF
