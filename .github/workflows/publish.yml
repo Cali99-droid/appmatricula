@@ -20,8 +20,8 @@ jobs:
       - name: Build the image
         run: |
           docker build --target prod . --tag ghcr.io/Cali99-droid/appmatricula:latest --tag ghcr.io/Cali99-droid/appmatricula:${GITHUB_SHA}Cali99-droid/appmatricula:latest
-          docker push ghcr.io/Cali99-droid/appmatricula:latest
-          docker push ghcr.io/Cali99-droid/appmatricula:${GITHUB_SHA}
+          docker push ghcr.io/cali99-droid/appmatricula:latest
+          docker push ghcr.io/cali99-droid/appmatricula:${GITHUB_SHA}
 
   deploy:
     needs: create-docker-image
@@ -39,8 +39,8 @@ jobs:
           run: |
             ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.HOSTNAME }} <<EOF
             cd /root/appmatricula/
-            docker login ghcr.io -u Cali99-droid -p ${{ secrets.TOKEN_APIENROLL }}
-            docker pull ghcr.io/Cali99-droid/appmatricula:latest
+            docker login ghcr.io -u cali99-droid -p ${{ secrets.TOKEN_APIENROLL }}
+            docker pull ghcr.io/cali99-droid/appmatricula:latest
             docker stop api-mat || true
             docker rm api-mat || true
             docker run -d \
