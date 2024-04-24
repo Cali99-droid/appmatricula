@@ -2,8 +2,8 @@ import { Controller, Get, Param, Res } from '@nestjs/common';
 
 import { Response } from 'express';
 import { PdfService } from './pdf.service';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+//cambio
 @ApiTags('Docs')
 @Controller('docs')
 export class DocsController {
@@ -28,7 +28,9 @@ export class DocsController {
   }
 
   @Get('download-carnet/student/:enrollmentId')
-  @ApiOperation({ summary: 'download pdf with carnet of the student' })
+  @ApiOperation({
+    summary: 'download  carnet of the student',
+  })
   @ApiResponse({
     status: 200,
     description: 'Pdf with carnet of the student',
