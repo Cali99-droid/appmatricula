@@ -43,8 +43,9 @@ jobs:
           docker run -d \
             --name appmatricula \
             -p 3000:4000 \
-            --env AWS_REGION=${{ secrets.AWS_REGION }} \
-            -v /home/ubuntu/appmatricula/api_vol:/app/api-vol \
+            -v /home/ubuntu/matdocker/api_vol:/app/api-vol \
             -w /app \
-            --restart always
+            -e AWS_REGION=${{ secrets.AWS_REGION }} \
+            --restart always \
+            ghcr.io/cali99-droid/appmatricula:latest
           EOF
