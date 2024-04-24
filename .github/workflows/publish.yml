@@ -38,13 +38,13 @@ jobs:
           cd matdocker
           docker login ghcr.io -u cali99-droid -p ${{ secrets.TOKEN_APIENROLL }}
           docker pull ghcr.io/cali99-droid/appmatricula:latest
-          docker stop api-mat || true
-          docker rm api-mat || true
+          docker stop appmatricula || true
+          docker rm appmatricula || true
           docker run -d \
-            --name api-mat \
+            --name appmatricula \
             -p 3000:4000 \
-            --env AWS_REGION=${{ secrets.AWS_REGION }}\
-            -v /root/appmatricula/api_vol:/app/api-vol \
+            --env AWS_REGION=${{ secrets.AWS_REGION }} \
+            -v /home/ubuntu/appmatricula/api_vol:/app/api-vol \
             -w /app \
             --restart always
           EOF
