@@ -14,7 +14,7 @@ import { Year } from 'src/years/entities/year.entity';
 
 @Injectable()
 export class HolidayService {
-  private readonly logger = new Logger('levelService');
+  private readonly logger = new Logger('holidayService');
   constructor(
     @InjectRepository(Holiday)
     private readonly holidayRepository: Repository<Holiday>,
