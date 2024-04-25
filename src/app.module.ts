@@ -19,6 +19,7 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { HolidayModule } from './holiday/holiday.module';
 import { DayOfWeekModule } from './day_of_week/day_of_week.module';
 import { BimesterModule } from './bimester/bimester.module';
+import { ScheduleModule } from './schedule/schedule.module';
 
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
@@ -58,6 +59,7 @@ import { DocsModule } from './docs/docs.module';
     HolidayModule,
     DayOfWeekModule,
     BimesterModule,
+    ScheduleModule,
     DocsModule,
   ],
   providers: [ExistIdConstraint],

@@ -5,16 +5,18 @@ import {
   IsNumber,
   IsOptional,
   IsBoolean,
+  MaxLength,
 } from 'class-validator';
 import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreateDayOfWeekDto {
   @ApiProperty({
     description: 'Name of day of week',
-    minLength: 4,
+    maxLength: 2,
   })
   @IsString()
-  @MinLength(2)
+  @MinLength(1)
+  @MaxLength(2)
   name: string;
 
   @ApiProperty({

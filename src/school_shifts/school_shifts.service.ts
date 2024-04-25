@@ -6,6 +6,8 @@ import { CreateSchoolShiftDto } from './dto/create-school_shift.dto';
 import { UpdateSchoolShiftDto } from './dto/update-school_shift.dto';
 import { SchoolShift } from './entities/school_shift.entity';
 import { SearchSchoolShiftsDto } from './dto/search-school_shift.dto';
+import { Campus } from 'src/campus/entities/campus.entity';
+import { Level } from 'src/level/entities/level.entity';
 
 @Injectable()
 export class SchoolShiftsService {
@@ -18,6 +20,8 @@ export class SchoolShiftsService {
     try {
       const schoolShift =
         this.schoolShiftRepository.create(createSchoolShiftDto);
+      schoolShift.campus = { id: createSchoolShiftDto.campusId } as Campus;
+      schoolShift.level = { id: createSchoolShiftDto.levelId } as Level;
       await this.schoolShiftRepository.save(schoolShift);
       return schoolShift;
     } catch (error) {
@@ -59,6 +63,8 @@ export class SchoolShiftsService {
     if (!schoolShift)
       throw new NotFoundException(`SchoolShift with id: ${id} not found`);
     try {
+      schoolShift.campus = { id: updateSchoolShiftDto.campusId } as Campus;
+      schoolShift.level = { id: updateSchoolShiftDto.levelId } as Level;
       await this.schoolShiftRepository.save(schoolShift);
       return schoolShift;
     } catch (error) {
