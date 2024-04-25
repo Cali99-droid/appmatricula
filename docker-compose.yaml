@@ -1,15 +1,54 @@
 version: '1'
 
 services:
+  backend:
+    build: 
+      context: .
+      target: ${STAGE}
+      dockerfile: Dockerfile
+    container_name: api_school
+    environment:
+      - PORT=${PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+      - DB_HOST=mysql_db
+      - JWT_SECRET=${JWT_SECRET}
+      - BUCKET_NAME=${BUCKET_NAME}
+      - FOLDER_IMG_NAME=${FOLDER_IMG_NAME}
+      - AVATAR_NAME_DEFAULT=${AVATAR_NAME_DEFAULT}
+      - AWS_URL_BUCKET=${AWS_URL_BUCKET}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - FULL_URL_S3=${FULL_URL_S3}
+      - NODE_ENV=development
+   
+    ports:
+      - "3000:3000" 
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run start:dev
+    depends_on:
+      - mysql-server
+    networks:
+      - api_network  
   mysql-server:
     image: mysql:8.0
-    # container_name: mi_mysql_server
+    container_name: mysql_db
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
+      MYSQL_ROOT_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./datos_mysql:/var/lib/mysql
+    networks:
+      - api_network
+networks:
+  api_network:
+    driver: bridge
