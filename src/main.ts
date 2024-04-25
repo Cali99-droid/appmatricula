@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { useContainer } from 'class-validator';
 //testrt port solve space
 async function bootstrap() {
+  console.log('si se ve algo aca');
   const app = await NestFactory.create(AppModule, { cors: true });
   // app.enableCors({ origin: ['http://localhost:3000'] });
   const logger = new Logger('Bootstrap');
@@ -19,6 +20,7 @@ async function bootstrap() {
       // },
     }),
   );
+
   console.log('este es el host: ' + process.env.DB_HOST);
   console.log('este es el user: ' + process.env.DB_USERNAME);
   console.log('este es el namedb: ' + process.env.DB_NAME);
