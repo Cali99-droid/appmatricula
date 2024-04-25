@@ -19,6 +19,11 @@ async function bootstrap() {
       // },
     }),
   );
+  console.log('este es el host: ' + process.env.DB_HOST);
+  console.log('este es el user: ' + process.env.DB_USERNAME);
+  console.log('este es el namedb: ' + process.env.DB_NAME);
+  console.log('este es el pass: ' + process.env.DB_PASSWORD);
+  console.log('este es el port: ' + process.env.DB_PORT);
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const config = new DocumentBuilder()
     .setTitle('Matrículas RESTFul API')
