@@ -205,14 +205,14 @@ export class PdfService {
 
         let imageBuffer = await this.fetchImage(imageUrl);
         imageBuffer = await this.convertWebPToPNG(imageBuffer);
-        // doc.image(imageBuffer, 49, 81, {
-        //   width: 58,
-        //   height: 73,
-        //   align: 'center',
-        // }); // Ajusta según necesidades de diseño
         doc.image(imageBuffer, 49, 81, {
+          width: 58,
+          height: 73,
           align: 'center',
         }); // Ajusta según necesidades de diseño
+        // doc.image(imageBuffer, 49, 81, {
+        //   align: 'center',
+        // }); // Ajusta según necesidades de diseño
       } catch (error) {
         reject(error);
       }
@@ -278,7 +278,7 @@ export class PdfService {
           },
         );
       // doc.fontSize(10).text(`Grado: ${student.grado}`, 80, 60);
-      // //http://localhost:3000/api/v1/docs/download-carnets/3
+      //http://localhost:3000/api/v1/docs/download-carnets/3
       // // Generar código QR
 
       const qr = await QRCode.toDataURL(
@@ -302,6 +302,9 @@ export class PdfService {
     return buffer;
   }
   async convertWebPToPNG(buffer: ArrayBuffer): Promise<Buffer> {
-    return sharp(buffer).png().resize(60, 75, { fit: 'cover' }).toBuffer();
+    return sharp(buffer)
+      .png()
+      .resize({ width: 200, height: 250, fit: 'cover' })
+      .toBuffer();
   }
 }
