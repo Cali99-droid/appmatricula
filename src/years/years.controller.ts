@@ -10,7 +10,13 @@ import {
 import { YearsService } from './years.service';
 import { CreateYearDto } from './dto/create-year.dto';
 import { UpdateYearDto } from './dto/update-year.dto';
-import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Year } from './entities/year.entity';
 @ApiTags('Year')
 @Controller('years')
@@ -28,6 +34,9 @@ export class YearsController {
   }
 
   @Get()
+  @ApiOperation({
+    summary: 'All Years',
+  })
   @ApiOkResponse({
     status: 200,
     description: 'Array of years',
@@ -38,6 +47,9 @@ export class YearsController {
   }
   // TODO revisar utilidad
   @Get('year/:id')
+  @ApiOperation({
+    summary: 'Detail of Year',
+  })
   @ApiParam({
     name: 'id',
     required: true,

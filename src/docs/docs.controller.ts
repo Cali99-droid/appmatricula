@@ -11,7 +11,7 @@ export class DocsController {
 
   @Get('download-carnets/:activityClassroomId')
   @ApiOperation({
-    summary: 'download pdf with carnets students of Activity classrom',
+    summary: 'download pdf with carnets students of Activity classroom',
   })
   @ApiResponse({
     status: 200,
