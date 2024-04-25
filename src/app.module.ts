@@ -59,12 +59,8 @@ import { DocsModule } from './docs/docs.module';
     HolidayModule,
     DayOfWeekModule,
     BimesterModule,
-<<<<<<< HEAD
     ScheduleModule,
-=======
     DocsModule,
-
->>>>>>> 7d48a9f4f07cc59b0b1d2b371bbe7df9eb5b3516
   ],
   providers: [ExistIdConstraint],
 })
