@@ -205,9 +205,12 @@ export class PdfService {
 
         let imageBuffer = await this.fetchImage(imageUrl);
         imageBuffer = await this.convertWebPToPNG(imageBuffer);
-        doc.image(imageBuffer, 49, 82, {
-          width: 58,
-          height: 73,
+        // doc.image(imageBuffer, 49, 81, {
+        //   width: 58,
+        //   height: 73,
+        //   align: 'center',
+        // }); // Ajusta según necesidades de diseño
+        doc.image(imageBuffer, 49, 81, {
           align: 'center',
         }); // Ajusta según necesidades de diseño
       } catch (error) {
@@ -299,6 +302,6 @@ export class PdfService {
     return buffer;
   }
   async convertWebPToPNG(buffer: ArrayBuffer): Promise<Buffer> {
-    return sharp(buffer).png().resize(140, 190, { fit: 'cover' }).toBuffer();
+    return sharp(buffer).png().resize(60, 75, { fit: 'cover' }).toBuffer();
   }
 }
