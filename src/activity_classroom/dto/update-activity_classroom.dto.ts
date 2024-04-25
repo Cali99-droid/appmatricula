@@ -1,4 +1,6 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
 import { CreateActivityClassroomDto } from './create-activity_classroom.dto';
 
-export class UpdateActivityClassroomDto extends PartialType(CreateActivityClassroomDto) {}
+export class UpdateActivityClassroomDto extends PartialType(
+  CreateActivityClassroomDto,
+) {}
