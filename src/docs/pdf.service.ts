@@ -175,9 +175,8 @@ export class PdfService {
     });
   }
   async generatePdfWithQRCodesStudent(id: number): Promise<Buffer> {
-    console.log(id);
     const enroll = await this.enrollmentRepositoy.findOneBy({ id });
-    console.log(enroll);
+
     const { student } = enroll;
     //TODO  OPTIMIZAR todo esto*/
 
@@ -196,7 +195,7 @@ export class PdfService {
       const imageUrl = student.photo
         ? `${fullUrl}${student.photo}`
         : `${fullUrl}${defaultAvatar}`;
-      console.log(imageUrl);
+
       try {
         const urlBack = fullUrl + 'carnet.png';
 
@@ -300,6 +299,6 @@ export class PdfService {
     return buffer;
   }
   async convertWebPToPNG(buffer: ArrayBuffer): Promise<Buffer> {
-    return sharp(buffer).png().toBuffer();
+    return sharp(buffer).png().resize(140, 190, { fit: 'cover' }).toBuffer();
   }
 }
