@@ -7,7 +7,7 @@ import {
   Column,
 } from 'typeorm';
 import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
-import { Student } from '../../person/entities/student.entity';
+import { Student } from '../../student/entities/student.entity';
 import { Status } from '../enum/status.enum';
 @Entity()
 export class Enrollment {
