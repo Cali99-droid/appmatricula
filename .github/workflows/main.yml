@@ -1,0 +1,68 @@
+name: publish prod
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+jobs:
+  create-docker-image:
+    runs-on: ubuntu-20.04
+    environment: prod
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v3
+      - name: Login to github Containeer Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.TOKEN_APIENROLL}}
+      - name: Build the image
+        run: |
+          docker build --target prod . --tag ghcr.io/cali99-droid/appmatricula-prod:latest --tag ghcr.io/cali99-droid/appmatricula-prod:${GITHUB_SHA}
+          docker push ghcr.io/cali99-droid/appmatricula-prod:latest
+          docker push ghcr.io/cali99-droid/appmatricula-prod:${GITHUB_SHA}
+  deploy:
+    needs: create-docker-image
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Setup SSH Keys
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.HOSTNAME }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+      - name: SSH into Server and Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.HOSTNAME }} <<-EOF
+          set -e
+          cd matdocker
+          docker login ghcr.io -u cali99-droid -p ${{ secrets.TOKEN_APIENROLL }}
+          docker stop appmatricula-prod || true
+          docker rm appmatricula-prod || true
+          docker pull ghcr.io/cali99-droid/appmatricula-prod:latest
+          docker run -d \
+            --name appmatricula-prod \
+            -p 4001:3001 \
+            -v /home/ubuntu/matdocker/api-prod_vol:/app/api-prod-vol \
+            -w /app \
+            -e NODE_ENV=${{ secrets.NODE_ENV }} \
+            -e PORT=${{ secrets.PORT }} \
+            -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            -e DB_NAME=${{ secrets.DB_NAME }} \
+            -e DB_HOST=${{ secrets.DB_HOST }} \
+            -e DB_PORT=${{ secrets.DB_PORT }} \
+            -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
+            -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            -e BUCKET_NAME=${{ secrets.BUCKET_NAME }} \
+            -e FOLDER_IMG_NAME=${{ secrets.FOLDER_IMG_NAME }} \
+            -e AVATAR_NAME_DEFAULT=${{ secrets.AVATAR_NAME_DEFAULT }} \
+            -e AWS_URL_BUCKET=${{ secrets.AWS_URL_BUCKET }} \
+            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            -e AWS_REGION=${{ secrets.AWS_REGION }} \
+            -e FULL_URL_S3=${{ secrets.FULL_URL_S3 }} \
+            --restart always \
+            ghcr.io/cali99-droid/appmatricula-prod:latest
+          EOF
