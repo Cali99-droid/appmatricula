@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { useContainer } from 'class-validator';
-
+//testrt port solve space
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
   // app.enableCors({ origin: ['http://localhost:3000'] });

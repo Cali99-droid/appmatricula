@@ -25,6 +25,7 @@ jobs:
   deploy:
     needs: create-docker-image
     runs-on: ubuntu-20.04
+    environment: dev
     steps:
       - name: Setup SSH Keys
         run: |

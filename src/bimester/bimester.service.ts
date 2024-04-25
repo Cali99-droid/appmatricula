@@ -186,7 +186,6 @@ export class BimesterService {
         .getOne();
 
       // Si existe una fase conflictiva, retorna falso
-      console.log(conflictingBimester);
       return !conflictingBimester;
     }
   }

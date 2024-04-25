@@ -14,6 +14,7 @@ import { Section } from '../../activity_classroom/enum/section.enum';
 import { Grade } from '../../grade/entities/grade.entity';
 import { SchoolShift } from '../../school_shifts/entities/school_shift.entity';
 import { Enrollment } from '../../enrollment/entities/enrollment.entity';
+import { Schedule } from 'src/schedule/entities/schedule.entity';
 @Entity()
 export class ActivityClassroom {
   @ApiProperty()
@@ -58,4 +59,7 @@ export class ActivityClassroom {
 
   @OneToMany(() => Enrollment, (enrollment) => enrollment.activityClassroom)
   enrollment?: Enrollment[];
+
+  @OneToMany(() => Schedule, (schedule) => schedule.activityClassroom)
+  schedule?: Schedule[];
 }
