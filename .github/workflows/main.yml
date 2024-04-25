@@ -19,6 +19,7 @@ jobs:
           password: ${{secrets.TOKEN_APIENROLL}}
       - name: Build the image
         run: |
+          echo "Deploying on port ${{ secrets.PORT }}"
           docker build --target prod . --tag ghcr.io/cali99-droid/appmatricula-prod:latest --tag ghcr.io/cali99-droid/appmatricula-prod:${GITHUB_SHA}
           docker push ghcr.io/cali99-droid/appmatricula-prod:latest
           docker push ghcr.io/cali99-droid/appmatricula-prod:${GITHUB_SHA}
