@@ -29,7 +29,7 @@ RUN yarn install --prod --frozen-lockfile
 RUN yarn add sharp --ignore-engines
 # Entorno de producción
 FROM node:21-alpine3.19 as prod
-EXPOSE 3000
+# EXPOSE 3000
 WORKDIR /app
 ENV APP_VERSION=${APP_VERSION}
 COPY --from=prod-deps /app/node_modules ./node_modules
