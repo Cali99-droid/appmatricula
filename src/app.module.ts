@@ -25,7 +25,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { StudentModule } from './student/student.module';
 import { DocsModule } from './docs/docs.module';
-//change key now user dokcer
+/**chagne host */
 @Module({
   imports: [
     ConfigModule.forRoot(),
