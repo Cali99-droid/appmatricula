@@ -67,6 +67,7 @@ export class ActivityClassroomService {
       },
       order: {
         grade: { name: 'ASC' },
+        section: 'ASC',
       },
     });
     return activityClassrooms;
@@ -158,6 +159,7 @@ export class ActivityClassroomService {
       },
       order: {
         grade: { name: 'ASC' },
+        section: 'ASC',
       },
     });
     return classrooms;

@@ -105,6 +105,9 @@ export class ClassroomService {
       where: {
         campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
       },
+      order: {
+        code: 'ASC',
+      },
     });
     return classrooms;
   }
