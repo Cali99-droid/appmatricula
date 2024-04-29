@@ -8,7 +8,6 @@ import { NextFunction, Request, Response } from 'express';
 
 import { AuthService } from './auth/auth.service';
 import { getToken } from './common/helpers/auth';
-import { handleDBExceptions } from './common/helpers/handleDBException';
 
 @Injectable()
 export class AppMiddleware implements NestMiddleware {
@@ -18,17 +17,14 @@ export class AppMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     const token = getToken(req.headers.authorization);
 
-    if (!token)
-      return res.status(401).json({
-        statusCode: '401',
-        error: 'Usuario No autorizado',
-        message: 'Falta tipo de Autorización y/o Token vació',
-      });
+    if (!token) new UnauthorizedException();
     try {
       const data: { user: any } = this.authService.verify(token);
       console.log('la data', data);
     } catch (error) {
-      throw new UnauthorizedException('token not valid');
+      throw new UnauthorizedException(
+        'Authorization type missing and/or empty Token',
+      );
     }
 
     return next();
