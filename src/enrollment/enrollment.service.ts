@@ -174,6 +174,11 @@ export class EnrollmentService {
             id: In(classroomsIds),
           },
         },
+        order: {
+          student: {
+            person: { lastname: 'ASC', mLastname: 'ASC', name: 'ASC' },
+          },
+        },
       },
     );
     //**TODO: se debe utilizar el atributo  student.studentCode el temporal es student.person.studentCode */
