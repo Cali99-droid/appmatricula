@@ -15,6 +15,11 @@ export class Enrollment {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column('varchar', {
+    unique: true,
+  })
+  code: string;
+
   @ApiProperty({
     description: 'Id of Student',
   })

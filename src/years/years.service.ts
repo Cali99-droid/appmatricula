@@ -38,6 +38,9 @@ export class YearsService {
         startDate: true,
         endDate: true,
       },
+      order: {
+        name: 'DESC',
+      },
     });
 
     return years;

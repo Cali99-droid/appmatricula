@@ -62,4 +62,9 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
     return token;
   }
+  verify(token: string): any {
+    console.log('verificando');
+    console.log(this.jwtService.verify(token));
+    return this.jwtService.verify(token);
+  }
 }
