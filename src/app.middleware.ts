@@ -20,7 +20,6 @@ export class AppMiddleware implements NestMiddleware {
     if (!token) new UnauthorizedException();
     try {
       const data: { user: any } = this.authService.verify(token);
-      console.log('la data', data);
     } catch (error) {
       throw new UnauthorizedException(
         'Authorization type missing and/or empty Token',

@@ -63,8 +63,6 @@ export class AuthService {
     return token;
   }
   verify(token: string): any {
-    console.log('verificando');
-    console.log(this.jwtService.verify(token));
     return this.jwtService.verify(token);
   }
 }
