@@ -22,6 +22,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { SearchClassroomsDto } from 'src/common/dto/search-classrooms.dto';
+import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @ApiTags('Activity Classroom')
 @Controller('activity-classroom')
@@ -167,4 +168,16 @@ export class ActivityClassroomController {
   findStudents(@Param('id') id: string) {
     return this.activityClassroomService.findStudents(+id);
   }
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+  })
+  updatedAt: Date;
 }

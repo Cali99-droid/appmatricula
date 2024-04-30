@@ -1,4 +1,9 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { YearsModule } from './years/years.module';
@@ -25,6 +30,8 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { StudentModule } from './student/student.module';
 import { DocsModule } from './docs/docs.module';
+import { AppMiddleware } from './app.middleware';
+import { AuthService } from './auth/auth.service';
 /**chagne host */
 @Module({
   imports: [
@@ -62,6 +69,31 @@ import { DocsModule } from './docs/docs.module';
     ScheduleModule,
     DocsModule,
   ],
-  providers: [ExistIdConstraint],
+  providers: [ExistIdConstraint, AuthService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  public configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AppMiddleware)
+      .exclude(
+        {
+          path: '/auth/login',
+          method: RequestMethod.POST,
+        },
+        {
+          path: '/auth/register',
+          method: RequestMethod.POST,
+        },
+        {
+          path: '/docs/download-carnets/:id',
+          method: RequestMethod.GET,
+        },
+
+        {
+          path: '/docs/download-carnet/student/:id',
+          method: RequestMethod.GET,
+        },
+      )
+      .forRoutes('/*');
+  }
+}

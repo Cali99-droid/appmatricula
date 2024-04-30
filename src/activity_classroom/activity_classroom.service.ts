@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Equal, Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateActivityClassroomDto } from './dto/create-activity_classroom.dto';
@@ -26,13 +26,9 @@ export class ActivityClassroomService {
     const exists = await this.activityClassroomRepository.findOne({
       where: [
         {
-          section: createActivityClassroomDto.section,
           classroom: { id: createActivityClassroomDto.classroomId },
-          phase: { id: createActivityClassroomDto.phaseId },
-        },
-        {
+          grade: { id: createActivityClassroomDto.gradeId },
           schoolShift: { id: createActivityClassroomDto.schoolShiftId },
-          classroom: { id: createActivityClassroomDto.classroomId },
           phase: { id: createActivityClassroomDto.phaseId },
         },
       ],
@@ -71,6 +67,7 @@ export class ActivityClassroomService {
       },
       order: {
         grade: { name: 'ASC' },
+        section: 'ASC',
       },
     });
     return activityClassrooms;
@@ -105,25 +102,19 @@ export class ActivityClassroomService {
       await this.activityClassroomRepository.findOne({
         where: [
           {
-            section: updateActivityClassroomDto.section,
             classroom: { id: updateActivityClassroomDto.classroomId },
             grade: { id: updateActivityClassroomDto.gradeId },
-            id: Not(Equal(id)),
-          },
-          {
             schoolShift: { id: updateActivityClassroomDto.schoolShiftId },
-            classroom: { id: updateActivityClassroomDto.classroomId },
-            grade: { id: updateActivityClassroomDto.gradeId },
-            id: Not(Equal(id)),
+            phase: { id: updateActivityClassroomDto.phaseId },
           },
         ],
       });
-
-    if (existingActivityClassroom) {
-      console.log(existingActivityClassroom.id);
-      throw new BadRequestException(
-        `An ActivityClassroom with the section "${updateActivityClassroomDto.section}" and schoolShiftId "${updateActivityClassroomDto.schoolShiftId}" for the gradeId "${updateActivityClassroomDto.gradeId}" already exists.`,
-      );
+    if (existingActivityClassroom != undefined) {
+      if (id != existingActivityClassroom.id) {
+        throw new BadRequestException(
+          `An ActivityClassroom with already exists.`,
+        );
+      }
     }
     try {
       await this.activityClassroomRepository.save(classroom);
@@ -168,6 +159,7 @@ export class ActivityClassroomService {
       },
       order: {
         grade: { name: 'ASC' },
+        section: 'ASC',
       },
     });
     return classrooms;

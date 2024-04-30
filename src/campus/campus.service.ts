@@ -97,8 +97,15 @@ export class CampusService {
   }
   async findOne(id: string) {
     try {
-      const campus = await this.campusRepository.findOneByOrFail({
-        id: +id,
+      const campus = await this.campusRepository.findOne({
+        where: { id: +id },
+        order: {
+          campusToLevel: {
+            level: {
+              name: 'ASC',
+            },
+          },
+        },
       });
 
       return {

@@ -62,4 +62,7 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
     return token;
   }
+  verify(token: string): any {
+    return this.jwtService.verify(token);
+  }
 }

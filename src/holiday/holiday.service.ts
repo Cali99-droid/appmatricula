@@ -22,20 +22,20 @@ export class HolidayService {
     private readonly yearRepository: Repository<Year>,
   ) {}
   async create(createHolidayDto: CreateHolidayDto) {
+    const holiday = this.holidayRepository.create(createHolidayDto);
+
+    holiday.year = { id: createHolidayDto.yearId } as Year;
+    const year = await this.yearRepository.findOne({
+      where: { id: createHolidayDto.yearId },
+    });
+
+    if (
+      createHolidayDto.date < year.startDate ||
+      createHolidayDto.date > year.endDate
+    ) {
+      throw new BadRequestException(`date must be within the year range`);
+    }
     try {
-      const holiday = this.holidayRepository.create(createHolidayDto);
-
-      holiday.year = { id: createHolidayDto.yearId } as Year;
-      const year = await this.yearRepository.findOne({
-        where: { id: createHolidayDto.yearId },
-      });
-
-      if (
-        createHolidayDto.date < year.startDate ||
-        createHolidayDto.date > year.endDate
-      ) {
-        throw new BadRequestException(`date must be within the year range`);
-      }
       await this.holidayRepository.save(holiday);
       return holiday;
     } catch (error) {

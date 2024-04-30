@@ -20,12 +20,13 @@ export class YearsService {
   ) {}
 
   async create(createYearDto: CreateYearDto) {
+    console.log('llego la peticion, YEAR');
     try {
       const year = this.yearRepository.create(createYearDto);
       return await this.yearRepository.save(year);
-      // return year;
     } catch (error) {
-      // this.logger.error(error);
+      this.logger.error(error);
+      console.log(error);
       handleDBExceptions(error, this.logger);
     }
   }
@@ -37,6 +38,9 @@ export class YearsService {
         name: true,
         startDate: true,
         endDate: true,
+      },
+      order: {
+        name: 'ASC',
       },
     });
 

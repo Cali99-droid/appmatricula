@@ -104,6 +104,7 @@ export class EnrollmentService {
               student: { id: student.id },
               activityClassroom: { id: activityClassroomId },
               status: Status.EN_PROCESO,
+              code: `${classroom.phase.year.name}-P${classroom.phase.id}S${student.id}`,
             });
             const saveEnrollment =
               await this.enrollmentRepository.save(enrollment);
@@ -171,6 +172,11 @@ export class EnrollmentService {
         where: {
           activityClassroom: {
             id: In(classroomsIds),
+          },
+        },
+        order: {
+          student: {
+            person: { lastname: 'ASC', mLastname: 'ASC', name: 'ASC' },
           },
         },
       },

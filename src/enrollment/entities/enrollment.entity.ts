@@ -14,6 +14,9 @@ export class Enrollment {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
+  /**TODO agregar valor unique */
+  @Column('varchar')
+  code: string;
 
   @ApiProperty({
     description: 'Id of Student',

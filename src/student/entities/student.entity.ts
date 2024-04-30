@@ -9,6 +9,7 @@ import {
 import { Enrollment } from '../../enrollment/entities/enrollment.entity';
 import { Person } from '../../person/entities/person.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { Attendance } from 'src/attendance/entities/attendance.entity';
 @Entity()
 export class Student {
   @ApiProperty()
@@ -34,4 +35,7 @@ export class Student {
 
   @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
   enrollment?: Enrollment[];
+
+  @OneToMany(() => Attendance, (attendance) => attendance.student)
+  attendance?: Attendance[];
 }

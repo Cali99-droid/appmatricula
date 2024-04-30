@@ -18,5 +18,6 @@ export const handleDBExceptions = (error: any, logger: Logger) => {
     throw new BadRequestException('Invalid foreign key id');
   }
   logger.error(error);
+  console.log(error);
   throw new InternalServerErrorException('Unexpected error, check server logs');
 };

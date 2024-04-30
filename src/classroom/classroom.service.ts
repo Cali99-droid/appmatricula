@@ -43,7 +43,11 @@ export class ClassroomService {
   }
 
   async findAll() {
-    const classrooms = await this.classroomRepository.find({});
+    const classrooms = await this.classroomRepository.find({
+      order: {
+        code: 'ASC',
+      },
+    });
     return classrooms.map((classroom) => {
       return {
         id: classroom.id,
@@ -100,6 +104,9 @@ export class ClassroomService {
     const classrooms = await this.classroomRepository.find({
       where: {
         campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
+      },
+      order: {
+        code: 'ASC',
       },
     });
     return classrooms;
