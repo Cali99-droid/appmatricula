@@ -84,6 +84,15 @@ export class AppModule implements NestModule {
           path: '/auth/register',
           method: RequestMethod.POST,
         },
+        {
+          path: '/docs/download-carnets/',
+          method: RequestMethod.GET,
+        },
+
+        {
+          path: '/docs/download-carnet/student/',
+          method: RequestMethod.GET,
+        },
       )
       .forRoutes('/*');
   }
