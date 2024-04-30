@@ -85,12 +85,12 @@ export class AppModule implements NestModule {
           method: RequestMethod.POST,
         },
         {
-          path: '/docs/download-carnets/',
+          path: '/docs/download-carnets/:id',
           method: RequestMethod.GET,
         },
 
         {
-          path: '/docs/download-carnet/student/',
+          path: '/docs/download-carnet/student/:id',
           method: RequestMethod.GET,
         },
       )
