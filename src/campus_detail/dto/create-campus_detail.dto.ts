@@ -29,6 +29,7 @@ export class CreateCampusDetailDto {
     description: 'Country of the campus',
     nullable: true,
     minLength: 4,
+    default: 'Perú',
   })
   @IsString()
   @MinLength(2)
