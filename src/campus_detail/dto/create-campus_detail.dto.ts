@@ -27,7 +27,7 @@ export class CreateCampusDetailDto {
   classRooms: number;
   @ApiProperty({
     description: 'Country of the campus',
-    nullable: false,
+    nullable: true,
     minLength: 4,
   })
   @IsString()
