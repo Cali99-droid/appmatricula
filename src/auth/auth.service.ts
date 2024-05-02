@@ -39,6 +39,7 @@ export class AuthService {
   }
   async signIn(loginUserDto: LoginUserDto) {
     const { email } = loginUserDto;
+    console.log(loginUserDto);
     const user = await this.userRepository.findOne({
       where: { email },
       select: { id: true, email: true, password: true },
@@ -50,7 +51,7 @@ export class AuthService {
       throw new UnauthorizedException('Credentials are not valid(password)');
 
     const { id, password, ...result } = user;
-    console.log(id, password);
+
     return {
       ...result,
       token: this.getJwtToken({ email: user.email }),
