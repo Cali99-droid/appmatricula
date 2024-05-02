@@ -20,6 +20,7 @@ export class AuthController {
 
   @Post('login')
   signIn(@Body() loginUserDto: LoginUserDto) {
+    console.log('llegó', loginUserDto);
     return this.authService.signIn(loginUserDto);
   }
 
