@@ -25,15 +25,16 @@ export class CreateCampusDetailDto {
   @IsInt({ message: 'ClassRooms has to be number' })
   @Min(0, { message: 'ClassRooms cannot be less than 0' })
   classRooms: number;
-  @ApiProperty({
-    description: 'Country of the campus',
-    nullable: true,
-    minLength: 4,
-    default: 'Perú',
-  })
-  @IsString()
-  @MinLength(2)
-  country: string;
+
+  // @ApiProperty({
+  //   description: 'Country of the campus',
+  //   nullable: true,
+  //   minLength: 4,
+  //   default: 'Perú',
+  // })
+  // @IsString()
+  // @MinLength(2)
+  // country: string;
   @ApiProperty({
     description: 'Departamnt of the campus',
     nullable: false,
@@ -42,6 +43,7 @@ export class CreateCampusDetailDto {
   @IsString()
   @MinLength(2)
   departamnt: string;
+
   @ApiProperty({
     description: 'Province of the campus',
     nullable: false,
