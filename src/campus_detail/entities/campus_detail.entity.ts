@@ -33,7 +33,9 @@ export class CampusDetail {
   @ApiProperty({
     description: 'Country of campus',
   })
-  @Column('varchar')
+  @Column('varchar', {
+    nullable: true,
+  })
   country: string;
   @ApiProperty({
     description: 'Departament of campus',
