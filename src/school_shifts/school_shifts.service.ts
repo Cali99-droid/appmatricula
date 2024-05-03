@@ -1,5 +1,10 @@
 import { Repository } from 'typeorm';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateSchoolShiftDto } from './dto/create-school_shift.dto';
@@ -17,6 +22,20 @@ export class SchoolShiftsService {
     private readonly schoolShiftRepository: Repository<SchoolShift>,
   ) {}
   async create(createSchoolShiftDto: CreateSchoolShiftDto) {
+    const exists = await this.schoolShiftRepository.findOne({
+      where: [
+        {
+          name: createSchoolShiftDto.name,
+          campus: { id: createSchoolShiftDto.campusId },
+          level: { id: createSchoolShiftDto.levelId },
+        },
+      ],
+    });
+    if (exists) {
+      throw new BadRequestException(
+        'School Shift not available, this turn already exists',
+      );
+    }
     try {
       const schoolShift =
         this.schoolShiftRepository.create(createSchoolShiftDto);
