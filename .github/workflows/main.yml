@@ -2,8 +2,8 @@ name: publish prod
 on:
   push:
     branches: ['main']
-  pull_request:
-    branches: ['main']
+  # pull_request:
+  #   branches: ['main']
 jobs:
   create-docker-image:
     runs-on: ubuntu-20.04
@@ -56,6 +56,7 @@ jobs:
             -e DB_PORT=${{ secrets.DB_PORT }} \
             -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
             -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            -e JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }} \
             -e BUCKET_NAME=${{ secrets.BUCKET_NAME }} \
             -e FOLDER_IMG_NAME=${{ secrets.FOLDER_IMG_NAME }} \
             -e AVATAR_NAME_DEFAULT=${{ secrets.AVATAR_NAME_DEFAULT }} \

@@ -2,8 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsArray, IsNumber, ValidateNested } from 'class-validator';
 import { ExistId } from 'src/common/validation/exist-id';
-import { CreatePersonDto } from 'src/person/dto/create-person.dto';
+
 import { Person } from 'src/person/entities/person.entity';
+import { CreatePersonEnrollDto } from './create-person-enrroll.dto';
 
 export class CreateManyEnrollmentDto {
   @ApiProperty({
@@ -14,8 +15,8 @@ export class CreateManyEnrollmentDto {
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreatePersonDto)
-  persons: CreatePersonDto[];
+  @Type(() => CreatePersonEnrollDto)
+  persons: CreatePersonEnrollDto[];
   @ApiProperty({
     example: 1,
     description: 'Id activityClassroom for this enrollment',

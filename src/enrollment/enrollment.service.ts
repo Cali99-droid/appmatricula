@@ -82,9 +82,9 @@ export class EnrollmentService {
       const dataEnrollment: any[] = [];
       for (const person of persons) {
         const existPerson = await this.personRepository.findOne({
-          where: { docNumber: person.docNumber },
+          where: { studentCode: person.studentCode },
         });
-
+        console.log(existPerson);
         if (existPerson) {
           const student = await this.studentRepository.findOne({
             where: { person: { id: existPerson.id } },
@@ -114,6 +114,7 @@ export class EnrollmentService {
           dataNoExist.push(person);
         }
       }
+      console.log('data', dataNoExist);
       // Crear y guardar personas que no existen
       const personsCreated = await this.personRepository.save(
         this.personRepository.create(dataNoExist),
@@ -132,6 +133,7 @@ export class EnrollmentService {
           status: Status.EN_PROCESO,
           activityClassroom: { id: activityClassroomId },
           student,
+          code: `${classroom.phase.year.name}-P${classroom.phase.id}S${student.id}`,
         })),
       );
       dataEnrollment.push(enrollments);

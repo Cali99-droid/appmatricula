@@ -25,6 +25,14 @@ async function bootstrap() {
     .setTitle('Matrículas RESTFul API')
     .setDescription('Matriculas endpoints')
     .setVersion('1.0')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'access-token', // Este es el nombre del esquema de seguridad
+    )
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'refresh-token', // Este es el nombre del esquema de seguridad
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
