@@ -31,6 +31,11 @@ export class User {
   })
   isActive: boolean;
 
+  @Column('varchar', {
+    nullable: true,
+  })
+  refreshToken: string;
+
   @ApiProperty({
     description: 'Id of Person',
   })
