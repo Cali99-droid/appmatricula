@@ -2,8 +2,8 @@ name: publish prod
 on:
   push:
     branches: ['main']
-  pull_request:
-    branches: ['main']
+  # pull_request:
+  #   branches: ['main']
 jobs:
   create-docker-image:
     runs-on: ubuntu-20.04

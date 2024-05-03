@@ -19,6 +19,7 @@ export class Person {
   @Column('varchar', {
     length: 8,
     unique: true,
+    nullable: true,
   })
   docNumber: string;
 

@@ -7,6 +7,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from './decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { ApiTags } from '@nestjs/swagger';
+import { Auth } from './decorators/auth.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -32,5 +33,11 @@ export class AuthController {
       user,
       email,
     };
+  }
+
+  @Get('check-status')
+  @Auth()
+  checkAuthStatus(@GetUser() user: User) {
+    return this.authService.checkAuthStatus(user);
   }
 }

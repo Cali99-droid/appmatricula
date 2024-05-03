@@ -66,4 +66,11 @@ export class AuthService {
   verify(token: string): any {
     return this.jwtService.verify(token);
   }
+
+  async checkAuthStatus(user: User) {
+    return {
+      ...user,
+      token: this.getJwtToken({ email: user.email }),
+    };
+  }
 }
