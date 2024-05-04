@@ -84,7 +84,7 @@ export class EnrollmentService {
         const existPerson = await this.personRepository.findOne({
           where: { studentCode: person.studentCode },
         });
-        console.log(existPerson);
+
         if (existPerson) {
           const student = await this.studentRepository.findOne({
             where: { person: { id: existPerson.id } },

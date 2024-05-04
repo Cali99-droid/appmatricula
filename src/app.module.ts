@@ -32,6 +32,7 @@ import { StudentModule } from './student/student.module';
 import { DocsModule } from './docs/docs.module';
 import { AppMiddleware } from './app.middleware';
 import { AuthService } from './auth/auth.service';
+import { FamilyModule } from './family/family.module';
 /**chagne host */
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { AuthService } from './auth/auth.service';
     BimesterModule,
     ScheduleModule,
     DocsModule,
+    FamilyModule,
   ],
   providers: [ExistIdConstraint, AuthService],
 })

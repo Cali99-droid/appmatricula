@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Gender } from 'src/person/enum/gender.enum';
+
 import { Status } from '../enum/status.enum';
+import { Gender } from 'src/common/enum/gender.enum';
 
 class StudentDto {
   @ApiProperty()

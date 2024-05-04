@@ -18,6 +18,7 @@ export class Student {
 
   @Column('varchar', {
     nullable: true,
+    unique: true,
   })
   studentCode: string;
   @Column('varchar', {
