@@ -1,13 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import {
-  IsEnum,
-  IsOptional,
-  IsString,
-  Length,
-  Matches,
-  ValidateIf,
-} from 'class-validator';
+import { IsEnum, IsString, Length, Matches, ValidateIf } from 'class-validator';
 import { Gender } from 'src/common/enum/gender.enum';
 
 export class CreatePersonEnrollDto {
@@ -21,8 +14,8 @@ export class CreatePersonEnrollDto {
   @Matches(/^\d+$/, {
     message: 'DNI debe ser una cadena numérica',
   })
-  @IsOptional() // Esto indica que el validador pasará si el campo es undefined o null
-  @ValidateIf((o) => o.docNumber !== '') // Los siguientes validadores solo se aplicarán si docNumber no está vacío
+  // @IsOptional() // Esto indica que el validador pasará si el campo es undefined o null
+  // @ValidateIf((o) => o.docNumber !== '') // Los siguientes validadores solo se aplicarán si docNumber no está vacío
   docNumber: string;
 
   @ApiProperty({
