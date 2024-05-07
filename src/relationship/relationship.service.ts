@@ -1,25 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CreateFamilyDto } from './dto/create-family.dto';
-import { UpdateFamilyDto } from './dto/update-family.dto';
-import { DataParentArrayDto } from '../relationship/dto/data-parent-array.dto';
-import { Family } from './entities/family.entity';
-import { In, Repository } from 'typeorm';
+
 import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
 import { Person } from 'src/person/entities/person.entity';
-import { Student } from 'src/student/entities/student.entity';
+import { Relationship } from './entities/relationship.entity';
+import { DataParentArrayDto } from './dto/data-parent-array.dto';
 
 @Injectable()
-export class FamilyService {
+export class RelationshipService {
   private readonly logger = new Logger('FamilyService');
   constructor(
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
-    @InjectRepository(Student)
-    private readonly studentRepository: Repository<Student>,
-    @InjectRepository(Family)
-    private readonly familyRepository: Repository<Family>,
+    // @InjectRepository(Student)
+    // private readonly studentRepository: Repository<Student>,
+    @InjectRepository(Relationship)
+    private readonly relationshipRepository: Repository<Relationship>,
   ) {}
-
   async createParents(dataParentArrayDto: DataParentArrayDto) {
     const { data } = dataParentArrayDto;
 
@@ -54,7 +51,7 @@ export class FamilyService {
       dniAssignee: item.docNumber,
       sonStudentCode: item.studentCode,
     }));
-    const existingFamilies = await this.familyRepository.find({
+    const existingFamilies = await this.relationshipRepository.find({
       where: studentCodes,
     });
     const existingFamiliesSet = new Set(
@@ -73,8 +70,8 @@ export class FamilyService {
       };
     });
     if (familiesToSave.length > 0) {
-      savedFamilies = await this.familyRepository.save(
-        this.familyRepository.create(familiesToSaveFormat),
+      savedFamilies = await this.relationshipRepository.save(
+        this.relationshipRepository.create(familiesToSaveFormat),
       );
     }
 
@@ -82,24 +79,5 @@ export class FamilyService {
       savedFamiliesMembers: savedFamilies.length,
       savedPersons: savedPersons.length,
     };
-  }
-  create(createFamilyDto: CreateFamilyDto) {
-    return 'This action adds a new family';
-  }
-
-  findAll() {
-    return `This action returns all family`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} family`;
-  }
-
-  update(id: number, updateFamilyDto: UpdateFamilyDto) {
-    return `This action updates a #${id} family`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} family`;
   }
 }

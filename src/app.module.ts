@@ -33,6 +33,7 @@ import { DocsModule } from './docs/docs.module';
 import { AppMiddleware } from './app.middleware';
 import { AuthService } from './auth/auth.service';
 import { FamilyModule } from './family/family.module';
+import { RelationshipModule } from './relationship/relationship.module';
 /**chagne host */
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { FamilyModule } from './family/family.module';
     ScheduleModule,
     DocsModule,
     FamilyModule,
+    RelationshipModule,
   ],
   providers: [ExistIdConstraint, AuthService],
 })
