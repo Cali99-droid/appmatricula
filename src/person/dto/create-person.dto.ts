@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Gender } from '../enum/gender.enum';
+
 import { IsEnum, IsString, Length, Matches } from 'class-validator';
+import { Gender } from 'src/common/enum/gender.enum';
 
 export class CreatePersonDto {
   @ApiProperty({

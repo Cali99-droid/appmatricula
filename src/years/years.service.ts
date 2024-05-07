@@ -40,7 +40,7 @@ export class YearsService {
         endDate: true,
       },
       order: {
-        name: 'ASC',
+        name: 'DESC',
       },
     });
 

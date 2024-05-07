@@ -1,9 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-
-import { IsEnum, IsString, Length, Matches, ValidateIf } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString, Length, Matches } from 'class-validator';
 import { Gender } from 'src/common/enum/gender.enum';
+import { FamilyRole } from '../../common/enum/family-role.enum';
 
-export class CreatePersonEnrollDto {
+export class DataParentDto {
+  @ApiProperty({
+    example: '23120393400220',
+    description: 'code of student',
+  })
+  @IsString()
+  @IsNotEmpty()
+  // @Length(3, 10)  Suponiendo que el código tiene entre 3 y 10 caracteres.
+  studentCode: string;
+
   @ApiProperty({
     example: '71562526',
     description: 'person DNI',
@@ -12,10 +21,8 @@ export class CreatePersonEnrollDto {
   @IsString()
   @Length(8, 8)
   @Matches(/^\d+$/, {
-    message: 'DNI debe ser una cadena numérica',
+    message: ' docNumber DNI debe ser una cadena numérica',
   })
-  // @IsOptional() // Esto indica que el validador pasará si el campo es undefined o null
-  // @ValidateIf((o) => o.docNumber !== '') // Los siguientes validadores solo se aplicarán si docNumber no está vacío
   docNumber: string;
 
   @ApiProperty({
@@ -49,8 +56,11 @@ export class CreatePersonEnrollDto {
   gender: Gender;
 
   @ApiProperty({
-    description: 'studentCode',
+    example: 'P',
+    description: 'role of person M: MADRE, P: PADRE, H: HIJO',
   })
-  @IsString()
-  studentCode: string;
+  @IsEnum(FamilyRole, {
+    message: 'Family Role value must be some values: [M, P, H]',
+  })
+  familyRole: FamilyRole;
 }

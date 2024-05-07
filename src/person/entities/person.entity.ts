@@ -1,8 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from 'typeorm';
-import { Gender } from '../enum/gender.enum';
+
 import { Student } from '../../student/entities/student.entity';
 import { User } from '../../user/entities/user.entity';
+import { Gender } from 'src/common/enum/gender.enum';
+import { FamilyRole } from 'src/common/enum/family-role.enum';
 //test
 
 @Entity()
@@ -51,6 +53,8 @@ export class Person {
   @Column({ type: 'enum', enum: Gender })
   gender: Gender;
 
+  @Column({ type: 'enum', enum: FamilyRole })
+  familyRole: FamilyRole;
   //**TODO:  atributo de uso temporal, para la subida en bloque de estudiantes */
   @ApiProperty({
     description: 'studentCode',

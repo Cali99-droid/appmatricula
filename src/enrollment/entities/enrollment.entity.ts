@@ -16,7 +16,7 @@ export class Enrollment {
   id: number;
 
   @Column('varchar', {
-    unique: true,
+    // unique: true,
   })
   code: string;
 
