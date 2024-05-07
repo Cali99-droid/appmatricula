@@ -5,6 +5,7 @@ import { In, Repository } from 'typeorm';
 import { Person } from 'src/person/entities/person.entity';
 import { Relationship } from './entities/relationship.entity';
 import { DataParentArrayDto } from './dto/data-parent-array.dto';
+import { Student } from 'src/student/entities/student.entity';
 
 @Injectable()
 export class RelationshipService {
@@ -12,8 +13,8 @@ export class RelationshipService {
   constructor(
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
-    // @InjectRepository(Student)
-    // private readonly studentRepository: Repository<Student>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
     @InjectRepository(Relationship)
     private readonly relationshipRepository: Repository<Relationship>,
   ) {}
@@ -25,12 +26,14 @@ export class RelationshipService {
     const existingPersons = await this.personRepository.find({
       where: { docNumber: In(docNumbers) },
     });
+    console.log('exist', existingPersons);
     const existingDocsSet = new Set(existingPersons.map((p) => p.docNumber));
 
     const personsToSave = data.filter(
       (item) => !existingDocsSet.has(item.docNumber),
     );
     let savedPersons = [];
+    console.log('to save', personsToSave);
     const personsToSaveFormat = personsToSave.map((item) => {
       return {
         name: item.name,
@@ -79,5 +82,17 @@ export class RelationshipService {
       savedFamiliesMembers: savedFamilies.length,
       savedPersons: savedPersons.length,
     };
+  }
+
+  async findAll() {
+    const rela = await this.relationshipRepository.find();
+    const dnis = rela.map((d) => d.dniAssignee);
+
+    const fathers = await this.personRepository.find({
+      where: {
+        docNumber: In(dnis),
+      },
+    });
+    return fathers;
   }
 }

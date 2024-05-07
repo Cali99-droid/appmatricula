@@ -1,6 +1,5 @@
 import { Type } from 'class-transformer';
 import { ValidateNested, IsArray } from 'class-validator';
-
 import { DataParentDto } from './data-parent.dto';
 import { ApiProperty } from '@nestjs/swagger';
 

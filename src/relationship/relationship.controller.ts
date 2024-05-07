@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 import { RelationshipService } from './relationship.service';
 
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -22,5 +22,21 @@ export class RelationshipController {
   })
   createParents(@Body() dataParentArrayDto: DataParentArrayDto) {
     return this.relationshipService.createParents(dataParentArrayDto);
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'get many parents of family ',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'array created',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'some data of array is bad ',
+  })
+  findAll() {
+    return this.relationshipService.findAll();
   }
 }
