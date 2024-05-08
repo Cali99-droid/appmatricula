@@ -103,7 +103,7 @@ export class RelationshipService {
     });
     return fathers;
   }
-
+  /** es deplot */
   async findByActivityClassroom(activityClassroomId: number) {
     const enroll = await this.enrollmentRepository.find({
       where: { activityClassroom: { id: activityClassroomId } },
