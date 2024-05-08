@@ -250,4 +250,21 @@ export class EnrollmentService {
       handleDBExceptions(error, this.logger);
     }
   }
+  async removeAllByActivityClassroom(activityClassroomId: number) {
+    const enrollment = await this.enrollmentRepository.find({
+      where: { activityClassroom: { id: activityClassroomId } },
+    });
+    if (enrollment.length <= 0)
+      throw new NotFoundException(`Enrollment by id: not found`);
+    try {
+      await this.enrollmentRepository.remove(enrollment);
+      return {
+        message: 'successful deletion',
+        error: '',
+        statusCode: 200,
+      };
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
 }
