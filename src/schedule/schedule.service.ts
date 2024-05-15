@@ -50,17 +50,18 @@ export class ScheduleService {
   // }
 
   async findByActivityClassroom(activityClassroomId: number) {
-    console.log(activityClassroomId);
     try {
-      const scheduleData = await this.scheduleRepository.findOneByOrFail({
+      let generalShift;
+      const scheduleData = await this.scheduleRepository.findBy({
         activityClassroom: { id: activityClassroomId },
       });
-      const { activityClassroom, ...res } = scheduleData;
+      const individualShift = scheduleData.map((item) => {
+        generalShift = item.activityClassroom.schoolShift;
+        delete item.activityClassroom;
+        return item;
+      });
 
-      return {
-        generalShift: activityClassroom.schoolShift,
-        individualShift: res,
-      };
+      return { generalShift, individualShift };
     } catch (error) {
       throw new NotFoundException(error.message);
       // handleDBExceptions(error, this.logger);
