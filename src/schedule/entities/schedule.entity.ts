@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
-import { DayOfWeek } from 'src/day_of_week/entities/day_of_week.entity';
+
 import { Day } from 'src/common/enum/day.enum';
 @Entity()
 export class Schedule {
@@ -54,10 +54,4 @@ export class Schedule {
   )
   @JoinColumn({ name: 'activityClassroomId' })
   activityClassroom?: ActivityClassroom;
-
-  @ManyToOne(() => DayOfWeek, (dayOfWeek) => dayOfWeek.schedule, {
-    eager: true,
-  })
-  @JoinColumn({ name: 'dayOfWeekId' })
-  dayOfWeek?: DayOfWeek;
 }

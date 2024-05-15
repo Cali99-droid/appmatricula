@@ -4,11 +4,9 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Year } from 'src/years/entities/year.entity';
-import { Schedule } from 'src/schedule/entities/schedule.entity';
 
 @Entity()
 export class DayOfWeek {
@@ -34,7 +32,4 @@ export class DayOfWeek {
   })
   @JoinColumn({ name: 'yearId' })
   year?: Year;
-
-  @OneToMany(() => Schedule, (schedule) => schedule.dayOfWeek)
-  schedule?: Schedule[];
 }
