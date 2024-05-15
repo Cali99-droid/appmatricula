@@ -47,7 +47,7 @@ export class AttendanceController {
   ) {
     return this.attendanceService.update(+id, updateAttendanceDto);
   }
-
+  /**upd */
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.attendanceService.remove(+id);
