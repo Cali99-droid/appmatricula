@@ -8,6 +8,7 @@ import {
   IsOptional,
 } from 'class-validator';
 import { IsEndTimeAfterStartTimeConstraint } from 'src/common/decorators/is-time-before.decorator';
+import { Day } from 'src/common/enum/day.enum';
 import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreateScheduleDto {
@@ -38,6 +39,14 @@ export class CreateScheduleDto {
   @Matches(/^(0?[0-9]|1[0-9]|2[0-3]):([0-5]?[0-9]):([0-5]?[0-9])$/)
   @Validate(IsEndTimeAfterStartTimeConstraint, ['startTime'])
   endTime: string;
+
+  @ApiProperty({
+    description: 'day of week',
+    nullable: false,
+    example: '1',
+    enum: Day,
+  })
+  day: Day;
 
   @ApiProperty({
     example: 1,

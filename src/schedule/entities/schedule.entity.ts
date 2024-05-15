@@ -39,9 +39,8 @@ export class Schedule {
 
   //**Day of week must be 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' */
   @ApiProperty({
-    example: 'MO',
+    // example: 'MO',
     description: 'day of week',
-    type: Day,
   })
   @Column({ type: 'enum', enum: Day })
   day: Day;
