@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Schedule } from './entities/schedule.entity';
 import { Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
-import { SearchSheduleDto } from './dto/search-schedule.dto';
+
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 
 @Injectable()
@@ -29,32 +29,38 @@ export class ScheduleService {
     }
   }
 
-  async findAll(searchScheduleDto: SearchSheduleDto) {
-    const { yearId, campusId, levelId } = searchScheduleDto;
-    // const schedules = await this.scheduleRepository.find({
-    //   where: {
-    //     dayOfWeek: {
-    //       year: { id: !isNaN(+yearId) ? +yearId : undefined },
-    //     },
-    //     activityClassroom: {
-    //       grade: {
-    //         level: { id: !isNaN(+levelId) ? +levelId : undefined },
-    //       },
-    //       classroom: {
-    //         campusDetail: { id: !isNaN(+campusId) ? +campusId : undefined },
-    //       },
-    //     },
-    //   },
-    // });
-    // return schedules;
-  }
+  // async findAll(searchScheduleDto: SearchSheduleDto) {
+  //   // const { yearId, campusId, levelId } = searchScheduleDto;
+  //   // const schedules = await this.scheduleRepository.find({
+  //   //   where: {
+  //   //     dayOfWeek: {
+  //   //       year: { id: !isNaN(+yearId) ? +yearId : undefined },
+  //   //     },
+  //   //     activityClassroom: {
+  //   //       grade: {
+  //   //         level: { id: !isNaN(+levelId) ? +levelId : undefined },
+  //   //       },
+  //   //       classroom: {
+  //   //         campusDetail: { id: !isNaN(+campusId) ? +campusId : undefined },
+  //   //       },
+  //   //     },
+  //   //   },
+  //   // });
+  //   // return schedules;
+  // }
 
   async findByActivityClassroom(activityClassroomId: number) {
     console.log(activityClassroomId);
     try {
-      return await this.scheduleRepository.findOneByOrFail({
+      const scheduleData = await this.scheduleRepository.findOneByOrFail({
         activityClassroom: { id: activityClassroomId },
       });
+      const { activityClassroom, ...res } = scheduleData;
+
+      return {
+        generalShift: activityClassroom.schoolShift,
+        individualShift: res,
+      };
     } catch (error) {
       throw new NotFoundException(error.message);
       // handleDBExceptions(error, this.logger);

@@ -6,20 +6,12 @@ import {
   Patch,
   Param,
   Delete,
-  Query,
 } from '@nestjs/common';
 import { ScheduleService } from './schedule.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
-import {
-  ApiOkResponse,
-  ApiParam,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Schedule } from './entities/schedule.entity';
-import { SearchSheduleDto } from './dto/search-schedule.dto';
 
 @ApiTags('Schedule')
 @Controller('schedule')
