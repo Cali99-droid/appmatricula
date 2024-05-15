@@ -7,7 +7,6 @@ import { Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { SearchSheduleDto } from './dto/search-schedule.dto';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
-import { DayOfWeek } from 'src/day_of_week/entities/day_of_week.entity';
 
 @Injectable()
 export class ScheduleService {
@@ -22,7 +21,7 @@ export class ScheduleService {
       schedule.activityClassroom = {
         id: createScheduleDto.activityClassroomId,
       } as ActivityClassroom;
-      schedule.dayOfWeek = { id: createScheduleDto.dayOfWeekId } as DayOfWeek;
+
       await this.scheduleRepository.save(schedule);
       return schedule;
     } catch (error) {
@@ -32,22 +31,34 @@ export class ScheduleService {
 
   async findAll(searchScheduleDto: SearchSheduleDto) {
     const { yearId, campusId, levelId } = searchScheduleDto;
-    const schedules = await this.scheduleRepository.find({
-      where: {
-        dayOfWeek: {
-          year: { id: !isNaN(+yearId) ? +yearId : undefined },
-        },
-        activityClassroom: {
-          grade: {
-            level: { id: !isNaN(+levelId) ? +levelId : undefined },
-          },
-          classroom: {
-            campusDetail: { id: !isNaN(+campusId) ? +campusId : undefined },
-          },
-        },
-      },
-    });
-    return schedules;
+    // const schedules = await this.scheduleRepository.find({
+    //   where: {
+    //     dayOfWeek: {
+    //       year: { id: !isNaN(+yearId) ? +yearId : undefined },
+    //     },
+    //     activityClassroom: {
+    //       grade: {
+    //         level: { id: !isNaN(+levelId) ? +levelId : undefined },
+    //       },
+    //       classroom: {
+    //         campusDetail: { id: !isNaN(+campusId) ? +campusId : undefined },
+    //       },
+    //     },
+    //   },
+    // });
+    // return schedules;
+  }
+
+  async findByActivityClassroom(activityClassroomId: number) {
+    console.log(activityClassroomId);
+    try {
+      return await this.scheduleRepository.findOneByOrFail({
+        activityClassroom: { id: activityClassroomId },
+      });
+    } catch (error) {
+      throw new NotFoundException(error.message);
+      // handleDBExceptions(error, this.logger);
+    }
   }
 
   async findOne(id: number) {
@@ -70,7 +81,7 @@ export class ScheduleService {
       schedule.activityClassroom = {
         id: updateScheduleDto.activityClassroomId,
       } as ActivityClassroom;
-      schedule.dayOfWeek = { id: updateScheduleDto.dayOfWeekId } as DayOfWeek;
+
       await this.scheduleRepository.save(schedule);
       return schedule;
     } catch (error) {

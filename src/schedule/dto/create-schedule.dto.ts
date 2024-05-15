@@ -56,13 +56,4 @@ export class CreateScheduleDto {
   @IsNumber()
   @ExistId({ tableName: 'activity_classroom' })
   activityClassroomId: number;
-
-  @ApiProperty({
-    example: 1,
-    description: 'id of the dayOfWeekId',
-    nullable: false,
-  })
-  @IsNumber()
-  @ExistId({ tableName: 'day_of_week' })
-  dayOfWeekId: number;
 }
