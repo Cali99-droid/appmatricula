@@ -15,7 +15,7 @@ export class DayOfWeek {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
-
+  //**Day of week must be 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' */
   @ApiProperty({
     example: 'LU',
     description: 'Day of day of week',

@@ -16,7 +16,12 @@ export class Attendance {
   id: number;
 
   @Column('datetime')
-  date: string;
+  arrivalTime: Date;
+
+  @Column('date', {
+    nullable: true,
+  })
+  arrivalDate: Date;
 
   @Column({ type: 'enum', enum: StatusAttendance })
   status: StatusAttendance;

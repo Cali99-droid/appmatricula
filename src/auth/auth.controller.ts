@@ -1,9 +1,8 @@
 import { Controller, Post, Body, Get, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
-import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
-import { AuthGuard } from '@nestjs/passport';
+
 import { GetUser } from './decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import {
@@ -43,11 +42,11 @@ export class AuthController {
   //   };
   // }
 
-  // @Get('check-status')
-  // @Auth()
-  // checkAuthStatus(@GetUser() user: User) {
-  //   return this.authService.checkAuthStatus(user);
-  // }
+  @Get('check-status')
+  @Auth()
+  checkAuthStatus(@GetUser() user: User) {
+    return this.authService.checkAuthStatus(user);
+  }
 
   @UseGuards(AccessTokenGuard)
   @Get('logout')

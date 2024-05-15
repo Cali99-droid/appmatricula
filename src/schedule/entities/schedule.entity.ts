@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
 import { DayOfWeek } from 'src/day_of_week/entities/day_of_week.entity';
+import { Day } from 'src/common/enum/day.enum';
 @Entity()
 export class Schedule {
   @ApiProperty()
@@ -28,12 +29,22 @@ export class Schedule {
   })
   @Column({ type: 'time' })
   startTime: string;
+
   @ApiProperty({
     example: '19:20:00',
     description: 'end of the schedule',
   })
   @Column({ type: 'time' })
   endTime: string;
+
+  //**Day of week must be 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' */
+  @ApiProperty({
+    example: 'MO',
+    description: 'day of week',
+    type: Day,
+  })
+  @Column({ type: 'enum', enum: Day })
+  day: Day;
 
   @ManyToOne(
     () => ActivityClassroom,
