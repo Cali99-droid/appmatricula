@@ -68,9 +68,7 @@ export class EnrollmentService {
     const classroom = await this.activityClassroomRepository.findOneBy({
       id: activityClassroomId,
     });
-    if (!classroom) {
-      throw new NotFoundException('Classroom not exist');
-    }
+
     const capacity = classroom.classroom.capacity;
 
     if (persons.length > capacity) {
@@ -89,9 +87,17 @@ export class EnrollmentService {
         });
 
         if (existPerson) {
-          const student = await this.studentRepository.findOne({
+          let student;
+          student = await this.studentRepository.findOne({
             where: { person: { id: existPerson.id } },
           });
+
+          if (!student) {
+            student = await this.studentRepository.save({
+              person: existPerson,
+              studentCode: person.studentCode,
+            });
+          }
 
           const existEnrollment = await this.enrollmentRepository.findOne({
             where: {
