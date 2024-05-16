@@ -6,6 +6,7 @@ import {
   Matches,
   IsNumber,
   IsOptional,
+  IsEnum,
 } from 'class-validator';
 import { IsEndTimeAfterStartTimeConstraint } from 'src/common/decorators/is-time-before.decorator';
 import { Day } from 'src/common/enum/day.enum';
@@ -19,7 +20,7 @@ export class CreateScheduleDto {
     example: 'Tarde',
   })
   @IsString()
-  @IsOptional()
+  // @IsOptional()
   @MinLength(2)
   shift: string;
 
@@ -45,6 +46,9 @@ export class CreateScheduleDto {
     nullable: false,
     example: '1',
     enum: Day,
+  })
+  @IsEnum(Day, {
+    message: 'day  value must be some values of [0,1...] ',
   })
   day: Day;
 
