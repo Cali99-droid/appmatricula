@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +12,7 @@ import { Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import { SchoolShift } from '../school_shifts/entities/school_shift.entity';
 
 @Injectable()
 export class ScheduleService {
@@ -14,14 +20,41 @@ export class ScheduleService {
   constructor(
     @InjectRepository(Schedule)
     private readonly scheduleRepository: Repository<Schedule>,
+    // private readonly schoolShiftRepository: Repository<SchoolShift>,
+    @InjectRepository(ActivityClassroom)
+    private readonly activityClassroomRepository: Repository<ActivityClassroom>,
   ) {}
   async create(createScheduleDto: CreateScheduleDto) {
+    const exists = await this.scheduleRepository.findOne({
+      where: [
+        {
+          day: createScheduleDto.day,
+          activityClassroom: { id: createScheduleDto.activityClassroomId },
+        },
+      ],
+    });
+    if (exists) {
+      throw new BadRequestException(
+        'Schedule not available, this turn already exists',
+      );
+    }
+    const { schoolShift } = await this.activityClassroomRepository.findOne({
+      where: [
+        {
+          id: createScheduleDto.activityClassroomId,
+        },
+      ],
+    });
+    if (!this.shoolShiftValid(createScheduleDto, schoolShift)) {
+      throw new BadRequestException(
+        'Schedule not available, this shift intersects with school shift',
+      );
+    }
     try {
       const schedule = this.scheduleRepository.create(createScheduleDto);
       schedule.activityClassroom = {
         id: createScheduleDto.activityClassroomId,
       } as ActivityClassroom;
-
       await this.scheduleRepository.save(schedule);
       return schedule;
     } catch (error) {
@@ -50,7 +83,6 @@ export class ScheduleService {
   // }
 
   async findByActivityClassroom(activityClassroomId: number) {
-    console.log(activityClassroomId);
     try {
       const scheduleData = await this.scheduleRepository.findOneByOrFail({
         activityClassroom: { id: activityClassroomId },
@@ -77,6 +109,18 @@ export class ScheduleService {
   }
 
   async update(id: number, updateScheduleDto: UpdateScheduleDto) {
+    const { schoolShift } = await this.activityClassroomRepository.findOne({
+      where: [
+        {
+          id: updateScheduleDto.activityClassroomId,
+        },
+      ],
+    });
+    if (!this.shoolShiftValid(updateScheduleDto, schoolShift)) {
+      throw new BadRequestException(
+        'Schedule not available, this shift intersects with school shift',
+      );
+    }
     const schedule = await this.scheduleRepository.preload({
       id: id,
       ...updateScheduleDto,
@@ -104,5 +148,21 @@ export class ScheduleService {
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
+  }
+  private shoolShiftValid(
+    newSchedule: CreateScheduleDto | UpdateScheduleDto,
+    schoolShift: SchoolShift,
+  ): boolean {
+    if (
+      (newSchedule.startTime >= schoolShift.startTime &&
+        newSchedule.startTime < schoolShift.endTime) ||
+      (newSchedule.endTime > schoolShift.startTime &&
+        newSchedule.endTime <= schoolShift.endTime) ||
+      (newSchedule.startTime <= schoolShift.startTime &&
+        newSchedule.endTime >= schoolShift.endTime)
+    ) {
+      return false;
+    }
+    return true;
   }
 }

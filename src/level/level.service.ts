@@ -15,11 +15,9 @@ export class LevelService {
 
   async create(createLevelDto: CreateLevelDto) {
     try {
-      console.log(createLevelDto);
       const level = this.levelRepository.create(createLevelDto);
-      console.log(level);
-      const data = await this.levelRepository.save(level);
-      console.log(data);
+
+      await this.levelRepository.save(level);
 
       return level;
     } catch (error) {
