@@ -20,7 +20,6 @@ export class YearsService {
   ) {}
 
   async create(createYearDto: CreateYearDto) {
-    console.log('llego la peticion, YEAR');
     try {
       const year = this.yearRepository.create(createYearDto);
       return await this.yearRepository.save(year);
