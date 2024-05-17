@@ -1,5 +1,5 @@
 import {
-  // BadRequestException,
+  BadRequestException,
   Injectable,
   Logger,
   NotFoundException,
@@ -20,19 +20,20 @@ export class DayOfWeekService {
     private readonly dayOfWeekRepository: Repository<DayOfWeek>,
   ) {}
   async create(createDayOfWeekDto: CreateDayOfWeekDto) {
+    const exists = await this.dayOfWeekRepository.findOne({
+      where: [
+        {
+          name: createDayOfWeekDto.name,
+          year: { id: createDayOfWeekDto.yearId },
+        },
+      ],
+    });
+    if (exists) {
+      throw new BadRequestException(
+        'Already exists with the same name and year',
+      );
+    }
     try {
-      // const validate = await this.dayOfWeekRepository.findOne({
-      //   where: {
-      //     name: createDayOfWeekDto.name,
-      //     year: {
-      //       id: createDayOfWeekDto.yearId,
-      //     },
-      //   },
-      // });
-      // if (validate) {
-      //   throw new BadRequestException(`Already exists with the same name and year`);
-      // }
-
       const dayOfWeek = this.dayOfWeekRepository.create(createDayOfWeekDto);
       dayOfWeek.year = { id: createDayOfWeekDto.yearId } as Year;
       await this.dayOfWeekRepository.save(dayOfWeek);

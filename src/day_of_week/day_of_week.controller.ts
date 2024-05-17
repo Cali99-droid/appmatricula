@@ -31,6 +31,10 @@ export class DayOfWeekController {
     description: 'DayOfWeek was created',
     type: DayOfWeek,
   })
+  @ApiResponse({
+    status: 400,
+    description: 'Duplicate name for DayOfWeek ',
+  })
   create(@Body() createDayOfWeekDto: CreateDayOfWeekDto) {
     return this.dayOfWeekService.create(createDayOfWeekDto);
   }
