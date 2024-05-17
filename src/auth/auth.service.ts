@@ -56,10 +56,14 @@ export class AuthService {
       throw new UnauthorizedException('Credentials are not valid(password)');
     const tokens = await this.getJwtTokens({ email: user.email, sub: user.id });
     await this.updateRefreshToken(user.id, tokens.refreshToken);
-    const { id, password, ...result } = user;
-    console.log(id, password);
+    const { id, password, permission, person, ...result } = user;
+    console.log(id, password, person);
+    const permissions = permission.map((item) => {
+      return item.accessName;
+    });
     return {
       ...result,
+      permissions,
       token: this.getJwtToken({ email: user.email, sub: user.id }),
       tokens,
     };

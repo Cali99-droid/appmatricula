@@ -15,16 +15,22 @@ import { Auth } from './decorators/auth.decorator';
 import { AccessTokenGuard } from './guards/accessToken.guard';
 import { Request } from 'express';
 import { RefreshTokenGuard } from './guards/refreshToken.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { RoleProtected } from './decorators/role-protected.decorator';
+import { ValidRoles } from './interfaces/valid-roles';
+import { UserRoleGuard } from './guards/user-role/user-role.guard';
+import { RegisterUserDto } from './dto/register-user.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // @Post('register')
-  // create(@Body() registerUserDto: RegisterUserDto) {
-  //   return this.authService.create(registerUserDto);
-  // }
+  @Post('register')
+  @Auth()
+  create(@Body() registerUserDto: RegisterUserDto) {
+    return this.authService.create(registerUserDto);
+  }
 
   @Post('login')
   signIn(@Body() loginUserDto: LoginUserDto) {
@@ -32,15 +38,16 @@ export class AuthController {
     return this.authService.signIn(loginUserDto);
   }
 
-  // @Get('private')
-  // @UseGuards(AuthGuard())
-  // testinRoute(@GetUser() user: User, @GetUser('email') email: string) {
-  //   return {
-  //     ok: true,
-  //     user,
-  //     email,
-  //   };
-  // }
+  @Get('private')
+  @RoleProtected(ValidRoles.superUser)
+  @UseGuards(AuthGuard(), UserRoleGuard)
+  testinRoute(@GetUser() user: User, @GetUser('email') email: string) {
+    return {
+      ok: true,
+      user,
+      email,
+    };
+  }
 
   @Get('check-status')
   @Auth()

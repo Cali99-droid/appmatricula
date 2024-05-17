@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { StatusAttendance } from '../enum/status-attendance.enum';
 import { Student } from 'src/student/entities/student.entity';
+import { Shift } from '../enum/shift.enum';
 
 @Entity()
 export class Attendance {
@@ -26,8 +27,8 @@ export class Attendance {
   @Column({ type: 'enum', enum: StatusAttendance })
   status: StatusAttendance;
 
-  @Column('varchar')
-  shift: string;
+  @Column({ type: 'enum', enum: Shift })
+  shift: Shift;
 
   @ManyToOne(() => Student, (student) => student.attendance, {
     eager: true,

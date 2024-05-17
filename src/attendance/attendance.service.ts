@@ -10,6 +10,7 @@ import { StatusAttendance } from './enum/status-attendance.enum';
 import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Day } from 'src/common/enum/day.enum';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
+import { Shift } from './enum/shift.enum';
 
 @Injectable()
 export class AttendanceService {
@@ -23,16 +24,21 @@ export class AttendanceService {
     private readonly scheduleRepository: Repository<Schedule>,
   ) {}
   async create(createAttendanceDto: CreateAttendanceDto) {
+    /**capturar fecha y hora actual */
     const currentTime = new Date();
     const currentDate = new Date();
 
-    let shift: 'Morning' | 'Afternoon';
+    /**declarar turno(Morning, Affternoon) y estado de asistencia (early, late) */
+    let shift: Shift;
     let status: StatusAttendance;
 
     try {
+      /**Verificar validez de matricula */
       const enrollment = await this.enrrollmentRepository.findOneByOrFail({
         code: createAttendanceDto.code,
       });
+      /**bimestres, buscar un bimestre y ver si la fecha de hoy esta o no dentro de ella */
+      console.log(enrollment.activityClassroom.phase.bimester);
       /**Validate existing */
       const queryBuilder =
         this.attendanceRepository.createQueryBuilder('attendance');
@@ -80,13 +86,13 @@ export class AttendanceService {
             );
           }
           if (currentTime.getHours() < 12) {
-            shift = 'Morning';
+            shift = Shift.M;
             status =
               currentTime <= cutoffTime
                 ? StatusAttendance.E
                 : StatusAttendance.L;
           } else {
-            shift = 'Afternoon';
+            shift = Shift.A;
             status =
               currentTime <= cutoffTime
                 ? StatusAttendance.E
@@ -155,11 +161,11 @@ export class AttendanceService {
         }
 
         if (currentTime.getHours() < 12) {
-          shift = 'Morning';
+          shift = Shift.M;
           status =
             currentTime <= cutoffTime ? StatusAttendance.E : StatusAttendance.L;
         } else {
-          shift = 'Afternoon';
+          shift = Shift.A;
           status =
             currentTime <= cutoffTime ? StatusAttendance.E : StatusAttendance.L;
         }
