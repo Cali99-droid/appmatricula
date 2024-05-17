@@ -15,6 +15,7 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { LoginUserDto } from './dto/login-user.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/user/user.service';
+import { AdminMenu } from './config/menu-config';
 
 @Injectable()
 export class AuthService {
@@ -48,6 +49,9 @@ export class AuthService {
     const user = await this.userRepository.findOne({
       where: { email },
       select: { id: true, email: true, password: true },
+      relations: {
+        permission: true,
+      },
     });
     if (!user)
       throw new UnauthorizedException('Credentials are not valid(email)');
@@ -57,15 +61,18 @@ export class AuthService {
     const tokens = await this.getJwtTokens({ email: user.email, sub: user.id });
     await this.updateRefreshToken(user.id, tokens.refreshToken);
     const { id, password, permission, person, ...result } = user;
-    console.log(id, password, person);
+
     const permissions = permission.map((item) => {
       return item.accessName;
     });
+
+    const menu = this.generateMenu(permissions);
     return {
       ...result,
       permissions,
       token: this.getJwtToken({ email: user.email, sub: user.id }),
       tokens,
+      menu,
     };
   }
 
@@ -113,7 +120,6 @@ export class AuthService {
   }
 
   async refreshTokens(userId: number, refreshToken: string) {
-    console.log(userId);
     const user = await this.userRepository.findOneBy({ id: userId });
 
     if (!user || !user.refreshToken)
@@ -124,5 +130,25 @@ export class AuthService {
     const tokens = await this.getJwtTokens({ email: user.email, sub: user.id });
     await this.updateRefreshToken(user.id, tokens.refreshToken);
     return tokens;
+  }
+
+  private generateMenu(userPermissions: string[]): any {
+    const filterMenu = (menu) => {
+      return menu
+        .filter((item) =>
+          item.permissions.some((permission) =>
+            userPermissions.includes(permission),
+          ),
+        )
+        .map((item) => ({
+          ...item,
+          subMenu: item.subMenu ? filterMenu(item.subMenu) : [],
+        }));
+    };
+
+    return {
+      mainMenu: filterMenu(AdminMenu.mainMenu),
+      settingsMenu: filterMenu(AdminMenu.settingsMenu),
+    };
   }
 }

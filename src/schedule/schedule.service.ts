@@ -93,7 +93,15 @@ export class ScheduleService {
         });
       const { campus, level, ...generalShift } = classroomData.schoolShift;
 
-      return { generalShift, individualShift: scheduleData };
+      const formatScheduleData = scheduleData.map((item) => {
+        const { activityClassroom, ...res } = item;
+
+        return res;
+      });
+      return {
+        generalShift,
+        individualShift: formatScheduleData,
+      };
     } catch (error) {
       throw new NotFoundException(error.message);
       // handleDBExceptions(error, this.logger);

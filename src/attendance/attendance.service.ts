@@ -11,6 +11,8 @@ import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Day } from 'src/common/enum/day.enum';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Shift } from './enum/shift.enum';
+import { Holiday } from 'src/holiday/entities/holiday.entity';
+import { Student } from 'src/student/entities/student.entity';
 
 @Injectable()
 export class AttendanceService {
@@ -22,6 +24,10 @@ export class AttendanceService {
     private readonly enrrollmentRepository: Repository<Enrollment>,
     @InjectRepository(Schedule)
     private readonly scheduleRepository: Repository<Schedule>,
+    @InjectRepository(Holiday)
+    private readonly holidayRepository: Repository<Holiday>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
   ) {}
   async create(createAttendanceDto: CreateAttendanceDto) {
     /**capturar fecha y hora actual */
@@ -37,8 +43,39 @@ export class AttendanceService {
       const enrollment = await this.enrrollmentRepository.findOneByOrFail({
         code: createAttendanceDto.code,
       });
-      /**bimestres, buscar un bimestre y ver si la fecha de hoy esta o no dentro de ella */
-      console.log(enrollment.activityClassroom.phase.bimester);
+      /**verificar dia feriado */
+      const yearId = enrollment.activityClassroom.phase.year.id;
+      const queryBuilderHoliday =
+        this.holidayRepository.createQueryBuilder('holiday');
+      const isHoliday = await queryBuilderHoliday
+        .where(`date=:dateNow and yearId =:yearId `, {
+          dateNow: this.convertISODateToYYYYMMDD(currentDate),
+          yearId,
+        })
+        .getOne();
+      if (isHoliday) {
+        throw new BadRequestException(
+          `You cannot mark attendance, this day was defined as a holiday ${currentDate}`,
+        );
+      }
+      /** verificar que se encuentre en un bimestre*/
+      const bimesters = enrollment.activityClassroom.phase.bimester;
+
+      let currentBimester;
+      for (const bimestre of bimesters) {
+        if (
+          currentDate >= new Date(bimestre.startDate) &&
+          currentDate <= new Date(bimestre.endDate)
+        ) {
+          currentBimester = bimestre;
+        }
+      }
+      if (!currentBimester) {
+        throw new BadRequestException(
+          `No active two-month period for the date ${currentDate}`,
+        );
+      }
+
       /**Validate existing */
       const queryBuilder =
         this.attendanceRepository.createQueryBuilder('attendance');
@@ -185,8 +222,13 @@ export class AttendanceService {
     }
   }
 
-  findAll() {
-    return `This action returns all attendance`;
+  async findAll() {
+    const attendance = await this.studentRepository.find({
+      relations: {
+        attendance: true,
+      },
+    });
+    return attendance;
   }
 
   findOne(id: number) {
