@@ -87,7 +87,7 @@ export class PdfService {
 
           let imageBuffer = await this.fetchImage(imageUrl);
           imageBuffer = await this.convertWebPToPNG(imageBuffer);
-          doc.image(imageBuffer, 49, 82, {
+          doc.image(imageBuffer, 49, 81, {
             width: 58,
             height: 73,
             align: 'center',
