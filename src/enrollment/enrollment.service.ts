@@ -68,6 +68,7 @@ export class EnrollmentService {
     const classroom = await this.activityClassroomRepository.findOneBy({
       id: activityClassroomId,
     });
+
     const capacity = classroom.classroom.capacity;
 
     if (persons.length > capacity) {
@@ -86,9 +87,17 @@ export class EnrollmentService {
         });
 
         if (existPerson) {
-          const student = await this.studentRepository.findOne({
+          let student;
+          student = await this.studentRepository.findOne({
             where: { person: { id: existPerson.id } },
           });
+
+          if (!student) {
+            student = await this.studentRepository.save({
+              person: existPerson,
+              studentCode: person.studentCode,
+            });
+          }
 
           const existEnrollment = await this.enrollmentRepository.findOne({
             where: {
@@ -114,7 +123,7 @@ export class EnrollmentService {
           dataNoExist.push(person);
         }
       }
-      console.log('data', dataNoExist);
+
       // Crear y guardar personas que no existen
       const personsCreated = await this.personRepository.save(
         this.personRepository.create(dataNoExist),
@@ -246,6 +255,23 @@ export class EnrollmentService {
       throw new NotFoundException(`Enrollment by id: '${id}' not found`);
     try {
       await this.enrollmentRepository.remove(enrollment);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+  async removeAllByActivityClassroom(activityClassroomId: number) {
+    const enrollment = await this.enrollmentRepository.find({
+      where: { activityClassroom: { id: activityClassroomId } },
+    });
+    if (enrollment.length <= 0)
+      throw new NotFoundException(`Enrollment by id: not found`);
+    try {
+      await this.enrollmentRepository.remove(enrollment);
+      return {
+        message: 'successful deletion',
+        error: '',
+        statusCode: 200,
+      };
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }

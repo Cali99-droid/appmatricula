@@ -6,9 +6,11 @@ import {
   Column,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Permission } from 'src/permissions/entities/permission.entity';
 
 @Entity()
 export class User {
@@ -44,6 +46,12 @@ export class User {
   })
   @JoinColumn({ name: 'personId' })
   person: Person;
+
+  @OneToMany(() => Permission, (permission) => permission.user, {
+    // cascade: true,
+    eager: true,
+  })
+  permission: Permission[];
 
   @BeforeInsert()
   checkFieldsBeforeInsert() {

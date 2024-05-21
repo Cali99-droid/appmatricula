@@ -90,4 +90,21 @@ export class EnrollmentController {
   remove(@Param('id') id: string) {
     return this.enrollmentService.remove(+id);
   }
+
+  @Delete('many/:activityClassroomId')
+  @ApiResponse({
+    status: 200,
+    description: 'successful deletion',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'some data is wrong',
+  })
+  removeAllByActivityClassroom(
+    @Param('activityClassroomId') activityClassroomId: number,
+  ) {
+    return this.enrollmentService.removeAllByActivityClassroom(
+      activityClassroomId,
+    );
+  }
 }

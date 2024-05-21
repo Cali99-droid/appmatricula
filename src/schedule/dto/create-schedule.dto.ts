@@ -6,8 +6,10 @@ import {
   Matches,
   IsNumber,
   IsOptional,
+  IsEnum,
 } from 'class-validator';
 import { IsEndTimeAfterStartTimeConstraint } from 'src/common/decorators/is-time-before.decorator';
+import { Day } from 'src/common/enum/day.enum';
 import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreateScheduleDto {
@@ -18,7 +20,7 @@ export class CreateScheduleDto {
     example: 'Tarde',
   })
   @IsString()
-  @IsOptional()
+  // @IsOptional()
   @MinLength(2)
   shift: string;
 
@@ -40,6 +42,17 @@ export class CreateScheduleDto {
   endTime: string;
 
   @ApiProperty({
+    description: 'day of week',
+    nullable: false,
+    example: '1',
+    enum: Day,
+  })
+  @IsEnum(Day, {
+    message: 'day  value must be some values of [0,1...] ',
+  })
+  day: Day;
+
+  @ApiProperty({
     example: 1,
     description: 'id of the activity_classroom',
     nullable: false,
@@ -47,13 +60,4 @@ export class CreateScheduleDto {
   @IsNumber()
   @ExistId({ tableName: 'activity_classroom' })
   activityClassroomId: number;
-
-  @ApiProperty({
-    example: 1,
-    description: 'id of the dayOfWeekId',
-    nullable: false,
-  })
-  @IsNumber()
-  @ExistId({ tableName: 'day_of_week' })
-  dayOfWeekId: number;
 }

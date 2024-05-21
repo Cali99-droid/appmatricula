@@ -1,8 +1,9 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param } from '@nestjs/common';
 import { RelationshipService } from './relationship.service';
 
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DataParentArrayDto } from './dto/data-parent-array.dto';
+import { Person } from 'src/person/entities/person.entity';
 @ApiTags('Relationship')
 @Controller('relationship')
 export class RelationshipController {
@@ -31,6 +32,7 @@ export class RelationshipController {
   @ApiResponse({
     status: 200,
     description: 'array created',
+    type: [Person],
   })
   @ApiResponse({
     status: 400,
@@ -38,5 +40,25 @@ export class RelationshipController {
   })
   findAll() {
     return this.relationshipService.findAll();
+  }
+  @Get('activity-classroom/:activityClassroomId')
+  @ApiOperation({
+    summary: 'get parents by ActivityClassroom',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'array whith data ',
+    type: [Person],
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'some data sending is bad ',
+  })
+  findByActivityClassroom(
+    @Param('activityClassroomId') activityClassroomId: number,
+  ) {
+    return this.relationshipService.findByActivityClassroom(
+      activityClassroomId,
+    );
   }
 }

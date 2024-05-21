@@ -4,24 +4,23 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Year } from 'src/years/entities/year.entity';
-import { Schedule } from 'src/schedule/entities/schedule.entity';
+import { Day } from 'src/common/enum/day.enum';
 
 @Entity()
 export class DayOfWeek {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
-
+  //**Day of week must be 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' */
   @ApiProperty({
-    example: 'LU',
-    description: 'Day of day of week',
+    // example: 'MO',
+    description: 'day of week',
   })
-  @Column('varchar', { unique: false })
-  name: string;
+  @Column({ type: 'enum', enum: Day })
+  name: Day;
 
   @ApiProperty({
     example: '1',
@@ -34,7 +33,4 @@ export class DayOfWeek {
   })
   @JoinColumn({ name: 'yearId' })
   year?: Year;
-
-  @OneToMany(() => Schedule, (schedule) => schedule.dayOfWeek)
-  schedule?: Schedule[];
 }

@@ -7,6 +7,7 @@ import { Relationship } from './entities/relationship.entity';
 import { DataParentArrayDto } from './dto/data-parent-array.dto';
 import { Student } from 'src/student/entities/student.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 
 @Injectable()
 export class RelationshipService {
@@ -18,6 +19,8 @@ export class RelationshipService {
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(Relationship)
     private readonly relationshipRepository: Repository<Relationship>,
+    @InjectRepository(Enrollment)
+    private readonly enrollmentRepository: Repository<Enrollment>,
   ) {}
   async createParents(dataParentArrayDto: DataParentArrayDto) {
     const { data } = dataParentArrayDto;
@@ -93,6 +96,23 @@ export class RelationshipService {
     const rela = await this.relationshipRepository.find();
     const dnis = rela.map((d) => d.dniAssignee);
 
+    const fathers = await this.personRepository.find({
+      where: {
+        docNumber: In(dnis),
+      },
+    });
+    return fathers;
+  }
+  /** es deplot */
+  async findByActivityClassroom(activityClassroomId: number) {
+    const enroll = await this.enrollmentRepository.find({
+      where: { activityClassroom: { id: activityClassroomId } },
+    });
+    const studentCodes = enroll.map((item) => item.student.studentCode);
+    const rel = await this.relationshipRepository.find({
+      where: { sonStudentCode: In(studentCodes) },
+    });
+    const dnis = rel.map((d) => d.dniAssignee);
     const fathers = await this.personRepository.find({
       where: {
         docNumber: In(dnis),

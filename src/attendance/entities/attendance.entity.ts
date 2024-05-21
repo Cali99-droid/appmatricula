@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { StatusAttendance } from '../enum/status-attendance.enum';
 import { Student } from 'src/student/entities/student.entity';
+import { Shift } from '../enum/shift.enum';
 
 @Entity()
 export class Attendance {
@@ -16,17 +17,32 @@ export class Attendance {
   id: number;
 
   @Column('datetime')
-  date: string;
+  arrivalTime: Date;
+
+  @Column('date', {
+    nullable: true,
+  })
+  arrivalDate: Date;
 
   @Column({ type: 'enum', enum: StatusAttendance })
   status: StatusAttendance;
 
-  @Column('varchar')
-  shift: string;
+  @Column({ type: 'enum', enum: Shift })
+  shift: Shift;
 
   @ManyToOne(() => Student, (student) => student.attendance, {
     eager: true,
   })
   @JoinColumn({ name: 'studentId' })
   student?: Student;
+
+  // @ManyToOne(
+  //   () => ActivityClassroom,
+  //   (activityClassroom) => activityClassroom.attendance,
+  //   {
+  //     eager: true,
+  //   },
+  // )
+  // @JoinColumn({ name: 'activityClassroomId' })
+  // activityClassroom?: ActivityClassroom;
 }

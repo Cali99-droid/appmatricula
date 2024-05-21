@@ -1,5 +1,6 @@
 export enum StatusAttendance {
-  puntual = 'P',
-  tarde = 'T',
-  ausente = 'A',
+  E = 'Early',
+  L = 'Late',
+  A = 'Absent',
 }
+//'Early' | 'Late' | 'Absent';

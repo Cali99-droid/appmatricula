@@ -20,17 +20,18 @@ export class UserRoleGuard implements CanActivate {
       META_ROLES,
       context.getHandler(),
     );
+
     if (!validRoles) return true;
     if (validRoles.length === 0) return true;
     const req = context.switchToHttp().getRequest();
     const user = req.user as User;
     if (!user) throw new NotFoundException('User not found');
 
-    // for (const role of user.roles) {
-    //   if (validRoles.includes(role.name)) {
-    //     return true;
-    //   }
-    // }
-    // throw new ForbiddenException(`User ${user.email} need a valid role`);
+    for (const perm of user.permission) {
+      if (validRoles.includes(perm.accessName)) {
+        return true;
+      }
+    }
+    throw new ForbiddenException(`User ${user.email} need a valid role`);
   }
 }

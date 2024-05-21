@@ -40,9 +40,7 @@ export class Bimester {
   })
   status: boolean;
 
-  @ManyToOne(() => Phase, (phase) => phase.bimester, {
-    eager: true,
-  })
+  @ManyToOne(() => Phase, (phase) => phase.bimester)
   @JoinColumn({ name: 'phaseId' })
   phase?: Phase;
 }

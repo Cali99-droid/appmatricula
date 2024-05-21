@@ -6,20 +6,12 @@ import {
   Patch,
   Param,
   Delete,
-  Query,
 } from '@nestjs/common';
 import { ScheduleService } from './schedule.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
-import {
-  ApiOkResponse,
-  ApiParam,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Schedule } from './entities/schedule.entity';
-import { SearchSheduleDto } from './dto/search-schedule.dto';
 
 @ApiTags('Schedule')
 @Controller('schedule')
@@ -40,32 +32,14 @@ export class ScheduleController {
     return this.scheduleService.create(createScheduleDto);
   }
 
-  @Get()
-  @ApiQuery({
-    name: 'yearId',
-    required: true,
-    description: 'Id of the year',
-    type: Number,
-  })
-  @ApiQuery({
-    name: 'campusId',
-    required: false,
-    description: 'Id of the campus',
-    type: Number,
-  })
-  @ApiQuery({
-    name: 'levelId',
-    required: false,
-    description: 'Id of the level',
-    type: Number,
-  })
+  @Get('by-classroom/:activityClassroomId')
   @ApiOkResponse({
     status: 200,
-    description: 'Array of Schedule',
-    type: [Schedule],
+    description: 'Schedule of classroom',
+    type: Schedule,
   })
-  findAll(@Query() searchSheduleDtoDto: SearchSheduleDto) {
-    return this.scheduleService.findAll(searchSheduleDtoDto);
+  findAll(@Param('activityClassroomId') activityClassroomId: string) {
+    return this.scheduleService.findByActivityClassroom(+activityClassroomId);
   }
 
   @Get(':id')
