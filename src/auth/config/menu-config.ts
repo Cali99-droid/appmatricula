@@ -57,13 +57,6 @@ export const AdminMenu = {
         },
         {
           id: 3,
-          label: 'Horario',
-          icon: 'student',
-          link: '/admin/student/dayofweek',
-          permissions: ['admin'],
-        },
-        {
-          id: 4,
           label: 'Hr. Personalizado',
           icon: 'student',
           link: '/admin/student/daysadditional',
@@ -142,6 +135,13 @@ export const AdminMenu = {
           label: 'Aulas',
           icon: 'module',
           link: '/admin/configuration/activity-classroom',
+          permissions: ['admin'],
+        },
+        {
+          id: 10,
+          label: 'Dias Laborables',
+          icon: 'student',
+          link: '/admin/student/dayofweek',
           permissions: ['admin'],
         },
       ],

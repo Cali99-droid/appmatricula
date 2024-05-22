@@ -213,9 +213,6 @@ export class PdfService {
           height: 73,
           align: 'center',
         }); // Ajusta según necesidades de diseño
-        // doc.image(imageBuffer, 49, 81, {
-        //   align: 'center',
-        // }); // Ajusta según necesidades de diseño
       } catch (error) {
         reject(error);
       }
