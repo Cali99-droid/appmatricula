@@ -61,7 +61,8 @@ export class BimesterService {
     await this.validateDateWithinPhaseRange(rest);
     await this.validateDateNotWithinOtherBimesterUpdate(rest, id);
     try {
-      const phase = this.bimesterRepository.create({
+      const phase = await this.bimesterRepository.preload({
+        id: id,
         ...rest,
       });
       phase.phase = { id: rest.phaseId } as Phase;
