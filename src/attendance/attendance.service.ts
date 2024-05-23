@@ -94,7 +94,6 @@ export class AttendanceService {
         .getOne();
 
       if (att) {
-        console.log('ya tiene asistencia');
         const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
 
         const indSchedule = await this.scheduleRepository.findOneBy({
