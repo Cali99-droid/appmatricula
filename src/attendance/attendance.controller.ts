@@ -11,6 +11,7 @@ import { AttendanceService } from './attendance.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Shift } from './enum/shift.enum';
 @ApiTags('Attendance')
 @Controller('attendance')
 export class AttendanceController {
@@ -33,6 +34,10 @@ export class AttendanceController {
   @Get()
   findAll() {
     return this.attendanceService.findAll();
+  }
+  @Get('cron')
+  testCron() {
+    return this.attendanceService.markAbsentStudents(Shift.A);
   }
 
   @Get(':id')

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 // import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -13,6 +13,9 @@ import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Shift } from './enum/shift.enum';
 import { Holiday } from 'src/holiday/entities/holiday.entity';
 import { Student } from 'src/student/entities/student.entity';
+
+import { Phase } from 'src/phase/entities/phase.entity';
+import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 
 @Injectable()
 export class AttendanceService {
@@ -28,6 +31,10 @@ export class AttendanceService {
     private readonly holidayRepository: Repository<Holiday>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(Phase)
+    private readonly phaseRepository: Repository<Phase>,
+    @InjectRepository(ActivityClassroom)
+    private readonly activityClassroomRepository: Repository<ActivityClassroom>,
   ) {}
   async create(createAttendanceDto: CreateAttendanceDto) {
     /**capturar fecha y hora actual */
@@ -58,7 +65,7 @@ export class AttendanceService {
           `You cannot mark attendance, this day was defined as a holiday ${currentDate}`,
         );
       }
-      /** verificar que se encuentre en un bimestre*/
+      /** verificar que la fecha se encuentre en un bimestre*/
       const bimesters = enrollment.activityClassroom.phase.bimester;
 
       let currentBimester;
@@ -106,11 +113,11 @@ export class AttendanceService {
             .map(Number);
           initAttendanceTime.setHours(
             startHour - 1,
-            startMinute,
+            startMinute - 20,
             startSecond,
             0,
           );
-          finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
+          finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
           if (
             !(
@@ -118,6 +125,7 @@ export class AttendanceService {
               currentTime <= finishAttendanceTime
             )
           ) {
+            console.log(endHour);
             throw new BadRequestException(
               `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
             );
@@ -274,5 +282,110 @@ export class AttendanceService {
     };
 
     return indexToDay[dayIndex];
+  }
+  /**FOR CRON JOBS, coloca a todos como ausentes en la madrugada
+   *
+   */
+  async markAbsentStudents(shift: Shift): Promise<void> {
+    this.logger.log(`Running cron jobs for the shift: ${shift}`);
+    const currentDate = new Date();
+    const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
+    /**obtener fase */
+    const qbphase = this.phaseRepository.createQueryBuilder('phase');
+    const phase = await qbphase
+      .where('startDate <=:currentDate', {
+        currentDate: this.convertISODateToYYYYMMDD(currentDate),
+      })
+      .andWhere('endDate>=:currentDate', {
+        currentDate: this.convertISODateToYYYYMMDD(currentDate),
+      })
+      .getOne();
+    if (!phase) {
+      this.logger.warn(
+        `There is no active phase for this date: ${currentDate}, the cron jobs were not completed`,
+      );
+      return;
+    }
+
+    // Encuentra todas las asistencias del día actual y turno especificado
+    const queryBuilder =
+      this.attendanceRepository.createQueryBuilder('attendance');
+    const attendances = await queryBuilder
+      .leftJoinAndSelect('attendance.student', 'student')
+      .where(`arrivalDate=:dateNow and shift =:shift`, {
+        dateNow: this.convertISODateToYYYYMMDD(currentDate),
+        shift,
+      })
+      .getMany();
+
+    //**TODO agregar que tengan una matricula valida para considerar como ausente (OBS esta con status)*/
+
+    const studentCodes = attendances.map((attendance) => attendance.student.id);
+    let studentsToAbsent: Student[] = [];
+
+    if (studentCodes.length > 0) {
+      studentsToAbsent = await this.studentRepository
+        .createQueryBuilder('student')
+
+        .where('id NOT IN (:...studentCodes)', {
+          studentCodes,
+        })
+        .andWhere('student.status = :status', { status: true })
+        .getMany();
+    } else {
+      studentsToAbsent = await this.studentRepository
+        .createQueryBuilder('student')
+        .where('student.status = :status', { status: true })
+        .getMany();
+    }
+
+    if (shift === Shift.A) {
+      const indSchedule = await this.scheduleRepository.findOneBy({
+        day: currentDay,
+        activityClassroom: { phase: phase },
+      });
+
+      if (!indSchedule) {
+        this.logger.verbose(
+          `There are no afternoon shifts for today ${currentDate}, the cron jobs were not completed`,
+        );
+        return;
+      }
+
+      const activityClassrooms = await this.activityClassroomRepository.findBy({
+        phase: {
+          id: phase.id,
+        },
+        schedule: {
+          day: currentDay,
+        },
+      });
+      const classroomsIds = activityClassrooms.map((item) => item.id);
+      const enrolls = await this.enrrollmentRepository.find({
+        where: {
+          activityClassroom: { id: In(classroomsIds) },
+        },
+      });
+      const idsForAfternoon = enrolls.map((item) => item.student.id);
+
+      studentsToAbsent = studentsToAbsent.filter((student) =>
+        idsForAfternoon.includes(student.id),
+      );
+    }
+
+    this.logger.log(
+      `Number of students absent for today (${currentDate}) in the shift ${shift}: ${studentsToAbsent.length}`,
+    );
+    for (const student of studentsToAbsent) {
+      await this.attendanceRepository.save({
+        arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
+        arrivalTime: currentDate,
+        shift: shift,
+        status: StatusAttendance.A,
+        student: { id: student.id },
+      });
+    }
+
+    this.logger.log(`Cron jobs completed succesfully`);
   }
 }
