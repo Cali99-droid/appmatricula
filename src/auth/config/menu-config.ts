@@ -62,6 +62,13 @@ export const AdminMenu = {
           link: '/admin/student/daysadditional',
           permissions: ['admin'],
         },
+        {
+          id: 4,
+          label: 'Control Asistencia',
+          icon: 'student',
+          link: '/admin/student/attendance',
+          permissions: ['admin'],
+        },
       ],
     },
   ],
@@ -140,7 +147,7 @@ export const AdminMenu = {
         {
           id: 10,
           label: 'Dias Laborables',
-          icon: 'student',
+          icon: 'module',
           link: '/admin/student/dayofweek',
           permissions: ['admin'],
         },
