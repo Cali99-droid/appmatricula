@@ -9,6 +9,7 @@ import {
 import { StatusAttendance } from '../enum/status-attendance.enum';
 import { Student } from 'src/student/entities/student.entity';
 import { Shift } from '../enum/shift.enum';
+import { ConditionAttendance } from '../enum/condition.enum';
 
 @Entity()
 export class Attendance {
@@ -26,6 +27,9 @@ export class Attendance {
 
   @Column({ type: 'enum', enum: StatusAttendance })
   status: StatusAttendance;
+
+  @Column({ type: 'enum', enum: ConditionAttendance })
+  condition: ConditionAttendance;
 
   @Column({ type: 'enum', enum: Shift })
   shift: Shift;

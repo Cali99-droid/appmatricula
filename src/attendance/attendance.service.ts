@@ -16,6 +16,8 @@ import { Student } from 'src/student/entities/student.entity';
 
 import { Phase } from 'src/phase/entities/phase.entity';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import * as moment from 'moment-timezone';
+import { ConditionAttendance } from './enum/condition.enum';
 
 @Injectable()
 export class AttendanceService {
@@ -44,6 +46,7 @@ export class AttendanceService {
     /**declarar turno(Morning, Affternoon) y estado de asistencia (early, late) */
     let shift: Shift;
     let status: StatusAttendance;
+    let condition: ConditionAttendance;
 
     try {
       /**Verificar validez de matricula */
@@ -79,7 +82,7 @@ export class AttendanceService {
       }
       if (!currentBimester) {
         throw new BadRequestException(
-          `No active two-month period for the date ${currentDate}`,
+          `No active two-month period (bimester) for the date ${currentDate}`,
         );
       }
 
@@ -118,29 +121,38 @@ export class AttendanceService {
           );
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
-          if (
-            !(
-              currentTime >= initAttendanceTime &&
-              currentTime <= finishAttendanceTime
-            )
-          ) {
-            console.log(endHour);
-            throw new BadRequestException(
-              `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
-            );
-          }
+          // if (
+          //   !(
+          //     currentTime >= initAttendanceTime &&
+          //     currentTime <= finishAttendanceTime
+          //   )
+          // ) {
+          //   console.log(endHour);
+          //   throw new BadRequestException(
+          //     `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
+          //   );
+          // }
           if (currentTime.getHours() < 12) {
             shift = Shift.M;
             status =
               currentTime <= cutoffTime
                 ? StatusAttendance.E
                 : StatusAttendance.L;
+            //**Mantener esto*/
+            condition =
+              currentTime <= cutoffTime
+                ? ConditionAttendance.Early
+                : ConditionAttendance.Late;
           } else {
             shift = Shift.A;
             status =
               currentTime <= cutoffTime
                 ? StatusAttendance.E
                 : StatusAttendance.L;
+            condition =
+              currentTime <= cutoffTime
+                ? ConditionAttendance.Early
+                : ConditionAttendance.Late;
           }
         } else {
           throw new BadRequestException(
@@ -193,31 +205,40 @@ export class AttendanceService {
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
-        if (
-          !(
-            currentTime >= initAttendanceTime &&
-            currentTime <= finishAttendanceTime
-          )
-        ) {
-          throw new BadRequestException(
-            `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
-          );
-        }
+        // if (
+        //   !(
+        //     currentTime >= initAttendanceTime &&
+        //     currentTime <= finishAttendanceTime
+        //   )
+        // ) {
+        //   throw new BadRequestException(
+        //     `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
+        //   );
+        // }
 
         if (currentTime.getHours() < 12) {
           shift = Shift.M;
           status =
             currentTime <= cutoffTime ? StatusAttendance.E : StatusAttendance.L;
+          condition =
+            currentTime <= cutoffTime
+              ? ConditionAttendance.Early
+              : ConditionAttendance.Late;
         } else {
           shift = Shift.A;
           status =
             currentTime <= cutoffTime ? StatusAttendance.E : StatusAttendance.L;
+          condition =
+            currentTime <= cutoffTime
+              ? ConditionAttendance.Early
+              : ConditionAttendance.Late;
         }
       }
 
       const attendance = this.attendanceRepository.create({
         shift: shift,
         status: status,
+        condition: condition,
         arrivalTime: currentTime,
         student: { id: enrollment.student.id },
         arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
@@ -236,6 +257,35 @@ export class AttendanceService {
       },
     });
     return attendance;
+  }
+  async findLastFiveRecords() {
+    const attendances = await this.attendanceRepository.find({
+      order: {
+        arrivalTime: 'DESC',
+      },
+      take: 5,
+    });
+
+    const timeZone = 'America/Lima';
+    const utcAttendance = attendances.map((attendance) => {
+      const utcDate = moment.utc(attendance.arrivalTime); // Aseguramos que la fecha sea UTC
+      const zonedDate = utcDate.tz(timeZone).format('YYYY-MM-DD HH:mm:ss');
+      return {
+        ...attendance,
+        arrivalTime: zonedDate,
+      };
+    });
+
+    const formatAttendances = utcAttendance.map((item) => {
+      const { student, ...attendance } = item;
+      const data = student.person;
+      return {
+        ...attendance,
+        student: data,
+      };
+    });
+
+    return formatAttendances;
   }
 
   findOne(id: number) {
@@ -381,6 +431,7 @@ export class AttendanceService {
         arrivalTime: currentDate,
         shift: shift,
         status: StatusAttendance.A,
+        condition: ConditionAttendance.Absent,
         student: { id: student.id },
       });
     }

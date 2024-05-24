@@ -10,8 +10,13 @@ import {
 import { AttendanceService } from './attendance.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
-import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Shift } from './enum/shift.enum';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+
 @ApiTags('Attendance')
 @Controller('attendance')
 export class AttendanceController {
@@ -31,14 +36,30 @@ export class AttendanceController {
     return this.attendanceService.create(createAttendanceDto);
   }
 
+  @Get('/last-records')
+  @ApiOperation({
+    summary: 'Get last five records of attendances',
+  })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({
+    status: 200,
+    description: 'last five records of attendances',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'internal server error',
+  })
+  findLastFiveRecords() {
+    return this.attendanceService.findLastFiveRecords();
+  }
   @Get()
   findAll() {
     return this.attendanceService.findAll();
   }
-  @Get('cron')
-  testCron() {
-    return this.attendanceService.markAbsentStudents(Shift.A);
-  }
+  // @Get('cron')
+  // testCron() {
+  //   return this.attendanceService.markAbsentStudents(Shift.A);
+  // }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
