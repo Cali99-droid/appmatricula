@@ -17,6 +17,7 @@ import { Status } from './enum/status.enum';
 import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { SearchEnrolledDto } from './dto/searchEnrollmet-dto';
+import { TypePhase } from 'src/phase/enum/type-phase.enum';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -113,7 +114,7 @@ export class EnrollmentService {
               student: { id: student.id },
               activityClassroom: { id: activityClassroomId },
               status: Status.EN_PROCESO,
-              code: `${classroom.phase.year.name}-P${classroom.phase.id}S${student.id}`,
+              code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
             });
             const saveEnrollment =
               await this.enrollmentRepository.save(enrollment);
@@ -275,5 +276,25 @@ export class EnrollmentService {
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
+  }
+  /**script para crear un codigo para todos las matriculas */
+
+  async scripting() {
+    const enrollments = await this.enrollmentRepository.find({
+      relations: {
+        activityClassroom: true,
+      },
+    });
+    for (const enroll of enrollments) {
+      const codeGe = `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${enroll.student.id}`;
+      const uptEnrroll: Enrollment = {
+        id: enroll.id,
+        code: codeGe,
+        status: Status.DEFINITIVA,
+        activityClassroom: enroll.activityClassroom,
+      };
+      await this.enrollmentRepository.save(uptEnrroll);
+    }
+    return enrollments;
   }
 }

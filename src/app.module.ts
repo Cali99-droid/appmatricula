@@ -34,6 +34,7 @@ import { AppMiddleware } from './app.middleware';
 import { AuthService } from './auth/auth.service';
 import { FamilyModule } from './family/family.module';
 import { RelationshipModule } from './relationship/relationship.module';
+import { PermissionsModule } from './permissions/permissions.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { RelationshipModule } from './relationship/relationship.module';
     DocsModule,
     FamilyModule,
     RelationshipModule,
+    PermissionsModule,
   ],
   providers: [ExistIdConstraint, AuthService],
 })

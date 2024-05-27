@@ -64,6 +64,8 @@ export class Phase {
   )
   activityClassroom: ActivityClassroom[];
 
-  @OneToMany(() => Bimester, (bimester) => bimester.phase)
+  @OneToMany(() => Bimester, (bimester) => bimester.phase, {
+    eager: true,
+  })
   bimester: Bimester[];
 }

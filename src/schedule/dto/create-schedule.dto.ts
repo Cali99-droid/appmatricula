@@ -20,7 +20,7 @@ export class CreateScheduleDto {
     example: 'Tarde',
   })
   @IsString()
-  @IsOptional()
+  // @IsOptional()
   @MinLength(2)
   shift: string;
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -7,6 +7,7 @@ import * as QRCode from 'qrcode';
 import * as sharp from 'sharp';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { TypePhase } from 'src/phase/enum/type-phase.enum';
 
 import { Repository } from 'typeorm';
 
@@ -32,6 +33,9 @@ export class PdfService {
             },
             grade: {
               level: true,
+            },
+            phase: {
+              year: true,
             },
           },
         },
@@ -87,7 +91,7 @@ export class PdfService {
 
           let imageBuffer = await this.fetchImage(imageUrl);
           imageBuffer = await this.convertWebPToPNG(imageBuffer);
-          doc.image(imageBuffer, 49, 82, {
+          doc.image(imageBuffer, 49, 81, {
             width: 58,
             height: 73,
             align: 'center',
@@ -159,10 +163,22 @@ export class PdfService {
 
         // doc.fontSize(10).text(`Grado: ${student.grado}`, 80, 60);
         // //http://localhost:3000/api/v1/docs/download-carnets/3
-        // // Generar código QR
+        //  Generar código QR
+        doc
+          .fontSize(5)
+          .fillColor('white')
+          .text(
+            `${enroll.activityClassroom.phase.year.name} - ${enroll.activityClassroom.phase.type}`,
+            6,
+            180,
+            {
+              width: 153,
+              height: 241,
+            },
+          );
         const code = enroll.code
           ? enroll.code
-          : `${enroll.activityClassroom.phase.year.name}-P${enroll.activityClassroom.phase.id}S${student.id}`;
+          : `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`;
         const qr = await QRCode.toDataURL(code);
         doc.image(qr, 6, 186, { width: 50, height: 50 });
         doc
@@ -179,7 +195,9 @@ export class PdfService {
   }
   async generatePdfWithQRCodesStudent(id: number): Promise<Buffer> {
     const enroll = await this.enrollmentRepositoy.findOneBy({ id });
-
+    if (!enroll) {
+      throw new NotFoundException('Not exits Enrrol');
+    }
     const { student } = enroll;
     //TODO  OPTIMIZAR todo esto*/
 
@@ -213,9 +231,6 @@ export class PdfService {
           height: 73,
           align: 'center',
         }); // Ajusta según necesidades de diseño
-        // doc.image(imageBuffer, 49, 81, {
-        //   align: 'center',
-        // }); // Ajusta según necesidades de diseño
       } catch (error) {
         reject(error);
       }
@@ -282,10 +297,23 @@ export class PdfService {
         );
       // doc.fontSize(10).text(`Grado: ${student.grado}`, 80, 60);
       //http://localhost:3000/api/v1/docs/download-carnets/3
-      // // Generar código QR
+      //  Generar código QR
+      doc
+        .fontSize(5)
+        .fillColor('white')
+        .text(
+          `${enroll.activityClassroom.phase.year.name} - ${enroll.activityClassroom.phase.type}`,
+          6,
+          180,
+          {
+            width: 153,
+            height: 241,
+          },
+        );
       const code = enroll.code
         ? enroll.code
-        : `${enroll.activityClassroom.phase.year.name}-P${enroll.activityClassroom.phase.id}S${student.id}`;
+        : `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`;
+      //${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}
       const qr = await QRCode.toDataURL(code);
       doc.image(qr, 6, 186, { width: 50, height: 50 });
       doc
