@@ -50,7 +50,7 @@ export const AdminMenu = {
         },
         {
           id: 2,
-          label: 'Estudiantes',
+          label: 'Carnets',
           icon: 'student',
           link: '/admin/student/students',
           permissions: ['admin', 'cardGenerator'],

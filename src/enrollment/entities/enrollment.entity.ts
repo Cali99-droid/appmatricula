@@ -17,6 +17,7 @@ export class Enrollment {
 
   @Column('varchar', {
     unique: true,
+    nullable: true,
   })
   code: string;
 

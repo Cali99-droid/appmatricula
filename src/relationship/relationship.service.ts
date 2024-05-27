@@ -129,9 +129,15 @@ export class RelationshipService {
       return data;
     });
 
-    return this.getGroupedData(formatData);
+    return this.getSortedData(formatData);
   }
-
+  getSortedData(data) {
+    return data.sort((a, b) => {
+      if (a.sonCode < b.sonCode) return -1;
+      if (a.sonCode > b.sonCode) return 1;
+      return 0;
+    });
+  }
   getGroupedData(data) {
     const groupedData = data.reduce((acc, current) => {
       const { sonCode } = current;

@@ -18,6 +18,7 @@ import { Phase } from 'src/phase/entities/phase.entity';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import * as moment from 'moment-timezone';
 import { ConditionAttendance } from './enum/condition.enum';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AttendanceService {
@@ -37,6 +38,7 @@ export class AttendanceService {
     private readonly phaseRepository: Repository<Phase>,
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
+    private readonly configService: ConfigService,
   ) {}
   async create(createAttendanceDto: CreateAttendanceDto) {
     /**capturar fecha y hora actual */
@@ -202,7 +204,6 @@ export class AttendanceService {
           .split(':')
           .map(Number);
 
-        cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
         // if (
@@ -275,13 +276,23 @@ export class AttendanceService {
         arrivalTime: zonedDate,
       };
     });
+    const urlS3 = this.configService.getOrThrow('FULL_URL_S3');
+
+    const defaultAvatar = this.configService.getOrThrow('AVATAR_NAME_DEFAULT');
 
     const formatAttendances = utcAttendance.map((item) => {
       const { student, ...attendance } = item;
+
       const data = student.person;
+
       return {
         ...attendance,
-        student: data,
+        student: {
+          ...data,
+          photo: student.photo
+            ? `${urlS3}${student.photo}`
+            : `${urlS3}${defaultAvatar}`,
+        },
       };
     });
 

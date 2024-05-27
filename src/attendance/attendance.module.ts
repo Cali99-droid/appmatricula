@@ -11,6 +11,7 @@ import { AttendanceScheduler } from './schedule/AttendanceScheduler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { Phase } from 'src/phase/entities/phase.entity';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   controllers: [AttendanceController],
@@ -25,6 +26,7 @@ import { ActivityClassroom } from 'src/activity_classroom/entities/activity_clas
       Phase,
       ActivityClassroom,
     ]),
+    ConfigModule,
     ScheduleModule.forRoot(),
   ],
 })
