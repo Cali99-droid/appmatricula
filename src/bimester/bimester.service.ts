@@ -22,6 +22,16 @@ export class BimesterService {
     private readonly phaseRepository: Repository<Phase>,
   ) {}
   async create(createBimesterDto: CreateBimesterDto) {
+    const bimesters = await this.bimesterRepository.find({
+      where: {
+        phase: { id: createBimesterDto.phaseId },
+      },
+    });
+    if (bimesters.length >= 3) {
+      throw new NotFoundException(
+        `Has already exceeded the number of semesters created in this phase`,
+      );
+    }
     await this.validateBimester(createBimesterDto);
     try {
       const phase = this.bimesterRepository.create({
@@ -41,6 +51,9 @@ export class BimesterService {
         phase: {
           year: { id: !isNaN(+yearId) ? +yearId : undefined },
         },
+      },
+      order: {
+        name: 'ASC',
       },
     });
 

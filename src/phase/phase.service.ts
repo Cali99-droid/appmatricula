@@ -53,6 +53,7 @@ export class PhaseService {
       },
       order: {
         type: 'ASC',
+        bimester: { name: 'ASC' },
       },
     });
     return phases;
