@@ -216,7 +216,7 @@ export class AttendanceService {
         //     `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
         //   );
         // }
-
+        cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
           shift = Shift.M;
           status =
