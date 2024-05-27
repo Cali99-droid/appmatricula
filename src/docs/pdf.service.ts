@@ -68,6 +68,7 @@ export class PdfService {
       photo: a.student.photo
         ? `${urlPhoto}/${a.student.photo}`
         : `${urlPhoto}/${defaultAvatar}`,
+      codeEnroll: a.code,
     }));
     return new Promise(async (resolve, reject) => {
       const doc = new PDFDocument({ size: [153, 241] }); // Tamaño en puntos para 85.60 × 53.98 mm
@@ -176,9 +177,10 @@ export class PdfService {
               height: 241,
             },
           );
-        const code = enroll.code
-          ? enroll.code
+        const code = student.codeEnroll
+          ? student.codeEnroll
           : `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`;
+
         const qr = await QRCode.toDataURL(code);
         doc.image(qr, 6, 186, { width: 50, height: 50 });
         doc
@@ -310,6 +312,7 @@ export class PdfService {
             height: 241,
           },
         );
+
       const code = enroll.code
         ? enroll.code
         : `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`;
