@@ -13,6 +13,7 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { SchoolShift } from '../school_shifts/entities/school_shift.entity';
+import { DayOfWeek } from 'src/day_of_week/entities/day_of_week.entity';
 
 @Injectable()
 export class ScheduleService {
@@ -23,6 +24,8 @@ export class ScheduleService {
     // private readonly schoolShiftRepository: Repository<SchoolShift>,
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
+    @InjectRepository(DayOfWeek)
+    private readonly daysRepository: Repository<DayOfWeek>,
   ) {}
   async create(createScheduleDto: CreateScheduleDto) {
     const exists = await this.scheduleRepository.findOne({
@@ -98,9 +101,19 @@ export class ScheduleService {
 
         return res;
       });
+
+      const daysActive = await this.daysRepository.findBy({
+        year: { id: classroomData.phase.year.id },
+        status: true,
+      });
+
       return {
         generalShift,
         individualShift: formatScheduleData,
+        daysActive: daysActive.map((item) => {
+          const { name } = item;
+          return +name;
+        }),
       };
     } catch (error) {
       throw new NotFoundException(error.message);

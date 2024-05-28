@@ -107,4 +107,9 @@ export class EnrollmentController {
       activityClassroomId,
     );
   }
+
+  @Get('get/aa')
+  getEnroll() {
+    return this.enrollmentService.scripting();
+  }
 }

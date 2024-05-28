@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 // import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -13,6 +13,12 @@ import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Shift } from './enum/shift.enum';
 import { Holiday } from 'src/holiday/entities/holiday.entity';
 import { Student } from 'src/student/entities/student.entity';
+
+import { Phase } from 'src/phase/entities/phase.entity';
+import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import * as moment from 'moment-timezone';
+import { ConditionAttendance } from './enum/condition.enum';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AttendanceService {
@@ -28,6 +34,11 @@ export class AttendanceService {
     private readonly holidayRepository: Repository<Holiday>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(Phase)
+    private readonly phaseRepository: Repository<Phase>,
+    @InjectRepository(ActivityClassroom)
+    private readonly activityClassroomRepository: Repository<ActivityClassroom>,
+    private readonly configService: ConfigService,
   ) {}
   async create(createAttendanceDto: CreateAttendanceDto) {
     /**capturar fecha y hora actual */
@@ -37,6 +48,7 @@ export class AttendanceService {
     /**declarar turno(Morning, Affternoon) y estado de asistencia (early, late) */
     let shift: Shift;
     let status: StatusAttendance;
+    let condition: ConditionAttendance;
 
     try {
       /**Verificar validez de matricula */
@@ -58,7 +70,7 @@ export class AttendanceService {
           `You cannot mark attendance, this day was defined as a holiday ${currentDate}`,
         );
       }
-      /** verificar que se encuentre en un bimestre*/
+      /** verificar que la fecha se encuentre en un bimestre*/
       const bimesters = enrollment.activityClassroom.phase.bimester;
 
       let currentBimester;
@@ -72,7 +84,7 @@ export class AttendanceService {
       }
       if (!currentBimester) {
         throw new BadRequestException(
-          `No active two-month period for the date ${currentDate}`,
+          `No active two-month period (bimester) for the date ${currentDate}`,
         );
       }
 
@@ -87,7 +99,6 @@ export class AttendanceService {
         .getOne();
 
       if (att) {
-        console.log('ya tiene asistencia');
         const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
 
         const indSchedule = await this.scheduleRepository.findOneBy({
@@ -106,34 +117,44 @@ export class AttendanceService {
             .map(Number);
           initAttendanceTime.setHours(
             startHour - 1,
-            startMinute,
+            startMinute - 20,
             startSecond,
             0,
           );
-          finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
+          finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
-          if (
-            !(
-              currentTime >= initAttendanceTime &&
-              currentTime <= finishAttendanceTime
-            )
-          ) {
-            throw new BadRequestException(
-              `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
-            );
-          }
+          // if (
+          //   !(
+          //     currentTime >= initAttendanceTime &&
+          //     currentTime <= finishAttendanceTime
+          //   )
+          // ) {
+          //   console.log(endHour);
+          //   throw new BadRequestException(
+          //     `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
+          //   );
+          // }
           if (currentTime.getHours() < 12) {
             shift = Shift.M;
             status =
               currentTime <= cutoffTime
                 ? StatusAttendance.E
                 : StatusAttendance.L;
+            //**Mantener esto*/
+            condition =
+              currentTime <= cutoffTime
+                ? ConditionAttendance.Early
+                : ConditionAttendance.Late;
           } else {
             shift = Shift.A;
             status =
               currentTime <= cutoffTime
                 ? StatusAttendance.E
                 : StatusAttendance.L;
+            condition =
+              currentTime <= cutoffTime
+                ? ConditionAttendance.Early
+                : ConditionAttendance.Late;
           }
         } else {
           throw new BadRequestException(
@@ -183,34 +204,42 @@ export class AttendanceService {
           .split(':')
           .map(Number);
 
-        cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
-        if (
-          !(
-            currentTime >= initAttendanceTime &&
-            currentTime <= finishAttendanceTime
-          )
-        ) {
-          throw new BadRequestException(
-            `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
-          );
-        }
-
+        // if (
+        //   !(
+        //     currentTime >= initAttendanceTime &&
+        //     currentTime <= finishAttendanceTime
+        //   )
+        // ) {
+        //   throw new BadRequestException(
+        //     `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
+        //   );
+        // }
+        cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
           shift = Shift.M;
           status =
             currentTime <= cutoffTime ? StatusAttendance.E : StatusAttendance.L;
+          condition =
+            currentTime <= cutoffTime
+              ? ConditionAttendance.Early
+              : ConditionAttendance.Late;
         } else {
           shift = Shift.A;
           status =
             currentTime <= cutoffTime ? StatusAttendance.E : StatusAttendance.L;
+          condition =
+            currentTime <= cutoffTime
+              ? ConditionAttendance.Early
+              : ConditionAttendance.Late;
         }
       }
 
       const attendance = this.attendanceRepository.create({
         shift: shift,
         status: status,
+        condition: condition,
         arrivalTime: currentTime,
         student: { id: enrollment.student.id },
         arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
@@ -229,6 +258,45 @@ export class AttendanceService {
       },
     });
     return attendance;
+  }
+  async findLastFiveRecords() {
+    const attendances = await this.attendanceRepository.find({
+      order: {
+        arrivalTime: 'DESC',
+      },
+      take: 5,
+    });
+
+    const timeZone = 'America/Lima';
+    const utcAttendance = attendances.map((attendance) => {
+      const utcDate = moment.utc(attendance.arrivalTime); // Aseguramos que la fecha sea UTC
+      const zonedDate = utcDate.tz(timeZone).format('YYYY-MM-DD HH:mm:ss');
+      return {
+        ...attendance,
+        arrivalTime: zonedDate,
+      };
+    });
+    const urlS3 = this.configService.getOrThrow('FULL_URL_S3');
+
+    const defaultAvatar = this.configService.getOrThrow('AVATAR_NAME_DEFAULT');
+
+    const formatAttendances = utcAttendance.map((item) => {
+      const { student, ...attendance } = item;
+
+      const data = student.person;
+
+      return {
+        ...attendance,
+        student: {
+          ...data,
+          photo: student.photo
+            ? `${urlS3}${student.photo}`
+            : `${urlS3}${defaultAvatar}`,
+        },
+      };
+    });
+
+    return formatAttendances;
   }
 
   findOne(id: number) {
@@ -274,5 +342,111 @@ export class AttendanceService {
     };
 
     return indexToDay[dayIndex];
+  }
+  /**FOR CRON JOBS, coloca a todos como ausentes en la madrugada
+   *
+   */
+  async markAbsentStudents(shift: Shift): Promise<void> {
+    this.logger.log(`Running cron jobs for the shift: ${shift}`);
+    const currentDate = new Date();
+    const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
+    /**obtener fase */
+    const qbphase = this.phaseRepository.createQueryBuilder('phase');
+    const phase = await qbphase
+      .where('startDate <=:currentDate', {
+        currentDate: this.convertISODateToYYYYMMDD(currentDate),
+      })
+      .andWhere('endDate>=:currentDate', {
+        currentDate: this.convertISODateToYYYYMMDD(currentDate),
+      })
+      .getOne();
+    if (!phase) {
+      this.logger.warn(
+        `There is no active phase for this date: ${currentDate}, the cron jobs were not completed`,
+      );
+      return;
+    }
+
+    // Encuentra todas las asistencias del día actual y turno especificado
+    const queryBuilder =
+      this.attendanceRepository.createQueryBuilder('attendance');
+    const attendances = await queryBuilder
+      .leftJoinAndSelect('attendance.student', 'student')
+      .where(`arrivalDate=:dateNow and shift =:shift`, {
+        dateNow: this.convertISODateToYYYYMMDD(currentDate),
+        shift,
+      })
+      .getMany();
+
+    //**TODO agregar que tengan una matricula valida para considerar como ausente (OBS esta con status)*/
+
+    const studentCodes = attendances.map((attendance) => attendance.student.id);
+    let studentsToAbsent: Student[] = [];
+
+    if (studentCodes.length > 0) {
+      studentsToAbsent = await this.studentRepository
+        .createQueryBuilder('student')
+
+        .where('id NOT IN (:...studentCodes)', {
+          studentCodes,
+        })
+        .andWhere('student.status = :status', { status: true })
+        .getMany();
+    } else {
+      studentsToAbsent = await this.studentRepository
+        .createQueryBuilder('student')
+        .where('student.status = :status', { status: true })
+        .getMany();
+    }
+
+    if (shift === Shift.A) {
+      const indSchedule = await this.scheduleRepository.findOneBy({
+        day: currentDay,
+        activityClassroom: { phase: phase },
+      });
+
+      if (!indSchedule) {
+        this.logger.verbose(
+          `There are no afternoon shifts for today ${currentDate}, the cron jobs were not completed`,
+        );
+        return;
+      }
+
+      const activityClassrooms = await this.activityClassroomRepository.findBy({
+        phase: {
+          id: phase.id,
+        },
+        schedule: {
+          day: currentDay,
+        },
+      });
+      const classroomsIds = activityClassrooms.map((item) => item.id);
+      const enrolls = await this.enrrollmentRepository.find({
+        where: {
+          activityClassroom: { id: In(classroomsIds) },
+        },
+      });
+      const idsForAfternoon = enrolls.map((item) => item.student.id);
+
+      studentsToAbsent = studentsToAbsent.filter((student) =>
+        idsForAfternoon.includes(student.id),
+      );
+    }
+
+    this.logger.log(
+      `Number of students absent for today (${currentDate}) in the shift ${shift}: ${studentsToAbsent.length}`,
+    );
+    for (const student of studentsToAbsent) {
+      await this.attendanceRepository.save({
+        arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
+        arrivalTime: currentDate,
+        shift: shift,
+        status: StatusAttendance.A,
+        condition: ConditionAttendance.Absent,
+        student: { id: student.id },
+      });
+    }
+
+    this.logger.log(`Cron jobs completed succesfully`);
   }
 }

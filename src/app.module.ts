@@ -91,6 +91,10 @@ export class AppModule implements NestModule {
           method: RequestMethod.POST,
         },
         {
+          path: '/person/crm',
+          method: RequestMethod.POST,
+        },
+        {
           path: '/docs/download-carnets/:id',
           method: RequestMethod.GET,
         },

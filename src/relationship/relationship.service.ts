@@ -118,6 +118,47 @@ export class RelationshipService {
         docNumber: In(dnis),
       },
     });
-    return fathers;
+
+    const formatData = fathers.map((item) => {
+      let data;
+      rel.forEach((r) => {
+        if (r.dniAssignee === item.docNumber) {
+          data = { ...item, sonCode: r.sonStudentCode };
+        }
+      });
+      return data;
+    });
+
+    return this.getSortedData(formatData);
+  }
+  getSortedData(data) {
+    return data.sort((a, b) => {
+      if (a.sonCode < b.sonCode) return -1;
+      if (a.sonCode > b.sonCode) return 1;
+      return 0;
+    });
+  }
+  getGroupedData(data) {
+    const groupedData = data.reduce((acc, current) => {
+      const { sonCode } = current;
+      if (!acc[sonCode]) {
+        acc[sonCode] = [];
+      }
+      acc[sonCode].push(current);
+      return acc;
+    }, {});
+
+    return Object.keys(groupedData).map((sonCode) => {
+      const members = groupedData[sonCode];
+      members.sort((a, b) => {
+        if (a.familyRole === 'P') return -1;
+        if (b.familyRole === 'P') return 1;
+        return 0;
+      });
+      return {
+        sonCode,
+        members,
+      };
+    });
   }
 }

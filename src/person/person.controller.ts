@@ -16,6 +16,7 @@ import { UpdatePersonDto } from './dto/update-person.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { fileFilter } from './helpers';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CreatePersonCrmDto } from './dto/create-person-crm.dto';
 @ApiTags('Person')
 @Controller('person')
 export class PersonController {
@@ -66,5 +67,9 @@ export class PersonController {
     }
 
     await this.personService.uploadPhoto(file.originalname, file.buffer, +id);
+  }
+  @Post('crm')
+  createByCrm(@Body() createPersonCrmDto: CreatePersonCrmDto) {
+    return this.personService.createParentCRM(createPersonCrmDto);
   }
 }

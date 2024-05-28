@@ -26,6 +26,14 @@ export class Student {
   })
   photo: string;
   @ApiProperty({
+    example: 'true',
+    description: 'status of the student',
+  })
+  @Column('bool', {
+    default: true,
+  })
+  status: boolean;
+  @ApiProperty({
     description: 'Id of Person',
   })
   @OneToOne(() => Person, (person) => person.student, {
