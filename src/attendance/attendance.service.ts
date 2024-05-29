@@ -68,7 +68,7 @@ export class AttendanceService {
         .getOne();
       if (isHoliday) {
         throw new BadRequestException(
-          `You cannot mark attendance, this day was defined as a holiday ${currentDate}`,
+          `No se puede marcar asistencia, este día fue definido como feriado ${currentDate}`,
         );
       }
       /** verificar que la fecha se encuentre en un bimestre*/
@@ -85,7 +85,7 @@ export class AttendanceService {
       }
       if (!currentBimester) {
         throw new BadRequestException(
-          `No active two-month period (bimester) for the date ${currentDate}`,
+          `No hay bimestre activo para la fecha ${currentDate}`,
         );
       }
 
@@ -160,7 +160,7 @@ export class AttendanceService {
           }
         } else {
           throw new BadRequestException(
-            `the student already marked assistance or does not have classes at this time ${currentDate}`,
+            `El estudiante ya marcó asistencia o no tiene clases en este momento ${currentDate}`,
           );
         }
         /**validar asistencia y turno */
@@ -179,7 +179,7 @@ export class AttendanceService {
 
         if (existAttendance) {
           throw new BadRequestException(
-            `Duplicate Attendance on this turn: ${shift}`,
+            `Asistencia duplicada en este turno: ${shift}`,
           );
         }
 

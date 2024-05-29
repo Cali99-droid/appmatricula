@@ -80,7 +80,7 @@ export class StudentService {
     }
   }
 
-  async updateStudentCodes(): Promise<void> {
+  async updateStudentCodes() {
     const students = await this.studentRepository.find();
     for (let i = 0; i < students.length; i++) {
       const codigo = (i + 1).toString().padStart(8, '0');
@@ -89,6 +89,9 @@ export class StudentService {
 
     console.log('updating codes...');
     await this.studentRepository.save(students);
+    return {
+      ms: 'updating codes',
+    };
   }
 
   async generateCodigo(): Promise<string> {
