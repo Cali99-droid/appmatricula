@@ -304,7 +304,8 @@ export class AttendanceService {
 
       return acc;
     }, {});
-    return result;
+    const arrayResult = Object.values(result);
+    return arrayResult;
   }
   async findAll() {
     const attendance = await this.studentRepository.find({
