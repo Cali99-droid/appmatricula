@@ -83,7 +83,7 @@ export class AttendanceController {
     type: Number,
   })
   @ApiQuery({
-    name: 'graideId',
+    name: 'gradeId',
     required: false,
     description: 'Id of the grade',
     type: Number,
