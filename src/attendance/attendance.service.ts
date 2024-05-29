@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
-import { In, Repository } from 'typeorm';
+import { Between, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 // import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -19,6 +19,7 @@ import { ActivityClassroom } from 'src/activity_classroom/entities/activity_clas
 import * as moment from 'moment-timezone';
 import { ConditionAttendance } from './enum/condition.enum';
 import { ConfigService } from '@nestjs/config';
+import { SearchAttendanceDto } from './dto/search-attendace.dto';
 
 @Injectable()
 export class AttendanceService {
@@ -253,7 +254,61 @@ export class AttendanceService {
       throw new BadRequestException(error.message);
     }
   }
+  async findByParams(params: SearchAttendanceDto) {
+    const { yearId, campusId, levelId } = params;
+    let condition = undefined;
+    switch (params.condition) {
+      case 'PUNTUAL':
+        condition = 'P';
+        break;
+      case 'TARDANZA':
+        condition = 'T';
+        break;
+      case 'FALTA':
+        condition = 'F';
+        break;
+    }
+    const attendance = await this.attendanceRepository.find({
+      where: {
+        student: {
+          enrollment: {
+            activityClassroom: {
+              phase: { year: { id: !isNaN(+yearId) ? +yearId : undefined } },
+              classroom: {
+                campusDetail: { id: !isNaN(+campusId) ? +campusId : undefined },
+              },
+              section: params.section ? params.section : undefined,
+              grade: {
+                id: !isNaN(+params.gradeId) ? +params.gradeId : undefined,
+                level: { id: !isNaN(+levelId) ? +levelId : undefined },
+              },
+            },
+          },
+        },
+        arrivalDate: Between(
+          new Date(params.startDate),
+          new Date(params.endDate),
+        ),
+        condition: condition,
+      },
+    });
+    const result = attendance.reduce((acc, item) => {
+      const { id, student, arrivalDate, condition } = item;
 
+      if (!acc[student.id]) {
+        acc[student.id] = {
+          id: student.id,
+          nombre: `${student.person.lastname} ${student.person.mLastname} ${student.person.name} `,
+          attendance: [],
+        };
+      }
+
+      acc[student.id].attendance.push({ id, arrivalDate, condition });
+
+      return acc;
+    }, {});
+    return result;
+  }
   async findAll() {
     const attendance = await this.studentRepository.find({
       relations: {
