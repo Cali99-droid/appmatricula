@@ -16,6 +16,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Shift } from './enum/shift.enum';
 
 @ApiTags('Attendance')
 @Controller('attendance')
@@ -56,10 +57,10 @@ export class AttendanceController {
   findAll() {
     return this.attendanceService.findAll();
   }
-  // @Get('cron')
-  // testCron() {
-  //   return this.attendanceService.markAbsentStudents(Shift.A);
-  // }
+  @Get('cron')
+  testCron() {
+    return this.attendanceService.markAbsentStudents(Shift.Afternoon);
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
