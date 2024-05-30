@@ -1,10 +1,14 @@
 import {
+  BeforeInsert,
   Column,
+  DataSource,
   Entity,
   JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  Repository,
+  getRepository,
 } from 'typeorm';
 import { Enrollment } from '../../enrollment/entities/enrollment.entity';
 import { Person } from '../../person/entities/person.entity';
@@ -21,6 +25,11 @@ export class Student {
     unique: true,
   })
   studentCode: string;
+  @Column('varchar', {
+    nullable: true,
+    unique: true,
+  })
+  code: string;
   @Column('varchar', {
     nullable: true,
   })

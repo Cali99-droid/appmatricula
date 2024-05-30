@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
-import { In, Repository } from 'typeorm';
+import { Between, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 // import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -19,6 +19,8 @@ import { ActivityClassroom } from 'src/activity_classroom/entities/activity_clas
 import * as moment from 'moment-timezone';
 import { ConditionAttendance } from './enum/condition.enum';
 import { ConfigService } from '@nestjs/config';
+import { SearchAttendanceDto } from './dto/search-attendace.dto';
+import { StudentData } from './interfaces/studentData.interface';
 
 @Injectable()
 export class AttendanceService {
@@ -67,7 +69,7 @@ export class AttendanceService {
         .getOne();
       if (isHoliday) {
         throw new BadRequestException(
-          `You cannot mark attendance, this day was defined as a holiday ${currentDate}`,
+          `No se puede marcar asistencia, este día fue definido como feriado ${currentDate}`,
         );
       }
       /** verificar que la fecha se encuentre en un bimestre*/
@@ -84,7 +86,7 @@ export class AttendanceService {
       }
       if (!currentBimester) {
         throw new BadRequestException(
-          `No active two-month period (bimester) for the date ${currentDate}`,
+          `No hay bimestre activo para la fecha ${currentDate}`,
         );
       }
 
@@ -121,6 +123,7 @@ export class AttendanceService {
             startSecond,
             0,
           );
+          console.log(endHour);
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
           // if (
@@ -135,7 +138,7 @@ export class AttendanceService {
           //   );
           // }
           if (currentTime.getHours() < 12) {
-            shift = Shift.M;
+            shift = Shift.Morning;
             status =
               currentTime <= cutoffTime
                 ? StatusAttendance.E
@@ -146,7 +149,7 @@ export class AttendanceService {
                 ? ConditionAttendance.Early
                 : ConditionAttendance.Late;
           } else {
-            shift = Shift.A;
+            shift = Shift.Afternoon;
             status =
               currentTime <= cutoffTime
                 ? StatusAttendance.E
@@ -158,7 +161,7 @@ export class AttendanceService {
           }
         } else {
           throw new BadRequestException(
-            `the student already marked assistance or does not have classes at this time ${currentDate}`,
+            `El estudiante ya marcó asistencia o no tiene clases en este momento ${currentDate}`,
           );
         }
         /**validar asistencia y turno */
@@ -177,7 +180,7 @@ export class AttendanceService {
 
         if (existAttendance) {
           throw new BadRequestException(
-            `Duplicate Attendance on this turn: ${shift}`,
+            `Asistencia duplicada en este turno: ${shift}`,
           );
         }
 
@@ -194,6 +197,7 @@ export class AttendanceService {
       } else {
         //*** crear asistencia */
         const turn = enrollment.activityClassroom.schoolShift;
+
         const cutoffTime = new Date();
         const initAttendanceTime = new Date();
         const finishAttendanceTime = new Date();
@@ -218,7 +222,7 @@ export class AttendanceService {
         // }
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
-          shift = Shift.M;
+          shift = Shift.Morning;
           status =
             currentTime <= cutoffTime ? StatusAttendance.E : StatusAttendance.L;
           condition =
@@ -226,7 +230,7 @@ export class AttendanceService {
               ? ConditionAttendance.Early
               : ConditionAttendance.Late;
         } else {
-          shift = Shift.A;
+          shift = Shift.Afternoon;
           status =
             currentTime <= cutoffTime ? StatusAttendance.E : StatusAttendance.L;
           condition =
@@ -234,6 +238,7 @@ export class AttendanceService {
               ? ConditionAttendance.Early
               : ConditionAttendance.Late;
         }
+        shift = turn.shift;
       }
 
       const attendance = this.attendanceRepository.create({
@@ -250,7 +255,85 @@ export class AttendanceService {
       throw new BadRequestException(error.message);
     }
   }
+  async findByParams(params: SearchAttendanceDto) {
+    const { yearId, campusId, levelId } = params;
+    let condition = undefined;
+    switch (params.condition) {
+      case 'PUNTUAL':
+        condition = 'P';
+        break;
+      case 'TARDANZA':
+        condition = 'T';
+        break;
+      case 'FALTA':
+        condition = 'F';
+        break;
+    }
+    const attendance = await this.attendanceRepository.find({
+      where: {
+        student: {
+          enrollment: {
+            activityClassroom: {
+              phase: { year: { id: !isNaN(+yearId) ? +yearId : undefined } },
+              classroom: {
+                campusDetail: { id: !isNaN(+campusId) ? +campusId : undefined },
+              },
+              section: params.section ? params.section : undefined,
+              grade: {
+                id: !isNaN(+params.gradeId) ? +params.gradeId : undefined,
+                level: { id: !isNaN(+levelId) ? +levelId : undefined },
+              },
+            },
+          },
+        },
+        arrivalDate: Between(
+          new Date(params.startDate),
+          new Date(params.endDate),
+        ),
+        condition: condition,
+      },
+    });
+    const result = attendance.reduce((acc, item) => {
+      const { id, student, arrivalDate, condition } = item;
 
+      if (!acc[student.id]) {
+        acc[student.id] = {
+          id: student.id,
+          lastname: student.person.lastname,
+          mLastname: student.person.mLastname,
+          name: student.person.name,
+          attendance: [],
+        };
+      }
+
+      acc[student.id].attendance.push({ id, arrivalDate, condition });
+
+      return acc;
+    }, {});
+    const arrayResult: StudentData[] = Object.values(result);
+    const sortedResult = arrayResult
+      .map((student) => ({
+        id: student.id,
+        lastname: student.lastname,
+        mLastname: student.mLastname,
+        name: student.name,
+        attendance: student.attendance,
+      }))
+      .sort((a, b) => {
+        const lastnameA = a.lastname.toUpperCase();
+        const lastnameB = b.lastname.toUpperCase();
+
+        if (lastnameA < lastnameB) {
+          return -1;
+        }
+        if (lastnameA > lastnameB) {
+          return 1;
+        }
+        return 0;
+      });
+
+    return sortedResult;
+  }
   async findAll() {
     const attendance = await this.studentRepository.find({
       relations: {
@@ -382,36 +465,98 @@ export class AttendanceService {
 
     const studentCodes = attendances.map((attendance) => attendance.student.id);
     let studentsToAbsent: Student[] = [];
-
+    // ***TODO cambiar shift por enumerador */
     if (studentCodes.length > 0) {
-      studentsToAbsent = await this.studentRepository
-        .createQueryBuilder('student')
-
-        .where('id NOT IN (:...studentCodes)', {
-          studentCodes,
+      const soloMorningActi = await this.activityClassroomRepository.findBy({
+        schoolShift: {
+          name: 'Mañana',
+        },
+      });
+      const idAct = soloMorningActi.map((item) => item.id);
+      const studentsMorning = await this.enrrollmentRepository
+        .createQueryBuilder('enrroll')
+        .leftJoinAndSelect('enrroll.student', 'student')
+        .where('activityClassroomId IN (:...idAct)', {
+          idAct,
         })
-        .andWhere('student.status = :status', { status: true })
         .getMany();
+
+      const idsStudents = studentsMorning.map((item) => item.student);
+      // console.log(idsStudents);
+
+      studentsToAbsent = idsStudents.filter(
+        (student) => !studentCodes.includes(student.id),
+      );
+      // studentsToAbsent = await this.studentRepository
+      //   .createQueryBuilder('student')
+
+      //   .where('id NOT IN (:...studentCodes)', {
+      //     studentCodes,
+      //   })
+      //   .andWhere('student.status = :status', { status: true })
+      //   .getMany();
     } else {
-      studentsToAbsent = await this.studentRepository
-        .createQueryBuilder('student')
-        .where('student.status = :status', { status: true })
+      const soloMorningActi = await this.activityClassroomRepository.findBy({
+        schoolShift: {
+          name: 'mañana',
+        },
+      });
+
+      const idAct = soloMorningActi.map((item) => item.id);
+
+      const studentsMorning = await this.enrrollmentRepository
+        .createQueryBuilder('enrroll')
+        .leftJoinAndSelect('enrroll.student', 'student')
+        .where('activityClassroomId IN (:idAct)', {
+          idAct,
+        })
         .getMany();
+
+      const idsStudents = studentsMorning.map((item) => item.student);
+      // console.log(idsStudents);
+      studentsToAbsent = idsStudents.filter(
+        (student) => !studentCodes.includes(student.id),
+      );
+      // console.log('ausentes de mañana hoy', toAbsent);
+      // studentsToAbsent = await this.studentRepository
+      //   .createQueryBuilder('student')
+      //   .where('student.status = :status', { status: true })
+      //   .getMany();
     }
 
-    if (shift === Shift.A) {
+    if (shift === Shift.Afternoon) {
       const indSchedule = await this.scheduleRepository.findOneBy({
         day: currentDay,
         activityClassroom: { phase: phase },
       });
+      const soloAfterActi = await this.activityClassroomRepository.findBy({
+        schoolShift: {
+          name: 'Tarde',
+        },
+      });
 
-      if (!indSchedule) {
+      if (!indSchedule && soloAfterActi.length === 0) {
         this.logger.verbose(
           `There are no afternoon shifts for today ${currentDate}, the cron jobs were not completed`,
         );
         return;
       }
+      /**turno tarde */
+      const idAct = soloAfterActi.map((item) => item.id);
 
+      const studentsMorning = await this.enrrollmentRepository
+        .createQueryBuilder('enrroll')
+        .leftJoinAndSelect('enrroll.student', 'student')
+        .where('activityClassroomId IN (:idAct)', {
+          idAct,
+        })
+        .getMany();
+
+      const idsStudents = studentsMorning.map((item) => item.student);
+      // console.log(idsStudents);
+      const studentsToAbsentGeneral = idsStudents.filter(
+        (student) => !studentCodes.includes(student.id),
+      );
       const activityClassrooms = await this.activityClassroomRepository.findBy({
         phase: {
           id: phase.id,
@@ -420,6 +565,7 @@ export class AttendanceService {
           day: currentDay,
         },
       });
+
       const classroomsIds = activityClassrooms.map((item) => item.id);
       const enrolls = await this.enrrollmentRepository.find({
         where: {
@@ -428,9 +574,10 @@ export class AttendanceService {
       });
       const idsForAfternoon = enrolls.map((item) => item.student.id);
 
-      studentsToAbsent = studentsToAbsent.filter((student) =>
+      const studentsToAbsentInd = studentsToAbsent.filter((student) =>
         idsForAfternoon.includes(student.id),
       );
+      studentsToAbsent = studentsToAbsentGeneral.concat(studentsToAbsentInd);
     }
 
     this.logger.log(
