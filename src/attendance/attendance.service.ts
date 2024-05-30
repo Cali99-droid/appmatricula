@@ -20,6 +20,7 @@ import * as moment from 'moment-timezone';
 import { ConditionAttendance } from './enum/condition.enum';
 import { ConfigService } from '@nestjs/config';
 import { SearchAttendanceDto } from './dto/search-attendace.dto';
+import { StudentData } from './interfaces/studentData.interface';
 
 @Injectable()
 export class AttendanceService {
@@ -298,7 +299,9 @@ export class AttendanceService {
       if (!acc[student.id]) {
         acc[student.id] = {
           id: student.id,
-          nombre: `${student.person.lastname} ${student.person.mLastname} ${student.person.name} `,
+          lastname: student.person.lastname,
+          mLastname: student.person.mLastname,
+          name: student.person.name,
           attendance: [],
         };
       }
@@ -307,7 +310,29 @@ export class AttendanceService {
 
       return acc;
     }, {});
-    return result;
+    const arrayResult: StudentData[] = Object.values(result);
+    const sortedResult = arrayResult
+      .map((student) => ({
+        id: student.id,
+        lastname: student.lastname,
+        mLastname: student.mLastname,
+        name: student.name,
+        attendance: student.attendance,
+      }))
+      .sort((a, b) => {
+        const lastnameA = a.lastname.toUpperCase();
+        const lastnameB = b.lastname.toUpperCase();
+
+        if (lastnameA < lastnameB) {
+          return -1;
+        }
+        if (lastnameA > lastnameB) {
+          return 1;
+        }
+        return 0;
+      });
+
+    return sortedResult;
   }
   async findAll() {
     const attendance = await this.studentRepository.find({
