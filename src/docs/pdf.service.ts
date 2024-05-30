@@ -117,10 +117,14 @@ export class PdfService {
           height: 200,
           align: 'center',
         });
-        doc.fontSize(6).fillColor('white').text(`${student.code}`, 60, 183, {
-          width: 153,
-          height: 241,
-        });
+        doc
+          .fontSize(6)
+          .fillColor('white')
+          .text(`CE: ${student.code}`, 100, 183, {
+            width: 50,
+            height: 241,
+            align: 'right',
+          });
         doc
           .fontSize(7)
           .fillColor('white')
@@ -257,9 +261,10 @@ export class PdfService {
         height: 200,
         align: 'center',
       });
-      doc.fontSize(6).fillColor('white').text(`${student.code}`, 60, 183, {
-        width: 153,
+      doc.fontSize(6).fillColor('white').text(`CE: ${student.code}`, 100, 183, {
+        width: 50,
         height: 241,
+        align: 'right',
       });
       doc
         .fontSize(7)
