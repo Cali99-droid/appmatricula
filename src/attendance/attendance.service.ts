@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
@@ -21,6 +26,7 @@ import { ConditionAttendance } from './enum/condition.enum';
 import { ConfigService } from '@nestjs/config';
 import { SearchAttendanceDto } from './dto/search-attendace.dto';
 import { StudentData } from './interfaces/studentData.interface';
+import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 
 @Injectable()
 export class AttendanceService {
@@ -345,6 +351,11 @@ export class AttendanceService {
         arrivalTime: 'DESC',
       },
       take: 5,
+      relations: {
+        student: {
+          enrollment: { activityClassroom: { grade: { level: true } } },
+        },
+      },
     });
 
     const timeZone = 'America/Lima';
@@ -363,16 +374,32 @@ export class AttendanceService {
     const formatAttendances = utcAttendance.map((item) => {
       const { student, ...attendance } = item;
 
-      const data = student.person;
-
+      // const data = student.person;
       return {
-        ...attendance,
-        student: {
-          ...data,
-          photo: student.photo
-            ? `${urlS3}${student.photo}`
-            : `${urlS3}${defaultAvatar}`,
-        },
+        // ...attendance,
+        id: attendance.id,
+        photo: student.photo
+          ? `${urlS3}${student.photo}`
+          : `${urlS3}${defaultAvatar}`,
+        full_name: `${student.person.lastname} ${student.person.mLastname},${student.person.name}`,
+        level: `${
+          student.enrollment[student.enrollment.length - 1].activityClassroom
+            .grade.level.name
+        } ${
+          student.enrollment[student.enrollment.length - 1].activityClassroom
+            .grade.name
+        } ${
+          student.enrollment[student.enrollment.length - 1].activityClassroom
+            .section
+        }`,
+        arrivalTime: attendance.arrivalTime,
+        condition: attendance.condition,
+        // student: {
+        //   ...data,
+        //   photo: student.photo
+        //     ? `${urlS3}${student.photo}`
+        //     : `${urlS3}${defaultAvatar}`,
+        // },
       };
     });
 
@@ -382,11 +409,33 @@ export class AttendanceService {
   findOne(id: number) {
     return `This action returns a #${id} attendance`;
   }
-
-  update(id: number, updateAttendanceDto: UpdateAttendanceDto) {
-    return `This action updates a #${updateAttendanceDto} attendance`;
+  async update(id: number, updateAttendanceDto: UpdateAttendanceDto) {
+    let status = undefined;
+    switch (updateAttendanceDto.condition) {
+      case 'P':
+        status = 'Early';
+        break;
+      case 'T':
+        status = 'Late';
+        break;
+      case 'F':
+        status = 'Absent';
+        break;
+    }
+    const attendance = await this.attendanceRepository.preload({
+      id: id,
+      condition: updateAttendanceDto.condition,
+      status: status,
+    });
+    if (!attendance)
+      throw new NotFoundException(`Attendance with id: ${id} not found`);
+    try {
+      await this.attendanceRepository.save(attendance);
+      return attendance;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
-
   remove(id: number) {
     return `This action removes a #${id} attendance`;
   }
@@ -395,7 +444,6 @@ export class AttendanceService {
     const [day, month, year] = dateString.split('-').map(Number);
     return new Date(year, month - 1, day); // los meses en JS van de 0 a 11
   }
-
   private convertISODateToYYYYMMDD(isoDateString) {
     const date = new Date(isoDateString);
     const year = date.getFullYear();
