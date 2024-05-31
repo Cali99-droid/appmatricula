@@ -7,13 +7,6 @@ import { ConditionAttendance } from '../enum/condition.enum';
 import { IsEnum } from 'class-validator';
 
 export class UpdateAttendanceDto {
-  // @ApiProperty({
-  //   example: 'P',
-  //   description: 'type of attendance, must be P, T or F',
-  //   type: 'enum',
-  //   enum: ConditionAttendance,
-  // })
-  // condition: ConditionAttendance;
   @ApiProperty({
     description: 'Condition of attedance',
     nullable: false,
