@@ -259,7 +259,27 @@ export class AttendanceService {
     }
   }
   async findByParams(params: SearchAttendanceDto) {
-    const { yearId, campusId, levelId } = params;
+    const { yearId, campusId, levelId, full_name } = params;
+    let lastName = undefined;
+    let mLastname = undefined;
+    let name = undefined;
+    const today = new Date();
+    const tomorrow = new Date(today);
+    const yesterday = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (full_name) {
+      const data = full_name.split(' ');
+      if (data.length > 0 && data.length <= 1) {
+        lastName = data[0];
+      }
+      if (data.length > 1 && data.length <= 2) {
+        mLastname = data[1];
+      }
+      if (data.length > 2 && data.length <= 3) {
+        name = data[2];
+      }
+    }
     let condition = undefined;
     switch (params.condition) {
       case 'PUNTUAL':
@@ -288,14 +308,21 @@ export class AttendanceService {
               },
             },
           },
+          person: {
+            lastname: lastName ? lastName : undefined,
+            mLastname: mLastname ? mLastname : undefined,
+            name: name ? name : undefined,
+          },
         },
         arrivalDate: Between(
-          new Date(params.startDate),
-          new Date(params.endDate),
+          new Date(params.startDate ? params.startDate : yesterday),
+          new Date(params.endDate ? params.section : tomorrow),
         ),
         condition: condition,
+        shift: params.shift ? params.shift : undefined,
       },
     });
+
     const result = attendance.reduce((acc, item) => {
       const { id, student, arrivalDate, condition } = item;
 

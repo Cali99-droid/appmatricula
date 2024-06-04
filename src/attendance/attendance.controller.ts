@@ -66,13 +66,13 @@ export class AttendanceController {
   @Get('search')
   @ApiQuery({
     name: 'yearId',
-    required: true,
+    required: false,
     description: 'Id of the year',
     type: Number,
   })
   @ApiQuery({
     name: 'campusId',
-    required: true,
+    required: false,
     description: 'Id of the campus',
     type: Number,
   })
@@ -96,13 +96,13 @@ export class AttendanceController {
   })
   @ApiQuery({
     name: 'startDate',
-    required: true,
+    required: false,
     description: 'StartDate of the attendace',
     type: String,
   })
   @ApiQuery({
     name: 'endDate',
-    required: true,
+    required: false,
     description: 'EndDate of the attendace',
     type: String,
   })
@@ -110,6 +110,18 @@ export class AttendanceController {
     name: 'condition',
     required: false,
     description: 'Condition of the attendace',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'full_name',
+    required: false,
+    description: 'Full Name of the attendace',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'shift',
+    required: false,
+    description: 'Shift of the attendace',
     type: String,
   })
   findByParams(@Query() searchAttendanceDto: SearchAttendanceDto) {
