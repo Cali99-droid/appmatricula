@@ -316,13 +316,12 @@ export class AttendanceService {
         },
         arrivalDate: Between(
           new Date(params.startDate ? params.startDate : yesterday),
-          new Date(params.endDate ? params.section : tomorrow),
+          new Date(params.endDate ? params.endDate : tomorrow),
         ),
         condition: condition,
         shift: params.shift ? params.shift : undefined,
       },
     });
-
     const result = attendance.reduce((acc, item) => {
       const { id, student, arrivalDate, condition } = item;
 
@@ -344,14 +343,15 @@ export class AttendanceService {
     const sortedResult = arrayResult
       .map((student) => ({
         id: student.id,
-        lastname: student.lastname,
-        mLastname: student.mLastname,
-        name: student.name,
+        full_name: `${student.lastname} ${student.mLastname}, ${student.name}`,
+        // lastname: student.lastname,
+        // mLastname: student.mLastname,
+        // name: student.name,
         attendance: student.attendance,
       }))
       .sort((a, b) => {
-        const lastnameA = a.lastname.toUpperCase();
-        const lastnameB = b.lastname.toUpperCase();
+        const lastnameA = a.full_name.toUpperCase();
+        const lastnameB = b.full_name.toUpperCase();
 
         if (lastnameA < lastnameB) {
           return -1;
