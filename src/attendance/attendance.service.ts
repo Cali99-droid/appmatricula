@@ -296,7 +296,7 @@ export class AttendanceService {
         condition = 'F';
         break;
     }
-    if (params.startDate == params.endDate) {
+    if (params.startDate == params.endDate && params.startDate != undefined) {
       const date = new Date(params.endDate);
       date.setDate(date.getDate() + 1);
       params.endDate = date.toISOString();
@@ -453,6 +453,7 @@ export class AttendanceService {
 
   async findOne(id: number, shift: Shift) {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     const yesterday = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -462,6 +463,7 @@ export class AttendanceService {
         student: { id: id },
         shift: shift,
         arrivalDate: Between(new Date(yesterday), new Date(tomorrow)),
+        condition: ConditionAttendance.Absent,
       },
     });
     if (!attendance) throw new NotFoundException(`No Exist by id and shift`);
