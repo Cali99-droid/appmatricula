@@ -18,6 +18,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Shift } from './enum/shift.enum';
 import { SearchAttendanceDto } from './dto/search-attendace.dto';
 // import { Shift } from './enum/shift.enum';
 
@@ -60,6 +61,11 @@ export class AttendanceController {
   findAll() {
     return this.attendanceService.findAll();
   }
+  @Get('cron')
+  testCron() {
+    return this.attendanceService.markAbsentStudents(Shift.Afternoon);
+  }
+
   // @Get('cron')
   // testCron() {
   //   return this.attendanceService.markAbsentStudents(Shift.A);

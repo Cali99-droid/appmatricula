@@ -44,6 +44,9 @@ export class PdfService {
         id,
       },
     });
+    if (!activityClassroom) {
+      throw new NotFoundException('Not exist Classroom');
+    }
     //TODO  OPTIMIZAR todo esto*/
     const urlS3 = this.configService.getOrThrow('AWS_URL_BUCKET');
     const folderName = this.configService.getOrThrow('FOLDER_IMG_NAME');
@@ -68,6 +71,8 @@ export class PdfService {
       photo: a.student.photo
         ? `${urlPhoto}/${a.student.photo}`
         : `${urlPhoto}/${defaultAvatar}`,
+      codeEnroll: a.code,
+      code: a.student.code,
     }));
     return new Promise(async (resolve, reject) => {
       const doc = new PDFDocument({ size: [153, 241] }); // Tamaño en puntos para 85.60 × 53.98 mm
@@ -113,6 +118,14 @@ export class PdfService {
           align: 'center',
         });
         doc
+          .fontSize(6)
+          .fillColor('white')
+          .text(`CE: ${student.code}`, 100, 183, {
+            width: 50,
+            height: 241,
+            align: 'right',
+          });
+        doc
           .fontSize(7)
           .fillColor('white')
           .text(
@@ -152,7 +165,7 @@ export class PdfService {
           .fontSize(7)
           .fillColor('white')
           .text(
-            `SECCION: "${enroll.activityClassroom.section.toLocaleUpperCase()}"`,
+            `SECCIÓN: "${enroll.activityClassroom.section.toLocaleUpperCase()}"`,
             60,
             225,
             {
@@ -165,10 +178,10 @@ export class PdfService {
         // //http://localhost:3000/api/v1/docs/download-carnets/3
         //  Generar código QR
         doc
-          .fontSize(5)
+          .fontSize(4)
           .fillColor('white')
           .text(
-            `${enroll.activityClassroom.phase.year.name} - ${enroll.activityClassroom.phase.type}`,
+            `${enroll.activityClassroom.phase.year.name}-${enroll.activityClassroom.phase.type}`,
             6,
             180,
             {
@@ -176,9 +189,10 @@ export class PdfService {
               height: 241,
             },
           );
-        const code = enroll.code
-          ? enroll.code
+        const code = student.codeEnroll
+          ? student.codeEnroll
           : `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`;
+
         const qr = await QRCode.toDataURL(code);
         doc.image(qr, 6, 186, { width: 50, height: 50 });
         doc
@@ -247,6 +261,11 @@ export class PdfService {
         height: 200,
         align: 'center',
       });
+      doc.fontSize(6).fillColor('white').text(`CE: ${student.code}`, 100, 183, {
+        width: 50,
+        height: 241,
+        align: 'right',
+      });
       doc
         .fontSize(7)
         .fillColor('white')
@@ -287,7 +306,7 @@ export class PdfService {
         .fontSize(7)
         .fillColor('white')
         .text(
-          `SECCION: "${enroll.activityClassroom.section.toLocaleUpperCase()}"`,
+          `SECCIÓN: "${enroll.activityClassroom.section.toLocaleUpperCase()}"`,
           60,
           225,
           {
@@ -299,10 +318,10 @@ export class PdfService {
       //http://localhost:3000/api/v1/docs/download-carnets/3
       //  Generar código QR
       doc
-        .fontSize(5)
+        .fontSize(4)
         .fillColor('white')
         .text(
-          `${enroll.activityClassroom.phase.year.name} - ${enroll.activityClassroom.phase.type}`,
+          `${enroll.activityClassroom.phase.year.name}-${enroll.activityClassroom.phase.type}`,
           6,
           180,
           {
@@ -310,6 +329,7 @@ export class PdfService {
             height: 241,
           },
         );
+
       const code = enroll.code
         ? enroll.code
         : `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`;

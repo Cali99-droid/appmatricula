@@ -18,6 +18,7 @@ import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { SearchEnrolledDto } from './dto/searchEnrollmet-dto';
 import { TypePhase } from 'src/phase/enum/type-phase.enum';
+import { StudentService } from 'src/student/student.service';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -30,6 +31,7 @@ export class EnrollmentService {
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
+    private readonly studentService: StudentService,
   ) {}
   async create(createEnrollmentDto: CreateEnrollmentDto) {
     try {
@@ -146,6 +148,7 @@ export class EnrollmentService {
           code: `${classroom.phase.year.name}-P${classroom.phase.id}S${student.id}`,
         })),
       );
+      await this.studentService.updateStudentCodes();
       dataEnrollment.push(enrollments);
       return enrollments;
     } catch (error) {

@@ -79,4 +79,34 @@ export class StudentService {
       throw new NotFoundException(error.message);
     }
   }
+
+  async updateStudentCodes() {
+    const students = await this.studentRepository.find();
+    for (let i = 0; i < students.length; i++) {
+      const codigo = (i + 1).toString().padStart(8, '0');
+      students[i].code = codigo;
+    }
+
+    console.log('updating codes...');
+    await this.studentRepository.save(students);
+    return {
+      ms: 'updating codes',
+    };
+  }
+
+  async generateCodigo(): Promise<string> {
+    const lastStudent = await this.studentRepository.find({
+      order: { code: 'DESC' },
+      take: 1,
+    });
+
+    let newCodigo = '00000001'; // Default value if there are no students yet
+
+    if (lastStudent.length > 0) {
+      const lastCodigo = parseInt(lastStudent[0].code, 10);
+      newCodigo = (lastCodigo + 1).toString().padStart(8, '0');
+    }
+
+    return newCodigo;
+  }
 }

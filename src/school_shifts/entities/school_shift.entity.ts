@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Campus } from 'src/campus/entities/campus.entity';
 import { Level } from 'src/level/entities/level.entity';
+import { Shift } from 'src/attendance/enum/shift.enum';
 @Entity()
 export class SchoolShift {
   @ApiProperty()
@@ -25,7 +26,8 @@ export class SchoolShift {
     // unique: true,
   })
   name: string;
-
+  @Column({ type: 'enum', enum: Shift, nullable: true })
+  shift: Shift;
   @ApiProperty({
     example: '08:00:00',
     description: 'start of the school shift',
