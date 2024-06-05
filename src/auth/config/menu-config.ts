@@ -39,7 +39,7 @@ export const AdminMenu = {
       link: '/admin/Prueba',
       icon: 'student',
       tagSubMenu: true,
-      permissions: ['admin', 'cardGenerator'],
+      permissions: ['admin', 'card-generator'],
       subMenu: [
         {
           id: 1,
@@ -50,7 +50,7 @@ export const AdminMenu = {
         },
         {
           id: 2,
-          label: 'Carnets',
+          label: 'Estudiantes',
           icon: 'student',
           link: '/admin/student/students',
           permissions: ['admin', 'cardGenerator'],
@@ -67,6 +67,40 @@ export const AdminMenu = {
           label: 'Control Asistencia',
           icon: 'student',
           link: '/admin/student/attendance',
+          permissions: ['admin'],
+        },
+      ],
+    },
+    {
+      id: 3,
+      label: 'Reportes',
+      link: '/admin/reports',
+      icon: 'report',
+      tagSubMenu: true,
+      permissions: ['admin'],
+      subMenu: [
+        {
+          id: 1,
+          label: 'Reportes Estudiantes',
+          icon: 'table',
+          link: '/admin/reports/students',
+          permissions: ['admin'],
+        },
+      ],
+    },
+    {
+      id: 4,
+      label: 'Usuarios',
+      link: '/admin/users',
+      icon: 'users',
+      tagSubMenu: true,
+      permissions: ['admin'],
+      subMenu: [
+        {
+          id: 1,
+          label: 'Usuarios',
+          icon: 'userAdd',
+          link: '/admin/users/system',
           permissions: ['admin'],
         },
       ],
