@@ -7,7 +7,7 @@ import {
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
-import { Between, In, Repository } from 'typeorm';
+import { Between, Equal, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 // import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -266,6 +266,7 @@ export class AttendanceService {
     const today = new Date();
     const tomorrow = new Date(today);
     const yesterday = new Date(today);
+    // let endDate = undefined;
     tomorrow.setDate(tomorrow.getDate() + 1);
     yesterday.setDate(yesterday.getDate() - 1);
     if (full_name) {
@@ -291,6 +292,11 @@ export class AttendanceService {
       case 'FALTA':
         condition = 'F';
         break;
+    }
+    if (params.startDate == params.endDate) {
+      const date = new Date(params.endDate);
+      date.setDate(date.getDate() + 1);
+      params.endDate = date.toISOString();
     }
     const attendance = await this.attendanceRepository.find({
       where: {
@@ -318,10 +324,17 @@ export class AttendanceService {
           new Date(params.startDate ? params.startDate : yesterday),
           new Date(params.endDate ? params.endDate : tomorrow),
         ),
+        // params.startDate === params.endDate
+        //   ? Equal(new Date(params.endDate))
+        //   : Between(
+        //       new Date(params.startDate ? params.startDate : yesterday),
+        //       new Date(params.endDate ? params.endDate : tomorrow),
+        //     ),
         condition: condition,
         shift: params.shift ? params.shift : undefined,
       },
     });
+
     const result = attendance.reduce((acc, item) => {
       const { id, student, arrivalDate, condition } = item;
 
@@ -331,6 +344,7 @@ export class AttendanceService {
           lastname: student.person.lastname,
           mLastname: student.person.mLastname,
           name: student.person.name,
+          shift: params.shift,
           attendance: [],
         };
       }
@@ -347,6 +361,7 @@ export class AttendanceService {
         // lastname: student.lastname,
         // mLastname: student.mLastname,
         // name: student.name,
+        shift: params.shift,
         attendance: student.attendance,
       }))
       .sort((a, b) => {
@@ -433,8 +448,21 @@ export class AttendanceService {
     return formatAttendances;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} attendance`;
+  async findOne(id: number, shift: Shift) {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    const yesterday = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const attendance = await this.attendanceRepository.find({
+      where: {
+        student: { id: id },
+        shift: shift,
+        arrivalDate: Between(new Date(yesterday), new Date(tomorrow)),
+      },
+    });
+    if (!attendance) throw new NotFoundException(`No Exist by id and shift`);
+    return attendance;
   }
   async update(id: number, updateAttendanceDto: UpdateAttendanceDto) {
     let status = undefined;

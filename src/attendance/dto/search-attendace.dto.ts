@@ -1,6 +1,6 @@
 import { IsDateString, IsEnum, IsOptional, IsUppercase } from 'class-validator';
 import { Section } from 'src/activity_classroom/enum/section.enum';
-import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';
+// import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';
 import { ExistId } from 'src/common/validation/exist-id';
 import { Shift } from '../enum/shift.enum';
 
@@ -40,7 +40,7 @@ export class SearchAttendanceDto {
 
   @IsOptional()
   @IsDateString()
-  @IsDateBefore('startDate', { message: 'endDate must be after startDate' })
+  // @IsDateBefore('startDate', { message: 'endDate must be after startDate' })
   endDate: string;
 
   @IsOptional()

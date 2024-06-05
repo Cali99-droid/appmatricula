@@ -19,6 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { SearchAttendanceDto } from './dto/search-attendace.dto';
+import { Shift } from './enum/shift.enum';
 
 @ApiTags('Attendance')
 @Controller('attendance')
@@ -128,8 +129,14 @@ export class AttendanceController {
     return this.attendanceService.findByParams(searchAttendanceDto);
   }
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.attendanceService.findOne(+id);
+  @ApiQuery({
+    name: 'shift',
+    required: true,
+    description: 'Shift of the attendace',
+    type: String,
+  })
+  findOne(@Param('id') id: string, @Query('shift') shift: Shift) {
+    return this.attendanceService.findOne(+id, shift);
   }
 
   @Patch(':id')
