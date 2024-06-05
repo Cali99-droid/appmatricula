@@ -9,14 +9,17 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { UserModule } from 'src/user/user.module';
+import { PermissionsModule } from 'src/permissions/permissions.module';
+import { Permission } from 'src/permissions/entities/permission.entity';
 
 @Module({
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
   imports: [
     UserModule,
+    PermissionsModule,
     ConfigModule,
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Permission]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

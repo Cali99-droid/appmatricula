@@ -6,11 +6,15 @@ import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Permission } from 'src/permissions/entities/permission.entity';
+import { Role } from 'src/role/entities/role.entity';
+import { Assignment } from './assignments.entity';
 
 @Entity()
 export class User {
@@ -52,6 +56,13 @@ export class User {
     eager: true,
   })
   permission: Permission[];
+
+  @OneToMany(() => Assignment, (assignment) => assignment.user)
+  assignments: Assignment[];
+
+  @ManyToMany(() => Role, (role) => role.users)
+  @JoinTable()
+  roles: Role[];
 
   @BeforeInsert()
   checkFieldsBeforeInsert() {

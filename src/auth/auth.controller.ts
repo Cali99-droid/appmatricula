@@ -15,10 +15,7 @@ import { Auth } from './decorators/auth.decorator';
 import { AccessTokenGuard } from './guards/accessToken.guard';
 import { Request } from 'express';
 import { RefreshTokenGuard } from './guards/refreshToken.guard';
-import { AuthGuard } from '@nestjs/passport';
-import { RoleProtected } from './decorators/role-protected.decorator';
-import { ValidRoles } from './interfaces/valid-roles';
-import { UserRoleGuard } from './guards/user-role/user-role.guard';
+
 import { RegisterUserDto } from './dto/register-user.dto';
 
 @ApiTags('Auth')
@@ -39,8 +36,11 @@ export class AuthController {
   }
 
   @Get('private')
-  @RoleProtected(ValidRoles.superUser)
-  @UseGuards(AuthGuard(), UserRoleGuard)
+  // @RoleProtected(ValidRoles.superUser)
+  // @UseGuards(AuthGuard(), UserRoleGuard)
+  // @Permissions('admin')
+  // @UseGuards(AuthGuard(), PermissionsGuard)
+  @Auth('card-generator', 'admin')
   testinRoute(@GetUser() user: User, @GetUser('email') email: string) {
     return {
       ok: true,

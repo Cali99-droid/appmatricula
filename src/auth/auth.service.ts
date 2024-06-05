@@ -50,7 +50,9 @@ export class AuthService {
       where: { email },
       select: { id: true, email: true, password: true },
       relations: {
-        permission: true,
+        roles: {
+          permissions: true,
+        },
       },
     });
     if (!user)
@@ -60,12 +62,15 @@ export class AuthService {
       throw new UnauthorizedException('Credentials are not valid(password)');
     const tokens = await this.getJwtTokens({ email: user.email, sub: user.id });
     await this.updateRefreshToken(user.id, tokens.refreshToken);
-    const { id, password, permission, person, ...result } = user;
+    const { id, password, roles, permission, person, ...result } = user;
+    let permissions = [];
 
-    const permissions = permission.map((item) => {
-      return item.accessName;
+    roles.forEach((role) => {
+      role.permissions.map((item) => {
+        permissions.push(item.name);
+      });
     });
-
+    console.log(permissions);
     const menu = this.generateMenu(permissions);
     return {
       ...result,
