@@ -6,7 +6,7 @@ import { Between, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 // import { handleDBExceptions } from 'src/common/helpers/handleDBException';
-import { StatusAttendance } from './enum/status-attendance.enum';
+
 import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Day } from 'src/common/enum/day.enum';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
@@ -21,6 +21,8 @@ import { ConditionAttendance } from './enum/condition.enum';
 import { ConfigService } from '@nestjs/config';
 import { SearchAttendanceDto } from './dto/search-attendace.dto';
 import { StudentData } from './interfaces/studentData.interface';
+import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
+import { TypeSchedule } from './enum/type-schedule.enum';
 
 @Injectable()
 export class AttendanceService {
@@ -49,7 +51,7 @@ export class AttendanceService {
 
     /**declarar turno(Morning, Affternoon) y estado de asistencia (early, late) */
     let shift: Shift;
-    let status: StatusAttendance;
+
     let condition: ConditionAttendance;
 
     try {
@@ -99,7 +101,7 @@ export class AttendanceService {
           studentId: enrollment.student.id,
         })
         .getOne();
-
+      //**Si ya tiene asistencia */
       if (att) {
         const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
 
@@ -107,6 +109,7 @@ export class AttendanceService {
           day: currentDay,
           activityClassroom: { id: enrollment.activityClassroom.id },
         });
+        /**si tiene horario adicional */
         if (indSchedule) {
           const cutoffTime = new Date();
           const initAttendanceTime = new Date();
@@ -123,6 +126,7 @@ export class AttendanceService {
             startSecond,
             0,
           );
+
           console.log(endHour);
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
@@ -139,10 +143,7 @@ export class AttendanceService {
           // }
           if (currentTime.getHours() < 12) {
             shift = Shift.Morning;
-            status =
-              currentTime <= cutoffTime
-                ? StatusAttendance.E
-                : StatusAttendance.L;
+
             //**Mantener esto*/
             condition =
               currentTime <= cutoffTime
@@ -150,10 +151,7 @@ export class AttendanceService {
                 : ConditionAttendance.Late;
           } else {
             shift = Shift.Afternoon;
-            status =
-              currentTime <= cutoffTime
-                ? StatusAttendance.E
-                : StatusAttendance.L;
+
             condition =
               currentTime <= cutoffTime
                 ? ConditionAttendance.Early
@@ -184,13 +182,13 @@ export class AttendanceService {
           );
         }
 
-        /**ya tiene asistencia, verificar si tiene otro turno */
         const attendance = this.attendanceRepository.create({
-          shift: shift,
-          status: status,
+          shift: indSchedule.shift,
+
           arrivalTime: currentTime,
           student: { id: enrollment.student.id },
           arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
+          typeSchedule: TypeSchedule.Individual,
         });
 
         return this.attendanceRepository.save(attendance);
@@ -223,16 +221,14 @@ export class AttendanceService {
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
           shift = Shift.Morning;
-          status =
-            currentTime <= cutoffTime ? StatusAttendance.E : StatusAttendance.L;
+
           condition =
             currentTime <= cutoffTime
               ? ConditionAttendance.Early
               : ConditionAttendance.Late;
         } else {
           shift = Shift.Afternoon;
-          status =
-            currentTime <= cutoffTime ? StatusAttendance.E : StatusAttendance.L;
+
           condition =
             currentTime <= cutoffTime
               ? ConditionAttendance.Early
@@ -243,11 +239,12 @@ export class AttendanceService {
 
       const attendance = this.attendanceRepository.create({
         shift: shift,
-        status: status,
+
         condition: condition,
         arrivalTime: currentTime,
         student: { id: enrollment.student.id },
         arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
+        typeSchedule: TypeSchedule.General,
       });
 
       return this.attendanceRepository.save(attendance);
@@ -386,13 +383,64 @@ export class AttendanceService {
     return `This action returns a #${id} attendance`;
   }
 
-  update(id: number, updateAttendanceDto: UpdateAttendanceDto) {
-    return `This action updates a #${updateAttendanceDto} attendance`;
+  async update(id: number, updateAttendanceDto: UpdateAttendanceDto) {
+    const timeZone = 'America/Lima';
+    const currentDate = moment.utc();
+    const zonedDate = currentDate
+      .tz(timeZone)
+      .subtract(2, 'd')
+      .format('YYYY-MM-DD');
+
+    try {
+      const attendace = await this.attendanceRepository.findOneByOrFail({ id });
+
+      if (!(new Date(attendace.arrivalDate) >= new Date(zonedDate))) {
+        console.log(attendace.arrivalDate >= new Date(zonedDate));
+        throw new BadRequestException(
+          'No es posible editar esta assitencia, pasaron dos dias',
+        );
+      }
+      attendace.condition = updateAttendanceDto.condition;
+      return await this.attendanceRepository.save(attendace);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   remove(id: number) {
     return `This action removes a #${id} attendance`;
   }
+
+  async findByClassroom(searchByClassroomDto: SearchByClassroomDto) {
+    const { activityClassroomId, typeSchedule, startDate, endDate } =
+      searchByClassroomDto;
+    const enrroll = await this.enrrollmentRepository.find({
+      where: {
+        activityClassroom: { id: activityClassroomId },
+      },
+    });
+
+    const studentsIds = enrroll.map((item) => item.student.id);
+
+    const students = await this.studentRepository
+      .createQueryBuilder('student')
+      .leftJoinAndSelect('student.attendance', 'attendance')
+      .leftJoinAndSelect('student.person', 'person')
+      .where('student.id IN (:...studentsIds)', { studentsIds })
+      .andWhere('attendance.arrivalDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('attendance.typeSchedule = :typeSchedule', { typeSchedule })
+      .getMany();
+
+    const formatStudents = students.map((item) => {
+      const { person, attendance } = item;
+      return { student: person, attendance };
+    });
+
+    return formatStudents;
+  } /**fs */
 
   private parseDate(dateString) {
     const [day, month, year] = dateString.split('-').map(Number);
@@ -578,6 +626,39 @@ export class AttendanceService {
         idsForAfternoon.includes(student.id),
       );
       studentsToAbsent = studentsToAbsentGeneral.concat(studentsToAbsentInd);
+      this.logger.log(
+        `Number of students absent for today (${currentDate}) in the shift ${shift}: ${studentsToAbsent.length}`,
+      );
+      this.logger.log(
+        `Number of students absent scheduleGeneral: $${studentsToAbsentGeneral.length}`,
+      );
+      this.logger.log(
+        `Number of students absent scheduleInd: $${studentsToAbsentInd.length}`,
+      );
+      for (const student of studentsToAbsentGeneral) {
+        await this.attendanceRepository.save({
+          arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
+          arrivalTime: currentDate,
+          shift: shift,
+
+          condition: ConditionAttendance.Absent,
+          student: { id: student.id },
+          typeSchedule: TypeSchedule.General,
+        });
+      }
+      for (const student of studentsToAbsentInd) {
+        await this.attendanceRepository.save({
+          arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
+          arrivalTime: currentDate,
+          shift: shift,
+
+          condition: ConditionAttendance.Absent,
+          student: { id: student.id },
+          typeSchedule: TypeSchedule.Individual,
+        });
+      }
+      this.logger.log(`Cron jobs completed succesfully`);
+      return;
     }
 
     this.logger.log(
@@ -588,7 +669,7 @@ export class AttendanceService {
         arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
         arrivalTime: currentDate,
         shift: shift,
-        status: StatusAttendance.A,
+
         condition: ConditionAttendance.Absent,
         student: { id: student.id },
       });

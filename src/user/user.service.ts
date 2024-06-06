@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -72,6 +72,9 @@ export class UserService {
     const users = await this.userRepository.find({
       relations: {
         roles: true,
+        assignments: {
+          campus: true,
+        },
       },
     });
 
@@ -81,12 +84,39 @@ export class UserService {
         email: user.email,
         isActive: user.isActive,
         roles: user.roles,
+        assignments: user.assignments.map((ass) => {
+          return { id: ass.campus.id, name: ass.campus.name };
+        }),
       };
     });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: number) {
+    try {
+      const user = await this.userRepository.findOneOrFail({
+        where: { id },
+        relations: {
+          roles: true,
+          assignments: {
+            campus: true,
+          },
+        },
+      });
+      const { email, roles, assignments } = user;
+
+      return {
+        id: user.id,
+        email,
+        roles: roles.map((rol) => {
+          return rol.id;
+        }),
+        assignments: assignments.map((ass) => {
+          return ass.campus.id;
+        }),
+      };
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
@@ -101,7 +131,10 @@ export class UserService {
     const { campusDetailsIds, rolesIds, email, password } = updateUserDto;
     userToUpdate.roles = [];
     userToUpdate.email = email;
-    userToUpdate.password = bcrypt.hashSync(password, 10);
+    if (password) {
+      userToUpdate.password = bcrypt.hashSync(password, 10);
+    }
+
     for (const roleId of rolesIds) {
       const role = await this.roleRepository.findOneBy({ id: roleId });
       if (role) {

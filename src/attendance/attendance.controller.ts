@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { Shift } from './enum/shift.enum';
 import { SearchAttendanceDto } from './dto/search-attendace.dto';
+import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
 
 @ApiTags('Attendance')
 @Controller('attendance')
@@ -59,6 +60,10 @@ export class AttendanceController {
   @Get()
   findAll() {
     return this.attendanceService.findAll();
+  }
+  @Get('/by-classroom')
+  findByClassroom(@Body() searchByClassroomDto: SearchByClassroomDto) {
+    return this.attendanceService.findByClassroom(searchByClassroomDto);
   }
   @Get('cron')
   testCron() {
