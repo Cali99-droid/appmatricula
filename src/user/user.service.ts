@@ -9,7 +9,7 @@ import { AddRoleDto } from './dto/add-role.dto';
 import * as bcrypt from 'bcrypt';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Assignment } from './entities/assignments.entity';
-import { Campus } from 'src/campus/entities/campus.entity';
+
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 @Injectable()
 export class UserService {

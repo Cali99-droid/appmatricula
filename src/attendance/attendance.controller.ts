@@ -62,7 +62,31 @@ export class AttendanceController {
     return this.attendanceService.findAll();
   }
   @Get('/by-classroom')
-  findByClassroom(@Body() searchByClassroomDto: SearchByClassroomDto) {
+  @ApiQuery({
+    name: 'activityClassroomId',
+    required: true,
+    description: 'Id of the activityClassroom',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'typeSchedule',
+    required: true,
+    description: 'typeSchedule of the G or I',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: true,
+    description: 'StartDate of the attendace',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: true,
+    description: 'EndDate of the attendace',
+    type: String,
+  })
+  findByClassroom(@Query() searchByClassroomDto: SearchByClassroomDto) {
     return this.attendanceService.findByClassroom(searchByClassroomDto);
   }
   @Get('cron')
