@@ -89,10 +89,10 @@ export class AttendanceController {
   findByClassroom(@Query() searchByClassroomDto: SearchByClassroomDto) {
     return this.attendanceService.findByClassroom(searchByClassroomDto);
   }
-  @Get('cron')
-  testCron() {
-    return this.attendanceService.markAbsentStudents(Shift.Afternoon);
-  }
+  // @Get('cron')
+  // testCron() {
+  //   return this.attendanceService.markAbsentStudents(Shift.Afternoon);
+  // }
 
   // @Get('cron')
   // testCron() {

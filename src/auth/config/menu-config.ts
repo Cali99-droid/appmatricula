@@ -67,7 +67,7 @@ export const AdminMenu = {
           label: 'Control Asistencia',
           icon: 'student',
           link: '/admin/student/attendance',
-          permissions: ['admin'],
+          permissions: ['admin', 'register-attendace'],
         },
       ],
     },
