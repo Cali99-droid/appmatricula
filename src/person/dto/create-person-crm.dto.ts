@@ -8,6 +8,13 @@ function ToUpperCase(value: string): string {
 }
 export class CreatePersonCrmDto {
   @ApiProperty({
+    example: 'x5nrn6P28eb3WgJq4CVp',
+    description: 'Contact Id to CRM  ',
+  })
+  @IsNotEmpty()
+  @IsString()
+  crmGHLId: string;
+  @ApiProperty({
     example: '71562526',
     description: 'person DNI',
     uniqueItems: true,

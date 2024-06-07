@@ -72,4 +72,12 @@ export class PersonController {
   createByCrm(@Body() createPersonCrmDto: CreatePersonCrmDto) {
     return this.personService.createParentCRM(createPersonCrmDto);
   }
+  @Get('crm/created')
+  findToCreateInCRM() {
+    return this.personService.findToCreateInCRM();
+  }
+  @Get('crm/updated')
+  findTUpdateInCRM() {
+    return this.personService.findToUpdateInCRM();
+  }
 }
