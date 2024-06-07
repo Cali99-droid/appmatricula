@@ -20,8 +20,6 @@ import {
 } from '@nestjs/swagger';
 import { Shift } from './enum/shift.enum';
 import { SearchAttendanceDto } from './dto/search-attendace.dto';
-// import { Shift } from './enum/shift.enum';
-
 @ApiTags('Attendance')
 @Controller('attendance')
 export class AttendanceController {
