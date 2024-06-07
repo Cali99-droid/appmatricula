@@ -68,13 +68,13 @@ export class PersonService {
   async findToCreateInCRM() {
     const users = await this.userRepository.find({
       where: {
-        crmGHLId: null,
+        crmGHLId: IsNull(),
       },
     });
     const userDetails = users.map((user) => ({
       email: user.email,
       first_name: user.person.name,
-      last_name: user.person.name,
+      last_name: `${user.person.lastname},${user.person.mLastname}`,
     }));
     return userDetails;
   }
