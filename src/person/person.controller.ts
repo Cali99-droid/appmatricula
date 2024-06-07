@@ -32,6 +32,14 @@ export class PersonController {
     return this.personService.findAll();
   }
 
+  @Get('crm/created')
+  findToCreateInCRM() {
+    return this.personService.findToCreateInCRM();
+  }
+  @Get('crm/updated')
+  findTUpdateInCRM() {
+    return this.personService.findToUpdateInCRM();
+  }
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.personService.findOne(+id);

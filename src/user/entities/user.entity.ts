@@ -4,11 +4,13 @@ import {
   BeforeInsert,
   BeforeUpdate,
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Permission } from 'src/permissions/entities/permission.entity';
 
@@ -53,6 +55,23 @@ export class User {
   })
   permission: Permission[];
 
+  @Column('varchar', {
+    nullable: true,
+  })
+  crmGHLId: string;
+
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+  })
+  updatedAt: Date;
   @BeforeInsert()
   checkFieldsBeforeInsert() {
     this.email = this.email.toLocaleLowerCase().trim();

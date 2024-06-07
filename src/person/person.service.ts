@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as sharp from 'sharp';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
-import { Repository } from 'typeorm';
+import { Between, IsNull, Not, Repository } from 'typeorm';
 import { Person } from './entities/person.entity';
 import { User } from 'src/user/entities/user.entity';
 import { CreatePersonCrmDto } from './dto/create-person-crm.dto';
@@ -52,8 +52,9 @@ export class PersonService {
       console.log(personCreated);
       const user = this.userRepository.create({
         email: data.email,
-        password: data.docNumber,
+        password: bcrypt.hashSync(data.docNumber, 10),
         person: { id: personCreated.id },
+        crmGHLId: data.crmGHLId,
       });
       const userCreated = await this.userRepository.save(user);
       console.log(userCreated);
@@ -63,6 +64,41 @@ export class PersonService {
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
+  }
+  async findToCreateInCRM() {
+    const users = await this.userRepository.find({
+      where: {
+        crmGHLId: null,
+      },
+    });
+    const userDetails = users.map((user) => ({
+      email: user.email,
+      first_name: user.person.name,
+      last_name: user.person.name,
+    }));
+    return userDetails;
+  }
+  async findToUpdateInCRM() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    const yesterday = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    yesterday.setDate(yesterday.getDate() - 1);
+    console.log(today);
+    const users = await this.userRepository.find({
+      where: {
+        crmGHLId: Not(IsNull()),
+        updatedAt: Between(new Date(yesterday), new Date(tomorrow)),
+      },
+    });
+    const userDetails = users.map((user) => ({
+      crmGHLId: user.crmGHLId,
+      email: user.email,
+      first_name: user.person.name,
+      last_name: user.person.name,
+    }));
+    return userDetails;
   }
   findAll() {
     return `This action returns all person`;
