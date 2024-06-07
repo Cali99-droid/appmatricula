@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
@@ -345,6 +350,24 @@ export class AttendanceService {
         arrivalTime: 'DESC',
       },
       take: 5,
+      relations: {
+        student: {
+          enrollment: {
+            activityClassroom: {
+              grade: {
+                level: true,
+              },
+            },
+          },
+        },
+      },
+      // where: {
+      //   student: {
+      //     enrollment: {
+
+      //     },
+      //   },
+      // },
     });
 
     const timeZone = 'America/Lima';
@@ -364,7 +387,9 @@ export class AttendanceService {
       const { student, ...attendance } = item;
 
       const data = student.person;
-
+      const classa = student.enrollment.reduce((max, obj) => {
+        return obj.id > max.id ? obj : max;
+      }, student.enrollment[0]);
       return {
         ...attendance,
         student: {
@@ -373,6 +398,12 @@ export class AttendanceService {
             ? `${urlS3}${student.photo}`
             : `${urlS3}${defaultAvatar}`,
         },
+        classroom:
+          classa.activityClassroom.grade.name +
+          ' ' +
+          classa.activityClassroom.section +
+          ' ' +
+          classa.activityClassroom.grade.level.name,
       };
     });
 
@@ -412,34 +443,41 @@ export class AttendanceService {
   }
 
   async findByClassroom(searchByClassroomDto: SearchByClassroomDto) {
-    const { activityClassroomId, typeSchedule, startDate, endDate } =
-      searchByClassroomDto;
-    const enrroll = await this.enrrollmentRepository.find({
-      where: {
-        activityClassroom: { id: activityClassroomId },
-      },
-    });
+    try {
+      const { activityClassroomId, typeSchedule, startDate, endDate } =
+        searchByClassroomDto;
+      const enrroll = await this.enrrollmentRepository.find({
+        where: {
+          activityClassroom: { id: activityClassroomId },
+        },
+      });
 
-    const studentsIds = enrroll.map((item) => item.student.id);
+      const studentsIds = enrroll.map((item) => item.student.id);
+      if (studentsIds.length > 0) {
+        const students = await this.studentRepository
+          .createQueryBuilder('student')
+          .leftJoinAndSelect('student.attendance', 'attendance')
+          .leftJoinAndSelect('student.person', 'person')
+          .where('student.id IN (:...studentsIds)', { studentsIds })
+          .andWhere('attendance.arrivalDate BETWEEN :startDate AND :endDate', {
+            startDate,
+            endDate,
+          })
+          .andWhere('attendance.typeSchedule = :typeSchedule', { typeSchedule })
+          .getMany();
 
-    const students = await this.studentRepository
-      .createQueryBuilder('student')
-      .leftJoinAndSelect('student.attendance', 'attendance')
-      .leftJoinAndSelect('student.person', 'person')
-      .where('student.id IN (:...studentsIds)', { studentsIds })
-      .andWhere('attendance.arrivalDate BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      })
-      .andWhere('attendance.typeSchedule = :typeSchedule', { typeSchedule })
-      .getMany();
+        const formatStudents = students.map((item) => {
+          const { person, attendance } = item;
+          return { student: person, attendance };
+        });
 
-    const formatStudents = students.map((item) => {
-      const { person, attendance } = item;
-      return { student: person, attendance };
-    });
-
-    return formatStudents;
+        return formatStudents;
+      } else {
+        return [];
+      }
+    } catch (error) {
+      console.log(error);
+    }
   } /**fs */
 
   private parseDate(dateString) {
@@ -669,7 +707,7 @@ export class AttendanceService {
         arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
         arrivalTime: currentDate,
         shift: shift,
-
+        typeSchedule: TypeSchedule.General,
         condition: ConditionAttendance.Absent,
         student: { id: student.id },
       });
