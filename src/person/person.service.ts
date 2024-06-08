@@ -55,6 +55,7 @@ export class PersonService {
         email: data.email,
         password: bcrypt.hashSync(data.docNumber, 10),
         person: { id: personCreated.id },
+        crmGHLId: data.crmGHLId,
       });
       const userCreated = await this.userRepository.save(user);
       console.log(userCreated);
