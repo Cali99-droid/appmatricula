@@ -55,6 +55,7 @@ export class PersonService {
         email: data.email,
         password: bcrypt.hashSync(data.docNumber, 10),
         person: { id: personCreated.id },
+        crmGHLId: data.crmGHLId,
       });
       const userCreated = await this.userRepository.save(user);
       console.log(userCreated);
@@ -68,13 +69,13 @@ export class PersonService {
   async findToCreateInCRM() {
     const users = await this.userRepository.find({
       where: {
-        crmGHLId: null,
+        crmGHLId: IsNull(),
       },
     });
     const userDetails = users.map((user) => ({
       email: user.email,
       first_name: user.person.name,
-      last_name: user.person.name,
+      last_name: `${user.person.lastname},${user.person.mLastname}`,
     }));
     return userDetails;
   }
