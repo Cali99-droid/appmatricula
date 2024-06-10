@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -78,7 +73,7 @@ export class UserService {
       relations: {
         roles: true,
         assignments: {
-          campus: true,
+          campusDetail: true,
         },
       },
     });
@@ -90,7 +85,7 @@ export class UserService {
         isActive: user.isActive,
         roles: user.roles,
         assignments: user.assignments.map((ass) => {
-          return { id: ass.campus.id, name: ass.campus.name };
+          return { id: ass.campusDetail.id, name: ass.campusDetail.name };
         }),
       };
     });
@@ -103,7 +98,7 @@ export class UserService {
         relations: {
           roles: true,
           assignments: {
-            campus: true,
+            campusDetail: true,
           },
         },
       });
@@ -116,7 +111,7 @@ export class UserService {
           return rol.id;
         }),
         assignments: assignments.map((ass) => {
-          return ass.campus.id;
+          return ass.campusDetail.id;
         }),
         isActive,
       };
@@ -164,14 +159,15 @@ export class UserService {
     await this.assignmentRepository.remove(assignmentToUpdate);
     if (campusDetailsIds) {
       for (const campusId of campusDetailsIds) {
-        const campus = await this.campusDetailRepository.findOneBy({
-          id: campusId,
+        // const campus = await this.campusDetailRepository.findOneBy({
+        //   id: campusId,
+        // });
+        // console.log(campus)
+
+        await this.assignmentRepository.save({
+          user: userUpdated,
+          campusDetail: { id: campusId },
         });
-        if (campus) {
-          await this.assignmentRepository.save({ user: userUpdated, campus });
-        } else {
-          throw new Error(`campus with ID ${campusId} not found`);
-        }
       }
     }
 

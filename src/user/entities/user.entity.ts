@@ -14,7 +14,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Permission } from 'src/permissions/entities/permission.entity';
+
 import { Role } from 'src/role/entities/role.entity';
 import { Assignment } from './assignments.entity';
 
@@ -53,11 +53,11 @@ export class User {
   @JoinColumn({ name: 'personId' })
   person: Person;
 
-  @OneToMany(() => Permission, (permission) => permission.user, {
-    // cascade: true,
-    eager: true,
-  })
-  permission: Permission[];
+  // @OneToMany(() => Permission, (permission) => permission.user, {
+  //   // cascade: true,
+  //   eager: true,
+  // })
+  // permission: Permission[];
 
   @OneToMany(() => Assignment, (assignment) => assignment.user)
   assignments: Assignment[];

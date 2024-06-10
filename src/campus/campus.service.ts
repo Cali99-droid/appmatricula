@@ -1,4 +1,4 @@
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import {
   BadRequestException,
   Injectable,
@@ -12,6 +12,8 @@ import { UpdateCampusDto } from './dto/update-campus.dto';
 import { Campus } from './entities/campus.entity';
 import { Year } from 'src/years/entities/year.entity';
 import { CampusToLevel } from './entities/campusToLevel.entity';
+import { User } from 'src/user/entities/user.entity';
+import { Assignment } from 'src/user/entities/assignments.entity';
 
 @Injectable()
 export class CampusService {
@@ -22,6 +24,10 @@ export class CampusService {
     @InjectRepository(CampusToLevel)
     private readonly campusToLevelRepository: Repository<CampusToLevel>,
     private readonly dataSource: DataSource,
+    @InjectRepository(Assignment)
+    private readonly assignmentRepository: Repository<Assignment>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
   async validateCampusExists(idCampus: number, idyear: number) {
     const existCampus = await this.campusRepository.findOne({
@@ -76,11 +82,42 @@ export class CampusService {
     });
     return campus;
   }
-  async findAllByYear(idYear: number) {
-    const campus = await this.campusRepository.find({
+  async findAllByYear(idYear: number, user: User) {
+    // Obtener el usuario con las relaciones necesarias
+    const us = await this.userRepository.findOne({
       where: {
-        year: { id: idYear },
+        email: user.email,
       },
+      relations: {
+        assignments: {
+          campusDetail: true,
+        },
+        roles: {
+          permissions: true,
+        },
+      },
+    });
+
+    // Recopilar permisos del usuario
+    const permissions = new Set(
+      us.roles.flatMap((role) => role.permissions.map((perm) => perm.name)),
+    );
+
+    // Determinar si el usuario es admin
+    const isAdmin = permissions.has('admin');
+
+    // Condición where para la consulta de campus
+    const whereCondition: any = { year: { id: idYear } };
+
+    if (!isAdmin) {
+      const campusDetailIds = us.assignments.map(
+        (item) => item.campusDetail.id,
+      );
+      whereCondition.campusDetail = { id: In(campusDetailIds) };
+    }
+
+    // Obtener campus según la condición
+    const campus = await this.campusRepository.find({
       relations: {
         campusDetail: true,
         year: true,
@@ -88,11 +125,11 @@ export class CampusService {
       },
       order: {
         campusDetail: { name: 'ASC' },
-        campusToLevel: {
-          level: { name: 'ASC' },
-        },
+        campusToLevel: { level: { name: 'ASC' } },
       },
+      where: whereCondition,
     });
+
     return campus;
   }
   async findOne(id: string) {

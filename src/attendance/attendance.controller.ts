@@ -21,6 +21,9 @@ import {
 // import { Shift } from './enum/shift.enum';
 import { SearchAttendanceDto } from './dto/search-attendace.dto';
 import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
+import { Auth } from 'src/auth/decorators/auth.decorator';
+import { GetUser } from 'src/auth/decorators/get-user.decorator';
+import { User } from 'src/user/entities/user.entity';
 
 @ApiTags('Attendance')
 @Controller('attendance')
@@ -37,8 +40,12 @@ export class AttendanceController {
     status: 400,
     description: 'some data is wrong, check message',
   })
-  create(@Body() createAttendanceDto: CreateAttendanceDto) {
-    return this.attendanceService.create(createAttendanceDto);
+  @Auth('attendance-recorder', 'admin')
+  create(
+    @Body() createAttendanceDto: CreateAttendanceDto,
+    @GetUser() user: User,
+  ) {
+    return this.attendanceService.create(createAttendanceDto, user);
   }
 
   @Get('/last-records')

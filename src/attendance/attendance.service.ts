@@ -23,6 +23,7 @@ import { SearchAttendanceDto } from './dto/search-attendace.dto';
 import { StudentData } from './interfaces/studentData.interface';
 import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
 import { TypeSchedule } from './enum/type-schedule.enum';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class AttendanceService {
@@ -40,11 +41,28 @@ export class AttendanceService {
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(Phase)
     private readonly phaseRepository: Repository<Phase>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
     private readonly configService: ConfigService,
   ) {}
-  async create(createAttendanceDto: CreateAttendanceDto) {
+  async create(createAttendanceDto: CreateAttendanceDto, user: User) {
+    // Obtener el usuario con las relaciones necesarias
+    const us = await this.userRepository.findOne({
+      where: {
+        email: user.email,
+      },
+      relations: {
+        assignments: {
+          campusDetail: true,
+        },
+        roles: {
+          permissions: true,
+        },
+      },
+    });
+
     /**capturar fecha y hora actual */
     const currentTime = new Date();
     const currentDate = new Date();
@@ -59,6 +77,26 @@ export class AttendanceService {
       const enrollment = await this.enrrollmentRepository.findOneByOrFail({
         code: createAttendanceDto.code,
       });
+      /**verificar pertenencia a sede */
+
+      const campusDetailIds = us.assignments.map(
+        (item) => item.campusDetail.id,
+      );
+      if (campusDetailIds.length === 0) {
+        throw new BadRequestException(
+          `Inicie sesión con un usuario autorizado para esta sede`,
+        );
+      }
+
+      const campusEnroll =
+        enrollment.activityClassroom.classroom.campusDetail.id;
+
+      const isInCampus = campusDetailIds.includes(campusEnroll);
+      if (!isInCampus) {
+        throw new BadRequestException(
+          `Inicie sesión con un usuario autorizado para esta sede`,
+        );
+      }
       /**verificar dia feriado */
       const yearId = enrollment.activityClassroom.phase.year.id;
       const queryBuilderHoliday =
@@ -181,7 +219,7 @@ export class AttendanceService {
             `Asistencia duplicada en este turno: ${shift}`,
           );
         }
-
+        console.log('creando cuando existe');
         const attendance = this.attendanceRepository.create({
           shift: indSchedule.shift,
 
@@ -194,6 +232,7 @@ export class AttendanceService {
         return this.attendanceRepository.save(attendance);
       } else {
         //*** crear asistencia */
+
         const turn = enrollment.activityClassroom.schoolShift;
 
         const cutoffTime = new Date();
@@ -513,6 +552,7 @@ export class AttendanceService {
     this.logger.log(`Running cron jobs for the shift: ${shift}`);
     const currentDate = new Date();
     const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
+
     /**obtener fase */
     const qbphase = this.phaseRepository.createQueryBuilder('phase');
     const phase = await qbphase
@@ -529,7 +569,22 @@ export class AttendanceService {
       );
       return;
     }
-
+    /**Validar si es feriado */
+    const yearId = phase.year.id;
+    const queryBuilderHoliday =
+      this.holidayRepository.createQueryBuilder('holiday');
+    const isHoliday = await queryBuilderHoliday
+      .where(`date=:dateNow and yearId =:yearId `, {
+        dateNow: this.convertISODateToYYYYMMDD(currentDate),
+        yearId,
+      })
+      .getOne();
+    if (isHoliday) {
+      this.logger.verbose(
+        `Not absent, this day was defined as a holiday ${currentDate}`,
+      );
+      return;
+    }
     // Encuentra todas las asistencias del día actual y turno especificado
     const queryBuilder =
       this.attendanceRepository.createQueryBuilder('attendance');

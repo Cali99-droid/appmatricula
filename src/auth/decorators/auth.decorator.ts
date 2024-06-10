@@ -11,6 +11,6 @@ export function Auth(...roles: string[]) {
   return applyDecorators(
     // RoleProtected(...roles),
     Permissions(...roles),
-    UseGuards(AuthGuard(), PermissionsGuard),
+    UseGuards(AuthGuard('jwt'), PermissionsGuard),
   );
 }
