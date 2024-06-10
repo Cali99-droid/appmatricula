@@ -39,7 +39,7 @@ export const AdminMenu = {
       link: '/admin/Prueba',
       icon: 'student',
       tagSubMenu: true,
-      permissions: ['admin', 'card-generator', 'register-attendace'],
+      permissions: ['admin', 'card-generator', 'attendance-recorder'],
       subMenu: [
         {
           id: 1,
