@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
@@ -426,7 +421,6 @@ export class AttendanceService {
       const attendace = await this.attendanceRepository.findOneByOrFail({ id });
 
       if (!(new Date(attendace.arrivalDate) >= new Date(zonedDate))) {
-        console.log(attendace.arrivalDate >= new Date(zonedDate));
         throw new BadRequestException(
           'No es posible editar esta assitencia, pasaron dos dias',
         );

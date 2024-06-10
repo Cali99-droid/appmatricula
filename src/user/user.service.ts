@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -102,7 +107,7 @@ export class UserService {
           },
         },
       });
-      const { email, roles, assignments } = user;
+      const { email, roles, assignments, isActive } = user;
 
       return {
         id: user.id,
@@ -113,6 +118,7 @@ export class UserService {
         assignments: assignments.map((ass) => {
           return ass.campus.id;
         }),
+        isActive,
       };
     } catch (error) {
       throw new NotFoundException(error.message);
@@ -128,38 +134,47 @@ export class UserService {
         roles: true,
       },
     });
-    const { campusDetailsIds, rolesIds, email, password } = updateUserDto;
+    const { campusDetailsIds, rolesIds, email, password, isActive } =
+      updateUserDto;
     userToUpdate.roles = [];
-    userToUpdate.email = email;
+    userToUpdate.isActive = isActive;
+    if (email) {
+      userToUpdate.email = email;
+    }
+
     if (password) {
       userToUpdate.password = bcrypt.hashSync(password, 10);
     }
-
-    for (const roleId of rolesIds) {
-      const role = await this.roleRepository.findOneBy({ id: roleId });
-      if (role) {
-        userToUpdate.roles.push(role);
-      } else {
-        throw new Error(`Role with ID ${roleId} not found`);
+    if (rolesIds) {
+      for (const roleId of rolesIds) {
+        const role = await this.roleRepository.findOneBy({ id: roleId });
+        if (role) {
+          userToUpdate.roles.push(role);
+        } else {
+          throw new Error(`Role with ID ${roleId} not found`);
+        }
       }
     }
+
     const userUpdated = await this.userRepository.save(userToUpdate);
 
     const assignmentToUpdate = await this.assignmentRepository.findBy({
       user: { id: userUpdated.id },
     });
     await this.assignmentRepository.remove(assignmentToUpdate);
-
-    for (const campusId of campusDetailsIds) {
-      const campus = await this.campusDetailRepository.findOneBy({
-        id: campusId,
-      });
-      if (campus) {
-        await this.assignmentRepository.save({ user: userUpdated, campus });
-      } else {
-        throw new Error(`campus with ID ${campusId} not found`);
+    if (campusDetailsIds) {
+      for (const campusId of campusDetailsIds) {
+        const campus = await this.campusDetailRepository.findOneBy({
+          id: campusId,
+        });
+        if (campus) {
+          await this.assignmentRepository.save({ user: userUpdated, campus });
+        } else {
+          throw new Error(`campus with ID ${campusId} not found`);
+        }
       }
     }
+
     return userUpdated;
   }
 

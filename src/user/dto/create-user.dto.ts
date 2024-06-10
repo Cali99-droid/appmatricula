@@ -1,8 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
+  IsBoolean,
   IsEmail,
   IsInt,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -31,6 +33,14 @@ export class CreateUserDto {
       'The password must have a Uppercase, lowercase letter and a number',
   })
   password: string;
+
+  @ApiProperty({
+    description: 'password of the user',
+    nullable: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isActive: boolean;
 
   @ApiProperty({
     description: 'role id',
