@@ -14,6 +14,7 @@ import { ActivityClassroom } from 'src/activity_classroom/entities/activity_clas
 import { ConfigModule } from '@nestjs/config';
 import { User } from 'src/user/entities/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
+import { DayOfWeek } from 'src/day_of_week/entities/day_of_week.entity';
 
 @Module({
   controllers: [AttendanceController],
@@ -29,6 +30,7 @@ import { Permission } from 'src/permissions/entities/permission.entity';
       ActivityClassroom,
       User,
       Permission,
+      DayOfWeek,
     ]),
     ConfigModule,
     ScheduleModule.forRoot(),

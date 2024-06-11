@@ -44,23 +44,15 @@ export class UserService {
 
       for (const roleId of rolesIds) {
         const role = await this.roleRepository.findOneBy({ id: roleId });
-        if (role) {
-          userToUpdate.roles.push(role);
-        } else {
-          throw new Error(`Role with ID ${roleId} not found`);
-        }
+        userToUpdate.roles.push(role);
       }
 
       const userCreated = await this.userRepository.save(userToUpdate);
       for (const campusId of campusDetailsIds) {
-        const campus = await this.campusDetailRepository.findOneBy({
-          id: campusId,
+        await this.assignmentRepository.save({
+          user: userCreated,
+          campusDetail: { id: campusId },
         });
-        if (campus) {
-          await this.assignmentRepository.save({ user: userCreated, campus });
-        } else {
-          throw new Error(`campus with ID ${campusId} not found`);
-        }
       }
       return userCreated;
     } catch (error) {

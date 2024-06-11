@@ -24,6 +24,7 @@ import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
+import { Shift } from './enum/shift.enum';
 
 @ApiTags('Attendance')
 @Controller('attendance')
@@ -61,8 +62,9 @@ export class AttendanceController {
     status: 500,
     description: 'internal server error',
   })
-  findLastFiveRecords() {
-    return this.attendanceService.findLastFiveRecords();
+  @Auth('attendance-recorder', 'admin')
+  findLastFiveRecords(@GetUser() user: User) {
+    return this.attendanceService.findLastFiveRecords(user);
   }
   @Get()
   findAll() {
@@ -93,13 +95,14 @@ export class AttendanceController {
     description: 'EndDate of the attendace',
     type: String,
   })
+  @Auth('attendance-recorder', 'admin')
   findByClassroom(@Query() searchByClassroomDto: SearchByClassroomDto) {
     return this.attendanceService.findByClassroom(searchByClassroomDto);
   }
-  // @Get('cron')
-  // testCron() {
-  //   return this.attendanceService.markAbsentStudents(Shift.Afternoon);
-  // }
+  @Get('cron')
+  testCron() {
+    return this.attendanceService.markAbsentStudents(Shift.Morning);
+  }
 
   // @Get('cron')
   // testCron() {
