@@ -53,7 +53,7 @@ export const AdminMenu = {
           label: 'Estudiantes',
           icon: 'student',
           link: '/admin/student/students',
-          permissions: ['admin', 'cardGenerator'],
+          permissions: ['admin', 'card-generator'],
         },
         {
           id: 3,
