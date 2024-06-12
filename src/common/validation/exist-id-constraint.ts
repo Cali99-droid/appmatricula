@@ -15,7 +15,9 @@ export class ExistIdConstraint implements ValidatorConstraintInterface {
   async validate(value: any, args?: ValidationArguments): Promise<boolean> {
     const input: ExistIdConstraintInput = args.constraints[0];
     const { tableName, isArray = false } = input;
-
+    if (!value) {
+      return false;
+    }
     // Directly return true for empty arrays to accept them as valid
     if (isArray && Array.isArray(value) && value.length === 0) {
       return true;

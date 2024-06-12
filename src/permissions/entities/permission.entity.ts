@@ -1,13 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ValidRoles } from 'src/auth/interfaces/valid-roles';
-import { User } from 'src/user/entities/user.entity';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Permission {
@@ -17,8 +11,13 @@ export class Permission {
 
   @Column({ type: 'enum', enum: ValidRoles })
   accessName: ValidRoles;
+  @ApiProperty()
+  @Column('varchar', {
+    nullable: true,
+  })
+  name: string;
 
-  @ManyToOne(() => User, (user) => user.permission)
-  @JoinColumn({ name: 'userId' })
-  user: User;
+  // @ManyToOne(() => User, (user) => user.permission)
+  // @JoinColumn({ name: 'userId' })
+  // user: User;
 }

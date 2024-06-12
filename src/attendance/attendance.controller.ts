@@ -18,8 +18,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Shift } from './enum/shift.enum';
+// import { Shift } from './enum/shift.enum';
 import { SearchAttendanceDto } from './dto/search-attendace.dto';
+import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
+import { Auth } from 'src/auth/decorators/auth.decorator';
+import { GetUser } from 'src/auth/decorators/get-user.decorator';
+import { User } from 'src/user/entities/user.entity';
+import { Shift } from './enum/shift.enum';
 
 @ApiTags('Attendance')
 @Controller('attendance')
@@ -36,8 +41,12 @@ export class AttendanceController {
     status: 400,
     description: 'some data is wrong, check message',
   })
-  create(@Body() createAttendanceDto: CreateAttendanceDto) {
-    return this.attendanceService.create(createAttendanceDto);
+  @Auth('attendance-recorder', 'admin')
+  create(
+    @Body() createAttendanceDto: CreateAttendanceDto,
+    @GetUser() user: User,
+  ) {
+    return this.attendanceService.create(createAttendanceDto, user);
   }
 
   @Get('/last-records')
@@ -53,16 +62,46 @@ export class AttendanceController {
     status: 500,
     description: 'internal server error',
   })
-  findLastFiveRecords() {
-    return this.attendanceService.findLastFiveRecords();
+  @Auth('attendance-recorder', 'admin')
+  findLastFiveRecords(@GetUser() user: User) {
+    return this.attendanceService.findLastFiveRecords(user);
   }
   @Get()
   findAll() {
     return this.attendanceService.findAll();
   }
+  @Get('/by-classroom')
+  @ApiQuery({
+    name: 'activityClassroomId',
+    required: true,
+    description: 'Id of the activityClassroom',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'typeSchedule',
+    required: true,
+    description: 'typeSchedule of the G or I',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: true,
+    description: 'StartDate of the attendace',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: true,
+    description: 'EndDate of the attendace',
+    type: String,
+  })
+  @Auth('attendance-recorder', 'admin')
+  findByClassroom(@Query() searchByClassroomDto: SearchByClassroomDto) {
+    return this.attendanceService.findByClassroom(searchByClassroomDto);
+  }
   @Get('cron')
   testCron() {
-    return this.attendanceService.markAbsentStudents(Shift.Afternoon);
+    return this.attendanceService.markAbsentStudents(Shift.Morning);
   }
 
   // @Get('cron')

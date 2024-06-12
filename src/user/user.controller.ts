@@ -10,7 +10,8 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+
 @ApiTags('User')
 @Controller('user')
 export class UserController {
@@ -21,7 +22,13 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
+  // @Patch('add-role')
+  // addRole(@Body() addRoleDto: AddRoleDto) {
+  //   return this.userService.addRoleToUser(addRoleDto);
+  // }
+
   @Get()
+  @ApiResponse({ status: 200, description: 'Detail User' })
   findAll() {
     return this.userService.findAll();
   }

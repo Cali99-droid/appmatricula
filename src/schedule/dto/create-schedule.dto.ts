@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsEnum,
 } from 'class-validator';
+import { Shift } from 'src/attendance/enum/shift.enum';
 import { IsEndTimeAfterStartTimeConstraint } from 'src/common/decorators/is-time-before.decorator';
 import { Day } from 'src/common/enum/day.enum';
 import { ExistId } from 'src/common/validation/exist-id';
@@ -22,7 +23,7 @@ export class CreateScheduleDto {
   @IsString()
   // @IsOptional()
   @MinLength(2)
-  shift: string;
+  shift: Shift;
 
   @ApiProperty({
     description: 'start of the schedule',

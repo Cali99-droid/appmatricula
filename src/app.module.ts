@@ -35,6 +35,7 @@ import { AuthService } from './auth/auth.service';
 import { FamilyModule } from './family/family.module';
 import { RelationshipModule } from './relationship/relationship.module';
 import { PermissionsModule } from './permissions/permissions.module';
+import { RoleModule } from './role/role.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { PermissionsModule } from './permissions/permissions.module';
     FamilyModule,
     RelationshipModule,
     PermissionsModule,
+    RoleModule,
   ],
   providers: [ExistIdConstraint, AuthService],
 })
@@ -93,6 +95,14 @@ export class AppModule implements NestModule {
         {
           path: '/person/crm',
           method: RequestMethod.POST,
+        },
+        {
+          path: '/person/crm/created',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/person/crm/updated',
+          method: RequestMethod.GET,
         },
         {
           path: '/docs/download-carnets/:id',

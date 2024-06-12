@@ -9,6 +9,7 @@ import {
 import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
 
 import { Day } from 'src/common/enum/day.enum';
+import { Shift } from 'src/attendance/enum/shift.enum';
 @Entity()
 export class Schedule {
   @ApiProperty()
@@ -20,8 +21,8 @@ export class Schedule {
     description: 'Shift of schedule',
     nullable: true,
   })
-  @Column('varchar')
-  shift: string;
+  @Column({ type: 'enum', enum: Shift, nullable: true })
+  shift: Shift;
 
   @ApiProperty({
     example: '15:00:00',
