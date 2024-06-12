@@ -82,7 +82,7 @@ export const AdminMenu = {
         {
           id: 1,
           label: 'Reportes Estudiantes',
-          icon: 'table',
+          icon: 'tableStudents',
           link: '/admin/reports/students',
           permissions: ['admin'],
         },
@@ -100,7 +100,7 @@ export const AdminMenu = {
           id: 1,
           label: 'Usuarios',
           icon: 'userAdd',
-          link: '/admin/users/system',
+          link: '/admin/staff/users',
           permissions: ['admin'],
         },
       ],
