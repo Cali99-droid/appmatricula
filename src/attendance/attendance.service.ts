@@ -189,17 +189,17 @@ export class AttendanceService {
           console.log(endHour);
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
-          // if (
-          //   !(
-          //     currentTime >= initAttendanceTime &&
-          //     currentTime <= finishAttendanceTime
-          //   )
-          // ) {
-          //   console.log(endHour);
-          //   throw new BadRequestException(
-          //     `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
-          //   );
-          // }
+          if (
+            !(
+              currentTime >= initAttendanceTime &&
+              currentTime <= finishAttendanceTime
+            )
+          ) {
+            console.log(endHour);
+            throw new BadRequestException(
+              `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
+            );
+          }
           if (currentTime.getHours() < 12) {
             shift = Shift.Morning;
 
@@ -268,16 +268,16 @@ export class AttendanceService {
 
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
-        // if (
-        //   !(
-        //     currentTime >= initAttendanceTime &&
-        //     currentTime <= finishAttendanceTime
-        //   )
-        // ) {
-        //   throw new BadRequestException(
-        //     `You cannot check attendance at this time, please wait until: ${initAttendanceTime}`,
-        //   );
-        // }
+        if (
+          !(
+            currentTime >= initAttendanceTime &&
+            currentTime <= finishAttendanceTime
+          )
+        ) {
+          throw new BadRequestException(
+            `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
+          );
+        }
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
           shift = Shift.Morning;
@@ -589,6 +589,7 @@ export class AttendanceService {
    *
    */
   async markAbsentStudents(shift: Shift): Promise<void> {
+    //TODO validar que se encuentre dentro de un bimestre */
     this.logger.log(`Running cron jobs for the shift: ${shift}`);
     const currentDate = new Date();
     const currentDay: Day = this.getDayEnumValue(currentDate.getDay());

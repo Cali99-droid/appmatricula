@@ -27,7 +27,7 @@ export class BimesterService {
         phase: { id: createBimesterDto.phaseId },
       },
     });
-    if (bimesters.length >= 3) {
+    if (bimesters.length === 4) {
       throw new NotFoundException(
         `Has already exceeded the number of semesters created in this phase`,
       );
