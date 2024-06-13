@@ -1,29 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  Validate,
-  IsString,
-  MinLength,
-  Matches,
-  IsNumber,
-  IsOptional,
-  IsEnum,
-} from 'class-validator';
-import { Shift } from 'src/attendance/enum/shift.enum';
+import { Validate, Matches, IsNumber, IsEnum } from 'class-validator';
+
 import { IsEndTimeAfterStartTimeConstraint } from 'src/common/decorators/is-time-before.decorator';
 import { Day } from 'src/common/enum/day.enum';
 import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreateScheduleDto {
-  @ApiProperty({
-    description: 'shift of the schedule',
-    nullable: true,
-    minLength: 4,
-    example: 'Tarde',
-  })
-  @IsString()
-  // @IsOptional()
-  @MinLength(2)
-  shift: Shift;
+  // @ApiProperty({
+  //   description: 'shift of the schedule',
+  //   nullable: true,
+  //   minLength: 4,
+  //   example: 'Tarde',
+  // })
+  // @IsString()
+  // // @IsOptional()
+  // @MinLength(2)
+  // shift: Shift;
 
   @ApiProperty({
     description: 'start of the schedule',

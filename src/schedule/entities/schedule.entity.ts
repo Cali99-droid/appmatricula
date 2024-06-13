@@ -9,7 +9,7 @@ import {
 import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
 
 import { Day } from 'src/common/enum/day.enum';
-import { Shift } from 'src/attendance/enum/shift.enum';
+
 @Entity()
 export class Schedule {
   @ApiProperty()

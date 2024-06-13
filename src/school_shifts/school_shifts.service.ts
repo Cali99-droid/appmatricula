@@ -25,7 +25,7 @@ export class SchoolShiftsService {
     const exists = await this.schoolShiftRepository.findOne({
       where: [
         {
-          name: createSchoolShiftDto.name,
+          // name: createSchoolShiftDto.name,
           campus: { id: createSchoolShiftDto.campusId },
           level: { id: createSchoolShiftDto.levelId },
           shift: createSchoolShiftDto.shift,
@@ -60,7 +60,7 @@ export class SchoolShiftsService {
         level: { id: !isNaN(+levelId) ? +levelId : undefined },
       },
       order: {
-        name: 'ASC',
+        shift: 'ASC',
       },
     });
     return schoolShifts;
