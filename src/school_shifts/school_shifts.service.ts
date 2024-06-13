@@ -28,6 +28,7 @@ export class SchoolShiftsService {
           name: createSchoolShiftDto.name,
           campus: { id: createSchoolShiftDto.campusId },
           level: { id: createSchoolShiftDto.levelId },
+          shift: createSchoolShiftDto.shift,
         },
       ],
     });

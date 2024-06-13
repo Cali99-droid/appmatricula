@@ -5,7 +5,9 @@ import {
   MinLength,
   Matches,
   IsNumber,
+  IsEnum,
 } from 'class-validator';
+import { Shift } from 'src/attendance/enum/shift.enum';
 // import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';
 import { IsEndTimeAfterStartTimeConstraint } from 'src/common/decorators/is-time-before.decorator';
 import { ExistId } from 'src/common/validation/exist-id';
@@ -51,4 +53,15 @@ export class CreateSchoolShiftDto {
   @IsNumber()
   @ExistId({ tableName: 'level' })
   levelId: number;
+
+  @ApiProperty({
+    example: 'M',
+    description: 'Shift , must be M:Morning, A:Afternoon OR E: Extra',
+    nullable: false,
+    enum: Shift,
+  })
+  @IsEnum(Shift, {
+    message: 'Shift value must be some values: [M, A, E] ',
+  })
+  shift: Shift;
 }

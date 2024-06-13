@@ -101,7 +101,8 @@ export class AttendanceController {
   }
   @Get('cron')
   testCron() {
-    return this.attendanceService.markAbsentStudents(Shift.Morning);
+    // return this.attendanceService.markAbsentStudentsCronGeneral(Shift.Morning);
+    // return this.attendanceService.markAbsentStudentsCronIndividual();
   }
 
   // @Get('cron')

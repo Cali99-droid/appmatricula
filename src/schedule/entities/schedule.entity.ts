@@ -16,13 +16,13 @@ export class Schedule {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({
-    example: 'Tarde',
-    description: 'Shift of schedule',
-    nullable: true,
-  })
-  @Column({ type: 'enum', enum: Shift, nullable: true })
-  shift: Shift;
+  // @ApiProperty({
+  //   example: 'Tarde',
+  //   description: 'Shift of schedule',
+  //   nullable: true,
+  // })
+  // @Column({ type: 'enum', enum: Shift, nullable: true })
+  // shift: Shift;
 
   @ApiProperty({
     example: '15:00:00',
