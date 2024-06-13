@@ -1,24 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  Validate,
-  IsString,
-  MinLength,
-  Matches,
-  IsNumber,
-} from 'class-validator';
+import { Validate, Matches, IsNumber, IsEnum } from 'class-validator';
+import { Shift } from 'src/attendance/enum/shift.enum';
 // import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';
 import { IsEndTimeAfterStartTimeConstraint } from 'src/common/decorators/is-time-before.decorator';
 import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreateSchoolShiftDto {
-  @ApiProperty({
-    description: 'Name of the school-shift (unique)',
-    nullable: false,
-    minLength: 4,
-  })
-  @IsString()
-  @MinLength(2)
-  name: string;
+  // @ApiProperty({
+  //   description: 'Name of the school-shift (unique)',
+  //   nullable: false,
+  //   minLength: 4,
+  // })
+  // @IsString()
+  // @MinLength(2)
+  // name: string;
 
   @ApiProperty({
     description: 'start of the school shift',
@@ -51,4 +46,15 @@ export class CreateSchoolShiftDto {
   @IsNumber()
   @ExistId({ tableName: 'level' })
   levelId: number;
+
+  @ApiProperty({
+    example: 'M',
+    description: 'Shift , must be M:Morning, A:Afternoon OR E: Extra',
+    nullable: false,
+    enum: Shift,
+  })
+  @IsEnum(Shift, {
+    message: 'Shift value must be some values: [M, A, E] ',
+  })
+  shift: Shift;
 }

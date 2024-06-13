@@ -10,12 +10,17 @@ export class AttendanceScheduler {
   // Ejecutar a las 09:01 AM todos los días para cerrar el turno de la mañana
   @Cron('0 9 * * 1-6')
   async handleMorningShift() {
-    await this.attendanceService.markAbsentStudents(Shift.Morning);
+    await this.attendanceService.markAbsentStudentsCronGeneral(Shift.Morning);
   }
 
   // Ejecutar a las 14:01 PM todos los días para cerrar el turno de la tarde
   @Cron('0 14 * * 1-6')
   async handleAfternoonShift() {
-    await this.attendanceService.markAbsentStudents(Shift.Afternoon);
+    await this.attendanceService.markAbsentStudentsCronGeneral(Shift.Afternoon);
+  }
+
+  @Cron('0 17 * * 1-6')
+  async handleIndividualSchedule() {
+    await this.attendanceService.markAbsentStudentsCronIndividual();
   }
 }
