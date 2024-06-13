@@ -33,6 +33,7 @@ export class PersonService {
     try {
       let familyRole = undefined;
       let gender = undefined;
+      let idPerson = undefined;
       console.log(data);
       if (data.gender == 'Masculino') {
         gender = 'M';
@@ -41,27 +42,34 @@ export class PersonService {
         gender = 'F';
         familyRole = 'M';
       }
-      const person = this.personRepository.create({
-        docNumber: data.docNumber,
-        name: data.name,
-        lastname: data.lastName,
-        mLastname: data.mLastname,
-        gender: gender,
-        familyRole: familyRole,
+      const validatPerson = await this.personRepository.findOne({
+        where: { docNumber: data.docNumber },
       });
-      const personCreated = await this.personRepository.save(person);
-      console.log(personCreated);
+      if (validatPerson) {
+        idPerson = validatPerson.id;
+      } else {
+        const person = this.personRepository.create({
+          docNumber: data.docNumber,
+          name: data.name,
+          lastname: data.lastName,
+          mLastname: data.mLastname,
+          gender: gender,
+          familyRole: familyRole,
+        });
+        const personCreated = await this.personRepository.save(person);
+        idPerson = personCreated.id;
+      }
       const user = this.userRepository.create({
         email: data.email,
         password: bcrypt.hashSync(data.docNumber, 10),
-        person: { id: personCreated.id },
+        person: { id: idPerson },
         crmGHLId: data.crmGHLId,
       });
       const userCreated = await this.userRepository.save(user);
-      console.log(userCreated);
-      const { email } = userCreated;
-
-      return { personCreated, email };
+      const { password, ...rest } = userCreated;
+      return {
+        rest,
+      };
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
