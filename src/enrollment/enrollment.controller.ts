@@ -108,8 +108,8 @@ export class EnrollmentController {
     );
   }
 
-  @Get('get/aa')
-  getEnroll() {
-    return this.enrollmentService.scripting();
-  }
+  // @Get('get/aa')
+  // getEnroll() {
+  //   return this.enrollmentService.scripting();
+  // }
 }
