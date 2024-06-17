@@ -532,6 +532,7 @@ export class AttendanceService {
             endDate,
           })
           .andWhere('attendance.typeSchedule = :typeSchedule', { typeSchedule })
+          .orderBy('person.lastname', 'ASC')
           .getMany();
 
         const formatStudents = students.map((item) => {
