@@ -184,6 +184,15 @@ export class ActivityClassroomService {
         where: {
           id,
         },
+        order: {
+          enrollment: {
+            student: {
+              person: {
+                lastname: 'ASC',
+              },
+            },
+          },
+        },
       });
       const formatData = activityClassroom.enrollment.map((e) => ({
         id: e.student.id,

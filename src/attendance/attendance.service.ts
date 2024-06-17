@@ -127,7 +127,7 @@ export class AttendanceService {
       });
 
       const days = daysObject.map((item) => item.name);
-      console.log(days);
+
       if (!days.includes(currentDay)) {
         throw new BadRequestException(
           `No se puede marcar asistencia, este día no fue configurado como parte de las clases ${currentDate}`,
@@ -536,6 +536,7 @@ export class AttendanceService {
             endDate,
           })
           .andWhere('attendance.typeSchedule = :typeSchedule', { typeSchedule })
+          .orderBy('person.lastname', 'ASC')
           .getMany();
 
         const formatStudents = students.map((item) => {
