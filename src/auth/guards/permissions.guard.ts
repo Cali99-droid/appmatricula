@@ -34,9 +34,10 @@ export class PermissionsGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
 
     const userR = req.user as User;
+
     if (!userR) throw new NotFoundException('User not found');
     const user = await this.userRepository.findOne({
-      where: { id: userR.id },
+      where: { email: userR.email },
       relations: {
         roles: {
           permissions: true,
@@ -51,9 +52,7 @@ export class PermissionsGuard implements CanActivate {
     const userPermissions = user.roles.flatMap((role) =>
       role.permissions.map((permission) => permission.name),
     );
-    console.log(
-      permissions.some((permission) => userPermissions.includes(permission)),
-    );
+
     return permissions.some((permission) =>
       userPermissions.includes(permission),
     );
