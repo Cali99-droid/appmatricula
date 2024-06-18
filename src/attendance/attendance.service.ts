@@ -243,7 +243,7 @@ export class AttendanceService {
 
         const attendance = this.attendanceRepository.create({
           shift: Shift.Extra,
-
+          activityClassroom: { id: enrollment.activityClassroom.id },
           arrivalTime: currentTime,
           student: { id: enrollment.student.id },
           arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
@@ -300,6 +300,7 @@ export class AttendanceService {
         student: { id: enrollment.student.id },
         arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
         typeSchedule: TypeSchedule.General,
+        activityClassroom: { id: enrollment.activityClassroom.id },
       });
 
       return this.attendanceRepository.save(attendance);
@@ -697,10 +698,10 @@ export class AttendanceService {
       })
       .getMany();
 
-    const shiftStudents = shiftEnrrollments.map((item) => item.student);
+    // const shiftStudents = shiftEnrrollments.map((item) => item.student);
 
-    const absentStudents = shiftStudents.filter(
-      (student) => !studentPresentCodes.includes(student.id),
+    const absentStudents = shiftEnrrollments.filter(
+      (en) => !studentPresentCodes.includes(en.student.id),
     );
 
     this.logger.log(
@@ -713,7 +714,8 @@ export class AttendanceService {
         shift: shift,
         typeSchedule: TypeSchedule.General,
         condition: ConditionAttendance.Absent,
-        student: { id: student.id },
+        student: { id: student.student.id },
+        activityClassroom: { id: student.activityClassroom.id },
       });
     }
 
@@ -829,9 +831,9 @@ export class AttendanceService {
       },
     });
 
-    const shiftStudents = enrollsSchedule.map((item) => item.student);
-    const absentStudents = shiftStudents.filter(
-      (student) => !studentPresentCodes.includes(student.id),
+    // const shiftStudents = enrollsSchedule.map((item) => item.student);
+    const absentStudents = enrollsSchedule.filter(
+      (enrollment) => !studentPresentCodes.includes(enrollment.student.id),
     );
 
     this.logger.log(
@@ -844,7 +846,8 @@ export class AttendanceService {
         shift: Shift.Extra,
         typeSchedule: TypeSchedule.Individual,
         condition: ConditionAttendance.Absent,
-        student: { id: student.id },
+        student: { id: student.student.id },
+        activityClassroom: { id: student.activityClassroom.id },
       });
     }
 
@@ -852,5 +855,72 @@ export class AttendanceService {
       `Cron jobs for the individual schedule  completed succesfully`,
     );
     return;
+  }
+  async updateAttendances() {
+    const qbphase = this.phaseRepository.createQueryBuilder('phase');
+    const currentDate = new Date();
+    const phase = await qbphase
+
+      .where('phase.startDate <=:currentDate', {
+        currentDate: this.convertISODateToYYYYMMDD(currentDate),
+      })
+      .andWhere('phase.endDate>=:currentDate', {
+        currentDate: this.convertISODateToYYYYMMDD(currentDate),
+      })
+      .getOne();
+
+    if (!phase) {
+      this.logger.warn(
+        `There is no active phase for this date: ${currentDate}, the cron jobs were not completed`,
+      );
+      return;
+    }
+    const acms = await this.activityClassroomRepository.find({
+      where: {
+        phase,
+      },
+    });
+    console.log(acms.length);
+
+    const acmds = acms.map((item) => {
+      return item.id;
+    });
+
+    const enrolls = await this.enrrollmentRepository.find({
+      where: {
+        activityClassroom: {
+          id: In(acmds),
+        },
+      },
+    });
+    // const enrollsStudentsId = enrolls.map((en) => {
+    //   return en.student.id;
+    // });
+    console.log(enrolls.length);
+    const attendancesStudent = await this.attendanceRepository.find({
+      relations: {
+        activityClassroom: true,
+      },
+    });
+    console.log(attendancesStudent.length);
+    let contador = 0;
+    for (const att of attendancesStudent) {
+      for (const enroll of enrolls) {
+        if (
+          att.student.id === enroll.student.id &&
+          att.activityClassroom === null
+        ) {
+          contador++;
+          const updAtt: Attendance = {
+            ...att,
+            activityClassroom: enroll.activityClassroom,
+          };
+          await this.attendanceRepository.save(updAtt);
+        }
+      }
+    }
+    console.log(contador);
+    console.log('updateing');
+    return attendancesStudent.length;
   }
 }
