@@ -693,6 +693,7 @@ export class AttendanceService {
     const shiftEnrrollments = await this.enrrollmentRepository
       .createQueryBuilder('enrroll')
       .leftJoinAndSelect('enrroll.student', 'student')
+      .leftJoinAndSelect('enrroll.activityClassroom', 'activityClassroom')
       .where('activityClassroomId IN (:...idsActivityClassroomsShift)', {
         idsActivityClassroomsShift,
       })
@@ -828,6 +829,9 @@ export class AttendanceService {
     const enrollsSchedule = await this.enrrollmentRepository.find({
       where: {
         activityClassroom: { id: In(classroomsIds) },
+      },
+      relations: {
+        activityClassroom: true,
       },
     });
 

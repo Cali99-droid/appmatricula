@@ -24,6 +24,7 @@ import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
+import { Shift } from './enum/shift.enum';
 
 @ApiTags('Attendance')
 @Controller('attendance')
@@ -100,7 +101,7 @@ export class AttendanceController {
   }
   @Get('cron')
   testCron() {
-    // return this.attendanceService.markAbsentStudentsCronGeneral(Shift.Morning);
+    return this.attendanceService.markAbsentStudentsCronGeneral(Shift.Morning);
     // return this.attendanceService.markAbsentStudentsCronIndividual();
   }
 
