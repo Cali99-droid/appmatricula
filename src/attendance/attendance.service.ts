@@ -678,6 +678,9 @@ export class AttendanceService {
         schoolShift: {
           shift: shift,
         },
+        phase: {
+          id: phase.id,
+        },
       });
     if (activityClassroomsShift.length === 0) {
       this.logger.verbose(`No Classroom for this shift. ${shift}`);
