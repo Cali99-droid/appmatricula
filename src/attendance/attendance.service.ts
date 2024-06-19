@@ -424,12 +424,8 @@ export class AttendanceService {
 
     if (!isAdmin) {
       attendanceOptions.where = {
-        student: {
-          enrollment: {
-            activityClassroom: {
-              classroom: { campusDetail: { id: In(campusDetailIds) } },
-            },
-          },
+        activityClassroom: {
+          classroom: { campusDetail: { id: In(campusDetailIds) } },
         },
       };
     }
