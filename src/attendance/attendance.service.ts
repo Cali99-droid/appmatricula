@@ -420,10 +420,6 @@ export class AttendanceService {
     const attendanceOptions: any = {
       order: { arrivalTime: 'DESC' },
       take: 5,
-      relations: [
-        'student.enrollment.activityClassroom.grade.level',
-        'student.enrollment.activityClassroom.classroom',
-      ],
     };
 
     if (!isAdmin) {
@@ -440,7 +436,7 @@ export class AttendanceService {
 
     // Realizar consulta para obtener las últimas cinco asistencias
     const attendances = await this.attendanceRepository.find(attendanceOptions);
-
+    console.log(attendances);
     // Convertir horas de llegada a zona horaria específica
     const timeZone = 'America/Lima';
     const utcAttendance = attendances.map((attendance) => ({
@@ -457,13 +453,14 @@ export class AttendanceService {
 
     // Formatear datos finales de asistencias
     const formatAttendances = utcAttendance.map((attendance) => {
-      const { student, ...restAttendance } = attendance;
+      const { student, activityClassroom, ...restAttendance } = attendance;
+
       const personData = student.person;
-      const latestEnrollment = student.enrollment.reduce(
-        (latest, current) => (current.id > latest.id ? current : latest),
-        student.enrollment[0],
-      );
-      const classroomInfo = `${latestEnrollment.activityClassroom.grade.name} ${latestEnrollment.activityClassroom.section} ${latestEnrollment.activityClassroom.grade.level.name}`;
+      // const latestEnrollment = student.enrollment.reduce(
+      //   (latest, current) => (current.id > latest.id ? current : latest),
+      //   student.enrollment[0],
+      // );
+      const classroomInfo = `${activityClassroom.grade.name} ${activityClassroom.section} ${activityClassroom.grade.level.name}`;
 
       return {
         ...restAttendance,
