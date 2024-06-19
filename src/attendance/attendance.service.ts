@@ -436,7 +436,7 @@ export class AttendanceService {
 
     // Realizar consulta para obtener las últimas cinco asistencias
     const attendances = await this.attendanceRepository.find(attendanceOptions);
-    console.log(attendances);
+
     // Convertir horas de llegada a zona horaria específica
     const timeZone = 'America/Lima';
     const utcAttendance = attendances.map((attendance) => ({
