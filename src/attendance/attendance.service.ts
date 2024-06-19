@@ -428,19 +428,15 @@ export class AttendanceService {
 
     if (!isAdmin) {
       attendanceOptions.where = {
-        student: {
-          enrollment: {
-            activityClassroom: {
-              classroom: { campusDetail: { id: In(campusDetailIds) } },
-            },
-          },
+        activityClassroom: {
+          classroom: { campusDetail: { id: In(campusDetailIds) } },
         },
       };
     }
 
     // Realizar consulta para obtener las últimas cinco asistencias
     const attendances = await this.attendanceRepository.find(attendanceOptions);
-    console.log(attendances);
+
     // Convertir horas de llegada a zona horaria específica
     const timeZone = 'America/Lima';
     const utcAttendance = attendances.map((attendance) => ({
@@ -681,6 +677,9 @@ export class AttendanceService {
       await this.activityClassroomRepository.findBy({
         schoolShift: {
           shift: shift,
+        },
+        phase: {
+          id: phase.id,
         },
       });
     if (activityClassroomsShift.length === 0) {
