@@ -228,14 +228,14 @@ export class AttendanceService {
             {
               dateNow: this.convertISODateToYYYYMMDD(currentDate),
               studentId: enrollment.student.id,
-              shift: shift,
+              shift: Shift.Extra,
             },
           )
           .getOne();
 
         if (existAttendance) {
           throw new BadRequestException(
-            `Asistencia duplicada en este turno: ${shift}`,
+            `Asistencia duplicada en este turno (extra): ${shift}`,
           );
         }
 
