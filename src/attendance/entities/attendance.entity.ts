@@ -13,6 +13,7 @@ import { Student } from 'src/student/entities/student.entity';
 import { Shift } from '../enum/shift.enum';
 import { ConditionAttendance } from '../enum/condition.enum';
 import { TypeSchedule } from '../enum/type-schedule.enum';
+import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 
 @Entity()
 export class Attendance {
@@ -63,13 +64,13 @@ export class Attendance {
     onUpdate: 'CURRENT_TIMESTAMP(6)',
   })
   updatedAt: Date;
-  // @ManyToOne(
-  //   () => ActivityClassroom,
-  //   (activityClassroom) => activityClassroom.attendance,
-  //   {
-  //     eager: true,
-  //   },
-  // )
-  // @JoinColumn({ name: 'activityClassroomId' })
-  // activityClassroom?: ActivityClassroom;
+  @ManyToOne(
+    () => ActivityClassroom,
+    (activityClassroom) => activityClassroom.attendance,
+    {
+      eager: true,
+    },
+  )
+  @JoinColumn({ name: 'activityClassroomId' })
+  activityClassroom?: ActivityClassroom;
 }

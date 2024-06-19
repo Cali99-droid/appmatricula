@@ -186,7 +186,6 @@ export class AttendanceService {
             0,
           );
 
-          console.log(endHour);
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
           /*
@@ -196,7 +195,6 @@ export class AttendanceService {
               currentTime <= finishAttendanceTime
             )
           ) {
-            console.log(endHour);
             throw new BadRequestException(
               `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
             );
@@ -232,20 +230,21 @@ export class AttendanceService {
             {
               dateNow: this.convertISODateToYYYYMMDD(currentDate),
               studentId: enrollment.student.id,
-              shift: shift,
+              shift: Shift.Extra,
             },
           )
           .getOne();
 
         if (existAttendance) {
           throw new BadRequestException(
-            `Asistencia duplicada en este turno: ${shift}`,
+            `Asistencia duplicada en este turno (extra): ${shift}`,
           );
         }
 
         const attendance = this.attendanceRepository.create({
           shift: Shift.Extra,
-
+          condition: condition,
+          activityClassroom: { id: enrollment.activityClassroom.id },
           arrivalTime: currentTime,
           student: { id: enrollment.student.id },
           arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
@@ -304,6 +303,7 @@ export class AttendanceService {
         student: { id: enrollment.student.id },
         arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
         typeSchedule: TypeSchedule.General,
+        activityClassroom: { id: enrollment.activityClassroom.id },
       });
 
       return this.attendanceRepository.save(attendance);
@@ -424,10 +424,6 @@ export class AttendanceService {
     const attendanceOptions: any = {
       order: { arrivalTime: 'DESC' },
       take: 5,
-      relations: [
-        'student.enrollment.activityClassroom.grade.level',
-        'student.enrollment.activityClassroom.classroom',
-      ],
     };
 
     if (!isAdmin) {
@@ -444,7 +440,7 @@ export class AttendanceService {
 
     // Realizar consulta para obtener las últimas cinco asistencias
     const attendances = await this.attendanceRepository.find(attendanceOptions);
-
+    console.log(attendances);
     // Convertir horas de llegada a zona horaria específica
     const timeZone = 'America/Lima';
     const utcAttendance = attendances.map((attendance) => ({
@@ -461,13 +457,14 @@ export class AttendanceService {
 
     // Formatear datos finales de asistencias
     const formatAttendances = utcAttendance.map((attendance) => {
-      const { student, ...restAttendance } = attendance;
+      const { student, activityClassroom, ...restAttendance } = attendance;
+
       const personData = student.person;
-      const latestEnrollment = student.enrollment.reduce(
-        (latest, current) => (current.id > latest.id ? current : latest),
-        student.enrollment[0],
-      );
-      const classroomInfo = `${latestEnrollment.activityClassroom.grade.name} ${latestEnrollment.activityClassroom.section} ${latestEnrollment.activityClassroom.grade.level.name}`;
+      // const latestEnrollment = student.enrollment.reduce(
+      //   (latest, current) => (current.id > latest.id ? current : latest),
+      //   student.enrollment[0],
+      // );
+      const classroomInfo = `${activityClassroom.grade.name} ${activityClassroom.section} ${activityClassroom.grade.level.name}`;
 
       return {
         ...restAttendance,
@@ -585,7 +582,7 @@ export class AttendanceService {
 
     return indexToDay[dayIndex];
   }
-  /**FOR CRON JOBS, OBS TOFDO coloca a todos como ausentes en la madrugada
+  /** TODO FOR CRON JOBS, OBS coloca a todos como ausentes en la madrugada
    *
    */
 
@@ -696,15 +693,16 @@ export class AttendanceService {
     const shiftEnrrollments = await this.enrrollmentRepository
       .createQueryBuilder('enrroll')
       .leftJoinAndSelect('enrroll.student', 'student')
+      .leftJoinAndSelect('enrroll.activityClassroom', 'activityClassroom')
       .where('activityClassroomId IN (:...idsActivityClassroomsShift)', {
         idsActivityClassroomsShift,
       })
       .getMany();
 
-    const shiftStudents = shiftEnrrollments.map((item) => item.student);
+    // const shiftStudents = shiftEnrrollments.map((item) => item.student);
 
-    const absentStudents = shiftStudents.filter(
-      (student) => !studentPresentCodes.includes(student.id),
+    const absentStudents = shiftEnrrollments.filter(
+      (en) => !studentPresentCodes.includes(en.student.id),
     );
 
     this.logger.log(
@@ -717,7 +715,8 @@ export class AttendanceService {
         shift: shift,
         typeSchedule: TypeSchedule.General,
         condition: ConditionAttendance.Absent,
-        student: { id: student.id },
+        student: { id: student.student.id },
+        activityClassroom: { id: student.activityClassroom.id },
       });
     }
 
@@ -831,11 +830,14 @@ export class AttendanceService {
       where: {
         activityClassroom: { id: In(classroomsIds) },
       },
+      relations: {
+        activityClassroom: true,
+      },
     });
 
-    const shiftStudents = enrollsSchedule.map((item) => item.student);
-    const absentStudents = shiftStudents.filter(
-      (student) => !studentPresentCodes.includes(student.id),
+    // const shiftStudents = enrollsSchedule.map((item) => item.student);
+    const absentStudents = enrollsSchedule.filter(
+      (enrollment) => !studentPresentCodes.includes(enrollment.student.id),
     );
 
     this.logger.log(
@@ -848,7 +850,8 @@ export class AttendanceService {
         shift: Shift.Extra,
         typeSchedule: TypeSchedule.Individual,
         condition: ConditionAttendance.Absent,
-        student: { id: student.id },
+        student: { id: student.student.id },
+        activityClassroom: { id: student.activityClassroom.id },
       });
     }
 

@@ -101,13 +101,13 @@ export class AttendanceController {
   }
   @Get('cron')
   testCron() {
-    // return this.attendanceService.markAbsentStudentsCronGeneral(Shift.Morning);
+    return this.attendanceService.markAbsentStudentsCronGeneral(Shift.Morning);
     // return this.attendanceService.markAbsentStudentsCronIndividual();
   }
 
-  // @Get('cron')
-  // testCron() {
-  //   return this.attendanceService.markAbsentStudents(Shift.A);
+  // @Get('upt')
+  // testUpdate() {
+  //   return this.attendanceService.updateAttendances();
   // }
   @Get('search')
   @ApiQuery({

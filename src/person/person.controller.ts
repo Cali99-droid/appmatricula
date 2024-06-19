@@ -32,9 +32,14 @@ export class PersonController {
     return this.personService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.personService.findOne(+id);
+  @Get(':studentId')
+  findOne(@Param('studentId') studentId: string) {
+    return this.personService.findOne(+studentId);
+  }
+
+  @Get('parents/:studentCode')
+  findParentsByStudentCode(@Param('studentCode') studentCode: string) {
+    return this.personService.findParentsByStudentCode(studentCode);
   }
 
   @Patch(':id')
