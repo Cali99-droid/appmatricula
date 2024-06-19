@@ -1,16 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as sharp from 'sharp';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
-import { Between, IsNull, Not, Repository } from 'typeorm';
+import { Between, In, IsNull, Not, Repository } from 'typeorm';
 import { Person } from './entities/person.entity';
 import { User } from 'src/user/entities/user.entity';
 import { CreatePersonCrmDto } from './dto/create-person-crm.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+import { Relationship } from 'src/relationship/entities/relationship.entity';
 
 @Injectable()
 export class PersonService {
@@ -25,6 +26,8 @@ export class PersonService {
     private readonly personRepository: Repository<Person>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Relationship)
+    private readonly relationShipRepository: Repository<Relationship>,
   ) {}
   create(createPersonDto: CreatePersonDto) {
     return 'This action adds a new person';
@@ -111,13 +114,39 @@ export class PersonService {
   findAll() {
     return `This action returns all person`;
   }
-
-  findOne(id: number) {
-    return `This action returns a #${id} person`;
+  async findOne(id: number) {
+    const person = await this.personRepository.findOne({
+      where: { student: { id: id } },
+    });
+    if (!person) throw new NotFoundException(`person with id ${id} not found`);
+    return person;
+  }
+  async findParentsByStudentCode(id: string) {
+    const relation = await this.relationShipRepository.find({
+      where: {
+        sonStudentCode: id,
+      },
+    });
+    const docNumbers = relation.map((item) => item.dniAssignee);
+    const parents = await this.personRepository.find({
+      where: { docNumber: In(docNumbers) },
+    });
+    return parents;
   }
 
-  update(id: number, updatePersonDto: UpdatePersonDto) {
-    return `This action updates a #${id} person`;
+  async update(id: number, updatePersonDto: UpdatePersonDto) {
+    const person = await this.personRepository.preload({
+      id: id,
+      ...updatePersonDto,
+    });
+    if (!person)
+      throw new NotFoundException(`Person with studentId: ${id} not found`);
+    try {
+      await this.personRepository.save(person);
+      return person;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
   remove(id: number) {
