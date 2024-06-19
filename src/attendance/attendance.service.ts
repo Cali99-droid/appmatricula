@@ -186,7 +186,6 @@ export class AttendanceService {
             0,
           );
 
-          console.log(endHour);
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
           if (
@@ -195,7 +194,6 @@ export class AttendanceService {
               currentTime <= finishAttendanceTime
             )
           ) {
-            console.log(endHour);
             throw new BadRequestException(
               `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
             );
@@ -243,6 +241,7 @@ export class AttendanceService {
 
         const attendance = this.attendanceRepository.create({
           shift: Shift.Extra,
+          condition: condition,
           activityClassroom: { id: enrollment.activityClassroom.id },
           arrivalTime: currentTime,
           student: { id: enrollment.student.id },
@@ -582,7 +581,7 @@ export class AttendanceService {
 
     return indexToDay[dayIndex];
   }
-  /**FOR CRON JOBS, OBS TOFDO coloca a todos como ausentes en la madrugada
+  /** TODO FOR CRON JOBS, OBS coloca a todos como ausentes en la madrugada
    *
    */
 
@@ -859,72 +858,5 @@ export class AttendanceService {
       `Cron jobs for the individual schedule  completed succesfully`,
     );
     return;
-  }
-  async updateAttendances() {
-    const qbphase = this.phaseRepository.createQueryBuilder('phase');
-    const currentDate = new Date();
-    const phase = await qbphase
-
-      .where('phase.startDate <=:currentDate', {
-        currentDate: this.convertISODateToYYYYMMDD(currentDate),
-      })
-      .andWhere('phase.endDate>=:currentDate', {
-        currentDate: this.convertISODateToYYYYMMDD(currentDate),
-      })
-      .getOne();
-
-    if (!phase) {
-      this.logger.warn(
-        `There is no active phase for this date: ${currentDate}, the cron jobs were not completed`,
-      );
-      return;
-    }
-    const acms = await this.activityClassroomRepository.find({
-      where: {
-        phase,
-      },
-    });
-    console.log(acms.length);
-
-    const acmds = acms.map((item) => {
-      return item.id;
-    });
-
-    const enrolls = await this.enrrollmentRepository.find({
-      where: {
-        activityClassroom: {
-          id: In(acmds),
-        },
-      },
-    });
-    // const enrollsStudentsId = enrolls.map((en) => {
-    //   return en.student.id;
-    // });
-    console.log(enrolls.length);
-    const attendancesStudent = await this.attendanceRepository.find({
-      relations: {
-        activityClassroom: true,
-      },
-    });
-    console.log(attendancesStudent.length);
-    let contador = 0;
-    for (const att of attendancesStudent) {
-      for (const enroll of enrolls) {
-        if (
-          att.student.id === enroll.student.id &&
-          att.activityClassroom === null
-        ) {
-          contador++;
-          const updAtt: Attendance = {
-            ...att,
-            activityClassroom: enroll.activityClassroom,
-          };
-          await this.attendanceRepository.save(updAtt);
-        }
-      }
-    }
-    console.log(contador);
-    console.log('updateing');
-    return attendancesStudent.length;
   }
 }
