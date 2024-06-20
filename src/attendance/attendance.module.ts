@@ -15,6 +15,9 @@ import { ConfigModule } from '@nestjs/config';
 import { User } from 'src/user/entities/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
 import { DayOfWeek } from 'src/day_of_week/entities/day_of_week.entity';
+import { Person } from 'src/person/entities/person.entity';
+import { Relationship } from 'src/relationship/entities/relationship.entity';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   controllers: [AttendanceController],
@@ -31,8 +34,11 @@ import { DayOfWeek } from 'src/day_of_week/entities/day_of_week.entity';
       User,
       Permission,
       DayOfWeek,
+      Person,
+      Relationship,
     ]),
     ConfigModule,
+    HttpModule,
     ScheduleModule.forRoot(),
   ],
 })
