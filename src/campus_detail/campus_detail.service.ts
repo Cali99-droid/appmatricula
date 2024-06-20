@@ -90,7 +90,7 @@ export class CampusDetailService {
         campus: { campusDetail: { id: idCampusDetail }, year: { id: idYear } },
       },
     });
-    console.log(campus);
+
     if (!campus)
       throw new NotFoundException(
         `campusRepository with idCampusDetail ${idCampusDetail} or idYear ${idYear}  not found`,

@@ -39,7 +39,7 @@ export const AdminMenu = {
       link: '/admin/Prueba',
       icon: 'student',
       tagSubMenu: true,
-      permissions: ['admin', 'card-generator', 'register-attendace'],
+      permissions: ['admin', 'card-generator', 'attendance-recorder'],
       subMenu: [
         {
           id: 1,
@@ -53,7 +53,7 @@ export const AdminMenu = {
           label: 'Estudiantes',
           icon: 'student',
           link: '/admin/student/students',
-          permissions: ['admin', 'cardGenerator'],
+          permissions: ['admin', 'card-generator'],
         },
         {
           id: 3,
@@ -67,7 +67,7 @@ export const AdminMenu = {
           label: 'Control Asistencia',
           icon: 'student',
           link: '/admin/student/attendance',
-          permissions: ['admin', 'register-attendace'],
+          permissions: ['admin', 'attendance-recorder'],
         },
       ],
     },
@@ -82,7 +82,7 @@ export const AdminMenu = {
         {
           id: 1,
           label: 'Reportes Estudiantes',
-          icon: 'table',
+          icon: 'tableStudents',
           link: '/admin/reports/students',
           permissions: ['admin'],
         },
@@ -100,7 +100,7 @@ export const AdminMenu = {
           id: 1,
           label: 'Usuarios',
           icon: 'userAdd',
-          link: '/admin/users/system',
+          link: '/admin/staff/users',
           permissions: ['admin'],
         },
       ],

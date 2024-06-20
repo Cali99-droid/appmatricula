@@ -45,7 +45,7 @@ export class AuthService {
   }
   async signIn(loginUserDto: LoginUserDto) {
     const { email } = loginUserDto;
-    console.log(loginUserDto);
+
     const user = await this.userRepository.findOne({
       where: { email },
       select: { id: true, email: true, password: true },
@@ -53,6 +53,7 @@ export class AuthService {
         roles: {
           permissions: true,
         },
+        // assignments: true,
       },
     });
     if (!user)
@@ -62,7 +63,7 @@ export class AuthService {
       throw new UnauthorizedException('Credentials are not valid(password)');
     const tokens = await this.getJwtTokens({ email: user.email, sub: user.id });
     await this.updateRefreshToken(user.id, tokens.refreshToken);
-    const { id, password, roles, permission, person, ...result } = user;
+    const { id, password, roles, person, ...result } = user;
     let permissions = [];
 
     roles.forEach((role) => {
@@ -70,7 +71,7 @@ export class AuthService {
         permissions.push(item.name);
       });
     });
-    console.log(permissions);
+
     const menu = this.generateMenu(permissions);
     return {
       ...result,
@@ -97,7 +98,7 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: '15m',
+        expiresIn: '5h',
       }),
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),

@@ -9,20 +9,20 @@ import {
 import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
 
 import { Day } from 'src/common/enum/day.enum';
-import { Shift } from 'src/attendance/enum/shift.enum';
+
 @Entity()
 export class Schedule {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({
-    example: 'Tarde',
-    description: 'Shift of schedule',
-    nullable: true,
-  })
-  @Column({ type: 'enum', enum: Shift, nullable: true })
-  shift: Shift;
+  // @ApiProperty({
+  //   example: 'Tarde',
+  //   description: 'Shift of schedule',
+  //   nullable: true,
+  // })
+  // @Column({ type: 'enum', enum: Shift, nullable: true })
+  // shift: Shift;
 
   @ApiProperty({
     example: '15:00:00',

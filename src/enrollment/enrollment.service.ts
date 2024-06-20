@@ -145,10 +145,11 @@ export class EnrollmentService {
           status: Status.EN_PROCESO,
           activityClassroom: { id: activityClassroomId },
           student,
-          code: `${classroom.phase.year.name}-P${classroom.phase.id}S${student.id}`,
+          code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
         })),
       );
       await this.studentService.updateStudentCodes();
+      // await this.scripting();
       dataEnrollment.push(enrollments);
       return enrollments;
     } catch (error) {

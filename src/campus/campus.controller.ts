@@ -17,6 +17,9 @@ import { CampusDetailService } from 'src/campus_detail/campus_detail.service';
 import { YearsService } from 'src/years/years.service';
 import { LevelService } from 'src/level/level.service';
 import { UpdateCampusDto } from './dto/update-campus.dto';
+import { GetUser } from 'src/auth/decorators/get-user.decorator';
+import { User } from 'src/user/entities/user.entity';
+import { Auth } from 'src/auth/decorators/auth.decorator';
 @ApiTags('Campus')
 @Controller('campus')
 export class CampusController {
@@ -74,8 +77,9 @@ export class CampusController {
     status: 404,
     description: 'campus  not found ',
   })
-  async findAllByYear(@Param('id') id: string) {
-    return this.campusService.findAllByYear(+id);
+  @Auth()
+  async findAllByYear(@Param('id') id: string, @GetUser() user: User) {
+    return this.campusService.findAllByYear(+id, user);
   }
   @Get(':id')
   @ApiParam({

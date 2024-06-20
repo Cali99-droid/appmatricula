@@ -28,7 +28,7 @@ import { Permission } from 'src/permissions/entities/permission.entity';
         return {
           secret: configService.get('JWT_SECRET'),
           signOptions: {
-            expiresIn: '2h',
+            expiresIn: '5h',
           },
         };
       },

@@ -28,11 +28,11 @@ export class UserRoleGuard implements CanActivate {
     console.log(user);
     if (!user) throw new NotFoundException('User not found');
 
-    for (const perm of user.permission) {
-      if (validRoles.includes(perm.accessName)) {
-        return true;
-      }
-    }
+    // for (const perm of user.) {
+    //   if (validRoles.includes(perm.accessName)) {
+    //     return true;
+    //   }
+    // }
     throw new ForbiddenException(`User ${user.email} need a valid role`);
   }
 }

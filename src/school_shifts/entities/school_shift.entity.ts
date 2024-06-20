@@ -17,15 +17,15 @@ export class SchoolShift {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({
-    example: 'Mañana',
-    description: 'Name of school_shift',
-    uniqueItems: true,
-  })
-  @Column('varchar', {
-    // unique: true,
-  })
-  name: string;
+  // @ApiProperty({
+  //   example: 'Mañana',
+  //   description: 'Name of school_shift',
+  //   uniqueItems: true,
+  // })
+  // @Column('varchar', {
+  //   // unique: true,
+  // })
+  // name: string;
   @Column({ type: 'enum', enum: Shift, nullable: true })
   shift: Shift;
   @ApiProperty({

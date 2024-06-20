@@ -12,5 +12,5 @@ export class Assignment {
   user: User;
 
   @ManyToOne(() => CampusDetail, (campus) => campus.assignments)
-  campus: CampusDetail;
+  campusDetail: CampusDetail;
 }

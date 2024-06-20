@@ -91,6 +91,6 @@ export class CampusDetail {
   })
   classroom?: Classroom[];
 
-  @OneToMany(() => Assignment, (assignment) => assignment.campus)
+  @OneToMany(() => Assignment, (assignment) => assignment.campusDetail)
   assignments: Assignment[];
 }
