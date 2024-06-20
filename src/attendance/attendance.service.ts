@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
-import { Between, In, Repository } from 'typeorm';
+import { Between, In, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 // import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -314,29 +314,35 @@ export class AttendanceService {
       const student = await this.studentRepository.findOne({
         where: { id: enrollment.student.id },
       });
+      console.log(student);
       const relation = await this.relationShipRepository.find({
         where: { sonStudentCode: student.studentCode },
       });
+      console.log(relation);
       const docNumbers = relation.map((item) => item.dniAssignee);
       const parents = await this.personRepository.find({
-        where: { docNumber: In(docNumbers) },
+        where: { docNumber: In(docNumbers), user: Not(null) },
         relations: { user: true },
       });
-      if (parents) {
-        parents.forEach(async (item) => {
-          this.sendEmail({
-            full_name_son: `${student.person.name}, ${student.person.lastname} ${student.person.mLastname}`,
-            first_name: item.name,
-            last_name: `${item.lastname} ${item.mLastname}`,
-            email: item.user.email,
-            cmrGHLId: item.user.crmGHLId,
-            arrivalTime: currentTime,
-            arribalDate: attendance.arrivalDate,
-            shift: shift === 'M' ? 'Mañana' : 'Tarde',
-            condition: condition === 'P' ? 'Temprano' : 'Tarde',
-          });
-        });
+      console.log(parents);
+      if (!parents) {
+        throw new BadRequestException(
+          `No se puede tomar asistencia porque los padres no cuenta con Email`,
+        );
       }
+      parents.forEach(async (item) => {
+        this.sendEmail({
+          full_name_son: `${student.person.name}, ${student.person.lastname} ${student.person.mLastname}`,
+          first_name: item.name,
+          last_name: `${item.lastname} ${item.mLastname}`,
+          email: item.user.email,
+          cmrGHLId: item.user.crmGHLId,
+          arrivalTime: currentTime,
+          arribalDate: attendance.arrivalDate,
+          shift: shift === 'M' ? 'Mañana' : 'Tarde',
+          condition: condition === 'P' ? 'Temprano' : 'Tarde',
+        });
+      });
 
       return this.attendanceRepository.save(attendance);
     } catch (error) {
