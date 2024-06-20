@@ -314,14 +314,17 @@ export class AttendanceService {
       const student = await this.studentRepository.findOne({
         where: { id: enrollment.student.id },
       });
+      console.log(student);
       const relation = await this.relationShipRepository.find({
         where: { sonStudentCode: student.studentCode },
       });
+      console.log(relation);
       const docNumbers = relation.map((item) => item.dniAssignee);
       const parents = await this.personRepository.find({
         where: { docNumber: In(docNumbers) },
         relations: { user: true },
       });
+      console.log(parents);
       if (parents) {
         parents.forEach(async (item) => {
           this.sendEmail({
