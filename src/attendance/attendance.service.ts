@@ -197,6 +197,7 @@ export class AttendanceService {
 
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
+
           if (
             !(
               currentTime >= initAttendanceTime &&
@@ -208,11 +209,13 @@ export class AttendanceService {
             );
           }
 
+
           //**Mantener esto*/
           condition =
             currentTime <= cutoffTime
               ? ConditionAttendance.Early
               : ConditionAttendance.Late;
+
         } else {
           throw new BadRequestException(
             `El estudiante ya marcó asistencia o no tiene clases en este momento ${currentDate}`,
@@ -266,6 +269,7 @@ export class AttendanceService {
 
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
+
         if (
           !(
             currentTime >= initAttendanceTime &&
@@ -276,6 +280,7 @@ export class AttendanceService {
             `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
           );
         }
+
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
           condition =
