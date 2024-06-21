@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
-import { Between, In, Repository } from 'typeorm';
+import { Between, In, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 // import { handleDBExceptions } from 'src/common/helpers/handleDBException';

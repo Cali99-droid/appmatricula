@@ -48,7 +48,18 @@ export class AttendanceController {
   ) {
     return this.attendanceService.create(createAttendanceDto, user);
   }
-
+  @Post('/prueba')
+  @ApiResponse({
+    status: 201,
+    description: 'Attendance was created success',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'some data is wrong, check message',
+  })
+  prueba(@Body() data: any) {
+    return this.attendanceService.sendEmail(data);
+  }
   @Get('/last-records')
   @ApiOperation({
     summary: 'Get last five records of attendances',
