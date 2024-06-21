@@ -92,6 +92,13 @@ export const AdminMenu = {
           link: '/admin/reports/students',
           permissions: ['admin', 'report'],
         },
+        {
+          id: 1,
+          label: 'Reporte Global',
+          icon: 'reports',
+          link: '/admin/reports/report',
+          permissions: ['admin', 'report'],
+        },
       ],
     },
     {
