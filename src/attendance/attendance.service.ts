@@ -209,13 +209,11 @@ export class AttendanceService {
             );
           }
 
-
           //**Mantener esto*/
           condition =
             currentTime <= cutoffTime
               ? ConditionAttendance.Early
               : ConditionAttendance.Late;
-
         } else {
           throw new BadRequestException(
             `El estudiante ya marcó asistencia o no tiene clases en este momento ${currentDate}`,
@@ -349,85 +347,7 @@ export class AttendanceService {
       throw error;
     }
   }
-  async findByParams(params: SearchAttendanceDto) {
-    const { yearId, campusId, levelId } = params;
-    let condition = undefined;
-    switch (params.condition) {
-      case 'PUNTUAL':
-        condition = 'P';
-        break;
-      case 'TARDANZA':
-        condition = 'T';
-        break;
-      case 'FALTA':
-        condition = 'F';
-        break;
-    }
-    const attendance = await this.attendanceRepository.find({
-      where: {
-        student: {
-          enrollment: {
-            activityClassroom: {
-              phase: { year: { id: !isNaN(+yearId) ? +yearId : undefined } },
-              classroom: {
-                campusDetail: { id: !isNaN(+campusId) ? +campusId : undefined },
-              },
-              section: params.section ? params.section : undefined,
-              grade: {
-                id: !isNaN(+params.gradeId) ? +params.gradeId : undefined,
-                level: { id: !isNaN(+levelId) ? +levelId : undefined },
-              },
-            },
-          },
-        },
-        arrivalDate: Between(
-          new Date(params.startDate),
-          new Date(params.endDate),
-        ),
-        condition: condition,
-      },
-    });
-    const result = attendance.reduce((acc, item) => {
-      const { id, student, arrivalDate, condition } = item;
 
-      if (!acc[student.id]) {
-        acc[student.id] = {
-          id: student.id,
-          lastname: student.person.lastname,
-          mLastname: student.person.mLastname,
-          name: student.person.name,
-          attendance: [],
-        };
-      }
-
-      acc[student.id].attendance.push({ id, arrivalDate, condition });
-
-      return acc;
-    }, {});
-    const arrayResult: StudentData[] = Object.values(result);
-    const sortedResult = arrayResult
-      .map((student) => ({
-        id: student.id,
-        lastname: student.lastname,
-        mLastname: student.mLastname,
-        name: student.name,
-        attendance: student.attendance,
-      }))
-      .sort((a, b) => {
-        const lastnameA = a.lastname.toUpperCase();
-        const lastnameB = b.lastname.toUpperCase();
-
-        if (lastnameA < lastnameB) {
-          return -1;
-        }
-        if (lastnameA > lastnameB) {
-          return 1;
-        }
-        return 0;
-      });
-
-    return sortedResult;
-  }
   async findAll() {
     const attendance = await this.studentRepository.find({
       relations: {
