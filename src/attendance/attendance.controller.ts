@@ -106,72 +106,21 @@ export class AttendanceController {
     description: 'EndDate of the attendace',
     type: String,
   })
-  @Auth('attendance-recorder', 'admin')
+  @Auth('attendance-recorder', 'admin', 'report')
   findByClassroom(@Query() searchByClassroomDto: SearchByClassroomDto) {
     return this.attendanceService.findByClassroom(searchByClassroomDto);
   }
-  @Get('cron')
-  testCron() {
-    return this.attendanceService.markAbsentStudentsCronGeneral(Shift.Morning);
-    // return this.attendanceService.markAbsentStudentsCronIndividual();
-  }
+  // @Get('cron')
+  // testCron() {
+  //   //return this.attendanceService.markAbsentStudentsCronGeneral(Shift.Morning);
+  //   // return this.attendanceService.markAbsentStudentsCronIndividual();
+  // }
 
   // @Get('upt')
   // testUpdate() {
   //   return this.attendanceService.updateAttendances();
   // }
-  @Get('search')
-  @ApiQuery({
-    name: 'yearId',
-    required: true,
-    description: 'Id of the year',
-    type: Number,
-  })
-  @ApiQuery({
-    name: 'campusId',
-    required: true,
-    description: 'Id of the campus',
-    type: Number,
-  })
-  @ApiQuery({
-    name: 'levelId',
-    required: false,
-    description: 'Id of the level',
-    type: Number,
-  })
-  @ApiQuery({
-    name: 'gradeId',
-    required: false,
-    description: 'Id of the grade',
-    type: Number,
-  })
-  @ApiQuery({
-    name: 'section',
-    required: false,
-    description: 'Section of the attendace',
-    type: String,
-  })
-  @ApiQuery({
-    name: 'startDate',
-    required: true,
-    description: 'StartDate of the attendace',
-    type: String,
-  })
-  @ApiQuery({
-    name: 'endDate',
-    required: true,
-    description: 'EndDate of the attendace',
-    type: String,
-  })
-  @ApiQuery({
-    name: 'condition',
-    required: false,
-    description: 'Condition of the attendace',
-    type: String,
-  })
-  findByParams(@Query() searchAttendanceDto: SearchAttendanceDto) {
-    return this.attendanceService.findByParams(searchAttendanceDto);
-  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.attendanceService.findOne(+id);
