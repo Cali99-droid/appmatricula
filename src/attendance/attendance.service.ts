@@ -197,6 +197,7 @@ export class AttendanceService {
 
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
+
           if (
             !(
               currentTime >= initAttendanceTime &&
@@ -207,22 +208,12 @@ export class AttendanceService {
               `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
             );
           }
-          if (currentTime.getHours() < 12) {
-            shift = Shift.Morning;
 
-            //**Mantener esto*/
-            condition =
-              currentTime <= cutoffTime
-                ? ConditionAttendance.Early
-                : ConditionAttendance.Late;
-          } else {
-            shift = Shift.Afternoon;
-
-            condition =
-              currentTime <= cutoffTime
-                ? ConditionAttendance.Early
-                : ConditionAttendance.Late;
-          }
+          //**Mantener esto*/
+          condition =
+            currentTime <= cutoffTime
+              ? ConditionAttendance.Early
+              : ConditionAttendance.Late;
         } else {
           throw new BadRequestException(
             `El estudiante ya marcó asistencia o no tiene clases en este momento ${currentDate}`,
@@ -244,7 +235,7 @@ export class AttendanceService {
 
         if (existAttendance) {
           throw new BadRequestException(
-            `Asistencia duplicada en este turno (extra): ${shift}`,
+            `Ya marcó asistencia en este turno a las: ${existAttendance.arrivalTime}`,
           );
         }
 
@@ -276,6 +267,7 @@ export class AttendanceService {
 
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
+
         if (
           !(
             currentTime >= initAttendanceTime &&
@@ -286,6 +278,7 @@ export class AttendanceService {
             `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
           );
         }
+
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
           condition =
@@ -311,40 +304,34 @@ export class AttendanceService {
         activityClassroom: { id: enrollment.activityClassroom.id },
       });
 
-      const student = await this.studentRepository.findOne({
-        where: { id: enrollment.student.id },
-      });
-      console.log(student);
-      const relation = await this.relationShipRepository.find({
-        where: { sonStudentCode: student.studentCode },
-      });
-      console.log(relation);
-      const docNumbers = relation.map((item) => item.dniAssignee);
-      const parents = await this.personRepository.find({
-        where: { docNumber: In(docNumbers), user: Not(null) },
-        relations: { user: true },
-      });
-      console.log(parents);
-      if (!parents) {
-        throw new BadRequestException(
-          `No se puede tomar asistencia porque los padres no cuenta con Email`,
-        );
-      }
-      parents.forEach(async (item) => {
-        this.sendEmail({
-          full_name_son: `${student.person.name}, ${student.person.lastname} ${student.person.mLastname}`,
-          first_name: item.name,
-          last_name: `${item.lastname} ${item.mLastname}`,
-          email: item.user.email,
-          cmrGHLId: item.user.crmGHLId,
-          arrivalTime: currentTime,
-          arribalDate: attendance.arrivalDate,
-          shift: shift === 'M' ? 'Mañana' : 'Tarde',
-          condition: condition === 'P' ? 'Temprano' : 'Tarde',
-        });
-      });
-
-      return this.attendanceRepository.save(attendance);
+      // const student = await this.studentRepository.findOne({
+      //   where: { id: enrollment.student.id },
+      // });
+      // const relation = await this.relationShipRepository.find({
+      //   where: { sonStudentCode: student.studentCode },
+      // });
+      // const docNumbers = relation.map((item) => item.dniAssignee);
+      // const parents = await this.personRepository.find({
+      //   where: { docNumber: In(docNumbers) },
+      //   relations: { user: true },
+      // });
+      // if (parents) {
+      //   parents.forEach(async (item) => {
+      //     this.sendEmail({
+      //       full_name_son: `${student.person.name}, ${student.person.lastname} ${student.person.mLastname}`,
+      //       first_name: item.name,
+      //       last_name: `${item.lastname} ${item.mLastname}`,
+      //       email: item.user.email,
+      //       cmrGHLId: item.user.crmGHLId,
+      //       arrivalTime: currentTime,
+      //       arribalDate: attendance.arrivalDate,
+      //       shift: shift === 'M' ? 'Mañana' : 'Tarde',
+      //       condition: condition === 'P' ? 'Temprano' : 'Tarde',
+      //     });
+      //   });
+      // }
+      const at = await this.attendanceRepository.save(attendance);
+      return at.id;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -360,85 +347,7 @@ export class AttendanceService {
       throw error;
     }
   }
-  async findByParams(params: SearchAttendanceDto) {
-    const { yearId, campusId, levelId } = params;
-    let condition = undefined;
-    switch (params.condition) {
-      case 'PUNTUAL':
-        condition = 'P';
-        break;
-      case 'TARDANZA':
-        condition = 'T';
-        break;
-      case 'FALTA':
-        condition = 'F';
-        break;
-    }
-    const attendance = await this.attendanceRepository.find({
-      where: {
-        student: {
-          enrollment: {
-            activityClassroom: {
-              phase: { year: { id: !isNaN(+yearId) ? +yearId : undefined } },
-              classroom: {
-                campusDetail: { id: !isNaN(+campusId) ? +campusId : undefined },
-              },
-              section: params.section ? params.section : undefined,
-              grade: {
-                id: !isNaN(+params.gradeId) ? +params.gradeId : undefined,
-                level: { id: !isNaN(+levelId) ? +levelId : undefined },
-              },
-            },
-          },
-        },
-        arrivalDate: Between(
-          new Date(params.startDate),
-          new Date(params.endDate),
-        ),
-        condition: condition,
-      },
-    });
-    const result = attendance.reduce((acc, item) => {
-      const { id, student, arrivalDate, condition } = item;
 
-      if (!acc[student.id]) {
-        acc[student.id] = {
-          id: student.id,
-          lastname: student.person.lastname,
-          mLastname: student.person.mLastname,
-          name: student.person.name,
-          attendance: [],
-        };
-      }
-
-      acc[student.id].attendance.push({ id, arrivalDate, condition });
-
-      return acc;
-    }, {});
-    const arrayResult: StudentData[] = Object.values(result);
-    const sortedResult = arrayResult
-      .map((student) => ({
-        id: student.id,
-        lastname: student.lastname,
-        mLastname: student.mLastname,
-        name: student.name,
-        attendance: student.attendance,
-      }))
-      .sort((a, b) => {
-        const lastnameA = a.lastname.toUpperCase();
-        const lastnameB = b.lastname.toUpperCase();
-
-        if (lastnameA < lastnameB) {
-          return -1;
-        }
-        if (lastnameA > lastnameB) {
-          return 1;
-        }
-        return 0;
-      });
-
-    return sortedResult;
-  }
   async findAll() {
     const attendance = await this.studentRepository.find({
       relations: {

@@ -39,14 +39,20 @@ export const AdminMenu = {
       link: '/admin/Prueba',
       icon: 'student',
       tagSubMenu: true,
-      permissions: ['admin', 'card-generator', 'attendance-recorder'],
+      permissions: [
+        'admin',
+        'card-generator',
+        'attendance-recorder',
+        'holiday',
+        'schedule',
+      ],
       subMenu: [
         {
           id: 1,
           label: 'Día festivo',
           icon: 'calendar',
           link: '/admin/student/holiday',
-          permissions: ['admin'],
+          permissions: ['admin', 'holiday'],
         },
         {
           id: 2,
@@ -60,7 +66,7 @@ export const AdminMenu = {
           label: 'Hr. Personalizado',
           icon: 'student',
           link: '/admin/student/daysadditional',
-          permissions: ['admin'],
+          permissions: ['admin', 'schedule'],
         },
         {
           id: 4,
@@ -77,14 +83,21 @@ export const AdminMenu = {
       link: '/admin/reports',
       icon: 'report',
       tagSubMenu: true,
-      permissions: ['admin'],
+      permissions: ['admin', 'report'],
       subMenu: [
         {
           id: 1,
           label: 'Reportes Estudiantes',
           icon: 'tableStudents',
           link: '/admin/reports/students',
-          permissions: ['admin'],
+          permissions: ['admin', 'report'],
+        },
+        {
+          id: 1,
+          label: 'Reporte Global',
+          icon: 'reports',
+          link: '/admin/reports/report',
+          permissions: ['admin', 'report'],
         },
       ],
     },
