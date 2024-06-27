@@ -37,10 +37,10 @@ export class PersonController {
     return this.personService.findOne(+studentId);
   }
 
-  @Get('parents/:studentCode')
-  findParentsByStudentCode(@Param('studentCode') studentCode: string) {
-    return this.personService.findParentsByStudentCode(studentCode);
-  }
+  // @Get('parents/:studentCode')
+  // findParentsByStudentCode(@Param('studentCode') studentCode: string) {
+  //   return this.personService.findParentsByStudentCode(studentCode);
+  // }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePersonDto: UpdatePersonDto) {

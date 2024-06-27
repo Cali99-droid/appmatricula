@@ -4,6 +4,7 @@ import {
   DataSource,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -14,6 +15,7 @@ import { Enrollment } from '../../enrollment/entities/enrollment.entity';
 import { Person } from '../../person/entities/person.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
+import { Family } from 'src/family/entities/family.entity';
 @Entity()
 export class Student {
   @ApiProperty()
@@ -50,6 +52,12 @@ export class Student {
   })
   @JoinColumn({ name: 'personId' })
   person: Person;
+
+  @ManyToOne(() => Family, (family) => family.student, {
+    // eager: true,
+  })
+  @JoinColumn({ name: 'familyId' })
+  family?: Family;
 
   @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
   enrollment?: Enrollment[];
