@@ -1,10 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, OneToMany } from 'typeorm';
 
 import { Student } from '../../student/entities/student.entity';
 import { User } from '../../user/entities/user.entity';
 import { Gender } from 'src/common/enum/gender.enum';
 import { FamilyRole } from 'src/common/enum/family-role.enum';
+import { Family } from 'src/family/entities/family.entity';
 //test
 
 @Entity()
@@ -29,21 +30,27 @@ export class Person {
     example: 'Jose',
     description: 'name of person',
   })
-  @Column('varchar')
+  @Column('varchar', {
+    nullable: true,
+  })
   name: string;
 
   @ApiProperty({
     example: 'Jose Luis',
     description: 'lastName of person',
   })
-  @Column('varchar')
+  @Column('varchar', {
+    nullable: true,
+  })
   lastname: string;
 
   @ApiProperty({
     example: 'Ramirez',
     description: 'mLastName of person',
   })
-  @Column('varchar')
+  @Column('varchar', {
+    nullable: true,
+  })
   mLastname: string;
 
   @ApiProperty({
@@ -69,4 +76,8 @@ export class Person {
 
   @OneToOne(() => User, (user) => user.person)
   user?: User;
+  @OneToMany(() => Family, (family) => family.parentOneId)
+  familyOne?: Family;
+  @OneToMany(() => Family, (family) => family.parentTwoId)
+  familyTwo?: Family;
 }

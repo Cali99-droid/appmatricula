@@ -36,15 +36,18 @@ export class FamilyController {
   //   return this.familyService.create(createFamilyDto);
   // }
 
-  // @Get()
-  // findAll() {
-  //   return this.familyService.findAll();
-  // }
-
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.familyService.findOne(+id);
-  // }
+  @Get()
+  findAll() {
+    return this.familyService.findAll();
+  }
+  @Get('migrate')
+  migrate() {
+    return this.familyService.migrate();
+  }
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.familyService.findOne(+id);
+  }
 
   // @Patch(':id')
   // update(@Param('id') id: string, @Body() updateFamilyDto: UpdateFamilyDto) {

@@ -1,5 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Person } from 'src/person/entities/person.entity';
+import { Student } from 'src/student/entities/student.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class Family {
@@ -13,13 +22,20 @@ export class Family {
   })
   nameFamily: string;
 
-  @ApiProperty()
-  @Column('varchar', {
-    length: 8,
+  @ManyToOne(() => Person, (person) => person.familyOne, {
+    // eager: true,
   })
-  dniAssignee: string;
+  @JoinColumn({ name: 'parentOneId' })
+  parentOneId?: Person;
 
-  @ApiProperty()
-  @Column('varchar')
-  sonStudentCode: string;
+  @ManyToOne(() => Person, (person) => person.familyTwo, {
+    // eager: true,
+  })
+  @JoinColumn({ name: 'parentTwoId' })
+  parentTwoId?: Person;
+
+  @OneToMany(() => Student, (student) => student.family, {
+    // eager: true,
+  })
+  student?: Student[];
 }
