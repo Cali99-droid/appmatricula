@@ -9,6 +9,7 @@ import { Role } from 'src/role/entities/role.entity';
 import { Assignment } from './entities/assignments.entity';
 
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
+import { AssignmentClassroom } from './entities/assignments-classroom.entity';
 
 @Module({
   controllers: [UserController],
@@ -21,6 +22,7 @@ import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
       Role,
       Assignment,
       CampusDetail,
+      AssignmentClassroom,
     ]),
   ],
   exports: [UserService, UserModule],

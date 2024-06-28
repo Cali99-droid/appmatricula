@@ -1,14 +1,8 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-  forwardRef,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
-import { Between, In, Not, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 // import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -33,7 +27,7 @@ import { DayOfWeek } from 'src/day_of_week/entities/day_of_week.entity';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-import { AttendanceGateway } from './attendance.gateway';
+// import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
 export class AttendanceService {
@@ -61,8 +55,8 @@ export class AttendanceService {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
 
-    @Inject(forwardRef(() => AttendanceGateway))
-    private readonly attendanceGateway: AttendanceGateway,
+    // @Inject(forwardRef(() => AttendanceGateway))
+    // private readonly attendanceGateway: AttendanceGateway,
   ) {}
   async create(createAttendanceDto: CreateAttendanceDto, user: User) {
     // Obtener el usuario con las relaciones necesarias
@@ -255,8 +249,8 @@ export class AttendanceService {
         });
 
         const newAttendance = await this.attendanceRepository.save(attendance);
-        const lastFiveRecords = await this.findLastFiveRecords(user);
-        this.attendanceGateway.emitLastFiveAttendances(lastFiveRecords);
+        // const lastFiveRecords = await this.findLastFiveRecords(user);
+        // this.attendanceGateway.emitLastFiveAttendances(lastFiveRecords);
 
         return newAttendance;
       } else {
@@ -315,8 +309,8 @@ export class AttendanceService {
 
       const at = await this.attendanceRepository.save(attendance);
 
-      const lastFiveRecords = await this.findLastFiveRecords(user);
-      this.attendanceGateway.emitLastFiveAttendances(lastFiveRecords);
+      // const lastFiveRecords = await this.findLastFiveRecords(user);
+      // this.attendanceGateway.emitLastFiveAttendances(lastFiveRecords);
       return at.id;
     } catch (error) {
       throw new BadRequestException(error.message);

@@ -9,8 +9,8 @@ import { AddRoleDto } from './dto/add-role.dto';
 import * as bcrypt from 'bcrypt';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Assignment } from './entities/assignments.entity';
+import { AssignmentClassroom } from './entities/assignments-classroom.entity';
 
-import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger('UserService');
@@ -21,12 +21,18 @@ export class UserService {
     private readonly roleRepository: Repository<Role>,
     @InjectRepository(Assignment)
     private readonly assignmentRepository: Repository<Assignment>,
-    @InjectRepository(CampusDetail)
-    private readonly campusDetailRepository: Repository<CampusDetail>,
+    @InjectRepository(AssignmentClassroom)
+    private readonly assignmentClassroomRepository: Repository<AssignmentClassroom>,
   ) {}
   async create(createUserDto: CreateUserDto) {
     try {
-      const { password, email, campusDetailsIds, rolesIds } = createUserDto;
+      const {
+        password,
+        email,
+        campusDetailsIds,
+        rolesIds,
+        activityClassroomIds,
+      } = createUserDto;
       const user = this.userRepository.create({
         email,
         password: bcrypt.hashSync(password, 10),
@@ -48,12 +54,23 @@ export class UserService {
       }
 
       const userCreated = await this.userRepository.save(userToUpdate);
-      for (const campusId of campusDetailsIds) {
-        await this.assignmentRepository.save({
-          user: userCreated,
-          campusDetail: { id: campusId },
-        });
+      if (campusDetailsIds) {
+        for (const campusId of campusDetailsIds) {
+          await this.assignmentRepository.save({
+            user: userCreated,
+            campusDetail: { id: campusId },
+          });
+        }
       }
+      if (activityClassroomIds) {
+        for (const acId of activityClassroomIds) {
+          await this.assignmentClassroomRepository.save({
+            user: userCreated,
+            activityClassroom: { id: acId },
+          });
+        }
+      }
+
       return userCreated;
     } catch (error) {
       handleDBExceptions(error, this.logger);
@@ -121,8 +138,14 @@ export class UserService {
         roles: true,
       },
     });
-    const { campusDetailsIds, rolesIds, email, password, isActive } =
-      updateUserDto;
+    const {
+      campusDetailsIds,
+      rolesIds,
+      email,
+      password,
+      isActive,
+      activityClassroomIds,
+    } = updateUserDto;
     userToUpdate.roles = [];
     userToUpdate.isActive = isActive;
     if (email) {
@@ -148,6 +171,7 @@ export class UserService {
     const assignmentToUpdate = await this.assignmentRepository.findBy({
       user: { id: userUpdated.id },
     });
+
     await this.assignmentRepository.remove(assignmentToUpdate);
     if (campusDetailsIds) {
       for (const campusId of campusDetailsIds) {
@@ -162,7 +186,25 @@ export class UserService {
         });
       }
     }
+    const assignmentClassToUpdate =
+      await this.assignmentClassroomRepository.findBy({
+        user: { id: userUpdated.id },
+      });
 
+    await this.assignmentClassroomRepository.remove(assignmentClassToUpdate);
+    if (activityClassroomIds) {
+      for (const acId of activityClassroomIds) {
+        // const campus = await this.campusDetailRepository.findOneBy({
+        //   id: campusId,
+        // });
+        // console.log(campus)
+
+        await this.assignmentClassroomRepository.save({
+          user: userUpdated,
+          activityClassroom: { id: acId },
+        });
+      }
+    }
     return userUpdated;
   }
 

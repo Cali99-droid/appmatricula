@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { AttendanceController } from './attendance.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -19,13 +19,10 @@ import { Person } from 'src/person/entities/person.entity';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { HttpModule } from '@nestjs/axios';
 
-import { UserModule } from 'src/user/user.module';
-import { AttendanceGateway } from './attendance.gateway';
-
 @Module({
   controllers: [AttendanceController],
 
-  providers: [AttendanceService, AttendanceScheduler, AttendanceGateway],
+  providers: [AttendanceService, AttendanceScheduler],
   imports: [
     TypeOrmModule.forFeature([
       Student,
@@ -41,7 +38,7 @@ import { AttendanceGateway } from './attendance.gateway';
       Person,
       Relationship,
     ]),
-    UserModule,
+
     ConfigModule,
     HttpModule,
 
