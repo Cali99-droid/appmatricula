@@ -1,38 +1,40 @@
 import {
   WebSocketGateway,
   WebSocketServer,
-  SubscribeMessage,
-  MessageBody,
-  ConnectedSocket,
+  OnGatewayInit,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { AttendanceService } from './attendance.service';
-import { User } from 'src/user/entities/user.entity';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
-    origin: '*', // Cambia '*' por el dominio específico si es necesario
+    origin: '*', // Ajusta esto según tus necesidades de CORS
     methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
   },
 })
-export class AttendanceGateway {
+export class AttendanceGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly attendanceService: AttendanceService) {}
+  private logger: Logger = new Logger('AttendanceGateway');
 
-  @SubscribeMessage('requestLastFiveRecords')
-  async handleRequestLastFiveRecords(
-    @MessageBody() user: User,
-    @ConnectedSocket() client: Socket,
-  ): Promise<void> {
-    try {
-      const records = await this.attendanceService.findLastFiveRecords(user);
-      client.emit('lastFiveRecords', records);
-    } catch (error) {
-      client.emit('error', { message: error.message });
-    }
+  afterInit(server: Server) {
+    this.logger.log('Initialized');
+  }
+
+  handleConnection(client: Socket) {
+    this.logger.log(`Client connected: ${client.id}`);
+  }
+
+  handleDisconnect(client: Socket) {
+    this.logger.log(`Client disconnected: ${client.id}`);
+  }
+
+  emitLastFiveAttendances(attendances: any) {
+    this.server.emit('lastFiveAttendances', attendances);
   }
 }

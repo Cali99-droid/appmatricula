@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  forwardRef,
+} from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
@@ -19,16 +25,15 @@ import { ActivityClassroom } from 'src/activity_classroom/entities/activity_clas
 import * as moment from 'moment-timezone';
 import { ConditionAttendance } from './enum/condition.enum';
 import { ConfigService } from '@nestjs/config';
-import { SearchAttendanceDto } from './dto/search-attendace.dto';
-import { StudentData } from './interfaces/studentData.interface';
+
 import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
 import { TypeSchedule } from './enum/type-schedule.enum';
 import { User } from 'src/user/entities/user.entity';
 import { DayOfWeek } from 'src/day_of_week/entities/day_of_week.entity';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { Relationship } from 'src/relationship/entities/relationship.entity';
-import { Person } from 'src/person/entities/person.entity';
+
+import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
 export class AttendanceService {
@@ -52,12 +57,12 @@ export class AttendanceService {
     private readonly daysRepository: Repository<DayOfWeek>,
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
-    @InjectRepository(Relationship)
-    private readonly relationShipRepository: Repository<Relationship>,
-    @InjectRepository(Person)
-    private readonly personRepository: Repository<Person>,
+
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
+
+    @Inject(forwardRef(() => AttendanceGateway))
+    private readonly attendanceGateway: AttendanceGateway,
   ) {}
   async create(createAttendanceDto: CreateAttendanceDto, user: User) {
     // Obtener el usuario con las relaciones necesarias
@@ -198,16 +203,16 @@ export class AttendanceService {
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
 
-          if (
-            !(
-              currentTime >= initAttendanceTime &&
-              currentTime <= finishAttendanceTime
-            )
-          ) {
-            throw new BadRequestException(
-              `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
-            );
-          }
+          // if (
+          //   !(
+          //     currentTime >= initAttendanceTime &&
+          //     currentTime <= finishAttendanceTime
+          //   )
+          // ) {
+          //   throw new BadRequestException(
+          //     `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
+          //   );
+          // }
 
           //**Mantener esto*/
           condition =
@@ -249,7 +254,11 @@ export class AttendanceService {
           typeSchedule: TypeSchedule.Individual,
         });
 
-        return this.attendanceRepository.save(attendance);
+        const newAttendance = await this.attendanceRepository.save(attendance);
+        const lastFiveRecords = await this.findLastFiveRecords(user);
+        this.attendanceGateway.emitLastFiveAttendances(lastFiveRecords);
+
+        return newAttendance;
       } else {
         //*** crear asistencia */
 
@@ -268,16 +277,16 @@ export class AttendanceService {
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
 
-        if (
-          !(
-            currentTime >= initAttendanceTime &&
-            currentTime <= finishAttendanceTime
-          )
-        ) {
-          throw new BadRequestException(
-            `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
-          );
-        }
+        // if (
+        //   !(
+        //     currentTime >= initAttendanceTime &&
+        //     currentTime <= finishAttendanceTime
+        //   )
+        // ) {
+        //   throw new BadRequestException(
+        //     `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
+        //   );
+        // }
 
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
@@ -304,33 +313,10 @@ export class AttendanceService {
         activityClassroom: { id: enrollment.activityClassroom.id },
       });
 
-      // const student = await this.studentRepository.findOne({
-      //   where: { id: enrollment.student.id },
-      // });
-      // const relation = await this.relationShipRepository.find({
-      //   where: { sonStudentCode: student.studentCode },
-      // });
-      // const docNumbers = relation.map((item) => item.dniAssignee);
-      // const parents = await this.personRepository.find({
-      //   where: { docNumber: In(docNumbers) },
-      //   relations: { user: true },
-      // });
-      // if (parents) {
-      //   parents.forEach(async (item) => {
-      //     this.sendEmail({
-      //       full_name_son: `${student.person.name}, ${student.person.lastname} ${student.person.mLastname}`,
-      //       first_name: item.name,
-      //       last_name: `${item.lastname} ${item.mLastname}`,
-      //       email: item.user.email,
-      //       cmrGHLId: item.user.crmGHLId,
-      //       arrivalTime: currentTime,
-      //       arribalDate: attendance.arrivalDate,
-      //       shift: shift === 'M' ? 'Mañana' : 'Tarde',
-      //       condition: condition === 'P' ? 'Temprano' : 'Tarde',
-      //     });
-      //   });
-      // }
       const at = await this.attendanceRepository.save(attendance);
+
+      const lastFiveRecords = await this.findLastFiveRecords(user);
+      this.attendanceGateway.emitLastFiveAttendances(lastFiveRecords);
       return at.id;
     } catch (error) {
       throw new BadRequestException(error.message);
