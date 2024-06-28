@@ -50,7 +50,7 @@ import { RoleModule } from './role/role.module';
       autoLoadEntities: true,
       synchronize: true,
       subscribers: [YearSubscriber, PhaseSubscriber],
-      logging: true,
+      // logging: true,
     }),
 
     YearsModule,
