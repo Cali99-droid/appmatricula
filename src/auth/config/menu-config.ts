@@ -93,8 +93,15 @@ export const AdminMenu = {
           permissions: ['admin', 'report'],
         },
         {
-          id: 1,
+          id: 2,
           label: 'Reporte Global',
+          icon: 'reports',
+          link: '/admin/reports/report',
+          permissions: ['admin'],
+        },
+        {
+          id: 3,
+          label: 'Reporte por sede',
           icon: 'reports',
           link: '/admin/reports/report',
           permissions: ['admin', 'report'],

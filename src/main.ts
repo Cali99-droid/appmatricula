@@ -19,7 +19,12 @@ async function bootstrap() {
       // },
     }),
   );
-
+  app.enableCors({
+    origin: '*', // Cambia '*' por el dominio específico si es necesario
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const config = new DocumentBuilder()
     .setTitle('Matrículas RESTFul API')

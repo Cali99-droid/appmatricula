@@ -18,10 +18,11 @@ import { DayOfWeek } from 'src/day_of_week/entities/day_of_week.entity';
 import { Person } from 'src/person/entities/person.entity';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { HttpModule } from '@nestjs/axios';
+import { AttendanceGateway } from './attendance.gateway';
 
 @Module({
   controllers: [AttendanceController],
-  providers: [AttendanceService, AttendanceScheduler],
+  providers: [AttendanceService, AttendanceScheduler, AttendanceGateway],
   imports: [
     TypeOrmModule.forFeature([
       Student,

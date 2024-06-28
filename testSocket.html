@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket Test</title>
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body>
+  <script>
+    // Asegúrate de usar 'io' para conectarte
+    const socket = io('http://localhost:3000');
+
+    // Simula un objeto de usuario
+    const user = {
+      email: 'admin@admin.com'
+    };
+
+    // Envía la solicitud al servidor
+    socket.emit('requestLastFiveRecords', user);
+
+    // Escucha la respuesta del servidor
+    socket.on('lastFiveRecords', (data) => {
+      console.log('Últimos cinco registros:', data);
+    });
+
+    // Escucha los errores
+    socket.on('error', (error) => {
+      console.error('Error:', error);
+    });
+  </script>
+</body>
+</html>
