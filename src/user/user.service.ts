@@ -130,7 +130,11 @@ export class UserService {
         }),
         isActive,
         assignmentClassroom: assignmentsClassroom.map((item) => {
-          return item.activityClassroom.id;
+          return {
+            id: item.activityClassroom.id,
+            grade: item.activityClassroom.grade.name,
+            section: item.activityClassroom.section,
+          };
         }),
       };
     } catch (error) {
