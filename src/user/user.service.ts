@@ -11,6 +11,7 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Assignment } from './entities/assignments.entity';
 
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
+import { AssignmentClassroom } from './entities/assignments-classroom.entity';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger('UserService');
@@ -23,10 +24,18 @@ export class UserService {
     private readonly assignmentRepository: Repository<Assignment>,
     @InjectRepository(CampusDetail)
     private readonly campusDetailRepository: Repository<CampusDetail>,
+    @InjectRepository(AssignmentClassroom)
+    private readonly assignmentClassroomRepository: Repository<AssignmentClassroom>,
   ) {}
   async create(createUserDto: CreateUserDto) {
     try {
-      const { password, email, campusDetailsIds, rolesIds } = createUserDto;
+      const {
+        password,
+        email,
+        campusDetailsIds,
+        rolesIds,
+        activityClassroomIds,
+      } = createUserDto;
       const user = this.userRepository.create({
         email,
         password: bcrypt.hashSync(password, 10),
@@ -48,11 +57,21 @@ export class UserService {
       }
 
       const userCreated = await this.userRepository.save(userToUpdate);
-      for (const campusId of campusDetailsIds) {
-        await this.assignmentRepository.save({
-          user: userCreated,
-          campusDetail: { id: campusId },
-        });
+      if (campusDetailsIds) {
+        for (const campusId of campusDetailsIds) {
+          await this.assignmentRepository.save({
+            user: userCreated,
+            campusDetail: { id: campusId },
+          });
+        }
+      }
+      if (activityClassroomIds) {
+        for (const acId of activityClassroomIds) {
+          await this.assignmentClassroomRepository.save({
+            user: userCreated,
+            activityClassroom: { id: acId },
+          });
+        }
       }
       return userCreated;
     } catch (error) {
@@ -92,9 +111,13 @@ export class UserService {
           assignments: {
             campusDetail: true,
           },
+          assignmentsClassroom: {
+            activityClassroom: true,
+          },
         },
       });
-      const { email, roles, assignments, isActive } = user;
+      const { email, roles, assignments, isActive, assignmentsClassroom } =
+        user;
 
       return {
         id: user.id,
@@ -106,6 +129,9 @@ export class UserService {
           return ass.campusDetail.id;
         }),
         isActive,
+        assignmentClassroom: assignmentsClassroom.map((item) => {
+          return item.activityClassroom.id;
+        }),
       };
     } catch (error) {
       throw new NotFoundException(error.message);
@@ -121,8 +147,14 @@ export class UserService {
         roles: true,
       },
     });
-    const { campusDetailsIds, rolesIds, email, password, isActive } =
-      updateUserDto;
+    const {
+      campusDetailsIds,
+      rolesIds,
+      email,
+      password,
+      isActive,
+      activityClassroomIds,
+    } = updateUserDto;
     userToUpdate.roles = [];
     userToUpdate.isActive = isActive;
     if (email) {
@@ -159,6 +191,20 @@ export class UserService {
         await this.assignmentRepository.save({
           user: userUpdated,
           campusDetail: { id: campusId },
+        });
+      }
+    }
+    const assignmentClassToUpdate =
+      await this.assignmentClassroomRepository.findBy({
+        user: { id: userUpdated.id },
+      });
+
+    await this.assignmentClassroomRepository.remove(assignmentClassToUpdate);
+    if (activityClassroomIds) {
+      for (const acId of activityClassroomIds) {
+        await this.assignmentClassroomRepository.save({
+          user: userUpdated,
+          activityClassroom: { id: acId },
         });
       }
     }
