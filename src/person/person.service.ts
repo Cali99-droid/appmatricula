@@ -114,9 +114,16 @@ export class PersonService {
   findAll() {
     return `This action returns all person`;
   }
-  async findOne(id: number) {
+  async findOneStudent(id: number) {
     const person = await this.personRepository.findOne({
       where: { student: { id: id } },
+    });
+    if (!person) throw new NotFoundException(`person with id ${id} not found`);
+    return person;
+  }
+  async findOne(id: number) {
+    const person = await this.personRepository.findOne({
+      where: { id: id },
     });
     if (!person) throw new NotFoundException(`person with id ${id} not found`);
     return person;
