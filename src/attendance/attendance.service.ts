@@ -307,32 +307,32 @@ export class AttendanceService {
         typeSchedule: TypeSchedule.General,
         activityClassroom: { id: enrollment.activityClassroom.id },
       });
-      const student = await this.studentRepository.findOne({
-        where: { id: enrollment.student.id },
-      });
-      const relation = await this.relationShipRepository.find({
-        where: { sonStudentCode: student.studentCode },
-      });
-      const docNumbers = relation.map((item) => item.dniAssignee);
-      const parents = await this.personRepository.find({
-        where: { docNumber: In(docNumbers) },
-        relations: { user: true },
-      });
-      if (parents) {
-        parents.forEach(async (item) => {
-          this.sendEmail({
-            full_name_son: `${student.person.name}, ${student.person.lastname} ${student.person.mLastname}`,
-            first_name: item.name,
-            last_name: `${item.lastname} ${item.mLastname}`,
-            email: item.user.email,
-            cmrGHLId: item.user.crmGHLId,
-            arrivalTime: currentTime,
-            arribalDate: attendance.arrivalDate,
-            shift: shift === 'M' ? 'Mañana' : 'Tarde',
-            condition: condition === 'P' ? 'Temprano' : 'Tarde',
-          });
-        });
-      }
+      // const student = await this.studentRepository.findOne({
+      //   where: { id: enrollment.student.id },
+      // });
+      // const relation = await this.relationShipRepository.find({ 
+      //   where: { sonStudentCode: student.studentCode },
+      // });
+      // const docNumbers = relation.map((item) => item.dniAssignee);
+      // const parents = await this.personRepository.find({
+      //   where: { docNumber: In(docNumbers) },
+      //   relations: { user: true },
+      // });
+      // if (parents) {
+      //   parents.forEach(async (item) => {
+      //     this.sendEmail({
+      //       full_name_son: `${student.person.name}, ${student.person.lastname} ${student.person.mLastname}`,
+      //       first_name: item.name,
+      //       last_name: `${item.lastname} ${item.mLastname}`,
+      //       email: item.user.email,
+      //       cmrGHLId: item.user.crmGHLId,
+      //       arrivalTime: currentTime,
+      //       arribalDate: attendance.arrivalDate,
+      //       shift: shift === 'M' ? 'Mañana' : 'Tarde',
+      //       condition: condition === 'P' ? 'Temprano' : 'Tarde',
+      //     });
+      //   });
+      // }
       const at = await this.attendanceRepository.save(attendance);
 
       // const lastFiveRecords = await this.findLastFiveRecords(user);
