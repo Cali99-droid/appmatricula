@@ -26,9 +26,16 @@ export const AdminMenu = {
         },
         {
           id: 2,
-          label: 'Familias',
+          label: 'Parentesco',
           icon: 'family',
           link: '/admin/school/family',
+          permissions: ['admin'],
+        },
+        {
+          id: 3,
+          label: 'Familias',
+          icon: 'family',
+          link: '/admin/school/families',
           permissions: ['admin'],
         },
       ],
