@@ -337,7 +337,6 @@ export class AttendanceService {
   }
   async sendEmail(data: any): Promise<any> {
     const url = this.configService.getOrThrow('GHL_ATTENDANCE_URL');
-    6;
     try {
       const response = await firstValueFrom(this.httpService.post(url, data));
       return response.data;
