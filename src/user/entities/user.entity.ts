@@ -17,6 +17,7 @@ import {
 
 import { Role } from 'src/role/entities/role.entity';
 import { Assignment } from './assignments.entity';
+import { AssignmentClassroom } from './assignments-classroom.entity';
 
 @Entity()
 export class User {
@@ -62,6 +63,11 @@ export class User {
   @OneToMany(() => Assignment, (assignment) => assignment.user)
   assignments: Assignment[];
 
+  @OneToMany(
+    () => AssignmentClassroom,
+    (assignmentClass) => assignmentClass.user,
+  )
+  assignmentsClassroom?: AssignmentClassroom[];
   @ManyToMany(() => Role, (role) => role.users)
   @JoinTable()
   roles: Role[];
