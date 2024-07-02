@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Attendance Updates</title>
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Attendance Updates</h1>
+  <div id="attendances"></div>
+
+  <script>
+    const socket = io('https://apissl-matricula.dev-solware.com/'); // Cambia a la URL de tu servidor
+
+    socket.on('lastFiveAttendances', (data) => {
+      const attendancesDiv = document.getElementById('attendances');
+      attendancesDiv.innerHTML = JSON.stringify(data, null, 2);
+    });
+  </script>
+</body>
+</html>

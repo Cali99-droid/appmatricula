@@ -21,6 +21,7 @@ import { HttpModule } from '@nestjs/axios';
 
 @Module({
   controllers: [AttendanceController],
+
   providers: [AttendanceService, AttendanceScheduler],
   imports: [
     TypeOrmModule.forFeature([
@@ -37,8 +38,10 @@ import { HttpModule } from '@nestjs/axios';
       Person,
       Relationship,
     ]),
+
     ConfigModule,
     HttpModule,
+
     ScheduleModule.forRoot(),
   ],
 })

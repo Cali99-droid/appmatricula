@@ -18,13 +18,16 @@ export class Role {
   @ApiProperty()
   @Column('varchar', {
     nullable: true,
+    unique: true,
   })
   name: string;
 
   @ManyToMany(() => User, (user) => user.roles)
   users: User[];
 
-  @ManyToMany(() => Permission)
+  @ManyToMany(() => Permission, {
+    eager: true,
+  })
   @JoinTable()
   permissions: Permission[];
 }
