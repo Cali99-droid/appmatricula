@@ -29,6 +29,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { Person } from 'src/person/entities/person.entity';
+// import { AttendanceGateway } from './attendance.gateway';
 @Injectable()
 export class AttendanceService {
   private readonly logger = new Logger('attendanceService');
