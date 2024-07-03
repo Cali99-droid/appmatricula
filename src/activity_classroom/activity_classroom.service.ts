@@ -161,7 +161,7 @@ export class ActivityClassroomService {
     const per = us.roles.flatMap((role) =>
       role.permissions.map((perm) => perm.name),
     );
-    console.log(per); //s
+
     const whereCondition: any = {
       phase: {
         id: !isNaN(+phaseId) ? +phaseId : undefined,
@@ -177,11 +177,11 @@ export class ActivityClassroomService {
     const autPerm = [
       'admin',
       'card-generator',
-      'report',
+      // 'report',
       'students',
       'families',
     ];
-
+    console.log(us.assignmentsClassroom);
     const isAdmin = per.some((e) => autPerm.includes(e));
     if (!isAdmin) {
       const acIds = us.assignmentsClassroom.map(
