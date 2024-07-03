@@ -260,9 +260,8 @@ export class AttendanceService {
           },
         });
         if (family) {
-          console.log(family);
           const { parentOneId, parentTwoId, student } = family;
-          if (parentOneId) {
+          if (parentOneId && parentOneId.user) {
             this.sendEmail(
               parentOneId,
               student[0],
@@ -272,9 +271,9 @@ export class AttendanceService {
               condition,
             );
           }
-          if (parentTwoId) {
+          if (parentTwoId && parentTwoId.user) {
             this.sendEmail(
-              parentOneId,
+              parentTwoId,
               student[0],
               currentTime,
               attendance.arrivalDate,
@@ -349,7 +348,7 @@ export class AttendanceService {
       });
       if (family) {
         const { parentOneId, parentTwoId, student } = family;
-        if (parentOneId) {
+        if (parentOneId && parentOneId.user) {
           this.sendEmail(
             parentOneId,
             student[0],
@@ -359,9 +358,9 @@ export class AttendanceService {
             condition,
           );
         }
-        if (parentTwoId) {
+        if (parentTwoId && parentTwoId.user) {
           this.sendEmail(
-            parentOneId,
+            parentTwoId,
             student[0],
             currentTime,
             attendance.arrivalDate,
@@ -387,15 +386,20 @@ export class AttendanceService {
   ) {
     const url = this.configService.get('GHL_ATTENDANCE_URL');
     try {
-      console.log(parent, student, currentTime, arrivalDate, condition);
+      currentTime.setHours(currentTime.getHours() - 5);
+      const hours = currentTime.getUTCHours().toString().padStart(2, '0');
+      const minutes = currentTime.getUTCMinutes().toString().padStart(2, '0');
+      const seconds = currentTime.getUTCSeconds().toString().padStart(2, '0');
+      const formattedTime = `${hours}:${minutes}:${seconds}`;
+
       await firstValueFrom(
         this.httpService.post(url, {
-          full_name_son: `${student.person.name}, ${student.person.lastname} ${student.person.mLastname}`,
+          full_name_son: `${student.person.name}`,
           first_name: parent.name,
           last_name: `${parent.lastname} ${parent.mLastname}`,
           email: parent.user.email,
           cmrGHLId: parent.user.crmGHLId,
-          arrivalTime: currentTime,
+          arrivalTime: formattedTime,
           arribalDate: arrivalDate,
           shift: shift === 'M' ? 'Mañana' : 'Tarde',
           condition: condition === 'P' ? 'Temprano' : 'Tarde',

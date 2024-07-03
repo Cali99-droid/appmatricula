@@ -77,6 +77,30 @@ export class Person {
   })
   studentCode: string;
 
+  @ApiProperty({
+    description: 'Cell phone ',
+  })
+  @Column('varchar', {
+    nullable: true,
+  })
+  cellPhone: string;
+
+  @ApiProperty({
+    description: 'Birthdate',
+  })
+  @Column('varchar', {
+    nullable: true,
+  })
+  birthDate: string;
+
+  @ApiProperty({
+    description: 'Profession ',
+  })
+  @Column('varchar', {
+    nullable: true,
+  })
+  profession: string;
+
   @OneToOne(() => Student, (student) => student.person)
   student?: Student;
 

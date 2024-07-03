@@ -55,6 +55,27 @@ export class CreatePersonDto {
   studentCode: string;
 
   @ApiProperty({
+    description: 'cellPhone',
+  })
+  @IsString()
+  @IsOptional()
+  cellPhone: string;
+
+  @ApiProperty({
+    description: 'birthDate',
+  })
+  @IsString()
+  @IsOptional()
+  birthDate: string;
+
+  @ApiProperty({
+    description: 'profession',
+  })
+  @IsString()
+  @IsOptional()
+  profession: string;
+
+  @ApiProperty({
     description: 'family Role  of student',
   })
   @IsEnum(FamilyRole, {
