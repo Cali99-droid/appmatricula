@@ -65,7 +65,7 @@ jobs:
             -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
             -e AWS_REGION=${{ secrets.AWS_REGION }} \
             -e FULL_URL_S3=${{ secrets.FULL_URL_S3 }} \
-            -e GHL_ATTENDANCE_URL=${{ secrets.GHL_ATTENDANCE_URL3 }} \
+            -e GHL_ATTENDANCE_URL=${{ secrets.GHL_ATTENDANCE_URL }} \
             -e TZ=America/Lima \
             --restart always \
             ghcr.io/cali99-droid/appmatricula:latest

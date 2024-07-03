@@ -387,7 +387,6 @@ export class AttendanceService {
   ) {
     const url = this.configService.get('GHL_ATTENDANCE_URL');
     try {
-      console.log('entro');
       console.log(parent, student, currentTime, arrivalDate, condition);
       await firstValueFrom(
         this.httpService.post(url, {
