@@ -386,7 +386,6 @@ export class AttendanceService {
   ) {
     const url = this.configService.get('GHL_ATTENDANCE_URL');
     try {
-      console.log(currentTime);
       currentTime.setHours(currentTime.getHours() - 5);
       const hours = currentTime.getUTCHours().toString().padStart(2, '0');
       const minutes = currentTime.getUTCMinutes().toString().padStart(2, '0');
