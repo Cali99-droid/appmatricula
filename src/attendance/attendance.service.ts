@@ -391,6 +391,7 @@ export class AttendanceService {
       const minutes = currentTime.getUTCMinutes().toString().padStart(2, '0');
       const seconds = currentTime.getUTCSeconds().toString().padStart(2, '0');
       const formattedTime = `${hours}:${minutes}:${seconds}`;
+
       await firstValueFrom(
         this.httpService.post(url, {
           full_name_son: `${student.person.name}`,
