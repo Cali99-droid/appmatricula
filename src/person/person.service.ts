@@ -58,6 +58,7 @@ export class PersonService {
           mLastname: data.mLastname,
           gender: gender,
           familyRole: familyRole,
+          birthDate: data.birthDate,
         });
         const personCreated = await this.personRepository.save(person);
         idPerson = personCreated.id;
@@ -124,9 +125,14 @@ export class PersonService {
   async findOne(id: number) {
     const person = await this.personRepository.findOne({
       where: { id: id },
+      relations: { user: true },
     });
     if (!person) throw new NotFoundException(`person with id ${id} not found`);
-    return person;
+    const { user, ...rest } = person;
+    return {
+      ...rest,
+      email: !user ? null : user.email,
+    };
   }
   async findParentsByStudentCode(id: string) {
     const relation = await this.relationShipRepository.find({
