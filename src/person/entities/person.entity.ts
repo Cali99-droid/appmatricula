@@ -88,10 +88,10 @@ export class Person {
   @ApiProperty({
     description: 'Birthdate',
   })
-  @Column('varchar', {
+  @Column('date', {
     nullable: true,
   })
-  birthDate: string;
+  birthDate: Date;
 
   @ApiProperty({
     description: 'Profession ',

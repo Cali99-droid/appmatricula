@@ -37,7 +37,6 @@ export class PersonService {
       let familyRole = undefined;
       let gender = undefined;
       let idPerson = undefined;
-      console.log(data);
       if (data.gender == 'Masculino') {
         gender = 'M';
         familyRole = 'P';
@@ -45,6 +44,21 @@ export class PersonService {
         gender = 'F';
         familyRole = 'M';
       }
+      const splitDate = data.birthDate.replace('th', '').split(' ');
+      const dateFormated = `${splitDate[1]} ${splitDate[0]} ${splitDate[2]}`;
+      const helpDate = new Date(dateFormated);
+      // Verificar que la date es válida
+      if (!helpDate)
+        throw new NotFoundException(
+          `Error  with dateBirth: ${helpDate} not found`,
+        );
+
+      const year = helpDate.getFullYear();
+      const mounth = ('0' + (helpDate.getMonth() + 1)).slice(-2);
+      const day = ('0' + helpDate.getDate()).slice(-2);
+
+      const date = `${year}-${mounth}-${day}`;
+
       const validatPerson = await this.personRepository.findOne({
         where: { docNumber: data.docNumber },
       });
@@ -58,7 +72,7 @@ export class PersonService {
           mLastname: data.mLastname,
           gender: gender,
           familyRole: familyRole,
-          birthDate: data.birthDate,
+          birthDate: date,
         });
         const personCreated = await this.personRepository.save(person);
         idPerson = personCreated.id;
