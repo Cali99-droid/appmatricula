@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsEnum, IsOptional, IsString, Length, Matches } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+} from 'class-validator';
 import { FamilyRole } from 'src/common/enum/family-role.enum';
 import { Gender } from 'src/common/enum/gender.enum';
 
@@ -62,11 +69,12 @@ export class CreatePersonDto {
   cellPhone: string;
 
   @ApiProperty({
+    example: '1996-10-25',
     description: 'birthDate',
   })
-  @IsString()
+  @IsDateString()
   @IsOptional()
-  birthDate: string;
+  birthDate: Date;
 
   @ApiProperty({
     description: 'profession',
