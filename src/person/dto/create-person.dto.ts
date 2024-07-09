@@ -1,6 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsEnum, IsString, Length, Matches } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+} from 'class-validator';
+import { FamilyRole } from 'src/common/enum/family-role.enum';
 import { Gender } from 'src/common/enum/gender.enum';
 
 export class CreatePersonDto {
@@ -50,5 +58,36 @@ export class CreatePersonDto {
     description: 'studentCode',
   })
   @IsString()
+  @IsOptional()
   studentCode: string;
+
+  @ApiProperty({
+    description: 'cellPhone',
+  })
+  @IsString()
+  @IsOptional()
+  cellPhone: string;
+
+  @ApiProperty({
+    example: '1996-10-25',
+    description: 'birthDate',
+  })
+  @IsDateString()
+  @IsOptional()
+  birthDate: Date;
+
+  @ApiProperty({
+    description: 'profession',
+  })
+  @IsString()
+  @IsOptional()
+  profession: string;
+
+  @ApiProperty({
+    description: 'family Role  of student',
+  })
+  @IsEnum(FamilyRole, {
+    message: 'FamilyRole value must be some values: [M,P,H] ',
+  })
+  familyRole: FamilyRole;
 }

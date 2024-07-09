@@ -64,6 +64,12 @@ export class CreatePersonCrmDto {
   })
   @IsString()
   email: string;
+  @ApiProperty({
+    example: 'OCT 15th 1996',
+    description: 'BirthDate of person',
+  })
+  @IsString()
+  birthDate: string;
   // @ApiProperty({
   //   example: 'M',
   //   description: 'gender, must be M or F',

@@ -58,7 +58,19 @@ export class CreateUserDto {
     example: [1, 2, 3],
   })
   @IsArray()
+  @IsOptional()
   @IsInt({ each: true })
   @ExistId({ tableName: 'campus_detail', isArray: true })
-  campusDetailsIds: number[];
+  campusDetailsIds?: number[];
+
+  @ApiProperty({
+    description: 'activity_classroom id, aulas a asignar al user',
+    nullable: false,
+    example: [1, 2, 3],
+  })
+  @IsArray()
+  @IsOptional()
+  @IsInt({ each: true })
+  @ExistId({ tableName: 'activity_classroom', isArray: true })
+  activityClassroomIds?: number[];
 }

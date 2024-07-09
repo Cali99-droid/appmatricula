@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 // import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { Attendance } from './entities/attendance.entity';
-import { Between, In, Not, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 // import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -19,8 +19,7 @@ import { ActivityClassroom } from 'src/activity_classroom/entities/activity_clas
 import * as moment from 'moment-timezone';
 import { ConditionAttendance } from './enum/condition.enum';
 import { ConfigService } from '@nestjs/config';
-import { SearchAttendanceDto } from './dto/search-attendace.dto';
-import { StudentData } from './interfaces/studentData.interface';
+
 import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
 import { TypeSchedule } from './enum/type-schedule.enum';
 import { User } from 'src/user/entities/user.entity';
@@ -29,6 +28,8 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { Person } from 'src/person/entities/person.entity';
+import { Family } from 'src/family/entities/family.entity';
+// import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
 export class AttendanceService {
@@ -52,12 +53,14 @@ export class AttendanceService {
     private readonly daysRepository: Repository<DayOfWeek>,
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
-    @InjectRepository(Relationship)
-    private readonly relationShipRepository: Repository<Relationship>,
-    @InjectRepository(Person)
-    private readonly personRepository: Repository<Person>,
+    @InjectRepository(Family)
+    private readonly familyRepository: Repository<Family>,
+
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
+
+    // @Inject(forwardRef(() => AttendanceGateway))
+    // private readonly attendanceGateway: AttendanceGateway,
   ) {}
   async create(createAttendanceDto: CreateAttendanceDto, user: User) {
     // Obtener el usuario con las relaciones necesarias
@@ -198,16 +201,16 @@ export class AttendanceService {
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
 
-          if (
-            !(
-              currentTime >= initAttendanceTime &&
-              currentTime <= finishAttendanceTime
-            )
-          ) {
-            throw new BadRequestException(
-              `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
-            );
-          }
+          // if (
+          //   !(
+          //     currentTime >= initAttendanceTime &&
+          //     currentTime <= finishAttendanceTime
+          //   )
+          // ) {
+          //   throw new BadRequestException(
+          //     `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
+          //   );
+          // }
 
           //**Mantener esto*/
           condition =
@@ -233,11 +236,11 @@ export class AttendanceService {
           )
           .getOne();
 
-        if (existAttendance) {
-          throw new BadRequestException(
-            `Ya marcó asistencia en este turno a las: ${existAttendance.arrivalTime}`,
-          );
-        }
+        // if (existAttendance) {
+        //   throw new BadRequestException(
+        //     `Ya marcó asistencia en este turno a las: ${existAttendance.arrivalTime}`,
+        //   );
+        // }
 
         const attendance = this.attendanceRepository.create({
           shift: Shift.Extra,
@@ -248,8 +251,42 @@ export class AttendanceService {
           arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
           typeSchedule: TypeSchedule.Individual,
         });
+        const family = await this.familyRepository.findOne({
+          where: { student: { id: enrollment.student.id } },
+          relations: {
+            student: true,
+            parentOneId: { user: true },
+            parentTwoId: { user: true },
+          },
+        });
+        if (family) {
+          const { parentOneId, parentTwoId, student } = family;
+          if (parentOneId && parentOneId.user) {
+            this.sendEmail(
+              parentOneId,
+              student[0],
+              currentTime,
+              attendance.arrivalDate,
+              attendance.shift,
+              condition,
+            );
+          }
+          if (parentTwoId && parentTwoId.user) {
+            this.sendEmail(
+              parentTwoId,
+              student[0],
+              currentTime,
+              attendance.arrivalDate,
+              attendance.shift,
+              condition,
+            );
+          }
+        }
+        const newAttendance = await this.attendanceRepository.save(attendance);
+        // const lastFiveRecords = await this.findLastFiveRecords(user);
+        // this.attendanceGateway.emitLastFiveAttendances(lastFiveRecords);
 
-        return this.attendanceRepository.save(attendance);
+        return newAttendance;
       } else {
         //*** crear asistencia */
 
@@ -268,17 +305,16 @@ export class AttendanceService {
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
 
-        if (
-          !(
-            currentTime >= initAttendanceTime &&
-            currentTime <= finishAttendanceTime
-          )
-        ) {
-          throw new BadRequestException(
-            `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
-          );
-        }
-
+        // if (
+        //   !(
+        //     currentTime >= initAttendanceTime &&
+        //     currentTime <= finishAttendanceTime
+        //   )
+        // ) {
+        //   throw new BadRequestException(
+        //     `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
+        //   );
+        // }
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
           condition =
@@ -293,7 +329,6 @@ export class AttendanceService {
         }
         shift = turn.shift;
       }
-
       const attendance = this.attendanceRepository.create({
         shift: shift,
         condition: condition,
@@ -303,46 +338,73 @@ export class AttendanceService {
         typeSchedule: TypeSchedule.General,
         activityClassroom: { id: enrollment.activityClassroom.id },
       });
-
-      // const student = await this.studentRepository.findOne({
-      //   where: { id: enrollment.student.id },
-      // });
-      // const relation = await this.relationShipRepository.find({
-      //   where: { sonStudentCode: student.studentCode },
-      // });
-      // const docNumbers = relation.map((item) => item.dniAssignee);
-      // const parents = await this.personRepository.find({
-      //   where: { docNumber: In(docNumbers) },
-      //   relations: { user: true },
-      // });
-      // if (parents) {
-      //   parents.forEach(async (item) => {
-      //     this.sendEmail({
-      //       full_name_son: `${student.person.name}, ${student.person.lastname} ${student.person.mLastname}`,
-      //       first_name: item.name,
-      //       last_name: `${item.lastname} ${item.mLastname}`,
-      //       email: item.user.email,
-      //       cmrGHLId: item.user.crmGHLId,
-      //       arrivalTime: currentTime,
-      //       arribalDate: attendance.arrivalDate,
-      //       shift: shift === 'M' ? 'Mañana' : 'Tarde',
-      //       condition: condition === 'P' ? 'Temprano' : 'Tarde',
-      //     });
-      //   });
-      // }
+      const family = await this.familyRepository.findOne({
+        where: { student: { id: enrollment.student.id } },
+        relations: {
+          student: true,
+          parentOneId: { user: true },
+          parentTwoId: { user: true },
+        },
+      });
+      if (family) {
+        const { parentOneId, parentTwoId, student } = family;
+        if (parentOneId && parentOneId.user) {
+          this.sendEmail(
+            parentOneId,
+            student[0],
+            currentTime,
+            attendance.arrivalDate,
+            shift,
+            condition,
+          );
+        }
+        if (parentTwoId && parentTwoId.user) {
+          this.sendEmail(
+            parentTwoId,
+            student[0],
+            currentTime,
+            attendance.arrivalDate,
+            shift,
+            condition,
+          );
+        }
+      }
       const at = await this.attendanceRepository.save(attendance);
       return at.id;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
-  async sendEmail(data: any): Promise<any> {
-    const url =
-      'https://backend.leadconnectorhq.com/hooks/wp3Dzm0Ktsmq3kEgTA7A/webhook-trigger/38b725c7-02eb-4efc-97fb-a38d85073d76';
 
+  async sendEmail(
+    parent: Person,
+    student: Student,
+    currentTime: Date,
+    arrivalDate: Date,
+    shift: Shift,
+    condition: ConditionAttendance,
+  ) {
+    const url = this.configService.get('GHL_ATTENDANCE_URL');
     try {
-      const response = await firstValueFrom(this.httpService.post(url, data));
-      return response.data;
+      currentTime.setHours(currentTime.getHours() - 5);
+      const hours = currentTime.getUTCHours().toString().padStart(2, '0');
+      const minutes = currentTime.getUTCMinutes().toString().padStart(2, '0');
+      const seconds = currentTime.getUTCSeconds().toString().padStart(2, '0');
+      const formattedTime = `${hours}:${minutes}:${seconds}`;
+
+      await firstValueFrom(
+        this.httpService.post(url, {
+          full_name_son: `${student.person.name}`,
+          first_name: parent.name,
+          last_name: `${parent.lastname} ${parent.mLastname}`,
+          email: parent.user.email,
+          cmrGHLId: parent.user.crmGHLId,
+          arrivalTime: formattedTime,
+          arribalDate: arrivalDate,
+          shift: shift === 'M' ? 'Mañana' : 'Tarde',
+          condition: condition === 'P' ? 'Temprano' : 'Tarde',
+        }),
+      );
     } catch (error) {
       throw error;
     }

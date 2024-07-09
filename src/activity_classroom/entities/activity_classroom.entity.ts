@@ -16,6 +16,7 @@ import { SchoolShift } from '../../school_shifts/entities/school_shift.entity';
 import { Enrollment } from '../../enrollment/entities/enrollment.entity';
 import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
+import { AssignmentClassroom } from 'src/user/entities/assignments-classroom.entity';
 
 @Entity()
 export class ActivityClassroom {
@@ -67,4 +68,10 @@ export class ActivityClassroom {
 
   @OneToMany(() => Attendance, (attendance) => attendance.activityClassroom)
   attendance?: Attendance[];
+
+  @OneToMany(
+    () => AssignmentClassroom,
+    (assignmentClass) => assignmentClass.activityClassroom,
+  )
+  assignmentClassroom: AssignmentClassroom[];
 }

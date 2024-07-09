@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateActivityClassroomDto } from './dto/create-activity_classroom.dto';
@@ -13,6 +13,7 @@ import { ActivityClassroom } from './entities/activity_classroom.entity';
 
 import { SearchClassroomsDto } from 'src/common/dto/search-classrooms.dto';
 import { ConfigService } from '@nestjs/config';
+import { User } from 'src/user/entities/user.entity';
 @Injectable()
 export class ActivityClassroomService {
   private readonly logger = new Logger('ActivityClassroomService');
@@ -20,6 +21,8 @@ export class ActivityClassroomService {
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
     private readonly configService: ConfigService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
   async create(createActivityClassroomDto: CreateActivityClassroomDto) {
     // Combinando las condiciones en un único objeto de consulta
@@ -135,28 +138,70 @@ export class ActivityClassroomService {
       throw new NotFoundException(error.message);
     }
   }
-  async searchClassrooms(searchClassroomsDto: SearchClassroomsDto) {
-    // let classrooms: ActivityClassroom[];
+  async searchClassrooms(searchClassroomsDto: SearchClassroomsDto, user: User) {
     const { yearId, phaseId, campusId, levelId } = searchClassroomsDto;
-    const classrooms = await this.activityClassroomRepository.find({
+    // Obtener el usuario con las relaciones necesarias
+    const us = await this.userRepository.findOne({
       where: {
-        phase: {
-          id: !isNaN(+phaseId) ? +phaseId : undefined,
-          year: { id: !isNaN(+yearId) ? +yearId : undefined },
-        },
-        classroom: {
-          campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
-        },
-        grade: {
-          level: !isNaN(+levelId) ? { id: +levelId } : {},
-        },
+        email: user.email,
       },
       relations: {
-        classroom: true,
-        phase: true,
-        grade: true,
-        schoolShift: true,
+        assignmentsClassroom: {
+          activityClassroom: true,
+        },
+        roles: {
+          permissions: true,
+        },
       },
+    });
+    // Recopilar permisos del usuario
+    // const permissions = new Set(
+    //   us.roles.flatMap((role) => role.permissions.map((perm) => perm.name)),
+    // );
+    const per = us.roles.flatMap((role) =>
+      role.permissions.map((perm) => perm.name),
+    );
+
+    const whereCondition: any = {
+      phase: {
+        id: !isNaN(+phaseId) ? +phaseId : undefined,
+        year: { id: !isNaN(+yearId) ? +yearId : undefined },
+      },
+      classroom: {
+        campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
+      },
+      grade: {
+        level: !isNaN(+levelId) ? { id: +levelId } : {},
+      },
+    };
+    const autPerm = [
+      'admin',
+      'card-generator',
+      // 'report',
+      'students',
+      'families',
+    ];
+    console.log(us.assignmentsClassroom);
+    const isAdmin = per.some((e) => autPerm.includes(e));
+    if (!isAdmin) {
+      const acIds = us.assignmentsClassroom.map(
+        (item) => item.activityClassroom.id,
+      );
+      whereCondition.assignmentClassroom = {
+        activityClassroom: { id: In(acIds) },
+      };
+    }
+    // let classrooms: ActivityClassroom[];d
+
+    const classrooms = await this.activityClassroomRepository.find({
+      where: whereCondition,
+      // relations: {
+      //   classroom: true,
+      //   phase: true,
+      //   grade: true,
+      //   // schoolShift: true,
+      //   assignmentClassroom: true,
+      // },
       order: {
         grade: { name: 'ASC' },
         section: 'ASC',

@@ -122,6 +122,10 @@ export class AppModule implements NestModule {
           path: '/auth/logout',
           method: RequestMethod.GET,
         },
+        {
+          path: '/family/migrate',
+          method: RequestMethod.GET,
+        },
       )
       .forRoutes('/*');
   }

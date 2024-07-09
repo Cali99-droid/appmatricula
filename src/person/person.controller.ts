@@ -32,15 +32,19 @@ export class PersonController {
     return this.personService.findAll();
   }
 
-  @Get(':studentId')
-  findOne(@Param('studentId') studentId: string) {
-    return this.personService.findOne(+studentId);
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.personService.findOne(+id);
   }
+  // @Get(':studentId')
+  // findOneStudent(@Param('studentId') studentId: string) {
+  //   return this.personService.findOneStudent(+studentId);
+  // }
 
-  @Get('parents/:studentCode')
-  findParentsByStudentCode(@Param('studentCode') studentCode: string) {
-    return this.personService.findParentsByStudentCode(studentCode);
-  }
+  // @Get('parents/:studentCode')
+  // findParentsByStudentCode(@Param('studentCode') studentCode: string) {
+  //   return this.personService.findParentsByStudentCode(studentCode);
+  // }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePersonDto: UpdatePersonDto) {
