@@ -218,9 +218,9 @@ export class AttendanceService {
               ? ConditionAttendance.Early
               : ConditionAttendance.Late;
         } else {
-          throw new BadRequestException(
-            `El estudiante ya marcó asistencia o no tiene clases en este momento ${currentDate}`,
-          );
+          // throw new BadRequestException(
+          //   `El estudiante ya marcó asistencia o no tiene clases en este momento ${currentDate}`,
+          // );
         }
         /**validar asistencia y turno */
         const queryBuilder =
