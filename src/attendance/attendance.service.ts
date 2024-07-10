@@ -201,16 +201,16 @@ export class AttendanceService {
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
 
-          // if (
-          //   !(
-          //     currentTime >= initAttendanceTime &&
-          //     currentTime <= finishAttendanceTime
-          //   )
-          // ) {
-          //   throw new BadRequestException(
-          //     `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
-          //   );
-          // }
+          if (
+            !(
+              currentTime >= initAttendanceTime &&
+              currentTime <= finishAttendanceTime
+            )
+          ) {
+            throw new BadRequestException(
+              `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
+            );
+          }
 
           //**Mantener esto*/
           condition =
@@ -218,9 +218,9 @@ export class AttendanceService {
               ? ConditionAttendance.Early
               : ConditionAttendance.Late;
         } else {
-          // throw new BadRequestException(
-          //   `El estudiante ya marcó asistencia o no tiene clases en este momento ${currentDate}`,
-          // );
+          throw new BadRequestException(
+            `El estudiante ya marcó asistencia o no tiene clases en este momento ${currentDate}`,
+          );
         }
         /**validar asistencia y turno */
         const queryBuilder =
@@ -236,11 +236,11 @@ export class AttendanceService {
           )
           .getOne();
 
-        // if (existAttendance) {
-        //   throw new BadRequestException(
-        //     `Ya marcó asistencia en este turno a las: ${existAttendance.arrivalTime}`,
-        //   );
-        // }
+        if (existAttendance) {
+          throw new BadRequestException(
+            `Ya marcó asistencia en este turno a las: ${existAttendance.arrivalTime}`,
+          );
+        }
 
         const attendance = this.attendanceRepository.create({
           shift: Shift.Extra,
@@ -305,16 +305,16 @@ export class AttendanceService {
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
 
-        // if (
-        //   !(
-        //     currentTime >= initAttendanceTime &&
-        //     currentTime <= finishAttendanceTime
-        //   )
-        // ) {
-        //   throw new BadRequestException(
-        //     `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
-        //   );
-        // }
+        if (
+          !(
+            currentTime >= initAttendanceTime &&
+            currentTime <= finishAttendanceTime
+          )
+        ) {
+          throw new BadRequestException(
+            `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
+          );
+        }
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
           condition =
