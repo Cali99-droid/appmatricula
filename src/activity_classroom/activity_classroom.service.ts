@@ -181,7 +181,7 @@ export class ActivityClassroomService {
       'students',
       'families',
     ];
-    console.log(per);
+
     const isAdmin = per.some((e) => autPerm.includes(e));
     if (!isAdmin && !per.includes('report')) {
       const acIds = us.assignmentsClassroom.map(
