@@ -19,12 +19,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 // import { Shift } from './enum/shift.enum';
-import { SearchAttendanceDto } from './dto/search-attendace.dto';
+
 import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
-import { Shift } from './enum/shift.enum';
 
 @ApiTags('Attendance')
 @Controller('attendance')
@@ -106,7 +105,7 @@ export class AttendanceController {
     description: 'EndDate of the attendace',
     type: String,
   })
-  @Auth('attendance-recorder', 'admin', 'report')
+  @Auth('attendance-recorder', 'admin', 'report', 'report-student')
   findByClassroom(@Query() searchByClassroomDto: SearchByClassroomDto) {
     return this.attendanceService.findByClassroom(searchByClassroomDto);
   }
