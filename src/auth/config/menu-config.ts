@@ -90,14 +90,14 @@ export const AdminMenu = {
       link: '/admin/reports',
       icon: 'report',
       tagSubMenu: true,
-      permissions: ['admin', 'report'],
+      permissions: ['admin', 'report', 'report-student'],
       subMenu: [
         {
           id: 1,
           label: 'Reportes Estudiantes',
           icon: 'tableStudents',
           link: '/admin/reports/students',
-          permissions: ['admin', 'report'],
+          permissions: ['admin', 'report', 'report-student'],
         },
         {
           id: 2,

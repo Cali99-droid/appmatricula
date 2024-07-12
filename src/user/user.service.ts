@@ -80,25 +80,32 @@ export class UserService {
   }
 
   async findAll() {
-    const users = await this.userRepository.find({
-      relations: {
-        roles: true,
-        assignments: {
-          campusDetail: true,
-        },
-      },
-    });
-
+    // const users = await this.userRepository.find({
+    //   relations: {
+    //     roles: true,
+    //     assignments: {
+    //       campusDetail: true,
+    //     },
+    //   },
+    // });
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .innerJoinAndSelect('user.roles', 'role') // Realizamos una unión interna con la tabla de roles
+      .leftJoinAndSelect('user.assignments', 'assignment') // Unión izquierda con assignments
+      .leftJoinAndSelect('assignment.campusDetail', 'campusDetail') // Unión izquierda con campusDetail
+      .getMany();
     return users.map((user) => {
-      return {
-        id: user.id,
-        email: user.email,
-        isActive: user.isActive,
-        roles: user.roles,
-        assignments: user.assignments.map((ass) => {
-          return { id: ass.campusDetail.id, name: ass.campusDetail.name };
-        }),
-      };
+      if (user.roles.length > 0) {
+        return {
+          id: user.id,
+          email: user.email,
+          isActive: user.isActive,
+          roles: user.roles,
+          assignments: user.assignments.map((ass) => {
+            return { id: ass.campusDetail.id, name: ass.campusDetail.name };
+          }),
+        };
+      }
     });
   }
 
