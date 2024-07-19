@@ -57,7 +57,7 @@ export class HolidayController {
     description: 'Holidays  not found ',
   })
   findAll(@Query('yearId') yearId: number) {
-    return this.holidayService.findAll(yearId);
+    return this.holidayService.findAll(+yearId);
   }
 
   @Get(':id')

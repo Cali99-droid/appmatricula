@@ -1,16 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { FamilyService } from './family.service';
 
-import { DataParentArrayDto } from '../relationship/dto/data-parent-array.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 @ApiTags('Family')
 @Controller('family')
 export class FamilyController {
