@@ -80,7 +80,8 @@ export class AttendanceService {
 
     /**capturar fecha y hora actual */
     const currentTime = new Date();
-    const currentDate = normalizeDate(new Date());
+    const currentDate = new Date();
+    const currentDateBimester = normalizeDate(new Date());
     const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
     /**declarar turno(Morning, Affternoon) y estado de asistencia (early, late) */
     let shift: Shift;
@@ -151,17 +152,16 @@ export class AttendanceService {
       let currentBimester;
 
       for (const bimestre of bimesters) {
-        console.log(normalizeDate(new Date(bimestre.startDate)));
         if (
-          currentDate >= normalizeDate(new Date(bimestre.startDate)) &&
-          currentDate <= normalizeDate(new Date(bimestre.endDate))
+          currentDateBimester >= normalizeDate(new Date(bimestre.startDate)) &&
+          currentDateBimester <= normalizeDate(new Date(bimestre.endDate))
         ) {
           currentBimester = bimestre;
         }
       }
       if (!currentBimester) {
         throw new BadRequestException(
-          `No hay bimestre activo para la fecha ${currentDate}`,
+          `No hay bimestre activo para la fecha ${currentDateBimester}`,
         );
       }
 
