@@ -28,6 +28,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { Person } from 'src/person/entities/person.entity';
 import { Family } from 'src/family/entities/family.entity';
+import { normalizeDate } from 'src/common/helpers/normalizeData';
 // import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
@@ -79,7 +80,7 @@ export class AttendanceService {
 
     /**capturar fecha y hora actual */
     const currentTime = new Date();
-    const currentDate = new Date();
+    const currentDate = normalizeDate(new Date());
     const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
     /**declarar turno(Morning, Affternoon) y estado de asistencia (early, late) */
     let shift: Shift;
@@ -148,10 +149,12 @@ export class AttendanceService {
       const bimesters = enrollment.activityClassroom.phase.bimester;
 
       let currentBimester;
+
       for (const bimestre of bimesters) {
+        console.log(normalizeDate(new Date(bimestre.startDate)));
         if (
-          currentDate >= new Date(bimestre.startDate) &&
-          currentDate <= new Date(bimestre.endDate)
+          currentDate >= normalizeDate(new Date(bimestre.startDate)) &&
+          currentDate <= normalizeDate(new Date(bimestre.endDate))
         ) {
           currentBimester = bimestre;
         }
@@ -503,6 +506,7 @@ export class AttendanceService {
       this.logger.error(error);
     }
   }
+
   findOne(id: number) {
     return `This action returns a #${id} attendance`;
   }
