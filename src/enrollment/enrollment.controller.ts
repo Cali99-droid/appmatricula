@@ -104,7 +104,7 @@ export class EnrollmentController {
     @Param('activityClassroomId') activityClassroomId: number,
   ) {
     return this.enrollmentService.removeAllByActivityClassroom(
-      activityClassroomId,
+      +activityClassroomId,
     );
   }
 

@@ -41,7 +41,7 @@ export class BimesterController {
     description: 'Bimester  not found ',
   })
   findAll(@Query('yearId') yearId: number) {
-    return this.bimesterService.findAll(yearId);
+    return this.bimesterService.findAll(+yearId);
   }
 
   @Get(':id')
