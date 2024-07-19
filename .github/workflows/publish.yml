@@ -6,7 +6,7 @@ on:
     branches: ['dev']
 jobs:
   create-docker-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04.6
     environment: dev
     steps:
       - name: Checkout the code
