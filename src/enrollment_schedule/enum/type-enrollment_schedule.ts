@@ -1,4 +1,5 @@
 export enum TypeEnrollmentSchedule {
-  Matricula = 'MATRICULA',
-  Admision = 'ADMISION',
+  Ratification = 'R',
+  OldStudents = 'O',
+  NewStudents = 'N',
 }
