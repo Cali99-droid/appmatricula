@@ -10,7 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EnrollmentSchedule } from './entities/enrollment_schedule.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
-import { Year } from 'src/years/entities/year.entity';
+import { FindCronogramasDto } from './dto/find-schedule.dto';
 
 @Injectable()
 export class EnrollmentScheduleService {
@@ -24,26 +24,47 @@ export class EnrollmentScheduleService {
       const data = this.enrollmentScheduleRepository.create(
         createEnrollmentScheduleDto,
       );
-      data.year = { id: createEnrollmentScheduleDto.yearId } as Year;
+
       return await this.enrollmentScheduleRepository.save(data);
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
   }
 
-  async findAll(id: number) {
-    if (isNaN(+id) || id == 0) {
-      throw new BadRequestException(`The year id is not valid`);
+  async findAll(query: FindCronogramasDto) {
+    try {
+      const { startDate, endDate, type, currentDate, name } = query;
+      let qb =
+        this.enrollmentScheduleRepository.createQueryBuilder('cronograma');
+
+      if (startDate && endDate) {
+        qb = qb.where(
+          'cronograma.startDate >= :startDate AND cronograma.endDate <= :endDate',
+          { startDate, endDate },
+        );
+      }
+
+      if (type) {
+        qb = qb.andWhere('cronograma.type = :tipo', { type });
+      }
+
+      if (currentDate) {
+        qb = qb.andWhere(
+          'cronograma.startDate <= :currentDate AND cronograma.endDate >= :currentDate',
+          { currentDate },
+        );
+      }
+
+      if (name) {
+        qb = qb.andWhere('LOWER(cronograma.name) LIKE :nombre', {
+          nombre: `%${name.toLowerCase()}%`,
+        });
+      }
+
+      return qb.getMany();
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
     }
-    const phases = await this.enrollmentScheduleRepository.find({
-      where: {
-        year: { id: id },
-      },
-      order: {
-        startDate: 'ASC',
-      },
-    });
-    return phases;
   }
 
   async findOne(id: number) {
@@ -70,7 +91,6 @@ export class EnrollmentScheduleService {
         `Enrollment Shedule with id: ${id} not found`,
       );
     try {
-      data.year = { id: updateEnrollmentScheduleDto.yearId } as Year;
       await this.enrollmentScheduleRepository.save(data);
       return data;
     } catch (error) {
