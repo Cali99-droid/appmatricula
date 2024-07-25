@@ -1,7 +1,14 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 import { ApiProperty } from '@nestjs/swagger';
 import { TypeEnrollmentSchedule } from '../enum/type-enrollment_schedule';
+import { Year } from 'src/years/entities/year.entity';
 
 @Entity()
 export class EnrollmentSchedule {
@@ -9,15 +16,15 @@ export class EnrollmentSchedule {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({
-    example: 'Matricula para estudiantes',
-    description: 'Name of enrollment schedule',
-    uniqueItems: false,
-  })
-  @Column('varchar', {
-    unique: false,
-  })
-  name: string;
+  // @ApiProperty({
+  //   example: 'Matricula para estudiantes',
+  //   description: 'Name of enrollment schedule',
+  //   uniqueItems: false,
+  // })
+  // @Column('varchar', {
+  //   unique: false,
+  // })
+  // name: string;
 
   @ApiProperty({
     example: '2023-11-01',
@@ -44,9 +51,9 @@ export class EnrollmentSchedule {
   })
   type: TypeEnrollmentSchedule;
 
-  // @ManyToOne(() => Year, (year) => year.phase, {
-  //   eager: true,
-  // })
-  // @JoinColumn({ name: 'yearId' })
-  // year?: Year;
+  @ManyToOne(() => Year, (year) => year.phase, {
+    eager: true,
+  })
+  @JoinColumn({ name: 'yearId' })
+  year?: Year;
 }

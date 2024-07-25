@@ -55,10 +55,10 @@ export class EnrollmentScheduleController {
     description: 'Fecha actual para filtrar cronogramas en curso',
   })
   @ApiQuery({
-    name: 'name',
+    name: 'yearId',
     required: false,
     type: String,
-    description: 'Nombre del cronograma',
+    description: 'id del año',
   })
   @ApiResponse({
     status: 200,

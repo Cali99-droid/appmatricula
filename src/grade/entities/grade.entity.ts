@@ -24,6 +24,11 @@ export class Grade {
   })
   name: string;
 
+  @Column('int', {
+    unique: false,
+  })
+  position: number;
+
   @ManyToOne(() => Level, (level) => level.grade, {
     eager: true,
   })

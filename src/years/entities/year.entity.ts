@@ -3,6 +3,7 @@ import { Campus } from '../../campus/entities/campus.entity';
 import { Phase } from '../../phase/entities/phase.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Holiday } from 'src/holiday/entities/holiday.entity';
+import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
 
 @Entity()
 export class Year {
@@ -86,4 +87,17 @@ export class Year {
     // eager: true,
   })
   holiday?: Holiday[];
+
+  @ApiProperty({
+    description: 'array of enrollmentSchedule ',
+  })
+  @OneToMany(
+    () => EnrollmentSchedule,
+    (enrollmentSchedule) => enrollmentSchedule.year,
+    {
+      // cascade: true,
+      // eager: true,
+    },
+  )
+  enrollmentSchedule?: EnrollmentSchedule[];
 }

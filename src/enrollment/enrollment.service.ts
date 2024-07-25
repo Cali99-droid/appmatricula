@@ -19,6 +19,7 @@ import { ActivityClassroom } from 'src/activity_classroom/entities/activity_clas
 import { SearchEnrolledDto } from './dto/searchEnrollmet-dto';
 import { TypePhase } from 'src/phase/enum/type-phase.enum';
 import { StudentService } from 'src/student/student.service';
+import { SetRatifiedDto } from './dto/set-ratified.dto';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -281,24 +282,78 @@ export class EnrollmentService {
       handleDBExceptions(error, this.logger);
     }
   }
-  /**script para crear un codigo para todos las matriculas */
 
-  async scripting() {
-    const enrollments = await this.enrollmentRepository.find({
-      relations: {
-        activityClassroom: true,
+  /**RATIFICACION */
+  async setRatified(query: SetRatifiedDto, code: string) {
+    const { desicion } = query;
+    // if (desicion != '1' ) {
+    //   throw new BadRequestException(`desicion must be a number (1 or 2)`);
+    // }
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: { code },
+    });
+    if (!enrollment)
+      throw new NotFoundException(`Enrollment by code: not found`);
+    try {
+      enrollment.ratified = desicion === '1' ? true : false;
+      await this.enrollmentRepository.save(enrollment);
+      return {
+        message: 'successful update',
+        error: '',
+        statusCode: 200,
+      };
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async getRatified(yearId: number) {
+    const totalMatriculados = await this.enrollmentRepository.count({
+      where: {
+        activityClassroom: {
+          phase: {
+            year: { id: yearId },
+          },
+        },
       },
     });
-    for (const enroll of enrollments) {
-      const codeGe = `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${enroll.student.id}`;
-      const uptEnrroll: Enrollment = {
-        id: enroll.id,
-        code: codeGe,
-        status: Status.DEFINITIVA,
-        activityClassroom: enroll.activityClassroom,
-      };
-      await this.enrollmentRepository.save(uptEnrroll);
-    }
-    return enrollments;
+    const totalRatificados = await this.enrollmentRepository.count({
+      where: {
+        activityClassroom: {
+          phase: {
+            year: { id: yearId },
+          },
+        },
+        ratified: true,
+      },
+    });
+    const totalNoRatificados = totalMatriculados - totalRatificados;
+    return {
+      totalMatriculados,
+      totalRatificados,
+      totalNoRatificados,
+      // Otros datos
+    };
   }
+  /**script para crear un codigo para todos las matriculas */
+
+  // async scripting() {
+  //   const enrollments = await this.enrollmentRepository.find({
+  //     relations: {
+  //       activityClassroom: true,
+  //     },
+  //   });
+  //   for (const enroll of enrollments) {
+  //     const codeGe = `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${enroll.student.id}`;
+  //     const uptEnrroll: Enrollment = {
+  //       id: enroll.id,
+  //       code: codeGe,
+  //       status: Status.DEFINITIVA,
+
+  //       activityClassroom: enroll.activityClassroom,
+  //     };
+  //     await this.enrollmentRepository.save(uptEnrroll);
+  //   }
+  //   return enrollments;
+  // }
 }

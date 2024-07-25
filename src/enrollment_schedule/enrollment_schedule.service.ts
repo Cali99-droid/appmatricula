@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { EnrollmentSchedule } from './entities/enrollment_schedule.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { FindCronogramasDto } from './dto/find-schedule.dto';
+import { Year } from 'src/years/entities/year.entity';
 
 @Injectable()
 export class EnrollmentScheduleService {
@@ -24,6 +25,7 @@ export class EnrollmentScheduleService {
       const data = this.enrollmentScheduleRepository.create(
         createEnrollmentScheduleDto,
       );
+      data.year = { id: createEnrollmentScheduleDto.yearId } as Year;
 
       return await this.enrollmentScheduleRepository.save(data);
     } catch (error) {
@@ -33,7 +35,7 @@ export class EnrollmentScheduleService {
 
   async findAll(query: FindCronogramasDto) {
     try {
-      const { startDate, endDate, type, currentDate, name } = query;
+      const { startDate, endDate, type, currentDate, yearId } = query;
       let qb =
         this.enrollmentScheduleRepository.createQueryBuilder('cronograma');
 
@@ -55,9 +57,9 @@ export class EnrollmentScheduleService {
         );
       }
 
-      if (name) {
-        qb = qb.andWhere('LOWER(cronograma.name) LIKE :nombre', {
-          nombre: `%${name.toLowerCase()}%`,
+      if (yearId) {
+        qb = qb.andWhere('cronograma.yearId = :yearId', {
+          yearId: `${yearId}`,
         });
       }
 
@@ -86,6 +88,7 @@ export class EnrollmentScheduleService {
       id: id,
       ...updateEnrollmentScheduleDto,
     });
+    data.year = { id: updateEnrollmentScheduleDto.yearId } as Year;
     if (!data)
       throw new NotFoundException(
         `Enrollment Shedule with id: ${id} not found`,
