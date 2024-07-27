@@ -126,8 +126,8 @@ export class AppModule implements NestModule {
           method: RequestMethod.GET,
         },
         {
-          path: '/family/migrate',
-          method: RequestMethod.GET,
+          path: '/enrollment/ratified/:code',
+          method: RequestMethod.PATCH,
         },
       )
       .forRoutes('/*');
