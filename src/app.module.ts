@@ -37,6 +37,7 @@ import { RelationshipModule } from './relationship/relationship.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { RoleModule } from './role/role.module';
 import { EnrollmentScheduleModule } from './enrollment_schedule/enrollment_schedule.module';
+import { EmailsModule } from './emails/emails.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { EnrollmentScheduleModule } from './enrollment_schedule/enrollment_sched
     PermissionsModule,
     RoleModule,
     EnrollmentScheduleModule,
+    EmailsModule,
   ],
   providers: [ExistIdConstraint, AuthService],
 })
