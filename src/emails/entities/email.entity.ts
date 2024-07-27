@@ -1,6 +1,7 @@
 import {
   BeforeInsert,
   Column,
+  CreateDateColumn,
   DataSource,
   Entity,
   JoinColumn,
@@ -17,6 +18,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { Year } from 'src/years/entities/year.entity';
+import { TypeEmail } from '../enum/type-email';
 @Entity()
 export class Email {
   @ApiProperty()
@@ -25,30 +27,40 @@ export class Email {
 
   @Column('varchar', {
     nullable: true,
-    unique: true,
   })
   receivers: string;
   @Column('varchar', {
     nullable: true,
-    unique: true,
   })
   subject: string;
   @Column('varchar', {
     nullable: true,
   })
   body: string;
+  @Column('varchar', {
+    nullable: true,
+  })
+  quantity: string;
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+  })
+  createdAt: Date;
   @ApiProperty({
-    example: 'true',
-    description: 'status of the student',
+    example: 'R',
+    description: 'Tipo de Email, puede ser "R"(ratification), "O"(Other)',
   })
-  @Column('bool', {
-    default: true,
+  @Column({
+    type: 'enum',
+    enum: TypeEmail,
   })
-  status: boolean;
-
-//   @ManyToOne(() => Year, (year) => year.email, {
-//     eager: true,
-//   })
-//   @JoinColumn({ name: 'yearId' })
-//   year?: Year;
+  type: TypeEmail;
+  // @ApiProperty({
+  //   example: 'true',
+  //   description: 'status of the student',
+  // })
+  // @Column('bool', {
+  //   default: true,
+  // })
+  // status: boolean;
 }
