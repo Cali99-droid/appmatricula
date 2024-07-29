@@ -8,12 +8,21 @@ import { ActivityClassroom } from 'src/activity_classroom/entities/activity_clas
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { HttpModule } from '@nestjs/axios';
+import { Person } from 'src/person/entities/person.entity';
+import { Student } from 'src/student/entities/student.entity';
 
 @Module({
   controllers: [EmailsController],
   providers: [EmailsService],
   imports: [
-    TypeOrmModule.forFeature([Email, ActivityClassroom, Enrollment, Family]),
+    TypeOrmModule.forFeature([
+      Email,
+      ActivityClassroom,
+      Enrollment,
+      Family,
+      Person,
+      Student,
+    ]),
     ConfigModule,
     HttpModule,
   ],

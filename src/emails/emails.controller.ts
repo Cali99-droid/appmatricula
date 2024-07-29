@@ -13,6 +13,7 @@ import { CreateEmailDto } from './dto/create-email.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
 import { FindActivityClassroomDto } from './dto/find-activity_classroom.dto';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CreateEmailByStudentDto } from './dto/create-byStudent.dto';
 @ApiTags('Emails')
 @Controller('emails')
 export class EmailsController {
@@ -55,7 +56,10 @@ export class EmailsController {
   ) {
     return this.emailsService.create(createEmailDto, findParams);
   }
-
+  @Post('student')
+  createbyStudent(@Body() createEmailDto: CreateEmailByStudentDto) {
+    return this.emailsService.createByStudent(createEmailDto);
+  }
   @Get()
   findAll() {
     return this.emailsService.findAll();
