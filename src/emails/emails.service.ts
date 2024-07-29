@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateEmailDto } from './dto/create-email.dto';
 import { CreateEmailByStudentDto } from './dto/create-byStudent.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
@@ -276,8 +281,12 @@ export class EmailsService {
     return emails;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} email`;
+  async findOne(id: number) {
+    const email = await this.emailRepository.findOne({
+      where: { id: id },
+    });
+    if (!email) throw new NotFoundException(`Email with id ${id} not found`);
+    return email;
   }
 
   update(id: number, updateEmailDto: UpdateEmailDto) {
