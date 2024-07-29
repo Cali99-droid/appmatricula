@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreateEmailDto } from './dto/create-email.dto';
+import { CreateEmailByStudentDto } from './dto/create-byStudent.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,6 +14,8 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { TypeEmail } from './enum/type-email';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { Person } from 'src/person/entities/person.entity';
+import { Student } from 'src/student/entities/student.entity';
 @Injectable()
 export class EmailsService {
   private readonly logger = new Logger('EmailsService');
@@ -28,6 +31,10 @@ export class EmailsService {
     private readonly familyRepository: Repository<Family>,
     @InjectRepository(Email)
     private readonly emailRepository: Repository<Email>,
+    @InjectRepository(Person)
+    private readonly personRepository: Repository<Person>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
     private readonly httpService: HttpService,
   ) {}
   async create(
@@ -91,9 +98,6 @@ export class EmailsService {
         activityClassroom: { id: In(activityClassroomIds) },
         student: {
           family: Not(IsNull()),
-          // family: {
-          //   parentOneId: { user: Not(IsNull()) },
-          // },
         },
       },
       relations: {
@@ -180,6 +184,79 @@ export class EmailsService {
       );
     } catch (error) {
       throw error;
+    }
+  }
+  async createByStudent(createEmail: CreateEmailByStudentDto) {
+    const stundent = await this.studentRepository.findOne({
+      where: {
+        person: { docNumber: createEmail.docNumber },
+      },
+      relations: {
+        family: true,
+      },
+    });
+    if (!stundent) {
+      throw new BadRequestException(`No existe el estudiante`);
+    }
+    if (!stundent.family) {
+      throw new BadRequestException(`El estudiante no tiene familia`);
+    }
+    const parentOne = await this.personRepository.findOne({
+      where: {
+        id: stundent.family.parentOneId.id,
+      },
+      relations: {
+        user: true,
+      },
+    });
+    const parentTwo = await this.personRepository.findOne({
+      where: {
+        id: stundent.family.parentTwoId.id,
+      },
+      relations: {
+        user: true,
+      },
+    });
+    if (!parentOne.user) {
+      throw new BadRequestException(
+        `El pariente con documento: ${parentOne.docNumber} no cuenta con usuario`,
+      );
+    }
+    try {
+      const data = await this.emailRepository.create({
+        receivers: stundent.family.nameFamily,
+        subject: createEmail.subject,
+        body: createEmail.body,
+        quantity: '1',
+        type: TypeEmail.Other,
+      });
+      const fechaActual = new Date();
+      const year = fechaActual.getFullYear();
+      this.sendEmail(
+        data.type,
+        year.toString(),
+        'NO_CODE',
+        stundent.person.name,
+        parentOne.name,
+        parentOne.user.email,
+        createEmail.subject,
+        createEmail.body,
+      );
+      if (parentTwo.user) {
+        this.sendEmail(
+          data.type,
+          year.toString(),
+          'NO_CODE',
+          stundent.person.name,
+          parentTwo.name,
+          parentTwo.user.email,
+          createEmail.subject,
+          createEmail.body,
+        );
+      }
+      return await this.emailRepository.save(data);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
     }
   }
   async findAll() {
