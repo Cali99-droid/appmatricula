@@ -197,7 +197,7 @@ export class EmailsService {
         person: { docNumber: createEmail.docNumber },
       },
       relations: {
-        family: true,
+        family: { parentOneId: true, parentTwoId: true },
       },
     });
     if (!stundent) {

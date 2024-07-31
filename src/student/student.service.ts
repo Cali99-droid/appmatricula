@@ -10,7 +10,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from './entities/student.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class StudentService {
@@ -26,8 +26,60 @@ export class StudentService {
     return 'This action adds a new student';
   }
 
-  findAll() {
-    return `This action returns all student`;
+  async findAll() {
+    const student = await this.studentRepository.find({
+      relations: {
+        family: { parentOneId: true, parentTwoId: true },
+        enrollment: {
+          activityClassroom: {
+            grade: true,
+            classroom: { campusDetail: true },
+            schoolShift: true,
+          },
+        },
+      },
+      // where: {
+      //   enrollment: Not(IsNull()),
+      // },
+    });
+    const students = student.map((student) => {
+      const lastEnrollment = student.enrollment.length;
+      return {
+        docNumber: student.person.docNumber,
+        studentName: `${student.person.lastname} ${student.person.mLastname}, ${student.person.name}`,
+        parentOne: student.family
+          ? `${student.family.parentOneId.lastname} ${student.family.parentOneId.mLastname}, ${student.family.parentOneId.name}`
+          : undefined,
+        parentTwo: student.family
+          ? `${student.family.parentTwoId.lastname} ${student.family.parentTwoId.mLastname}, ${student.family.parentTwoId.name}`
+          : undefined,
+        level:
+          student.enrollment.length !== 0
+            ? student.enrollment[lastEnrollment - 1].activityClassroom.grade
+                .level.name
+            : undefined,
+        grade:
+          student.enrollment.length !== 0
+            ? student.enrollment[lastEnrollment - 1].activityClassroom.grade
+                .name
+            : undefined,
+        section:
+          student.enrollment.length !== 0
+            ? student.enrollment[lastEnrollment - 1].activityClassroom.section
+            : undefined,
+        campus:
+          student.enrollment.length !== 0
+            ? student.enrollment[lastEnrollment - 1].activityClassroom.classroom
+                .campusDetail.name
+            : undefined,
+        shift:
+          student.enrollment.length !== 0
+            ? student.enrollment[lastEnrollment - 1].activityClassroom
+                .schoolShift.shift
+            : undefined,
+      };
+    });
+    return students;
   }
 
   findOne(id: number) {

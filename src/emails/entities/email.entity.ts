@@ -33,7 +33,7 @@ export class Email {
     nullable: true,
   })
   subject: string;
-  @Column('varchar', {
+  @Column('longtext', {
     nullable: true,
   })
   body: string;
