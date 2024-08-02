@@ -85,7 +85,26 @@ export class StudentService {
   findOne(id: number) {
     return `This action returns a #${id} student`;
   }
-
+  async findAutocomplete(value: string) {
+    const students = await this.studentRepository
+      .createQueryBuilder('student')
+      .leftJoinAndSelect('student.person', 'person')
+      .leftJoinAndSelect('student.family', 'family')
+      .leftJoinAndSelect('family.parentOneId', 'parentOne')
+      .leftJoinAndSelect('parentOne.user', 'user')
+      .where('person.name LIKE :value', { value: `%${value}%` })
+      .orWhere('person.lastname LIKE :value', { value: `%${value}%` })
+      .orWhere('person.mLastname LIKE :value', { value: `%${value}%` })
+      .andWhere('family.id IS NOT NULL')
+      .andWhere('user.id IS NOT NULL')
+      .getMany();
+    return students.filter(
+      (student) =>
+        student.family &&
+        student.family.parentOneId &&
+        student.family.parentOneId.user,
+    );
+  }
   update(id: number, updateStudentDto: UpdateStudentDto) {
     return `This action updates a #${id} student`;
   }

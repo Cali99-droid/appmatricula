@@ -2,23 +2,15 @@ import {
   BeforeInsert,
   Column,
   CreateDateColumn,
-  DataSource,
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
-  Repository,
-  getRepository,
 } from 'typeorm';
-import { Enrollment } from '../../enrollment/entities/enrollment.entity';
-import { Person } from '../../person/entities/person.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { Attendance } from 'src/attendance/entities/attendance.entity';
-import { Family } from 'src/family/entities/family.entity';
-import { Year } from 'src/years/entities/year.entity';
 import { TypeEmail } from '../enum/type-email';
+import * as moment from 'moment-timezone';
+import { Student } from 'src/student/entities/student.entity';
 @Entity()
 export class Email {
   @ApiProperty()
@@ -46,6 +38,10 @@ export class Email {
     default: () => 'CURRENT_TIMESTAMP(6)',
   })
   createdAt: Date;
+  @BeforeInsert()
+  updateTimestamp() {
+    this.createdAt = moment().tz('America/Lima').toDate();
+  }
   @ApiProperty({
     example: 'R',
     description: 'Tipo de Email, puede ser "R"(ratification), "O"(Other)',
@@ -55,12 +51,9 @@ export class Email {
     enum: TypeEmail,
   })
   type: TypeEmail;
-  // @ApiProperty({
-  //   example: 'true',
-  //   description: 'status of the student',
-  // })
-  // @Column('bool', {
-  //   default: true,
-  // })
-  // status: boolean;
+  @ManyToOne(() => Student, (student) => student.email, {
+    eager: true,
+  })
+  @JoinColumn({ name: 'studentId' })
+  student?: Student;
 }

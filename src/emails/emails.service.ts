@@ -234,6 +234,7 @@ export class EmailsService {
         body: createEmail.body,
         quantity: '1',
         type: TypeEmail.Other,
+        student: { id: stundent.id },
       });
       const fechaActual = new Date();
       const year = fechaActual.getFullYear();
@@ -273,6 +274,7 @@ export class EmailsService {
         subject: true,
         body: true,
         quantity: true,
+        createdAt: true,
       },
       order: {
         createdAt: 'DESC',
@@ -284,6 +286,15 @@ export class EmailsService {
   async findOne(id: number) {
     const email = await this.emailRepository.findOne({
       where: { id: id },
+      relations: {
+        student: {
+          family: {
+            parentOneId: { user: true },
+            parentTwoId: { user: true },
+          },
+          person: true,
+        },
+      },
     });
     if (!email) throw new NotFoundException(`Email with id ${id} not found`);
     return email;

@@ -10,6 +10,7 @@ import {
   UploadedFile,
   BadRequestException,
   Put,
+  Query,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { CreateStudentDto } from './dto/create-student.dto';
@@ -38,7 +39,10 @@ export class StudentController {
   findAll() {
     return this.studentService.findAll();
   }
-
+  @Get('autocomplete')
+  findAllAutocomplete(@Query('value') value: string) {
+    return this.studentService.findAutocomplete(value);
+  }
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.studentService.findOne(+id);
