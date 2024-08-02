@@ -21,6 +21,11 @@ export class Enrollment {
   })
   code: string;
 
+  @Column('boolean', {
+    default: true,
+  })
+  ratified: boolean;
+
   @ApiProperty({
     description: 'Id of Student',
   })

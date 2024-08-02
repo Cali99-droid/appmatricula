@@ -1,19 +1,20 @@
-import { IsDateString, IsEnum, MinLength, IsString } from 'class-validator';
+import { IsDateString, IsEnum, IsNumber } from 'class-validator';
 import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';
 import { ApiProperty } from '@nestjs/swagger';
 
 import { TypeEnrollmentSchedule } from '../enum/type-enrollment_schedule';
+import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreateEnrollmentScheduleDto {
-  @ApiProperty({
-    example: 'Matricula para estudiantes',
-    description: 'Name of enrollment schedule',
-    nullable: false,
-    minLength: 4,
-  })
-  @IsString()
-  @MinLength(2)
-  name: string;
+  // @ApiProperty({
+  //   example: 'Matricula para estudiantes',
+  //   description: 'Name of enrollment schedule',
+  //   nullable: false,
+  //   minLength: 4,
+  // })
+  // @IsString()
+  // @MinLength(2)
+  // name: string;
 
   @ApiProperty({
     example: '2023-11-01',
@@ -44,12 +45,12 @@ export class CreateEnrollmentScheduleDto {
   })
   type: TypeEnrollmentSchedule;
 
-  // @ApiProperty({
-  //   example: 1,
-  //   description: 'id of the year',
-  //   nullable: false,
-  // })
-  // @IsNumber()
-  // @ExistId({ tableName: 'year' })
-  // yearId: number;
+  @ApiProperty({
+    example: 1,
+    description: 'id of the year',
+    nullable: false,
+  })
+  @IsNumber()
+  @ExistId({ tableName: 'year' })
+  yearId: number;
 }
