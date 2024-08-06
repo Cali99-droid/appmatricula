@@ -171,26 +171,7 @@ export class PersonService {
     return userDetails;
   }
   async findAll() {
-    console.log(`prueba`);
-    const getParent = await this.familypRepository.findOne({
-      where: [
-        {
-          parentOneId: { id: 3135 },
-          student: { enrollment: { isActive: true } },
-        },
-        {
-          parentTwoId: { id: 3135 },
-          student: { enrollment: { isActive: true } },
-        },
-      ],
-      relations: {
-        student: {
-          enrollment: { activityClassroom: { grade: { level: true } } },
-        },
-      },
-    });
-    return getParent.student[0].enrollment[0].activityClassroom.grade.level
-      .name;
+    return `Get all person`;
   }
   async findOneStudent(id: number) {
     const person = await this.personRepository.findOne({
