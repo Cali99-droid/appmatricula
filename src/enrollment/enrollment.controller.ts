@@ -17,6 +17,7 @@ import { ApiOkResponse, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
 import { SearchEnrolledDto } from './dto/searchEnrollmet-dto';
 import { SetRatifiedDto } from './dto/set-ratified.dto';
+import { FindVacantsDto } from './dto/find-vacants.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -131,5 +132,29 @@ export class EnrollmentController {
   })
   setRatified(@Param('code') code: string, @Query() query: SetRatifiedDto) {
     return this.enrollmentService.setRatified(query, code);
+  }
+
+  @Get('vacants/:yearId')
+  @ApiQuery({
+    name: 'campusId',
+    required: true,
+    type: String,
+    description: 'id of campus',
+  })
+  @ApiQuery({
+    name: 'levelId',
+    required: false,
+    type: String,
+    description: 'id of level',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Detail Vacants',
+  })
+  findVacants(
+    @Param('yearId', ParseIntPipe) yearId: number,
+    @Query() query: FindVacantsDto,
+  ) {
+    return this.enrollmentService.getVacants(yearId, query);
   }
 }

@@ -20,6 +20,7 @@ import { SearchEnrolledDto } from './dto/searchEnrollmet-dto';
 import { TypePhase } from 'src/phase/enum/type-phase.enum';
 import { StudentService } from 'src/student/student.service';
 import { SetRatifiedDto } from './dto/set-ratified.dto';
+import { FindVacantsDto } from './dto/find-vacants.dto';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -356,4 +357,99 @@ export class EnrollmentService {
   //   }
   //   return enrollments;
   // }
+
+  async getVacants(yearId: number, query: FindVacantsDto) {
+    const { campusId, levelId } = query;
+    const vacants = [];
+    const whereCondition: any = {
+      phase: {
+        year: {
+          id: yearId,
+        },
+      },
+    };
+    if (campusId) {
+      whereCondition.classroom = {
+        campusDetail: {
+          id: campusId,
+        },
+      };
+    }
+    if (levelId) {
+      whereCondition.grade = {
+        level: {
+          id: levelId,
+        },
+      };
+    }
+    try {
+      const activityClassrooms = await this.activityClassroomRepository.find({
+        where: whereCondition,
+      });
+
+      for (const ac of activityClassrooms) {
+        const enrrollmentRatified = await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              // id: activityClassrooms[0].id,
+              grade: {
+                // id: ac.grade.id,
+                position: ac.grade.position - 1,
+              },
+              section: ac.section,
+              phase: {
+                year: {
+                  id: yearId - 1,
+                },
+              },
+            },
+            ratified: true,
+          },
+        });
+
+        const currentEnrrollment = await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              // id: activityClassrooms[0].id,
+              grade: {
+                // id: ac.grade.id,
+                position: ac.grade.position,
+              },
+              section: ac.section,
+              phase: {
+                year: {
+                  id: yearId,
+                },
+              },
+            },
+          },
+        });
+
+        const rtAndEnr = enrrollmentRatified.filter((item1) =>
+          currentEnrrollment.some(
+            (item2) => item1.student.id === item2.student.id,
+          ),
+        );
+
+        /**menos los que ya estan matriculados, el calculo varia dependiendo del cronograma */
+        const capacity = ac.classroom.capacity;
+        const ratifieds = enrrollmentRatified.length - rtAndEnr.length;
+
+        const vacant = capacity - ratifieds - rtAndEnr.length;
+        vacants.push({
+          grade: ac.grade.name,
+          section: ac.section,
+          level: ac.grade.level.name,
+          capacity,
+          ratified: ratifieds,
+          enrollments: rtAndEnr.length,
+          vacant,
+        });
+      }
+
+      return vacants;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
 }
