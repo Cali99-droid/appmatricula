@@ -38,6 +38,13 @@ export const AdminMenu = {
           link: '/admin/school/families',
           permissions: ['admin'],
         },
+        {
+          id: 4,
+          label: 'Vacantes',
+          icon: 'family',
+          link: '/admin/school/vancats',
+          permissions: ['admin'],
+        },
       ],
     },
     {
