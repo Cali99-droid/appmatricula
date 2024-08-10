@@ -42,7 +42,7 @@ export const AdminMenu = {
           id: 4,
           label: 'Vacantes',
           icon: 'family',
-          link: '/admin/school/vancats',
+          link: '/admin/school/vacants',
           permissions: ['admin'],
         },
       ],
