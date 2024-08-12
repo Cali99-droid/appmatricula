@@ -435,7 +435,9 @@ export class EnrollmentService {
         const capacity = ac.classroom.capacity;
         const ratifieds = enrrollmentRatified.length - rtAndEnr.length;
 
-        const vacant = capacity - ratifieds - rtAndEnr.length;
+        /**temporal */
+        const vacant =
+          capacity - ratifieds - rtAndEnr.length - currentEnrrollment.length;
         vacants.push({
           grade: ac.grade.name,
           section: ac.section,
