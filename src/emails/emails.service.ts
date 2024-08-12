@@ -296,6 +296,9 @@ export class EmailsService {
         },
       },
     });
+    const nuevaFecha = new Date(email.createdAt);
+    nuevaFecha.setHours(nuevaFecha.getHours() - 5);
+    email.createdAt = nuevaFecha;
     if (!email) throw new NotFoundException(`Email with id ${id} not found`);
     return email;
   }
