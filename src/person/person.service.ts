@@ -5,7 +5,15 @@ import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as sharp from 'sharp';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
-import { Between, In, IsNull, Not, Repository } from 'typeorm';
+import {
+  Between,
+  In,
+  IsNull,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm';
 import { Person } from './entities/person.entity';
 import { User } from 'src/user/entities/user.entity';
 import { CreatePersonCrmDto } from './dto/create-person-crm.dto';
@@ -13,6 +21,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { Family } from 'src/family/entities/family.entity';
+import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
+import { Attendance } from 'src/attendance/entities/attendance.entity';
 
 @Injectable()
 export class PersonService {
@@ -31,6 +41,10 @@ export class PersonService {
     private readonly relationShipRepository: Repository<Relationship>,
     @InjectRepository(Family)
     private readonly familypRepository: Repository<Family>,
+    @InjectRepository(EnrollmentSchedule)
+    private readonly enrollmentScheduleRepository: Repository<EnrollmentSchedule>,
+    @InjectRepository(Attendance)
+    private readonly attendanceRepository: Repository<Attendance>,
   ) {}
   create(createPersonDto: CreatePersonDto) {
     return 'This action adds a new person';
@@ -82,7 +96,10 @@ export class PersonService {
       }
       const user = this.userRepository.create({
         email: data.email,
-        password: bcrypt.hashSync(data.docNumber, 10),
+        password: bcrypt.hashSync(
+          `${data.docNumber}${data.name.charAt(0).toUpperCase()}${data.lastName.charAt(0).toLocaleLowerCase()}`,
+          10,
+        ),
         person: { id: idPerson },
         crmGHLId: data.crmGHLId,
       });
@@ -204,7 +221,66 @@ export class PersonService {
     });
     return parents;
   }
-
+  //MODULO DE PADRES
+  async findStudentsByParents(user: User) {
+    const students = await this.familypRepository.findOne({
+      where: [
+        {
+          parentOneId: { id: user.person.id },
+          student: { enrollment: { isActive: true } },
+        },
+        {
+          parentTwoId: { id: user.person.id },
+          student: { enrollment: { isActive: true } },
+        },
+      ],
+      relations: {
+        student: {
+          enrollment: { activityClassroom: { grade: { level: true } } },
+        },
+      },
+    });
+    return students;
+  }
+  async findAttendanceByStudent(id: number) {
+    const date = new Date();
+    const year = date.getFullYear();
+    if (isNaN(id)) {
+      throw new NotFoundException(`Id is not valid`);
+    }
+    const attendance = await this.attendanceRepository
+      .createQueryBuilder('attendance')
+      .where('studentId = :id', { id })
+      .andWhere('YEAR(arrivalDate) = :year', { year })
+      .getMany();
+    return attendance;
+  }
+  async findProfileUser(user: User) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const enrollShedule = await this.enrollmentScheduleRepository.findOne({
+      where: {
+        startDate: LessThanOrEqual(today),
+        endDate: MoreThanOrEqual(today),
+      },
+    });
+    return {
+      user: {
+        email: user.email,
+        name: user.person.name,
+        lastname: user.person.lastname,
+        mLastname: user.person.mLastname,
+      },
+      enrollmentShedule: enrollShedule
+        ? {
+            type: enrollShedule.type,
+            startDate: enrollShedule.startDate,
+            endDate: enrollShedule.endDate,
+            year: enrollShedule.year.name,
+          }
+        : undefined,
+    };
+  }
   async update(id: number, updatePersonDto: UpdatePersonDto) {
     const person = await this.personRepository.preload({
       id: id,
