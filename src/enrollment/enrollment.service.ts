@@ -446,7 +446,8 @@ export class EnrollmentService {
           level: ac.grade.level.name,
           capacity,
           ratified: ratifieds,
-          enrollments: rtAndEnr.length,
+          // enrollments: rtAndEnr.length,
+          enrollments: currentEnrrollment.length,
           vacant,
         });
       }
