@@ -435,9 +435,11 @@ export class EnrollmentService {
         const capacity = ac.classroom.capacity;
         const ratifieds = enrrollmentRatified.length - rtAndEnr.length;
 
-        /**temporal */
-        const vacant =
-          capacity - ratifieds - rtAndEnr.length - currentEnrrollment.length;
+        /**temporal, la fórmula varia en funcion al cronograma */
+        // const vacant =
+        //   capacity - ratifieds - rtAndEnr.length - currentEnrrollment.length;
+        /**formula para cuando no tengan que ver los ratificados */
+        const vacant = capacity - ratifieds - currentEnrrollment.length;
         vacants.push({
           grade: ac.grade.name,
           section: ac.section,
