@@ -441,6 +441,7 @@ export class EnrollmentService {
         /**formula para cuando no tengan que ver los ratificados */
         const vacant = capacity - ratifieds - currentEnrrollment.length;
         vacants.push({
+          gradeId: ac.grade.id,
           grade: ac.grade.name,
           section: ac.section,
           level: ac.grade.level.name,
@@ -452,7 +453,35 @@ export class EnrollmentService {
         });
       }
 
-      return vacants;
+      const groupedData = vacants.reduce((acc, curr) => {
+        const { gradeId, grade, level, capacity, ratified, enrollments } = curr;
+
+        if (!acc[gradeId]) {
+          acc[gradeId] = {
+            // gradeId,
+            grade,
+            level,
+            capacity: 0,
+            ratified: 0,
+            enrollments: 0,
+            vacant: 0,
+          };
+        }
+
+        acc[gradeId].capacity += capacity;
+        acc[gradeId].ratified += ratified;
+        acc[gradeId].enrollments += enrollments;
+        acc[gradeId].vacant =
+          acc[gradeId].capacity -
+          acc[gradeId].ratified -
+          acc[gradeId].enrollments;
+
+        return acc;
+      }, {});
+
+      const result = Object.values(groupedData);
+
+      return result;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
