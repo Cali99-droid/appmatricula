@@ -436,10 +436,11 @@ export class EnrollmentService {
         const ratifieds = enrrollmentRatified.length - rtAndEnr.length;
 
         /**temporal, la fórmula varia en funcion al cronograma */
-        // const vacant =
-        //   capacity - ratifieds - rtAndEnr.length - currentEnrrollment.length;
+        const vacant =
+          capacity - ratifieds - rtAndEnr.length - currentEnrrollment.length;
         /**formula para cuando no tengan que ver los ratificados */
-        const vacant = capacity - ratifieds - currentEnrrollment.length;
+        // const vacant = capacity - ratifieds - currentEnrrollment.length;
+
         vacants.push({
           gradeId: ac.grade.id,
           grade: ac.grade.name,
@@ -454,7 +455,15 @@ export class EnrollmentService {
       }
 
       const groupedData = vacants.reduce((acc, curr) => {
-        const { gradeId, grade, level, capacity, ratified, enrollments } = curr;
+        const {
+          gradeId,
+          grade,
+          level,
+          capacity,
+          ratified,
+          enrollments,
+          section,
+        } = curr;
 
         if (!acc[gradeId]) {
           acc[gradeId] = {
@@ -465,9 +474,16 @@ export class EnrollmentService {
             ratified: 0,
             enrollments: 0,
             vacant: 0,
+            sections: [],
           };
         }
-
+        acc[gradeId].sections.push({
+          section,
+          capacity,
+          ratified,
+          enrollments,
+          vacant: capacity - ratified - enrollments,
+        });
         acc[gradeId].capacity += capacity;
         acc[gradeId].ratified += ratified;
         acc[gradeId].enrollments += enrollments;

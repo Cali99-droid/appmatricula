@@ -374,7 +374,6 @@ export class AttendanceService {
       const at = await this.attendanceRepository.save(attendance);
       return at.id;
     } catch (error) {
-      this.logger.error(error);
       throw new BadRequestException(error.message);
     }
   }
