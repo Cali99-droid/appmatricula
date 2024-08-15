@@ -56,4 +56,9 @@ export class Email {
   })
   @JoinColumn({ name: 'studentId' })
   student?: Student;
+
+  @Column('bool', {
+    default: false,
+  })
+  opened: boolean;
 }

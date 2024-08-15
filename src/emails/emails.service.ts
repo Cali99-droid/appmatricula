@@ -120,6 +120,7 @@ export class EmailsService {
       const family = enrollment.student.family;
       if (family.parentOneId.user) {
         this.sendEmail(
+          0,
           createEmailDto.type,
           enrollment.activityClassroom.phase.year.name,
           enrollment.code,
@@ -132,6 +133,7 @@ export class EmailsService {
       }
       if (family.parentTwoId.user) {
         this.sendEmail(
+          0,
           createEmailDto.type,
           enrollment.activityClassroom.phase.year.name,
           enrollment.code,
@@ -164,6 +166,7 @@ export class EmailsService {
     }
   }
   async sendEmail(
+    id: number,
     type: TypeEmail,
     year: string,
     code: string,
@@ -177,6 +180,7 @@ export class EmailsService {
     try {
       await firstValueFrom(
         this.httpService.post(url, {
+          id: id,
           type: type,
           year: year,
           code: code,
@@ -238,7 +242,9 @@ export class EmailsService {
       });
       const fechaActual = new Date();
       const year = fechaActual.getFullYear();
+      const email = await this.emailRepository.save(data);
       this.sendEmail(
+        email.id,
         data.type,
         year.toString(),
         'NO_CODE',
@@ -250,6 +256,7 @@ export class EmailsService {
       );
       if (parentTwo.user) {
         this.sendEmail(
+          email.id,
           data.type,
           year.toString(),
           'NO_CODE',
@@ -260,7 +267,7 @@ export class EmailsService {
           createEmail.body,
         );
       }
-      return await this.emailRepository.save(data);
+      return email;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
@@ -302,7 +309,19 @@ export class EmailsService {
     if (!email) throw new NotFoundException(`Email with id ${id} not found`);
     return email;
   }
-
+  async updateOpened(id: number) {
+    const email = await this.emailRepository.preload({
+      id: id,
+      opened: true,
+    });
+    if (!email) throw new NotFoundException(`Email with id: ${id} not found`);
+    try {
+      await this.emailRepository.save(email);
+      return email;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
   update(id: number, updateEmailDto: UpdateEmailDto) {
     return `This action updates a #${id} email`;
   }
