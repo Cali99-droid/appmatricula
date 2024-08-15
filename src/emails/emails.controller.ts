@@ -74,6 +74,10 @@ export class EmailsController {
   update(@Param('id') id: string, @Body() updateEmailDto: UpdateEmailDto) {
     return this.emailsService.update(+id, updateEmailDto);
   }
+  @Patch('crm/:id')
+  updateOnpened(@Param('id') id: string) {
+    return this.emailsService.updateOpened(+id);
+  }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
