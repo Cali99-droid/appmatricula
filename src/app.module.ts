@@ -110,7 +110,7 @@ export class AppModule implements NestModule {
         },
         {
           path: '/emails/crm/:id',
-          method: RequestMethod.PATCH,
+          method: RequestMethod.PUT,
         },
         {
           path: '/docs/download-carnets/:id',
