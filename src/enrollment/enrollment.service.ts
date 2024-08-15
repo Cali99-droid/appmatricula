@@ -436,11 +436,9 @@ export class EnrollmentService {
         const ratifieds = enrrollmentRatified.length - rtAndEnr.length;
 
         /**temporal, la fórmula varia en funcion al cronograma */
-        const vacant =
-          capacity - ratifieds - rtAndEnr.length - currentEnrrollment.length;
+        const vacant = capacity - ratifieds - currentEnrrollment.length;
         /**formula para cuando no tengan que ver los ratificados */
         // const vacant = capacity - ratifieds - currentEnrrollment.length;
-
         vacants.push({
           gradeId: ac.grade.id,
           grade: ac.grade.name,

@@ -245,7 +245,7 @@ export const AdminMenu = {
         },
         {
           id: 10,
-          label: 'Inscripciones',
+          label: 'Cronograma',
           icon: 'module',
           link: '/admin/enrollment/schedule',
           permissions: ['admin'],
