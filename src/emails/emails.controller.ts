@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Put,
 } from '@nestjs/common';
 import { EmailsService } from './emails.service';
 import { CreateEmailDto } from './dto/create-email.dto';
@@ -74,7 +75,7 @@ export class EmailsController {
   update(@Param('id') id: string, @Body() updateEmailDto: UpdateEmailDto) {
     return this.emailsService.update(+id, updateEmailDto);
   }
-  @Patch('crm/:id')
+  @Put('crm/:id')
   updateOnpened(@Param('id') id: string) {
     return this.emailsService.updateOpened(+id);
   }
