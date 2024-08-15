@@ -282,6 +282,7 @@ export class EmailsService {
         body: true,
         quantity: true,
         createdAt: true,
+        opened: true,
       },
       order: {
         createdAt: 'DESC',
