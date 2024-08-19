@@ -227,17 +227,15 @@ export class PersonService {
       where: [
         {
           parentOneId: { id: user.person.id },
-          student: { enrollment: { isActive: true } },
+          // student: { enrollment: { isActive: true } },
         },
         {
           parentTwoId: { id: user.person.id },
-          student: { enrollment: { isActive: true } },
+          // student: { enrollment: { isActive: true } },
         },
       ],
       relations: {
-        student: {
-          enrollment: { activityClassroom: { grade: { level: true } } },
-        },
+        student: true,
       },
     });
     return students;

@@ -82,8 +82,16 @@ export class StudentService {
     return students;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} student`;
+  async findOne(id: number) {
+    const student = await this.studentRepository.findOne({
+      where: { id, enrollment: { isActive: true } },
+      relations: {
+        enrollment: { activityClassroom: { grade: { level: true } } },
+      },
+    });
+    if (!student)
+      throw new NotFoundException(`student with id ${id} not found`);
+    return student;
   }
   async findAutocomplete(value: string) {
     const students = await this.studentRepository
