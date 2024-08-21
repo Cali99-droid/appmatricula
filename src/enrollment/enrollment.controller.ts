@@ -123,7 +123,7 @@ export class EnrollmentController {
     return this.enrollmentService.getRatified(yearId);
   }
 
-  @Put('ratified/:code')
+  @Patch('ratified/:code')
   @ApiQuery({
     name: 'desicion',
     required: false,
