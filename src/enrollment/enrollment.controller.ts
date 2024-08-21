@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Put,
   Param,
   Delete,
   Query,
@@ -123,7 +124,7 @@ export class EnrollmentController {
     return this.enrollmentService.getRatified(yearId);
   }
 
-  @Patch('ratified/:code')
+  @Put('ratified/:code')
   @ApiQuery({
     name: 'desicion',
     required: false,
