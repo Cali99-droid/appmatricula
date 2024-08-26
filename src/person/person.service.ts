@@ -251,6 +251,13 @@ export class PersonService {
       .where('studentId = :id', { id })
       .andWhere('YEAR(arrivalDate) = :year', { year })
       .getMany();
+
+    attendance.forEach((entry) => {
+      const date = new Date(entry.arrivalTime);
+      date.setHours(date.getHours() - 5);
+      const newTime = date.toISOString();
+      (entry as any).time = newTime.split('T')[1].split('.')[0];
+    });
     return attendance;
   }
   async findProfileUser(user: User) {

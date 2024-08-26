@@ -564,6 +564,12 @@ export class AttendanceService {
 
         const formatStudents = students.map((item) => {
           const { person, attendance } = item;
+          attendance.forEach((entry) => {
+            const date = new Date(entry.arrivalTime);
+            date.setHours(date.getHours() - 5);
+            const newTime = date.toISOString();
+            (entry as any).time = newTime.split('T')[1].split('.')[0];
+          });
           return { student: person, attendance };
         });
 
