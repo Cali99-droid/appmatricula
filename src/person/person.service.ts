@@ -23,6 +23,7 @@ import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
+import { SearchByDateDto } from '../common/dto/search-by-date.dto';
 
 @Injectable()
 export class PersonService {
@@ -240,18 +241,20 @@ export class PersonService {
     });
     return students;
   }
-  async findAttendanceByStudent(id: number) {
-    const date = new Date();
-    const year = date.getFullYear();
+  async findAttendanceByStudent(id: number, searchByDateDto: SearchByDateDto) {
     if (isNaN(id)) {
       throw new NotFoundException(`Id is not valid`);
     }
+    const startDate = searchByDateDto.startDate;
+    const endDate = searchByDateDto.endDate;
     const attendance = await this.attendanceRepository
       .createQueryBuilder('attendance')
       .where('studentId = :id', { id })
-      .andWhere('YEAR(arrivalDate) = :year', { year })
+      .andWhere('attendance.arrivalDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
       .getMany();
-
     attendance.forEach((entry) => {
       const date = new Date(entry.arrivalTime);
       date.setHours(date.getHours() - 5);
