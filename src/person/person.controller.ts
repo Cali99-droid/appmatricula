@@ -9,17 +9,19 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { PersonService } from './person.service';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { fileFilter } from './helpers';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreatePersonCrmDto } from './dto/create-person-crm.dto';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
+import { SearchByDateDto } from 'src/common/dto/search-by-date.dto';
 @ApiTags('Person')
 @Controller('person')
 export class PersonController {
@@ -99,8 +101,23 @@ export class PersonController {
     return this.personService.findStudentsByParents(user);
   }
   @Get('parents/attendance-student/:id')
-  findAttendanceByStudent(@Param('id') id: string) {
-    return this.personService.findAttendanceByStudent(+id);
+  @ApiQuery({
+    name: 'startDate',
+    required: true,
+    description: 'StartDate of the attendace',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: true,
+    description: 'EndDate of the attendace',
+    type: String,
+  })
+  findAttendanceByStudent(
+    @Param('id') id: string,
+    @Query() searchByDateDto: SearchByDateDto,
+  ) {
+    return this.personService.findAttendanceByStudent(+id, searchByDateDto);
   }
   @Get('parents/profile')
   @Auth()
