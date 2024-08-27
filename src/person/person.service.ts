@@ -12,6 +12,7 @@ import { CreatePersonCrmDto } from './dto/create-person-crm.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
+import { Family } from 'src/family/entities/family.entity';
 
 @Injectable()
 export class PersonService {
@@ -28,6 +29,8 @@ export class PersonService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Relationship)
     private readonly relationShipRepository: Repository<Relationship>,
+    @InjectRepository(Relationship)
+    private readonly familypRepository: Repository<Family>,
   ) {}
   create(createPersonDto: CreatePersonDto) {
     return 'This action adds a new person';
@@ -79,14 +82,58 @@ export class PersonService {
       }
       const user = this.userRepository.create({
         email: data.email,
-        password: bcrypt.hashSync(data.docNumber, 10),
+        password: bcrypt.hashSync(
+          `${data.docNumber}${data.name.charAt(0).toUpperCase()}${data.lastName.charAt(0).toLocaleLowerCase()}`,
+          10,
+        ),
         person: { id: idPerson },
         crmGHLId: data.crmGHLId,
       });
       const userCreated = await this.userRepository.save(user);
-      const { password, ...rest } = userCreated;
+      const getParent = await this.familypRepository.findOne({
+        where: [
+          {
+            parentOneId: { id: idPerson },
+            student: { enrollment: { isActive: true } },
+          },
+          {
+            parentTwoId: { id: idPerson },
+            student: { enrollment: { isActive: true } },
+          },
+        ],
+        relations: {
+          student: {
+            enrollment: { activityClassroom: { grade: { level: true } } },
+          },
+        },
+      });
+      if (!getParent) {
+        return {
+          type: 'Interesado',
+          email: userCreated.email,
+          crmGHLId: userCreated.crmGHLId,
+          name: data.name,
+          lastName: `${data.lastName} ${data.mLastname}`,
+        };
+      }
+      if (!getParent.student[0].enrollment) {
+        return {
+          type: 'Interesado',
+          email: userCreated.email,
+          crmGHLId: userCreated.crmGHLId,
+          name: data.name,
+          lastName: `${data.lastName} ${data.mLastname}`,
+        };
+      }
       return {
-        rest,
+        type: 'Matriculado',
+        email: userCreated.email,
+        crmGHLId: userCreated.crmGHLId,
+        name: data.name,
+        lastName: `${data.lastName} ${data.mLastname}`,
+        grade: getParent.student[0].enrollment[0].activityClassroom.grade.name,
+        level:
+          getParent.student[0].enrollment[0].activityClassroom.grade.level.name,
       };
     } catch (error) {
       handleDBExceptions(error, this.logger);

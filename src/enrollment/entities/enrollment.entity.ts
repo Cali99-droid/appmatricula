@@ -45,4 +45,11 @@ export class Enrollment {
   })
   @Column({ type: 'enum', enum: Status })
   status: Status;
+
+  @ApiProperty({
+    example: '1',
+    description: 'optional, 1: active, 0 inactive',
+  })
+  @Column('boolean', { default: '1' })
+  isActive?: boolean;
 }

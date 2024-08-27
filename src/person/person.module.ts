@@ -7,12 +7,13 @@ import { Student } from '../student/entities/student.entity';
 import { User } from 'src/user/entities/user.entity';
 import { ConfigModule } from '@nestjs/config';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
+import { Family } from 'src/family/entities/family.entity';
 
 @Module({
   controllers: [PersonController],
   providers: [PersonService],
   imports: [
-    TypeOrmModule.forFeature([Person, Student, User, Relationship]),
+    TypeOrmModule.forFeature([Person, Student, User, Relationship, Family]),
     ConfigModule,
   ],
 })
