@@ -29,7 +29,7 @@ export class PersonService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Relationship)
     private readonly relationShipRepository: Repository<Relationship>,
-    @InjectRepository(Relationship)
+    @InjectRepository(Family)
     private readonly familypRepository: Repository<Family>,
   ) {}
   create(createPersonDto: CreatePersonDto) {
