@@ -340,37 +340,37 @@ export class AttendanceService {
         typeSchedule: TypeSchedule.General,
         activityClassroom: { id: enrollment.activityClassroom.id },
       });
-      const family = await this.familyRepository.findOne({
-        where: { student: { id: enrollment.student.id } },
-        relations: {
-          student: true,
-          parentOneId: { user: true },
-          parentTwoId: { user: true },
-        },
-      });
-      if (family) {
-        const { parentOneId, parentTwoId, student } = family;
-        if (parentOneId && parentOneId.user) {
-          this.sendEmail(
-            parentOneId,
-            student[0],
-            currentTime,
-            attendance.arrivalDate,
-            shift,
-            condition,
-          );
-        }
-        if (parentTwoId && parentTwoId.user) {
-          this.sendEmail(
-            parentTwoId,
-            student[0],
-            currentTime,
-            attendance.arrivalDate,
-            shift,
-            condition,
-          );
-        }
-      }
+      // const family = await this.familyRepository.findOne({
+      //   where: { student: { id: enrollment.student.id } },
+      //   relations: {
+      //     student: true,
+      //     parentOneId: { user: true },
+      //     parentTwoId: { user: true },
+      //   },
+      // });
+      // if (family) {
+      //   const { parentOneId, parentTwoId, student } = family;
+      //   if (parentOneId && parentOneId.user) {
+      //     this.sendEmail(
+      //       parentOneId,
+      //       student[0],
+      //       currentTime,
+      //       attendance.arrivalDate,
+      //       shift,
+      //       condition,
+      //     );
+      //   }
+      //   if (parentTwoId && parentTwoId.user) {
+      //     this.sendEmail(
+      //       parentTwoId,
+      //       student[0],
+      //       currentTime,
+      //       attendance.arrivalDate,
+      //       shift,
+      //       condition,
+      //     );
+      //   }
+      // }
       const at = await this.attendanceRepository.save(attendance);
       return at.id;
     } catch (error) {
