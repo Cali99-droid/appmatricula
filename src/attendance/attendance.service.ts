@@ -420,82 +420,103 @@ export class AttendanceService {
   }
   async findLastFiveRecords(user: User) {
     // Obtener usuario con asignaciones y roles
-    const userWithRelations = await this.userRepository.findOne({
-      where: { email: user.email },
-      relations: ['assignments.campusDetail', 'roles.permissions'],
-    });
 
-    if (!userWithRelations) {
-      throw new Error('Usuario no encontrado');
-    }
+    // const userWithRelations = await this.userRepository.findOne({
+    //   where: { email: user.email },
+    //   relations: ['roles.permissions'],
+    // });
 
-    // Obtener permisos y determinar si es admin
-    const permissions = new Set(
-      userWithRelations.roles.flatMap((role) =>
-        role.permissions.map((perm) => perm.name),
-      ),
-    );
-    const isAdmin = permissions.has('admin');
-    const campusDetailIds = userWithRelations.assignments.map(
-      (assignment) => assignment.campusDetail.id,
-    );
+    // if (!userWithRelations) {
+    //   throw new Error('Usuario no encontrado');
+    // }
 
-    // Construir opciones de consulta para asistencias
-    const attendanceOptions: any = {
-      order: { arrivalTime: 'DESC' },
-      take: 5,
-    };
-
-    if (!isAdmin) {
-      attendanceOptions.where = {
-        activityClassroom: {
-          classroom: { campusDetail: { id: In(campusDetailIds) } },
-        },
-      };
-    }
-
-    // Realizar consulta para obtener las últimas cinco asistencias
-    const attendances = await this.attendanceRepository.find(attendanceOptions);
-
-    // Convertir horas de llegada a zona horaria específica
-    const timeZone = 'America/Lima';
-    const utcAttendance = attendances.map((attendance) => ({
-      ...attendance,
-      arrivalTime: moment
-        .utc(attendance.arrivalTime)
-        .tz(timeZone)
-        .format('YYYY-MM-DD HH:mm:ss'),
-    }));
-
-    // Obtener configuración de URLs y avatar predeterminado
-    const urlS3 = this.configService.getOrThrow('FULL_URL_S3');
-    const defaultAvatar = this.configService.getOrThrow('AVATAR_NAME_DEFAULT');
-
-    // Formatear datos finales de asistencias
-    const formatAttendances = utcAttendance.map((attendance) => {
-      const { student, activityClassroom, ...restAttendance } = attendance;
-
-      const personData = student.person;
-      // const latestEnrollment = student.enrollment.reduce(
-      //   (latest, current) => (current.id > latest.id ? current : latest),
-      //   student.enrollment[0],
+    try {
+      // Obtener permisos y determinar si es admin
+      const isAdmin = user.roles.some((role) =>
+        role.permissions.some((perm) => perm.name === 'admin'),
+      );
+      // const campusDetailIds = userWithRelations.assignments.map(
+      //   (assignment) => assignment.campusDetail.id,
       // );
-      const classroomInfo = `${activityClassroom.grade.name} ${activityClassroom.section} ${activityClassroom.grade.level.name}`;
 
-      return {
-        ...restAttendance,
-        student: {
-          ...personData,
-          photo: student.photo
-            ? `${urlS3}${student.photo}`
-            : `${urlS3}${defaultAvatar}`,
-        },
-        classroom: classroomInfo,
+      // Construir opciones de consulta para asistencias
+      const attendanceOptions: any = {
+        order: { arrivalTime: 'DESC' },
+        take: 3,
       };
-    });
 
-    return formatAttendances;
+      if (!isAdmin) {
+        const campusDetailIds = user.assignments.map((c) => c.campusDetail.id);
+
+        attendanceOptions.where = {
+          activityClassroom: {
+            classroom: {
+              campusDetail: {
+                id: In(campusDetailIds),
+              },
+            },
+          },
+        };
+      }
+
+      // Realizar consulta para obtener las últimas cinco asistencias
+      const attendances =
+        await this.attendanceRepository.find(attendanceOptions);
+
+      // Convertir horas de llegada a zona horaria específica
+      const timeZone = 'America/Lima';
+      // const utcAttendance = attendances.map((attendance) => ({
+      //   ...attendance,
+      //   arrivalTime: moment
+      //     .utc(attendance.arrivalTime)
+      //     .tz(timeZone)
+      //     .format('YYYY-MM-DD HH:mm:ss'),
+      // }));
+
+      // Obtener configuración de URLs y avatar predeterminado
+      const urlS3 = this.configService.getOrThrow('FULL_URL_S3');
+      const defaultAvatar = this.configService.getOrThrow(
+        'AVATAR_NAME_DEFAULT',
+      );
+
+      // Formatear datos finales de asistencias
+      const formatAttendances = attendances.map((attendance) => {
+        const { student, activityClassroom, arrivalTime, condition } =
+          attendance;
+
+        const personData = {
+          name: student.person.name,
+          lastname: student.person.lastname,
+          mLastname: student.person.mLastname,
+        };
+        // const latestEnrollment = student.enrollment.reduce(
+        //   (latest, current) => (current.id > latest.id ? current : latest),
+        //   student.enrollment[0],
+        // );
+        const classroomInfo = `${activityClassroom.grade.name} ${activityClassroom.section} ${activityClassroom.grade.level.name}`;
+
+        return {
+          condition,
+          arrivaltime: moment
+            .utc(arrivalTime)
+            .tz(timeZone)
+            .format('YYYY-MM-DD HH:mm:ss'),
+          student: {
+            ...personData,
+            photo: student.photo
+              ? `${urlS3}${student.photo}`
+              : `${urlS3}${defaultAvatar}`,
+          },
+          classroom: classroomInfo,
+        };
+      });
+
+      return formatAttendances;
+    } catch (error) {
+      this.logger.error(error);
+    }
   }
+
   findOne(id: number) {
     return `This action returns a #${id} attendance`;
   }
