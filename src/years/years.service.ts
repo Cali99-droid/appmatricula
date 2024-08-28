@@ -24,8 +24,6 @@ export class YearsService {
       const year = this.yearRepository.create(createYearDto);
       return await this.yearRepository.save(year);
     } catch (error) {
-      this.logger.error(error);
-      console.log(error);
       handleDBExceptions(error, this.logger);
     }
   }

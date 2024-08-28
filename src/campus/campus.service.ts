@@ -132,7 +132,7 @@ export class CampusService {
 
     return campus;
   }
-  async findOne(id: string) {
+  async findOne(id: number) {
     try {
       const campus = await this.campusRepository.findOne({
         where: { id: +id },

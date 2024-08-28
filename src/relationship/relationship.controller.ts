@@ -58,7 +58,7 @@ export class RelationshipController {
     @Param('activityClassroomId') activityClassroomId: number,
   ) {
     return this.relationshipService.findByActivityClassroom(
-      activityClassroomId,
+      +activityClassroomId,
     );
   }
 }

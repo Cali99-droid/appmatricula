@@ -13,9 +13,7 @@ import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CampusService } from './campus.service';
 import { CreateCampusDto } from './dto/create-campus.dto';
 import { Campus } from './entities/campus.entity';
-import { CampusDetailService } from 'src/campus_detail/campus_detail.service';
-import { YearsService } from 'src/years/years.service';
-import { LevelService } from 'src/level/level.service';
+
 import { UpdateCampusDto } from './dto/update-campus.dto';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
@@ -23,12 +21,7 @@ import { Auth } from 'src/auth/decorators/auth.decorator';
 @ApiTags('Campus')
 @Controller('campus')
 export class CampusController {
-  constructor(
-    private readonly campusService: CampusService,
-    private readonly campusDetailService: CampusDetailService,
-    private readonly yearService: YearsService,
-    private readonly levelService: LevelService,
-  ) {}
+  constructor(private readonly campusService: CampusService) {}
 
   @Post()
   @ApiResponse({ status: 201, description: 'Campus was created', type: Campus })
@@ -95,7 +88,7 @@ export class CampusController {
     description: 'campus  not found ',
   })
   async findOne(@Param('id') id: string) {
-    return this.campusService.findOne(id);
+    return this.campusService.findOne(+id);
   }
 
   @Patch(':id')
