@@ -70,9 +70,7 @@ export class User {
     (assignmentClass) => assignmentClass.user,
   )
   assignmentsClassroom?: AssignmentClassroom[];
-  @ManyToMany(() => Role, (role) => role.users, {
-    eager: true,
-  })
+  @ManyToMany(() => Role, (role) => role.users)
   @JoinTable()
   roles: Role[];
 

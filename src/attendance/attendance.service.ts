@@ -64,19 +64,20 @@ export class AttendanceService {
   ) {}
   async create(createAttendanceDto: CreateAttendanceDto, user: User) {
     // Obtener el usuario con las relaciones necesarias
-    const us = await this.userRepository.findOne({
-      where: {
-        email: user.email,
-      },
-      relations: {
-        assignments: {
-          campusDetail: true,
-        },
-        roles: {
-          permissions: true,
-        },
-      },
-    });
+
+    // const us = await this.userRepository.findOne({
+    //   where: {
+    //     email: user.email,
+    //   },
+    //   relations: {
+    //     assignments: {
+    //       campusDetail: true,
+    //     },
+    //     roles: {
+    //       permissions: true,
+    //     },
+    //   },
+    // });
 
     /**capturar fecha y hora actual */
     const currentTime = new Date();
@@ -93,9 +94,10 @@ export class AttendanceService {
       const enrollment = await this.enrrollmentRepository.findOneByOrFail({
         code: createAttendanceDto.code,
       });
+      const { student, activityClassroom } = enrollment;
       /**verificar pertenencia a sede */
 
-      const campusDetailIds = us.assignments.map(
+      const campusDetailIds = user.assignments.map(
         (item) => item.campusDetail.id,
       );
       if (campusDetailIds.length === 0) {
@@ -104,8 +106,7 @@ export class AttendanceService {
         );
       }
 
-      const campusEnroll =
-        enrollment.activityClassroom.classroom.campusDetail.id;
+      const campusEnroll = activityClassroom.classroom.campusDetail.id;
 
       const isInCampus = campusDetailIds.includes(campusEnroll);
       if (!isInCampus) {
@@ -171,7 +172,7 @@ export class AttendanceService {
       const att = await queryBuilder
         .where(`arrivalDate=:dateNow and studentId =:studentId`, {
           dateNow: this.convertISODateToYYYYMMDD(currentDate),
-          studentId: enrollment.student.id,
+          studentId: student.id,
         })
         .getOne();
       //**Si ya tiene asistencia */
@@ -180,7 +181,7 @@ export class AttendanceService {
 
         const indSchedule = await this.scheduleRepository.findOneBy({
           day: currentDay,
-          activityClassroom: { id: enrollment.activityClassroom.id },
+          activityClassroom: { id: activityClassroom.id },
         });
         /**si tiene horario adicional */
         if (indSchedule) {
@@ -232,7 +233,7 @@ export class AttendanceService {
             `arrivalDate=:dateNow and studentId =:studentId and shift=:shift`,
             {
               dateNow: this.convertISODateToYYYYMMDD(currentDate),
-              studentId: enrollment.student.id,
+              studentId: student.id,
               shift: Shift.Extra,
             },
           )
@@ -247,22 +248,22 @@ export class AttendanceService {
         const attendance = this.attendanceRepository.create({
           shift: Shift.Extra,
           condition: condition,
-          activityClassroom: { id: enrollment.activityClassroom.id },
+          activityClassroom: { id: activityClassroom.id },
           arrivalTime: currentTime,
-          student: { id: enrollment.student.id },
+          student: { id: student.id },
           arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
           typeSchedule: TypeSchedule.Individual,
         });
-        const classroomInfo = `${enrollment.activityClassroom.grade.name} ${enrollment.activityClassroom.section} ${enrollment.activityClassroom.grade.level.name}`;
+        const classroomInfo = `${activityClassroom.grade.name} ${activityClassroom.section} ${activityClassroom.grade.level.name}`;
         const dataStudent = {
-          name: enrollment.student.person.name,
-          lastname: enrollment.student.person.lastname,
-          mLastname: enrollment.student.person.mLastname,
+          name: student.person.name,
+          lastname: student.person.lastname,
+          mLastname: student.person.mLastname,
           arrivalTime: currentTime,
           classroom: classroomInfo,
         };
         const family = await this.familyRepository.findOne({
-          where: { student: { id: enrollment.student.id } },
+          where: { student: { id: student.id } },
           relations: {
             student: true,
             parentOneId: { user: true },
@@ -300,7 +301,7 @@ export class AttendanceService {
       } else {
         //*** crear asistencia */
 
-        const turn = enrollment.activityClassroom.schoolShift;
+        const turn = activityClassroom.schoolShift;
 
         const cutoffTime = new Date();
         const initAttendanceTime = new Date();
@@ -343,22 +344,22 @@ export class AttendanceService {
         shift: shift,
         condition: condition,
         arrivalTime: currentTime,
-        student: { id: enrollment.student.id },
+        student: { id: student.id },
         arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
         typeSchedule: TypeSchedule.General,
-        activityClassroom: { id: enrollment.activityClassroom.id },
+        activityClassroom: { id: activityClassroom.id },
       });
-      const classroomInfo = `${enrollment.activityClassroom.grade.name} ${enrollment.activityClassroom.section} ${enrollment.activityClassroom.grade.level.name}`;
+      const classroomInfo = `${activityClassroom.grade.name} ${activityClassroom.section} ${activityClassroom.grade.level.name}`;
       const urlS3 = this.configService.getOrThrow('FULL_URL_S3');
       const defaultAvatar = this.configService.getOrThrow(
         'AVATAR_NAME_DEFAULT',
       );
       const dataStudent = {
-        name: enrollment.student.person.name,
-        lastname: enrollment.student.person.lastname,
-        mLastname: enrollment.student.person.mLastname,
-        photo: enrollment.student.photo
-          ? `${urlS3}${enrollment.student.photo}`
+        name: student.person.name,
+        lastname: student.person.lastname,
+        mLastname: student.person.mLastname,
+        photo: student.photo
+          ? `${urlS3}${student.photo}`
           : `${urlS3}${defaultAvatar}`,
         arrivalTime: currentTime,
         classroom: classroomInfo,
