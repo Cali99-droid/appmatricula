@@ -253,6 +253,14 @@ export class AttendanceService {
           arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
           typeSchedule: TypeSchedule.Individual,
         });
+        const classroomInfo = `${enrollment.activityClassroom.grade.name} ${enrollment.activityClassroom.section} ${enrollment.activityClassroom.grade.level.name}`;
+        const dataStudent = {
+          name: enrollment.student.person.name,
+          lastname: enrollment.student.person.lastname,
+          mLastname: enrollment.student.person.mLastname,
+          arrivalTime: currentTime,
+          classroom: classroomInfo,
+        };
         const family = await this.familyRepository.findOne({
           where: { student: { id: enrollment.student.id } },
           relations: {
@@ -284,11 +292,11 @@ export class AttendanceService {
             );
           }
         }
-        const newAttendance = await this.attendanceRepository.save(attendance);
+        await this.attendanceRepository.save(attendance);
         // const lastFiveRecords = await this.findLastFiveRecords(user);
         // this.attendanceGateway.emitLastFiveAttendances(lastFiveRecords);
 
-        return newAttendance;
+        return dataStudent;
       } else {
         //*** crear asistencia */
 
@@ -340,6 +348,21 @@ export class AttendanceService {
         typeSchedule: TypeSchedule.General,
         activityClassroom: { id: enrollment.activityClassroom.id },
       });
+      const classroomInfo = `${enrollment.activityClassroom.grade.name} ${enrollment.activityClassroom.section} ${enrollment.activityClassroom.grade.level.name}`;
+      const urlS3 = this.configService.getOrThrow('FULL_URL_S3');
+      const defaultAvatar = this.configService.getOrThrow(
+        'AVATAR_NAME_DEFAULT',
+      );
+      const dataStudent = {
+        name: enrollment.student.person.name,
+        lastname: enrollment.student.person.lastname,
+        mLastname: enrollment.student.person.mLastname,
+        photo: enrollment.student.photo
+          ? `${urlS3}${enrollment.student.photo}`
+          : `${urlS3}${defaultAvatar}`,
+        arrivalTime: currentTime,
+        classroom: classroomInfo,
+      };
       // const family = await this.familyRepository.findOne({
       //   where: { student: { id: enrollment.student.id } },
       //   relations: {
@@ -371,8 +394,8 @@ export class AttendanceService {
       //     );
       //   }
       // }
-      const at = await this.attendanceRepository.save(attendance);
-      return at.id;
+      await this.attendanceRepository.save(attendance);
+      return dataStudent;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
