@@ -429,7 +429,6 @@ export class AttendanceService {
     //   relations: ['roles.permissions'],
     // });
 
-<<<<<<< HEAD
     // if (!userWithRelations) {
     //   throw new Error('Usuario no encontrado');
     // }
@@ -459,30 +458,6 @@ export class AttendanceService {
                 id: In(campusDetailIds),
               },
             },
-=======
-    try {
-      // Obtener permisos y determinar si es admin
-      const permissions = new Set(
-        userWithRelations.roles.flatMap((role) =>
-          role.permissions.map((perm) => perm.name),
-        ),
-      );
-      const isAdmin = permissions.has('admin');
-      const campusDetailIds = userWithRelations.assignments.map(
-        (assignment) => assignment.campusDetail.id,
-      );
-
-      // Construir opciones de consulta para asistencias
-      const attendanceOptions: any = {
-        order: { arrivalTime: 'DESC' },
-        take: 5,
-      };
-
-      if (!isAdmin) {
-        attendanceOptions.where = {
-          activityClassroom: {
-            classroom: { campusDetail: { id: In(campusDetailIds) } },
->>>>>>> cbbb9f36c3e107bc0da5f407ff4ebc3dc4f49184
           },
         };
       }
@@ -493,7 +468,6 @@ export class AttendanceService {
 
       // Convertir horas de llegada a zona horaria específica
       const timeZone = 'America/Lima';
-<<<<<<< HEAD
       // const utcAttendance = attendances.map((attendance) => ({
       //   ...attendance,
       //   arrivalTime: moment
@@ -501,15 +475,6 @@ export class AttendanceService {
       //     .tz(timeZone)
       //     .format('YYYY-MM-DD HH:mm:ss'),
       // }));
-=======
-      const utcAttendance = attendances.map((attendance) => ({
-        ...attendance,
-        arrivalTime: moment
-          .utc(attendance.arrivalTime)
-          .tz(timeZone)
-          .format('YYYY-MM-DD HH:mm:ss'),
-      }));
->>>>>>> cbbb9f36c3e107bc0da5f407ff4ebc3dc4f49184
 
       // Obtener configuración de URLs y avatar predeterminado
       const urlS3 = this.configService.getOrThrow('FULL_URL_S3');
@@ -518,7 +483,6 @@ export class AttendanceService {
       );
 
       // Formatear datos finales de asistencias
-<<<<<<< HEAD
       const formatAttendances = attendances.map((attendance) => {
         const { student, activityClassroom, arrivalTime, condition } =
           attendance;
@@ -528,12 +492,6 @@ export class AttendanceService {
           lastname: student.person.lastname,
           mLastname: student.person.mLastname,
         };
-=======
-      const formatAttendances = utcAttendance.map((attendance) => {
-        const { student, activityClassroom, ...restAttendance } = attendance;
-
-        const personData = student.person;
->>>>>>> cbbb9f36c3e107bc0da5f407ff4ebc3dc4f49184
         // const latestEnrollment = student.enrollment.reduce(
         //   (latest, current) => (current.id > latest.id ? current : latest),
         //   student.enrollment[0],
@@ -541,15 +499,11 @@ export class AttendanceService {
         const classroomInfo = `${activityClassroom.grade.name} ${activityClassroom.section} ${activityClassroom.grade.level.name}`;
 
         return {
-<<<<<<< HEAD
           condition,
           arrivaltime: moment
             .utc(arrivalTime)
             .tz(timeZone)
             .format('YYYY-MM-DD HH:mm:ss'),
-=======
-          ...restAttendance,
->>>>>>> cbbb9f36c3e107bc0da5f407ff4ebc3dc4f49184
           student: {
             ...personData,
             photo: student.photo
