@@ -39,6 +39,7 @@ export class Student {
   })
   @Column('bool', {
     default: true,
+    select: false,
   })
   status: boolean;
   @ApiProperty({
