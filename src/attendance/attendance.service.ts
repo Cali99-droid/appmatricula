@@ -29,8 +29,6 @@ import { firstValueFrom } from 'rxjs';
 import { Person } from 'src/person/entities/person.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { normalizeDate } from 'src/common/helpers/normalizeData';
-import { UserService } from 'src/user/user.service';
-import { use } from 'passport';
 // import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
@@ -60,7 +58,6 @@ export class AttendanceService {
 
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
-    private usersService: UserService,
 
     // @Inject(forwardRef(() => AttendanceGateway))
     // private readonly attendanceGateway: AttendanceGateway,
@@ -478,8 +475,13 @@ export class AttendanceService {
 
       // Formatear datos finales de asistencias
       const formatAttendances = attendances.map((attendance) => {
-        const { student, activityClassroom, arrivalTime, condition } =
-          attendance;
+        const {
+          student,
+          activityClassroom,
+          arrivalTime,
+
+          condition,
+        } = attendance;
 
         const personData = {
           name: student.person.name,
