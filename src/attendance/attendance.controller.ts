@@ -76,10 +76,10 @@ export class AttendanceController {
   findLastFiveRecords(@GetUser() user: User) {
     return this.attendanceService.findLastFiveRecords(user);
   }
-  @Get()
-  findAll() {
-    return this.attendanceService.findAll();
-  }
+  // @Get()
+  // findAll() {
+  //   return this.attendanceService.findAll();
+  // }
   @Get('/by-classroom')
   @ApiQuery({
     name: 'activityClassroomId',
@@ -120,10 +120,10 @@ export class AttendanceController {
   //   return this.attendanceService.updateAttendances();
   // }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.attendanceService.findOne(+id);
-  }
+  // @Get(':id')
+  // findOne(@Param('id') id: string) {
+  //   return this.attendanceService.findOne(+id);
+  // }
 
   @Patch(':id')
   update(

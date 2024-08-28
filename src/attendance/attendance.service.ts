@@ -203,16 +203,16 @@ export class AttendanceService {
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
 
-          if (
-            !(
-              currentTime >= initAttendanceTime &&
-              currentTime <= finishAttendanceTime
-            )
-          ) {
-            throw new BadRequestException(
-              `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
-            );
-          }
+          // if (
+          //   !(
+          //     currentTime >= initAttendanceTime &&
+          //     currentTime <= finishAttendanceTime
+          //   )
+          // ) {
+          //   throw new BadRequestException(
+          //     `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
+          //   );
+          // }
 
           //**Mantener esto*/
           condition =
@@ -307,16 +307,16 @@ export class AttendanceService {
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
 
-        if (
-          !(
-            currentTime >= initAttendanceTime &&
-            currentTime <= finishAttendanceTime
-          )
-        ) {
-          throw new BadRequestException(
-            `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
-          );
-        }
+        // if (
+        //   !(
+        //     currentTime >= initAttendanceTime &&
+        //     currentTime <= finishAttendanceTime
+        //   )
+        // ) {
+        //   throw new BadRequestException(
+        //     `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
+        //   );
+        // }
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
           condition =
@@ -412,14 +412,6 @@ export class AttendanceService {
     }
   }
 
-  async findAll() {
-    const attendance = await this.studentRepository.find({
-      relations: {
-        attendance: true,
-      },
-    });
-    return attendance;
-  }
   async findLastFiveRecords(user: User) {
     // Obtener usuario con asignaciones y roles
     const userWithRelations = await this.userRepository.findOne({
@@ -506,10 +498,6 @@ export class AttendanceService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} attendance`;
-  }
-
   async update(id: number, updateAttendanceDto: UpdateAttendanceDto) {
     const timeZone = 'America/Lima';
     const currentDate = moment.utc();
@@ -580,11 +568,6 @@ export class AttendanceService {
     } catch (error) {
       console.log(error);
     }
-  } /**fs */
-
-  private parseDate(dateString) {
-    const [day, month, year] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day); // los meses en JS van de 0 a 11
   }
 
   private convertISODateToYYYYMMDD(isoDateString) {
