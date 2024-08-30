@@ -11,6 +11,8 @@ export class Assignment {
   @ManyToOne(() => User, (user) => user.assignments)
   user: User;
 
-  @ManyToOne(() => CampusDetail, (campus) => campus.assignments)
+  @ManyToOne(() => CampusDetail, (campus) => campus.assignments, {
+    eager: true,
+  })
   campusDetail: CampusDetail;
 }

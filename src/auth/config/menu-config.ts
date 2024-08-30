@@ -38,6 +38,13 @@ export const AdminMenu = {
           link: '/admin/school/families',
           permissions: ['admin'],
         },
+        {
+          id: 4,
+          label: 'Vacantes',
+          icon: 'family',
+          link: '/admin/school/vacants',
+          permissions: ['admin'],
+        },
       ],
     },
     {
@@ -139,6 +146,23 @@ export const AdminMenu = {
         },
       ],
     },
+    {
+      id: 5,
+      label: 'Comunicaciones',
+      link: '/admin/emails',
+      icon: 'comunication',
+      tagSubMenu: true,
+      permissions: ['admin'],
+      subMenu: [
+        {
+          id: 1,
+          label: 'Correos',
+          icon: 'email',
+          link: '/admin/emails',
+          permissions: ['admin'],
+        },
+      ],
+    },
   ],
   settingsMenu: [
     {
@@ -217,6 +241,13 @@ export const AdminMenu = {
           label: 'Dias Laborables',
           icon: 'module',
           link: '/admin/student/dayofweek',
+          permissions: ['admin'],
+        },
+        {
+          id: 10,
+          label: 'Cronograma',
+          icon: 'module',
+          link: '/admin/enrollment/schedule',
           permissions: ['admin'],
         },
       ],

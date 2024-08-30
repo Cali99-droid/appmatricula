@@ -131,7 +131,7 @@ export class AppModule implements NestModule {
         },
         {
           path: '/enrollment/ratified/:code',
-          method: RequestMethod.PATCH,
+          method: RequestMethod.PUT,
         },
       )
       .forRoutes('/*');

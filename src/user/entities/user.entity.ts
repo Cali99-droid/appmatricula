@@ -60,7 +60,9 @@ export class User {
   // })
   // permission: Permission[];
 
-  @OneToMany(() => Assignment, (assignment) => assignment.user)
+  @OneToMany(() => Assignment, (assignment) => assignment.user, {
+    eager: true,
+  })
   assignments: Assignment[];
 
   @OneToMany(
