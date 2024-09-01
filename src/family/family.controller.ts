@@ -1,7 +1,8 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
 import { FamilyService } from './family.service';
 
 import { ApiTags } from '@nestjs/swagger';
+import { UpdateFamilyDto } from './dto/update-family.dto';
 @ApiTags('Family')
 @Controller('family')
 export class FamilyController {
@@ -40,10 +41,10 @@ export class FamilyController {
     return this.familyService.findOne(+id);
   }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateFamilyDto: UpdateFamilyDto) {
-  //   return this.familyService.update(+id, updateFamilyDto);
-  // }
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateFamilyDto: UpdateFamilyDto) {
+    return this.familyService.update(+id, updateFamilyDto);
+  }
 
   // @Delete(':id')
   // remove(@Param('id') id: string) {

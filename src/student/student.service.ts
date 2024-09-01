@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import * as sharp from 'sharp';
@@ -10,10 +10,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from './entities/student.entity';
-import { IsNull, Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 
 @Injectable()
 export class StudentService {
+  private readonly logger = new Logger('StudentService');
   private readonly s3Client = new S3Client({
     region: this.configService.getOrThrow('AWS_REGION'),
   });
@@ -113,8 +115,32 @@ export class StudentService {
         student.family.parentOneId.user,
     );
   }
-  update(id: number, updateStudentDto: UpdateStudentDto) {
-    return `This action updates a #${id} student`;
+  async update(id: number, updateStudentDto: UpdateStudentDto) {
+    const {
+      personId,
+      familyId,
+      respEnrollment,
+      respAcademic,
+      respEconomic,
+      ...rest
+    } = updateStudentDto;
+    const student = await this.studentRepository.preload({
+      id: id,
+      person: isNaN(personId) ? undefined : { id: personId },
+      family: isNaN(familyId) ? undefined : { id: familyId },
+      respEnrollment: isNaN(respEnrollment) ? undefined : { id: familyId },
+      respAcademic: isNaN(respAcademic) ? undefined : { id: respAcademic },
+      respEconomic: isNaN(respEconomic) ? undefined : { id: respEconomic },
+      ...rest,
+    });
+    if (!student)
+      throw new NotFoundException(`Student with id: ${id} not found`);
+    try {
+      await this.studentRepository.save(student);
+      return student;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
   remove(id: number) {

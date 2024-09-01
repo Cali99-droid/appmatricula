@@ -224,7 +224,7 @@ export class PersonService {
   }
   //MODULO DE PADRES
   async findStudentsByParents(user: User) {
-    const students = await this.familypRepository.findOne({
+    const students = await this.familypRepository.find({
       where: [
         {
           parentOneId: { id: user.person.id },

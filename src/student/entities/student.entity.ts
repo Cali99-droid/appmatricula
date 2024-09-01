@@ -57,6 +57,27 @@ export class Student {
   @JoinColumn({ name: 'familyId' })
   family?: Family;
 
+  @ManyToOne(() => Person, (person) => person.respEnrollments, {
+    // eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'respEnrollment' })
+  respEnrollment?: Person;
+
+  @ManyToOne(() => Person, (person) => person.respEconomics, {
+    // eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'respEconomic' })
+  respEconomic?: Person;
+
+  @ManyToOne(() => Person, (person) => person.respAcademics, {
+    // eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'respAcademic' })
+  respAcademic?: Person;
+
   @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
   enrollment?: Enrollment[];
 
