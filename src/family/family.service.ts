@@ -242,8 +242,21 @@ export class FamilyService {
     return family;
   }
 
-  update(id: number, updateFamilyDto: UpdateFamilyDto) {
-    return `This action updates a #${id} family`;
+  async update(id: number, updateFamilyDto: UpdateFamilyDto) {
+    const { parentOneId, parentTwoId, ...rest } = updateFamilyDto;
+    const family = await this.familyRepository.preload({
+      id: id,
+      parentOneId: isNaN(parentOneId) ? undefined : { id: parentOneId },
+      parentTwoId: isNaN(parentTwoId) ? undefined : { id: parentTwoId },
+      ...rest,
+    });
+    if (!family) throw new NotFoundException(`Family with id: ${id} not found`);
+    try {
+      await this.familyRepository.save(family);
+      return family;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
   remove(id: number) {
