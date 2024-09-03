@@ -21,9 +21,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { Family } from 'src/family/entities/family.entity';
+
 import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { SearchByDateDto } from '../common/dto/search-by-date.dto';
+
 
 @Injectable()
 export class PersonService {
@@ -42,10 +44,12 @@ export class PersonService {
     private readonly relationShipRepository: Repository<Relationship>,
     @InjectRepository(Family)
     private readonly familypRepository: Repository<Family>,
+
     @InjectRepository(EnrollmentSchedule)
     private readonly enrollmentScheduleRepository: Repository<EnrollmentSchedule>,
     @InjectRepository(Attendance)
     private readonly attendanceRepository: Repository<Attendance>,
+
   ) {}
   create(createPersonDto: CreatePersonDto) {
     return 'This action adds a new person';
