@@ -9,6 +9,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { TypeSure } from '../enum/type-sure.enum';
 
 @Entity()
 export class Family {
@@ -33,6 +34,43 @@ export class Family {
   })
   @JoinColumn({ name: 'parentTwoId' })
   parentTwoId?: Person;
+
+  @ApiProperty()
+  @Column('varchar', {
+    nullable: true,
+  })
+  provinceCode: string;
+
+  @ApiProperty()
+  @Column('varchar', {
+    nullable: true,
+  })
+  address: string;
+
+  @ApiProperty()
+  @Column('varchar', {
+    nullable: true,
+  })
+  reference: string;
+
+  @ApiProperty()
+  @Column({
+    type: 'enum',
+    enum: TypeSure,
+  })
+  type_sure: string;
+
+  @ApiProperty()
+  @Column('varchar', {
+    nullable: true,
+  })
+  sure: string;
+
+  @ApiProperty()
+  @Column('varchar', {
+    nullable: true,
+  })
+  addressSure: string;
 
   @OneToMany(() => Student, (student) => student.family, {
     // eager: true,

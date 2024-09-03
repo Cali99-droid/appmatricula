@@ -19,6 +19,8 @@ import { ActivityClassroom } from 'src/activity_classroom/entities/activity_clas
 import { SearchEnrolledDto } from './dto/searchEnrollmet-dto';
 import { TypePhase } from 'src/phase/enum/type-phase.enum';
 import { StudentService } from 'src/student/student.service';
+import { SetRatifiedDto } from './dto/set-ratified.dto';
+import { FindVacantsDto } from './dto/find-vacants.dto';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -281,24 +283,221 @@ export class EnrollmentService {
       handleDBExceptions(error, this.logger);
     }
   }
-  /**script para crear un codigo para todos las matriculas */
 
-  async scripting() {
-    const enrollments = await this.enrollmentRepository.find({
-      relations: {
-        activityClassroom: true,
+  /**RATIFICACION */
+  async setRatified(query: SetRatifiedDto, code: string) {
+    const { desicion } = query;
+    // if (desicion != '1' ) {
+    //   throw new BadRequestException(`desicion must be a number (1 or 2)`);
+    // }
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: { code },
+    });
+    if (!enrollment)
+      throw new NotFoundException(`Enrollment by code: not found`);
+    try {
+      enrollment.ratified = desicion === '1' ? true : false;
+      await this.enrollmentRepository.save(enrollment);
+      return {
+        message: 'successful update',
+        error: '',
+        statusCode: 200,
+      };
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async getRatified(yearId: number) {
+    const totalMatriculados = await this.enrollmentRepository.count({
+      where: {
+        activityClassroom: {
+          phase: {
+            year: { id: yearId },
+          },
+        },
       },
     });
-    for (const enroll of enrollments) {
-      const codeGe = `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${enroll.student.id}`;
-      const uptEnrroll: Enrollment = {
-        id: enroll.id,
-        code: codeGe,
-        status: Status.DEFINITIVA,
-        activityClassroom: enroll.activityClassroom,
+    const totalRatificados = await this.enrollmentRepository.count({
+      where: {
+        activityClassroom: {
+          phase: {
+            year: { id: yearId },
+          },
+        },
+        ratified: true,
+      },
+    });
+    const totalNoRatificados = totalMatriculados - totalRatificados;
+    return {
+      totalMatriculados,
+      totalRatificados,
+      totalNoRatificados,
+      // Otros datos
+    };
+  }
+  /**script para crear un codigo para todos las matriculas */
+
+  // async scripting() {
+  //   const enrollments = await this.enrollmentRepository.find({
+  //     relations: {
+  //       activityClassroom: true,
+  //     },
+  //   });
+  //   for (const enroll of enrollments) {
+  //     const codeGe = `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${enroll.student.id}`;
+  //     const uptEnrroll: Enrollment = {
+  //       id: enroll.id,
+  //       code: codeGe,
+  //       status: Status.DEFINITIVA,
+
+  //       activityClassroom: enroll.activityClassroom,
+  //     };
+  //     await this.enrollmentRepository.save(uptEnrroll);
+  //   }
+  //   return enrollments;
+  // }
+
+  async getVacants(yearId: number, query: FindVacantsDto) {
+    const { campusId, levelId } = query;
+    const vacants = [];
+    const whereCondition: any = {
+      phase: {
+        year: {
+          id: yearId,
+        },
+      },
+    };
+    if (campusId) {
+      whereCondition.classroom = {
+        campusDetail: {
+          id: campusId,
+        },
       };
-      await this.enrollmentRepository.save(uptEnrroll);
     }
-    return enrollments;
+    if (levelId) {
+      whereCondition.grade = {
+        level: {
+          id: levelId,
+        },
+      };
+    }
+    try {
+      const activityClassrooms = await this.activityClassroomRepository.find({
+        where: whereCondition,
+      });
+
+      for (const ac of activityClassrooms) {
+        const enrrollmentRatified = await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              // id: activityClassrooms[0].id,
+              grade: {
+                // id: ac.grade.id,
+                position: ac.grade.position - 1,
+              },
+              section: ac.section,
+              phase: {
+                year: {
+                  id: yearId - 1,
+                },
+              },
+            },
+            ratified: true,
+          },
+        });
+
+        const currentEnrrollment = await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              // id: activityClassrooms[0].id,
+              grade: {
+                // id: ac.grade.id,
+                position: ac.grade.position,
+              },
+              section: ac.section,
+              phase: {
+                year: {
+                  id: yearId,
+                },
+              },
+            },
+          },
+        });
+
+        const rtAndEnr = enrrollmentRatified.filter((item1) =>
+          currentEnrrollment.some(
+            (item2) => item1.student.id === item2.student.id,
+          ),
+        );
+
+        /**menos los que ya estan matriculados, el calculo varia dependiendo del cronograma */
+        const capacity = ac.classroom.capacity;
+        const ratifieds = enrrollmentRatified.length - rtAndEnr.length;
+
+        /**temporal, la fórmula varia en funcion al cronograma */
+        const vacant = capacity - ratifieds - currentEnrrollment.length;
+        /**formula para cuando no tengan que ver los ratificados */
+        // const vacant = capacity - ratifieds - currentEnrrollment.length;
+        vacants.push({
+          gradeId: ac.grade.id,
+          grade: ac.grade.name,
+          section: ac.section,
+          level: ac.grade.level.name,
+          capacity,
+          ratified: ratifieds,
+          // enrollments: rtAndEnr.length,
+          enrollments: currentEnrrollment.length,
+          vacant,
+        });
+      }
+
+      const groupedData = vacants.reduce((acc, curr) => {
+        const {
+          gradeId,
+          grade,
+          level,
+          capacity,
+          ratified,
+          enrollments,
+          section,
+        } = curr;
+
+        if (!acc[gradeId]) {
+          acc[gradeId] = {
+            // gradeId,
+            grade,
+            level,
+            capacity: 0,
+            ratified: 0,
+            enrollments: 0,
+            vacant: 0,
+            sections: [],
+          };
+        }
+        acc[gradeId].sections.push({
+          section,
+          capacity,
+          ratified,
+          enrollments,
+          vacant: capacity - ratified - enrollments,
+        });
+        acc[gradeId].capacity += capacity;
+        acc[gradeId].ratified += ratified;
+        acc[gradeId].enrollments += enrollments;
+        acc[gradeId].vacant =
+          acc[gradeId].capacity -
+          acc[gradeId].ratified -
+          acc[gradeId].enrollments;
+
+        return acc;
+      }, {});
+
+      const result = Object.values(groupedData);
+
+      return result;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 }

@@ -1,25 +1,20 @@
-import {
-  IsDateString,
-  IsEnum,
-  IsNumber,
-  MinLength,
-  IsString,
-} from 'class-validator';
+import { IsDateString, IsEnum, IsNumber } from 'class-validator';
 import { IsDateBefore } from 'src/common/decorators/is-date-before.decorator';
 import { ApiProperty } from '@nestjs/swagger';
-import { ExistId } from 'src/common/validation/exist-id';
+
 import { TypeEnrollmentSchedule } from '../enum/type-enrollment_schedule';
+import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreateEnrollmentScheduleDto {
-  @ApiProperty({
-    example: 'Matricula para estudiantes',
-    description: 'Name of enrollment schedule',
-    nullable: false,
-    minLength: 4,
-  })
-  @IsString()
-  @MinLength(2)
-  name: string;
+  // @ApiProperty({
+  //   example: 'Matricula para estudiantes',
+  //   description: 'Name of enrollment schedule',
+  //   nullable: false,
+  //   minLength: 4,
+  // })
+  // @IsString()
+  // @MinLength(2)
+  // name: string;
 
   @ApiProperty({
     example: '2023-11-01',
@@ -39,13 +34,14 @@ export class CreateEnrollmentScheduleDto {
   endDate: Date;
 
   @ApiProperty({
-    example: 'MATRICULA',
-    description: 'type of phase, must be MATRICULA or ADMISION',
+    example: 'R',
+    description:
+      'tipo de cronograma, puede ser "R"(ratification), "O"(matricula de estudiantes antiguos), N (matricula de estudiantes nuevos)',
     nullable: false,
     enum: TypeEnrollmentSchedule,
   })
   @IsEnum(TypeEnrollmentSchedule, {
-    message: 'type value must be some values: [MATRICULA, ADMISION] ',
+    message: 'type value must be some values: [R, N, O] ',
   })
   type: TypeEnrollmentSchedule;
 

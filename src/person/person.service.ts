@@ -5,7 +5,15 @@ import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as sharp from 'sharp';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
-import { Between, In, IsNull, Not, Repository } from 'typeorm';
+import {
+  Between,
+  In,
+  IsNull,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm';
 import { Person } from './entities/person.entity';
 import { User } from 'src/user/entities/user.entity';
 import { CreatePersonCrmDto } from './dto/create-person-crm.dto';
@@ -13,6 +21,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { Family } from 'src/family/entities/family.entity';
+
+import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
+import { Attendance } from 'src/attendance/entities/attendance.entity';
+import { SearchByDateDto } from '../common/dto/search-by-date.dto';
+
 
 @Injectable()
 export class PersonService {
@@ -31,6 +44,12 @@ export class PersonService {
     private readonly relationShipRepository: Repository<Relationship>,
     @InjectRepository(Family)
     private readonly familypRepository: Repository<Family>,
+
+    @InjectRepository(EnrollmentSchedule)
+    private readonly enrollmentScheduleRepository: Repository<EnrollmentSchedule>,
+    @InjectRepository(Attendance)
+    private readonly attendanceRepository: Repository<Attendance>,
+
   ) {}
   create(createPersonDto: CreatePersonDto) {
     return 'This action adds a new person';
@@ -173,8 +192,8 @@ export class PersonService {
     }));
     return userDetails;
   }
-  findAll() {
-    return `This action returns all person`;
+  async findAll() {
+    return `Get all person`;
   }
   async findOneStudent(id: number) {
     const person = await this.personRepository.findOne({
@@ -207,7 +226,73 @@ export class PersonService {
     });
     return parents;
   }
-
+  //MODULO DE PADRES
+  async findStudentsByParents(user: User) {
+    const students = await this.familypRepository.find({
+      where: [
+        {
+          parentOneId: { id: user.person.id },
+          // student: { enrollment: { isActive: true } },
+        },
+        {
+          parentTwoId: { id: user.person.id },
+          // student: { enrollment: { isActive: true } },
+        },
+      ],
+      relations: {
+        student: true,
+      },
+    });
+    return students;
+  }
+  async findAttendanceByStudent(id: number, searchByDateDto: SearchByDateDto) {
+    if (isNaN(id)) {
+      throw new NotFoundException(`Id is not valid`);
+    }
+    const startDate = searchByDateDto.startDate;
+    const endDate = searchByDateDto.endDate;
+    const attendance = await this.attendanceRepository
+      .createQueryBuilder('attendance')
+      .where('studentId = :id', { id })
+      .andWhere('attendance.arrivalDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .getMany();
+    attendance.forEach((entry) => {
+      const date = new Date(entry.arrivalTime);
+      date.setHours(date.getHours() - 5);
+      const newTime = date.toISOString();
+      (entry as any).time = newTime.split('T')[1].split('.')[0];
+    });
+    return attendance;
+  }
+  async findProfileUser(user: User) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const enrollShedule = await this.enrollmentScheduleRepository.findOne({
+      where: {
+        startDate: LessThanOrEqual(today),
+        endDate: MoreThanOrEqual(today),
+      },
+    });
+    return {
+      user: {
+        email: user.email,
+        name: user.person.name,
+        lastname: user.person.lastname,
+        mLastname: user.person.mLastname,
+      },
+      enrollmentShedule: enrollShedule
+        ? {
+            type: enrollShedule.type,
+            startDate: enrollShedule.startDate,
+            endDate: enrollShedule.endDate,
+            year: enrollShedule.year.name,
+          }
+        : undefined,
+    };
+  }
   async update(id: number, updatePersonDto: UpdatePersonDto) {
     const person = await this.personRepository.preload({
       id: id,

@@ -64,7 +64,7 @@ export class AuthService {
     const tokens = await this.getJwtTokens({ email: user.email, sub: user.id });
     await this.updateRefreshToken(user.id, tokens.refreshToken);
     const { id, password, roles, person, ...result } = user;
-    let permissions = [];
+    const permissions = [];
 
     roles.forEach((role) => {
       role.permissions.map((item) => {
@@ -75,6 +75,7 @@ export class AuthService {
     const menu = this.generateMenu(permissions);
     return {
       ...result,
+      isWorker: roles.length > 0,
       permissions,
       token: this.getJwtToken({ email: user.email, sub: user.id }),
       tokens,

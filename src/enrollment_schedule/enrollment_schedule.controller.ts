@@ -7,12 +7,15 @@ import {
   Param,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { EnrollmentScheduleService } from './enrollment_schedule.service';
 import { CreateEnrollmentScheduleDto } from './dto/create-enrollment_schedule.dto';
 import { UpdateEnrollmentScheduleDto } from './dto/update-enrollment_schedule.dto';
 import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { EnrollmentSchedule } from './entities/enrollment_schedule.entity';
+import { FindCronogramasDto } from './dto/find-schedule.dto';
+import { TypeEnrollmentSchedule } from './enum/type-enrollment_schedule';
 @ApiTags('Enrollment Schedule')
 @Controller('enrollment-schedule')
 export class EnrollmentScheduleController {
@@ -27,39 +30,63 @@ export class EnrollmentScheduleController {
 
   @Get()
   @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Fecha de inicio del cronograma',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    description: 'Fecha final del cronograma',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: TypeEnrollmentSchedule,
+    description: 'Tipo de cronograma',
+  })
+  @ApiQuery({
+    name: 'currentDate',
+    required: false,
+    type: String,
+
+    description: 'Fecha actual para filtrar cronogramas en curso',
+  })
+  @ApiQuery({
     name: 'yearId',
-    required: true,
-    description:
-      'El término de búsqueda utilizado para encontrar cronograma de matricula, puedes enviar el id del año ',
-    type: Number,
+    required: false,
+    type: String,
+    description: 'id del año',
   })
   @ApiResponse({
     status: 200,
     description: 'Detail EnrollmentSchedule',
     type: EnrollmentSchedule,
   })
-  findAll(@Query('yearId') yearId: number) {
-    return this.enrollmentScheduleService.findAll(yearId);
+  findAll(@Query() query: FindCronogramasDto) {
+    return this.enrollmentScheduleService.findAll(query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.enrollmentScheduleService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.enrollmentScheduleService.findOne(id);
   }
 
   @Patch(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateEnrollmentScheduleDto: UpdateEnrollmentScheduleDto,
   ) {
     return this.enrollmentScheduleService.update(
-      +id,
+      id,
       updateEnrollmentScheduleDto,
     );
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.enrollmentScheduleService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.enrollmentScheduleService.remove(id);
   }
 }

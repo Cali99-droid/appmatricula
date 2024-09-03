@@ -110,4 +110,13 @@ export class Person {
   familyOne?: Family;
   @OneToMany(() => Family, (family) => family.parentTwoId)
   familyTwo?: Family;
+
+  @OneToMany(() => Student, (student) => student.respEnrollment)
+  respEnrollments?: Family;
+
+  @OneToMany(() => Student, (student) => student.respEconomic)
+  respEconomics?: Family;
+
+  @OneToMany(() => Student, (student) => student.respAcademic)
+  respAcademics?: Family;
 }

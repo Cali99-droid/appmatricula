@@ -108,7 +108,24 @@ export class UserService {
       }
     });
   }
+  async findAssig(email: string) {
+    // Obtener el usuario con las relaciones necesarias
+    const user = await this.userRepository.findOneOrFail({
+      where: { email },
+      relations: {
+        assignments: {
+          campusDetail: true, // Cargar la relación del campusDetail
+        },
+      },
+    });
 
+    // Extraer solo los IDs de campusDetail de las asignaciones del usuario
+    const campusDetailIds = user.assignments.map(
+      (assignment) => assignment.campusDetail.id,
+    );
+
+    return campusDetailIds;
+  }
   async findOne(id: number) {
     try {
       const user = await this.userRepository.findOneOrFail({

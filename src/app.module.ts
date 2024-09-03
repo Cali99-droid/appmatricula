@@ -37,6 +37,7 @@ import { RelationshipModule } from './relationship/relationship.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { RoleModule } from './role/role.module';
 import { EnrollmentScheduleModule } from './enrollment_schedule/enrollment_schedule.module';
+import { EmailsModule } from './emails/emails.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { EnrollmentScheduleModule } from './enrollment_schedule/enrollment_sched
     PermissionsModule,
     RoleModule,
     EnrollmentScheduleModule,
+    EmailsModule,
   ],
   providers: [ExistIdConstraint, AuthService],
 })
@@ -108,6 +110,10 @@ export class AppModule implements NestModule {
           method: RequestMethod.GET,
         },
         {
+          path: '/emails/crm/:id',
+          method: RequestMethod.PUT,
+        },
+        {
           path: '/docs/download-carnets/:id',
           method: RequestMethod.GET,
         },
@@ -125,8 +131,8 @@ export class AppModule implements NestModule {
           method: RequestMethod.GET,
         },
         {
-          path: '/family/migrate',
-          method: RequestMethod.GET,
+          path: '/enrollment/ratified/:code',
+          method: RequestMethod.PUT,
         },
       )
       .forRoutes('/*');
