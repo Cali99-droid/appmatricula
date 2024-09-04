@@ -212,16 +212,16 @@ export class AttendanceService {
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
 
-           if (
-             !(
-               currentTime >= initAttendanceTime &&
-               currentTime <= finishAttendanceTime
-             )
-           ) {
-             throw new BadRequestException(
+          if (
+            !(
+              currentTime >= initAttendanceTime &&
+              currentTime <= finishAttendanceTime
+            )
+          ) {
+            throw new BadRequestException(
               `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
             );
-           }
+          }
 
           //**Mantener esto*/
           condition =
@@ -326,16 +326,16 @@ export class AttendanceService {
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
 
-         if (
-           !(
+        if (
+          !(
             currentTime >= initAttendanceTime &&
-             currentTime <= finishAttendanceTime
+            currentTime <= finishAttendanceTime
           )
-         ) {
-           throw new BadRequestException(
+        ) {
+          throw new BadRequestException(
             `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
-           );
-         }
+          );
+        }
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
           condition =
@@ -370,37 +370,37 @@ export class AttendanceService {
         classroom: classroomInfo,
         condition,
       };
-      // const family = await this.familyRepository.findOne({
-      //   where: { student: { id: enrollment.student.id } },
-      //   relations: {
-      //     student: true,
-      //     parentOneId: { user: true },
-      //     parentTwoId: { user: true },
-      //   },
-      // });
-      // if (family) {
-      //   const { parentOneId, parentTwoId, student } = family;
-      //   if (parentOneId && parentOneId.user) {
-      //     this.sendEmail(
-      //       parentOneId,
-      //       student[0],
-      //       currentTime,
-      //       attendance.arrivalDate,
-      //       shift,
-      //       condition,
-      //     );
-      //   }
-      //   if (parentTwoId && parentTwoId.user) {
-      //     this.sendEmail(
-      //       parentTwoId,
-      //       student[0],
-      //       currentTime,
-      //       attendance.arrivalDate,
-      //       shift,
-      //       condition,
-      //     );
-      //   }
-      // }
+      const family = await this.familyRepository.findOne({
+        where: { student: { id: enrollment.student.id } },
+        relations: {
+          student: true,
+          parentOneId: { user: true },
+          parentTwoId: { user: true },
+        },
+      });
+      if (family) {
+        const { parentOneId, parentTwoId, student } = family;
+        if (parentOneId && parentOneId.user) {
+          this.sendEmail(
+            parentOneId,
+            student[0],
+            currentTime,
+            attendance.arrivalDate,
+            shift,
+            condition,
+          );
+        }
+        if (parentTwoId && parentTwoId.user) {
+          this.sendEmail(
+            parentTwoId,
+            student[0],
+            currentTime,
+            attendance.arrivalDate,
+            shift,
+            condition,
+          );
+        }
+      }
 
       await this.attendanceRepository.save(attendance);
       return dataStudent;
@@ -505,10 +505,8 @@ export class AttendanceService {
 
       // Formatear datos finales de asistencias
       const formatAttendances = attendances.map((attendance) => {
-
         const { student, activityClassroom, arrivalTime, condition } =
           attendance;
-
 
         const personData = {
           name: student.person.name,
