@@ -19,6 +19,7 @@ import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
 import { SearchEnrolledDto } from './dto/searchEnrollmet-dto';
 import { SetRatifiedDto } from './dto/set-ratified.dto';
 import { FindVacantsDto } from './dto/find-vacants.dto';
+import { CreateAscentDto } from './dto/create-ascent.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -157,5 +158,17 @@ export class EnrollmentController {
     @Query() query: FindVacantsDto,
   ) {
     return this.enrollmentService.getVacants(yearId, query);
+  }
+
+  /**Ascents */
+
+  @Post('config/ascent')
+  createAscent(@Body() createAscentDto: CreateAscentDto) {
+    return this.enrollmentService.createAscent(createAscentDto);
+  }
+
+  @Get('config/ascent/:yearId')
+  getAscent(@Param('yearId', ParseIntPipe) yearId: number) {
+    return this.enrollmentService.getAscent(yearId);
   }
 }

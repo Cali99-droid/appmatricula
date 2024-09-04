@@ -21,12 +21,16 @@ import { TypePhase } from 'src/phase/enum/type-phase.enum';
 import { StudentService } from 'src/student/student.service';
 import { SetRatifiedDto } from './dto/set-ratified.dto';
 import { FindVacantsDto } from './dto/find-vacants.dto';
+import { CreateAscentDto } from './dto/create-ascent.dto';
+import { Ascent } from './entities/ascent.entity';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
   constructor(
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
+    @InjectRepository(Ascent)
+    private readonly ascentRepository: Repository<Ascent>,
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
     @InjectRepository(Student)
@@ -496,6 +500,36 @@ export class EnrollmentService {
       const result = Object.values(groupedData);
 
       return result;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  /**Configuracion de ascenso */
+  async createAscent(createAscentDto: CreateAscentDto) {
+    /**Validaciones */
+    try {
+      const ascent = this.ascentRepository.create({
+        originId: { id: createAscentDto.originId },
+        destinationId: { id: createAscentDto.destinationId },
+        year: { id: createAscentDto.yearId },
+      });
+
+      await this.ascentRepository.save(ascent);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+  async getAscent(yearId: number) {
+    try {
+      const ascents = await this.ascentRepository.find({
+        where: {
+          year: {
+            id: yearId,
+          },
+        },
+      });
+      return ascents;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
