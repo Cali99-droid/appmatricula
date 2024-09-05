@@ -364,7 +364,7 @@ export class ActivityClassroomService {
 
       return data;
     } catch (error) {
-      handleDBExceptions(this.logger, error);
+      handleDBExceptions(error, this.logger);
     }
   }
 
