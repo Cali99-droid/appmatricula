@@ -367,43 +367,42 @@ export class EnrollmentService {
       let vacant;
       const activityClassroom = await this.activityClassroomRepository.findOne({
         where: {
-          id: 67,
+          id: 151,
         },
       });
       const configAscent = await this.ascentRepository.findOne({
         where: {
-          originId: { id: activityClassroom.id },
+          destinationId: { id: activityClassroom.id },
           // year: { id: ac.yearId },
         },
       });
 
       if (configAscent) {
         /**calcular con el aula destino */
-        const configAscent = await this.ascentRepository.findOne({
-          where: {
-            originId: { id: activityClassroom.id },
-            year: { id: activityClassroom.phase.year.id },
-          },
-        });
-        const ac = configAscent.destinationId;
+        // const configAscent = await this.ascentRepository.findOne({
+        //   where: {
+        //     originId: { id: activityClassroom.id },
+        //     year: { id: activityClassroom.phase.year.id },
+        //   },
+        // });
+        const ac = configAscent.originId;
         const enrrollmentRatified = await this.enrollmentRepository.find({
           where: {
-            activityClassroom: {
-              grade: { position: ac.grade.position - 1 },
-              section: ac.section,
-              phase: {
-                year: {
-                  name: (parseInt(ac.phase.year.name) - 1).toString(),
-                },
-              },
-            },
+            activityClassroom: ac,
             ratified: true,
           },
         });
 
         const capacity = activityClassroom.classroom.capacity;
         const ratifieds = enrrollmentRatified.length;
-        vacant = capacity - ratifieds;
+        const vacants = capacity - ratifieds;
+        vacant = {
+          origin: ac.grade.name + ' ' + ac.section,
+          grade: activityClassroom.grade.name + ' ' + activityClassroom.section,
+          capacity,
+          ratifieds,
+          vacants,
+        };
       } else {
         /**si no hay configuracion adicional */
         const enrrollmentRatified = await this.enrollmentRepository.find({
@@ -422,10 +421,18 @@ export class EnrollmentService {
             ratified: true,
           },
         });
+        const acor = enrrollmentRatified[0].activityClassroom;
 
         const capacity = activityClassroom.classroom.capacity;
         const ratifieds = enrrollmentRatified.length;
-        vacant = capacity - ratifieds;
+        const vacants = capacity - ratifieds;
+        vacant = {
+          origin: acor.grade.name + ' ' + acor.section,
+          grade: activityClassroom.grade.name + ' ' + activityClassroom.section,
+          capacity,
+          ratifieds,
+          vacants,
+        };
       }
 
       return vacant;

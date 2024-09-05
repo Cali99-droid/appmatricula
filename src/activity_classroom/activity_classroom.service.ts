@@ -282,13 +282,14 @@ export class ActivityClassroomService {
         //   assignmentClassroom: true,
         // },
         order: {
-          grade: { name: 'ASC' },
-          section: 'ASC',
+          // grade: { name: 'ASC' },
+          // section: 'ASC',
         },
       });
       const formattedData = classrooms.map((c) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { level, ...grade } = c.grade;
+        const { campusDetail } = c.classroom;
         return {
           id: c.id,
           grade: grade,
@@ -297,6 +298,7 @@ export class ActivityClassroomService {
           year: c.phase.year.name,
           yearId: c.phase.year.id,
           classroom: c.classroom.code,
+          campusId: campusDetail.id,
           capacity: c.classroom.capacity,
           level: c.grade.level.name,
           modality: c.classroom.modality,
@@ -319,14 +321,31 @@ export class ActivityClassroomService {
               },
             };
           } else {
-            const nextYearClassroom =
-              await this.activityClassroomRepository.findOne({
-                where: {
-                  grade: { position: ac.grade.position + 1 },
-                  section: ac.section,
-                  phase: { year: { name: (parseInt(ac.year) + 1).toString() } },
-                },
-              });
+            let nextYearClassroom;
+            nextYearClassroom = await this.activityClassroomRepository.findOne({
+              where: {
+                grade: { position: ac.grade.position + 1 },
+                section: ac.section,
+                phase: { year: { name: (parseInt(ac.year) + 1).toString() } },
+              },
+            });
+
+            const campusNext = nextYearClassroom.classroom.campusDetail.id;
+            const campusAct = ac.campusId;
+
+            if (campusNext !== campusAct) {
+              console.log('son diferentes', ac.id);
+              nextYearClassroom =
+                await this.activityClassroomRepository.findOne({
+                  where: {
+                    grade: { position: ac.grade.position + 1 },
+                    classroom: { campusDetail: { id: campusAct } },
+                    phase: {
+                      year: { name: (parseInt(ac.year) + 1).toString() },
+                    },
+                  },
+                });
+            }
 
             return {
               ...ac,
