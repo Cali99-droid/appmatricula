@@ -10,19 +10,19 @@ export class Ascent {
   id: number;
 
   @ManyToOne(() => ActivityClassroom, (ac) => ac.origin, {
-    // eager: true,
+    eager: true,
   })
   @JoinColumn({ name: 'originId' })
   originId?: ActivityClassroom;
 
   @ManyToOne(() => ActivityClassroom, (ac) => ac.destination, {
-    // eager: true,
+    eager: true,
   })
   @JoinColumn({ name: 'destinationId' })
   destinationId?: ActivityClassroom;
 
   @ManyToOne(() => Year, (year) => year.ascent, {
-    eager: true,
+    // eager: true,
   })
   @JoinColumn({ name: 'yearId' })
   year?: Year;

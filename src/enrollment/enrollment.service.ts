@@ -362,6 +362,78 @@ export class EnrollmentService {
   //   return enrollments;
   // }
 
+  async getVacantsExample() {
+    try {
+      let vacant;
+      const activityClassroom = await this.activityClassroomRepository.findOne({
+        where: {
+          id: 67,
+        },
+      });
+      const configAscent = await this.ascentRepository.findOne({
+        where: {
+          originId: { id: activityClassroom.id },
+          // year: { id: ac.yearId },
+        },
+      });
+
+      if (configAscent) {
+        /**calcular con el aula destino */
+        const configAscent = await this.ascentRepository.findOne({
+          where: {
+            originId: { id: activityClassroom.id },
+            year: { id: activityClassroom.phase.year.id },
+          },
+        });
+        const ac = configAscent.destinationId;
+        const enrrollmentRatified = await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              grade: { position: ac.grade.position - 1 },
+              section: ac.section,
+              phase: {
+                year: {
+                  name: (parseInt(ac.phase.year.name) - 1).toString(),
+                },
+              },
+            },
+            ratified: true,
+          },
+        });
+
+        const capacity = activityClassroom.classroom.capacity;
+        const ratifieds = enrrollmentRatified.length;
+        vacant = capacity - ratifieds;
+      } else {
+        /**si no hay configuracion adicional */
+        const enrrollmentRatified = await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              grade: { position: activityClassroom.grade.position - 1 },
+              section: activityClassroom.section,
+              phase: {
+                year: {
+                  name: (
+                    parseInt(activityClassroom.phase.year.name) - 1
+                  ).toString(),
+                },
+              },
+            },
+            ratified: true,
+          },
+        });
+
+        const capacity = activityClassroom.classroom.capacity;
+        const ratifieds = enrrollmentRatified.length;
+        vacant = capacity - ratifieds;
+      }
+
+      return vacant;
+    } catch (error) {
+      handleDBExceptions(this.logger, error);
+    }
+  }
+
   async getVacants(yearId: number, query: FindVacantsDto) {
     const { campusId, levelId } = query;
     const vacants = [];
@@ -508,6 +580,7 @@ export class EnrollmentService {
   /**Configuracion de ascenso */
   async createAscent(createAscentDto: CreateAscentDto) {
     /**Validaciones */
+    //TODO validar jerarquia */
     try {
       const ascent = this.ascentRepository.create({
         originId: { id: createAscentDto.originId },
