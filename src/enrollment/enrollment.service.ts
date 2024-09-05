@@ -21,12 +21,16 @@ import { TypePhase } from 'src/phase/enum/type-phase.enum';
 import { StudentService } from 'src/student/student.service';
 import { SetRatifiedDto } from './dto/set-ratified.dto';
 import { FindVacantsDto } from './dto/find-vacants.dto';
+import { CreateAscentDto } from './dto/create-ascent.dto';
+import { Ascent } from './entities/ascent.entity';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
   constructor(
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
+    @InjectRepository(Ascent)
+    private readonly ascentRepository: Repository<Ascent>,
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
     @InjectRepository(Student)
@@ -358,6 +362,78 @@ export class EnrollmentService {
   //   return enrollments;
   // }
 
+  async getVacantsExample() {
+    try {
+      let vacant;
+      const activityClassroom = await this.activityClassroomRepository.findOne({
+        where: {
+          id: 67,
+        },
+      });
+      const configAscent = await this.ascentRepository.findOne({
+        where: {
+          originId: { id: activityClassroom.id },
+          // year: { id: ac.yearId },
+        },
+      });
+
+      if (configAscent) {
+        /**calcular con el aula destino */
+        const configAscent = await this.ascentRepository.findOne({
+          where: {
+            originId: { id: activityClassroom.id },
+            year: { id: activityClassroom.phase.year.id },
+          },
+        });
+        const ac = configAscent.destinationId;
+        const enrrollmentRatified = await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              grade: { position: ac.grade.position - 1 },
+              section: ac.section,
+              phase: {
+                year: {
+                  name: (parseInt(ac.phase.year.name) - 1).toString(),
+                },
+              },
+            },
+            ratified: true,
+          },
+        });
+
+        const capacity = activityClassroom.classroom.capacity;
+        const ratifieds = enrrollmentRatified.length;
+        vacant = capacity - ratifieds;
+      } else {
+        /**si no hay configuracion adicional */
+        const enrrollmentRatified = await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              grade: { position: activityClassroom.grade.position - 1 },
+              section: activityClassroom.section,
+              phase: {
+                year: {
+                  name: (
+                    parseInt(activityClassroom.phase.year.name) - 1
+                  ).toString(),
+                },
+              },
+            },
+            ratified: true,
+          },
+        });
+
+        const capacity = activityClassroom.classroom.capacity;
+        const ratifieds = enrrollmentRatified.length;
+        vacant = capacity - ratifieds;
+      }
+
+      return vacant;
+    } catch (error) {
+      handleDBExceptions(this.logger, error);
+    }
+  }
+
   async getVacants(yearId: number, query: FindVacantsDto) {
     const { campusId, levelId } = query;
     const vacants = [];
@@ -496,6 +572,37 @@ export class EnrollmentService {
       const result = Object.values(groupedData);
 
       return result;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  /**Configuracion de ascenso */
+  async createAscent(createAscentDto: CreateAscentDto) {
+    /**Validaciones */
+    //TODO validar jerarquia */
+    try {
+      const ascent = this.ascentRepository.create({
+        originId: { id: createAscentDto.originId },
+        destinationId: { id: createAscentDto.destinationId },
+        year: { id: createAscentDto.yearId },
+      });
+
+      await this.ascentRepository.save(ascent);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+  async getAscent(yearId: number) {
+    try {
+      const ascents = await this.ascentRepository.find({
+        where: {
+          year: {
+            id: yearId,
+          },
+        },
+      });
+      return ascents;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
