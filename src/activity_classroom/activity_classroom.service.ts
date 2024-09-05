@@ -321,31 +321,42 @@ export class ActivityClassroomService {
               },
             };
           } else {
-            let nextYearClassroom;
-            nextYearClassroom = await this.activityClassroomRepository.findOne({
-              where: {
-                grade: { position: ac.grade.position + 1 },
-                section: ac.section,
-                phase: { year: { name: (parseInt(ac.year) + 1).toString() } },
-              },
-            });
+            // let nextYearClassroom;
+            // nextYearClassroom = await this.activityClassroomRepository.findOne({
+            //   where: {
+            //     grade: { position: ac.grade.position + 1 },
+            //     section: ac.section,
+            //     phase: { year: { name: (parseInt(ac.year) + 1).toString() } },
+            //   },
+            // });
 
-            const campusNext = nextYearClassroom.classroom.campusDetail.id;
-            const campusAct = ac.campusId;
+            // const campusNext = nextYearClassroom
+            //   ? nextYearClassroom.classroom.campusDetail.id
+            //   : 0;
+            // const campusAct = ac.campusId;
 
-            if (campusNext !== campusAct) {
-              console.log('son diferentes', ac.id);
-              nextYearClassroom =
-                await this.activityClassroomRepository.findOne({
-                  where: {
-                    grade: { position: ac.grade.position + 1 },
-                    classroom: { campusDetail: { id: campusAct } },
-                    phase: {
-                      year: { name: (parseInt(ac.year) + 1).toString() },
-                    },
-                  },
-                });
-            }
+            // if (campusNext !== campusAct) {
+            //   console.log('son diferentes', ac.id);
+            //   nextYearClassroom =
+            //     await this.activityClassroomRepository.findOne({
+            //       where: {
+            //         grade: { position: ac.grade.position + 1 },
+            //         classroom: { campusDetail: { id: campusAct } },
+            //         phase: {
+            //           year: { name: (parseInt(ac.year) + 1).toString() },
+            //         },
+            //       },
+            //     });
+            // }
+
+            const nextYearClassroom =
+              await this.activityClassroomRepository.findOne({
+                where: {
+                  grade: { position: ac.grade.position + 1 },
+                  section: ac.section,
+                  phase: { year: { name: (parseInt(ac.year) + 1).toString() } },
+                },
+              });
 
             return {
               ...ac,
