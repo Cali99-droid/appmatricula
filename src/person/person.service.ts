@@ -153,11 +153,12 @@ export class PersonService {
         crmGHLId: userCreated.crmGHLId,
         name: data.name,
         lastName: `${data.lastName} ${data.mLastname}`,
-        grade: getParent.student[0].enrollment[0].activityClassroom.grade.name,
-        level:
-          getParent.student[0].enrollment[0].activityClassroom.grade.level.name,
         year: getParent.student[0].enrollment[0].activityClassroom.phase.year
           .name,
+        level:
+          getParent.student[0].enrollment[0].activityClassroom.grade.level.name,
+        grade: getParent.student[0].enrollment[0].activityClassroom.grade.name,
+        section: getParent.student[0].enrollment[0].activityClassroom.section,
       };
     } catch (error) {
       handleDBExceptions(error, this.logger);
