@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform, TransformFnParams } from 'class-transformer';
 
 import { IsNotEmpty, IsString, Length, Matches } from 'class-validator';
+import { TypeDoc } from '../enum/typeDoc.enum';
 // import { Gender } from 'src/common/enum/gender.enum';
 function ToUpperCase(value: string): string {
   return value.toUpperCase();
@@ -14,15 +15,24 @@ export class CreatePersonCrmDto {
   @IsNotEmpty()
   @IsString()
   crmGHLId: string;
+
+  @ApiProperty({
+    example: 'DNI',
+    description: 'Gender value must be some values: [DNI, CE] ',
+  })
+  @IsNotEmpty()
+  @IsString()
+  typeDoc: TypeDoc;
+
   @ApiProperty({
     example: '71562526',
     description: 'person DNI',
     uniqueItems: true,
   })
   @IsString()
-  @Length(8, 8)
-  @Matches(/^\d+$/, {
-    message: 'DNI debe ser una cadena numérica',
+  @Length(8, 12)
+  @Matches(/^[a-zA-Z0-9]+$/, {
+    message: 'El docNumber debe contener solo caracteres alfanuméricos',
   })
   docNumber: string;
 
