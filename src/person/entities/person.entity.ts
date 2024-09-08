@@ -12,6 +12,7 @@ import { User } from '../../user/entities/user.entity';
 import { Gender } from 'src/common/enum/gender.enum';
 import { FamilyRole } from 'src/common/enum/family-role.enum';
 import { Family } from 'src/family/entities/family.entity';
+import { TypeDoc } from '../enum/typeDoc.enum';
 //test
 
 @Entity()
@@ -21,12 +22,19 @@ export class Person {
   id: number;
 
   @ApiProperty({
+    example: 'DNI',
+    description: 'Type Doct, must be DNI or CE',
+  })
+  @Column({ type: 'enum', enum: TypeDoc })
+  typeDoc: TypeDoc;
+
+  @ApiProperty({
     example: '71562526',
     description: 'person DNI',
     uniqueItems: true,
   })
   @Column('varchar', {
-    length: 8,
+    length: 12,
     unique: true,
     nullable: true,
   })
