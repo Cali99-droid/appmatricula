@@ -9,6 +9,9 @@ import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/student/entities/student.entity';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class FamilyService {
@@ -22,6 +25,8 @@ export class FamilyService {
     private readonly familyRepository: Repository<Family>,
     @InjectRepository(Relationship)
     private readonly relationShipRepository: Repository<Relationship>,
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
   ) {}
 
   // async createParents(dataParentArrayDto: DataParentArrayDto) {
@@ -229,6 +234,41 @@ export class FamilyService {
     });
     return family;
   }
+
+  async getCites(idDistrict: string) {
+    //OBTENER TODOS LOS DISTRITOS
+    const url = this.configService.get('API_ADMISION');
+    try {
+      const dataDistrict = await firstValueFrom(
+        this.httpService.get(`${url}/cities/district`),
+      );
+      // const dataDistricts = dataDistrict.data;
+      const district = dataDistrict.data.data.find(
+        (district: any) => district.id === idDistrict,
+      );
+      //OBTENER TODOS LAS PROVINCIAS
+      const dataProvince = await firstValueFrom(
+        this.httpService.get(`${url}/cities/province`),
+      );
+      const province = dataProvince.data.data.find(
+        (province: any) => province.id === district.province_id,
+      );
+      //OBTENER TODOS LAS REGION
+      const dataRegion = await firstValueFrom(
+        this.httpService.get(`${url}/cities/region`),
+      );
+      const region = dataRegion.data.data.find(
+        (region: any) => region.id === province.region_id,
+      );
+      return {
+        region: region.name,
+        province: province.name,
+        district: district.name,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
   async findOne(id: number) {
     const family = await this.familyRepository.findOne({
       where: { id: id },
@@ -239,6 +279,14 @@ export class FamilyService {
       },
     });
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
+    if (family.district) {
+      const { district, ...rest } = family;
+      const cities = await this.getCites(district);
+      return {
+        ...rest,
+        ...cities,
+      };
+    }
     return family;
   }
 
