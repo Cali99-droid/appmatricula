@@ -35,12 +35,12 @@ export class CreateFamilyDto {
   parentTwoId: number;
 
   @ApiProperty({
-    example: '121',
-    description: 'privince code',
+    example: '230301',
+    description: 'district code',
   })
   @IsString()
   @IsOptional()
-  provinceCode?: string;
+  district?: string;
 
   @ApiProperty({
     example: '121',
