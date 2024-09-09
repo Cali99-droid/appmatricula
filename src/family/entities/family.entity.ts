@@ -39,7 +39,7 @@ export class Family {
   @Column('varchar', {
     nullable: true,
   })
-  provinceCode: string;
+  district: string;
 
   @ApiProperty()
   @Column('varchar', {
