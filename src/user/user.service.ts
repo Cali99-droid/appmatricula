@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { Repository, Not, IsNull } from 'typeorm';
 import { Role } from 'src/role/entities/role.entity';
 import { AddRoleDto } from './dto/add-role.dto';
 import * as bcrypt from 'bcrypt';
@@ -283,5 +283,43 @@ export class UserService {
     } catch (error) {
       this.logger.error(error);
     }
+  }
+
+  async reportUsers() {
+    const [parents, workers, parentsWithoutFamily] = await Promise.all([
+      // OBTENEMOS TODOS LOS PADRES REGISTRADOS POR EL FORMULARIO DEL CRM
+      this.userRepository.find({
+        where: {
+          crmGHLId: Not(IsNull()),
+        },
+      }),
+      //OBTENEMOS A TODOS LOS USUARIOS TRABAJADORES
+      this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.person', 'person')
+        .leftJoinAndSelect('person.familyOne', 'familyOne')
+        .leftJoinAndSelect('person.familyTwo', 'familyTwo')
+        .where('familyOne.id IS NULL')
+        .andWhere('familyTwo.id IS NULL')
+        .andWhere('user.crmGHLId IS NULL')
+        .getMany(),
+      //OBTENEMOS A TODOS LOS PADRES QUE NO TIENEN FAMILIA
+      this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.person', 'person')
+        .leftJoinAndSelect('person.familyOne', 'familyOne')
+        .leftJoinAndSelect('person.familyTwo', 'familyTwo')
+        .where('familyOne.id IS NULL')
+        .andWhere('familyTwo.id IS NULL')
+        .andWhere('user.crmGHLId IS NOT NULL')
+        .getMany(),
+    ]);
+    return {
+      totalUsers: workers.length + parents.length,
+      totalworkers: workers.length,
+      totalParents: parents.length,
+      parentsWithFamily: parents.length - parentsWithoutFamily.length,
+      parentsWithoutFamily: parentsWithoutFamily.length,
+    };
   }
 }
