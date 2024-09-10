@@ -34,7 +34,7 @@ export class CreatePersonCrmDto {
   @Matches(/^[a-zA-Z0-9]+$/, {
     message: 'El docNumber debe contener solo caracteres alfanuméricos',
   })
-  // @Transform(({ value }) => value.trim())
+  @Transform(({ value }) => value.trim())
   docNumber: string;
 
   @ApiProperty({
