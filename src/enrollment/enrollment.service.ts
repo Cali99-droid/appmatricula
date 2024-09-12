@@ -362,7 +362,7 @@ export class EnrollmentService {
   //   return enrollments;
   // }
 
-  async getVacantsExample() {
+  async getVacantsTest() {
     try {
       let vacant;
       const activityClassroom = await this.activityClassroomRepository.findOne({
@@ -589,13 +589,25 @@ export class EnrollmentService {
     /**Validaciones */
     //TODO validar jerarquia */
     try {
-      const ascent = this.ascentRepository.create({
-        originId: { id: createAscentDto.originId },
-        destinationId: { id: createAscentDto.destinationId },
-        year: { id: createAscentDto.yearId },
-      });
+      await this.ascentRepository
+        .createQueryBuilder()
+        .delete()
+        .from('ascent')
+        .where('originId = :id', { id: createAscentDto.originId })
+        .execute();
 
-      await this.ascentRepository.save(ascent);
+      const promises = createAscentDto.destinations.map(
+        async (destinationId) => {
+          const ascent = this.ascentRepository.create({
+            originId: { id: createAscentDto.originId },
+            destinationId: { id: destinationId },
+            year: { id: createAscentDto.yearId },
+          });
+
+          await this.ascentRepository.save(ascent);
+        },
+      );
+      await Promise.all(promises);
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
@@ -610,6 +622,49 @@ export class EnrollmentService {
         },
       });
       return ascents;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+  /**obtener grado y seccion permitido para el usario */
+  async getAvailableClassrooms(studentId: number) {
+    const currentEnrrollment = await this.enrollmentRepository
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.activityClassroom', 'ac')
+      .leftJoinAndSelect('ac.grade', 'grade')
+      .where('enrollment.studentId = :id', { id: studentId })
+      .orderBy('enrollment.id', 'DESC')
+      .getOne();
+
+    if (!currentEnrrollment) {
+      throw new NotFoundException('Dont exists this fact');
+    }
+    try {
+      const configAscent = await this.ascentRepository.find({
+        where: {
+          originId: { id: currentEnrrollment.activityClassroom.id },
+        },
+      });
+
+      if (configAscent.length > 0) {
+        return configAscent.map((c) => {
+          const { grade, section } = c.destinationId;
+          return { grade: grade.name + ' ' + section };
+        });
+      }
+
+      const availableClassrooms =
+        await this.activityClassroomRepository.findOne({
+          where: {
+            section: currentEnrrollment.activityClassroom.section,
+            grade: {
+              position: currentEnrrollment.activityClassroom.grade.position + 1,
+            },
+          },
+        });
+
+      const { grade, section } = availableClassrooms;
+      return [{ grade: grade.name + ' ' + section }];
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }

@@ -14,7 +14,13 @@ import { EnrollmentService } from './enrollment.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
-import { ApiOkResponse, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
 import { SearchEnrolledDto } from './dto/searchEnrollmet-dto';
 import { SetRatifiedDto } from './dto/set-ratified.dto';
@@ -157,7 +163,7 @@ export class EnrollmentController {
     @Param('yearId', ParseIntPipe) yearId: number,
     @Query() query: FindVacantsDto,
   ) {
-    return this.enrollmentService.getVacantsExample();
+    // return this.enrollmentService.getVacantsTest();
     return this.enrollmentService.getVacants(yearId, query);
   }
 
@@ -168,8 +174,22 @@ export class EnrollmentController {
     return this.enrollmentService.createAscent(createAscentDto);
   }
 
-  @Get('config/ascent/:yearId')
-  getAscent(@Param('yearId', ParseIntPipe) yearId: number) {
-    return this.enrollmentService.getAscent(yearId);
+  // @Get('config/ascent/:yearId')
+  // getAscent(@Param('yearId', ParseIntPipe) yearId: number) {
+  //   return this.enrollmentService.getAscent(yearId);
+  // }
+
+  /**Proceso de matricula */
+  @Get('available/:studentId')
+  @ApiOperation({
+    summary: 'get availables classroom for enrroll',
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: 'Array of availables classrooms',
+    // type: [Year],
+  })
+  getAvailableClassrooms(@Param('studentId', ParseIntPipe) studentId: number) {
+    return this.enrollmentService.getAvailableClassrooms(studentId);
   }
 }
