@@ -162,7 +162,7 @@ export class FamilyService {
             id: student.id,
             family: { id: familyExist.id },
           });
-          await this.personRepository.save(updateStudent);
+          await this.studentRepository.save(updateStudent);
         } else {
           const newEntry = this.familyRepository.create({
             nameFamily: `${student.person.lastname} ${student.person.mLastname}`,
@@ -173,7 +173,7 @@ export class FamilyService {
             id: student.id,
             family: { id: family.id },
           });
-          await this.personRepository.save(updateStudent);
+          await this.studentRepository.save(updateStudent);
         }
       });
       withDniAssignee2.forEach(async (item) => {
@@ -196,15 +196,15 @@ export class FamilyService {
         });
         if (familyExist) {
           // console.log('entro');
-          console.log(student.id, familyExist.id);
+          // console.log(student.id, familyExist.id);
           const update = await this.studentRepository.preload({
             id: student.id,
             family: { id: familyExist.id },
           });
           const data = await this.studentRepository.save(update);
-          console.log(data);
+          // console.log(data);
         } else {
-          console.log('entro a crear familia');
+          // console.log('entro a crear familia');
           const newEntry = this.familyRepository.create({
             nameFamily: `${student.person.lastname} ${student.person.mLastname}`,
             parentOneId: { id: parent[0].id },
