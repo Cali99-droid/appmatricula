@@ -306,19 +306,22 @@ export class ActivityClassroomService {
       });
       const data = await Promise.all(
         formattedData.map(async (ac) => {
-          const configAscent = await this.ascentRepository.findOne({
+          const configAscent = await this.ascentRepository.find({
             where: { originId: { id: ac.id }, year: { id: ac.yearId } },
           });
 
-          if (configAscent) {
+          if (configAscent.length > 0) {
+            const data = configAscent.map((c) => {
+              return {
+                id: c.destinationId.id,
+                section: c.destinationId.section,
+                grade: c.destinationId.grade.name,
+                campus: c.destinationId.classroom.campusDetail.name,
+              };
+            });
             return {
               ...ac,
-              ascent: {
-                id: configAscent.destinationId.id,
-                section: configAscent.destinationId.section,
-                grade: configAscent.destinationId.grade.name,
-                campus: configAscent.destinationId.classroom.campusDetail.name,
-              },
+              ascent: data,
             };
           } else {
             // let nextYearClassroom;
