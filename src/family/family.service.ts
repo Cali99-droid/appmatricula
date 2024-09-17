@@ -1,9 +1,14 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { UpdateFamilyDto } from './dto/update-family.dto';
 import { DataParentArrayDto } from '../relationship/dto/data-parent-array.dto';
 import { Family } from './entities/family.entity';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/student/entities/student.entity';
@@ -292,6 +297,21 @@ export class FamilyService {
 
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
     const { parentOneId, parentTwoId, ...rest } = updateFamilyDto;
+    if (updateFamilyDto.district) {
+      const url = this.configService.get('API_ADMISION');
+      const dataDistrict = await firstValueFrom(
+        this.httpService.get(`${url}/cities/district`),
+      );
+      // const dataDistricts = dataDistrict.data;
+      const district = dataDistrict.data.data.find(
+        (district: any) => district.id === updateFamilyDto.district,
+      );
+      if (!district) {
+        throw new BadRequestException(
+          `Discrict with id ${updateFamilyDto.district} not found`,
+        );
+      }
+    }
     const family = await this.familyRepository.preload({
       id: id,
       parentOneId: isNaN(parentOneId) ? undefined : { id: parentOneId },
