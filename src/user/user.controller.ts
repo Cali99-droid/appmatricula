@@ -32,7 +32,11 @@ export class UserController {
   findAll() {
     return this.userService.findAll();
   }
-
+  @Get('/report')
+  @ApiResponse({ status: 200, description: 'Report User' })
+  reportUsers() {
+    return this.userService.reportUsers();
+  }
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.userService.findOne(+id);

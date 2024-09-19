@@ -21,12 +21,16 @@ import { TypePhase } from 'src/phase/enum/type-phase.enum';
 import { StudentService } from 'src/student/student.service';
 import { SetRatifiedDto } from './dto/set-ratified.dto';
 import { FindVacantsDto } from './dto/find-vacants.dto';
+import { CreateAscentDto } from './dto/create-ascent.dto';
+import { Ascent } from './entities/ascent.entity';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
   constructor(
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
+    @InjectRepository(Ascent)
+    private readonly ascentRepository: Repository<Ascent>,
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
     @InjectRepository(Student)
@@ -358,6 +362,85 @@ export class EnrollmentService {
   //   return enrollments;
   // }
 
+  async getVacantsTest() {
+    try {
+      let vacant;
+      const activityClassroom = await this.activityClassroomRepository.findOne({
+        where: {
+          id: 151,
+        },
+      });
+      const configAscent = await this.ascentRepository.findOne({
+        where: {
+          destinationId: { id: activityClassroom.id },
+          // year: { id: ac.yearId },
+        },
+      });
+
+      if (configAscent) {
+        /**calcular con el aula destino */
+        // const configAscent = await this.ascentRepository.findOne({
+        //   where: {
+        //     originId: { id: activityClassroom.id },
+        //     year: { id: activityClassroom.phase.year.id },
+        //   },
+        // });
+        const ac = configAscent.originId;
+        const enrrollmentRatified = await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: ac,
+            ratified: true,
+          },
+        });
+
+        const capacity = activityClassroom.classroom.capacity;
+        const ratifieds = enrrollmentRatified.length;
+        const vacants = capacity - ratifieds;
+        vacant = {
+          origin: ac.grade.name + ' ' + ac.section,
+          grade: activityClassroom.grade.name + ' ' + activityClassroom.section,
+          capacity,
+          ratifieds,
+          vacants,
+        };
+      } else {
+        /**si no hay configuracion adicional */
+        const enrrollmentRatified = await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              grade: { position: activityClassroom.grade.position - 1 },
+              section: activityClassroom.section,
+              phase: {
+                year: {
+                  name: (
+                    parseInt(activityClassroom.phase.year.name) - 1
+                  ).toString(),
+                },
+              },
+            },
+            ratified: true,
+          },
+        });
+        const acor = enrrollmentRatified[0].activityClassroom;
+
+        const capacity = activityClassroom.classroom.capacity;
+        const ratifieds = enrrollmentRatified.length;
+        const vacants = capacity - ratifieds;
+        vacant = {
+          origin: acor.grade.name + ' ' + acor.section,
+          grade: activityClassroom.grade.name + ' ' + activityClassroom.section,
+          capacity,
+          ratifieds,
+          vacants,
+        };
+      }
+
+      return vacant;
+    } catch (error) {
+      handleDBExceptions(this.logger, error);
+    }
+  }
+
   async getVacants(yearId: number, query: FindVacantsDto) {
     const { campusId, levelId } = query;
     const vacants = [];
@@ -496,6 +579,92 @@ export class EnrollmentService {
       const result = Object.values(groupedData);
 
       return result;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  /**Configuracion de ascenso */
+  async createAscent(createAscentDto: CreateAscentDto) {
+    /**Validaciones */
+    //TODO validar jerarquia */
+    try {
+      await this.ascentRepository
+        .createQueryBuilder()
+        .delete()
+        .from('ascent')
+        .where('originId = :id', { id: createAscentDto.originId })
+        .execute();
+
+      const promises = createAscentDto.destinations.map(
+        async (destinationId) => {
+          const ascent = this.ascentRepository.create({
+            originId: { id: createAscentDto.originId },
+            destinationId: { id: destinationId },
+            year: { id: createAscentDto.yearId },
+          });
+
+          await this.ascentRepository.save(ascent);
+        },
+      );
+      await Promise.all(promises);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+  async getAscent(yearId: number) {
+    try {
+      const ascents = await this.ascentRepository.find({
+        where: {
+          year: {
+            id: yearId,
+          },
+        },
+      });
+      return ascents;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+  /**obtener grado y seccion permitido para el usario */
+  async getAvailableClassrooms(studentId: number) {
+    const currentEnrrollment = await this.enrollmentRepository
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.activityClassroom', 'ac')
+      .leftJoinAndSelect('ac.grade', 'grade')
+      .where('enrollment.studentId = :id', { id: studentId })
+      .orderBy('enrollment.id', 'DESC')
+      .getOne();
+
+    if (!currentEnrrollment) {
+      throw new NotFoundException('Dont exists this fact');
+    }
+    try {
+      const configAscent = await this.ascentRepository.find({
+        where: {
+          originId: { id: currentEnrrollment.activityClassroom.id },
+        },
+      });
+
+      if (configAscent.length > 0) {
+        return configAscent.map((c) => {
+          const { grade, section } = c.destinationId;
+          return { grade: grade.name + ' ' + section };
+        });
+      }
+
+      const availableClassrooms =
+        await this.activityClassroomRepository.findOne({
+          where: {
+            section: currentEnrrollment.activityClassroom.section,
+            grade: {
+              position: currentEnrrollment.activityClassroom.grade.position + 1,
+            },
+          },
+        });
+
+      const { grade, section } = availableClassrooms;
+      return [{ grade: grade.name + ' ' + section }];
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
