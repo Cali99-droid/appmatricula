@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { Role } from 'src/role/entities/role.entity';
 import { AddRoleDto } from './dto/add-role.dto';
 import * as bcrypt from 'bcrypt';
@@ -284,4 +284,32 @@ export class UserService {
       this.logger.error(error);
     }
   }
+  // async addOportunityMake() {
+  //   this.userRepository.find({
+  //     where: {
+  //       crmGHLId: Not(IsNull()),
+  //     },
+  //     relations: {
+  //       person: {
+  //         familyOne: {
+  //           student: {
+  //             enrollment: {
+  //               activityClassroom: {
+  //                 phase: { year: true },
+  //                 grade: { level: true },
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   });
+  //   return {
+  //     totalUsers: workers.length + parents.length,
+  //     totalworkers: workers.length,
+  //     totalParents: parents.length,
+  //     parentsWithFamily: parents.length - parentsWithoutFamily.length,
+  //     parentsWithoutFamily: parentsWithoutFamily.length,
+  //   };
+  // }
 }
