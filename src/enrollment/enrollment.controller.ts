@@ -163,7 +163,7 @@ export class EnrollmentController {
     @Param('yearId', ParseIntPipe) yearId: number,
     @Query() query: FindVacantsDto,
   ) {
-    // return this.enrollmentService.getVacantsTest();
+    //return this.enrollmentService.getVacantsTest();
     return this.enrollmentService.getVacants(yearId, query);
   }
 
@@ -187,7 +187,7 @@ export class EnrollmentController {
   @ApiOkResponse({
     status: 200,
     description: 'Array of availables classrooms',
-    // type: [Year],
+    //  type: [AvailableClassroom],
   })
   getAvailableClassrooms(@Param('studentId', ParseIntPipe) studentId: number) {
     return this.enrollmentService.getAvailableClassrooms(studentId);
