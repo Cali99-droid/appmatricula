@@ -363,13 +363,15 @@ export class ActivityClassroomService {
 
             return {
               ...ac,
-              ascent: nextYearClassroom
-                ? {
-                    id: nextYearClassroom.id,
-                    section: nextYearClassroom.section,
-                    grade: nextYearClassroom.grade.name,
-                    campus: nextYearClassroom.classroom.campusDetail.name,
-                  }
+              ascent: [nextYearClassroom]
+                ? [
+                    {
+                      id: nextYearClassroom.id,
+                      section: nextYearClassroom.section,
+                      grade: nextYearClassroom.grade.name,
+                      campus: nextYearClassroom.classroom.campusDetail.name,
+                    },
+                  ]
                 : null,
             };
           }
