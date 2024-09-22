@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository, Not, IsNull } from 'typeorm';
+import { Repository, Not, IsNull, Brackets } from 'typeorm';
 import { Role } from 'src/role/entities/role.entity';
 import { AddRoleDto } from './dto/add-role.dto';
 import * as bcrypt from 'bcrypt';
@@ -321,5 +321,57 @@ export class UserService {
       parentsWithFamily: parents.length - parentsWithoutFamily.length,
       parentsWithoutFamily: parentsWithoutFamily.length,
     };
+  }
+  async findParentUser(page: number, limit: number, term?: string) {
+    try {
+      const query = this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.person', 'person')
+        .where('user.crmGHLId is not null');
+      if (term) {
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.orWhere('user.email LIKE :term', { term: `%${term}%` })
+              .orWhere('person.docNumber LIKE :term', { term: `%${term}%` })
+              .orWhere('person.lastname LIKE :term', { term: `%${term}%` })
+              .orWhere('person.mLastname LIKE :term', { term: `%${term}%` })
+              .orWhere('person.name LIKE :term', { term: `%${term}%` });
+          }),
+        );
+        query
+          .addSelect(
+            `CASE
+            WHEN user.email = :exactTerm THEN 1
+            WHEN person.docNumber = :exactTerm THEN 2
+            WHEN person.lastname = :exactTerm THEN 3
+            WHEN person.mLastname = :exactTerm THEN 4
+            WHEN person.name = :exactTerm THEN 3
+            ELSE 3
+          END`,
+            'relevance', 
+          )
+          .setParameters({ exactTerm: term });
+
+        // Ordenar por relevancia
+        query.addOrderBy('relevance', 'ASC');
+      }
+      if (Number.isNaN(page) || page < 1) {
+        page = 1;
+      }
+      if (Number.isNaN(limit) || limit < 1) {
+        limit = 10;
+      }
+      query.skip((page - 1) * limit).take(limit);
+
+      const [result, total] = await query.getManyAndCount();
+      return {
+        data: result,
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      this.logger.error(error);
+    }
   }
 }
