@@ -363,7 +363,7 @@ export class ActivityClassroomService {
 
             return {
               ...ac,
-              ascent: [nextYearClassroom]
+              ascent: nextYearClassroom
                 ? [
                     {
                       id: nextYearClassroom.id,
