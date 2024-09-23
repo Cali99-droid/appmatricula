@@ -1,5 +1,7 @@
 export enum Status {
-  EN_PROCESO = 'EN PROCESO',
-  TRASLADADO = 'TRASLADADO',
-  DEFINITIVA = 'DEFINITIVA',
+  PROMOVIDO = 'promoted',
+  EN_PROCESO = 'on process',
+  TRASLADADO = 'transferred',
+  PREMATRICULADO = 'pre-registered',
+  MATRICULADO = 'registered',
 }

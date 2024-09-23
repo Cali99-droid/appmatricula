@@ -29,6 +29,7 @@ import {
 } from './interfaces/available.interface';
 import { Vacants } from './interfaces/res-vacants.interface';
 import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
+import { User } from 'src/user/entities/user.entity';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -45,8 +46,10 @@ export class EnrollmentService {
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
     private readonly studentService: StudentService,
   ) {}
-  async create(createEnrollmentDto: CreateEnrollChildrenDto) {
-    console.log(createEnrollmentDto.enrrollments);
+  async create(createEnrollmentDto: CreateEnrollChildrenDto, user: User) {
+    /**TODO: funcion paraValidar que sea el papá quien matricula */
+    /**TODO: llamar a la funcion para Validar se matricule a una de las aulas disponibles para este estudiante */
+    console.log(user);
     try {
       const codes = [];
       for (const ce of createEnrollmentDto.enrrollments) {
@@ -72,7 +75,7 @@ export class EnrollmentService {
           student: { id: ce.studentId },
           activityClassroom: { id: ce.activityClassroomId },
           code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
-          status: Status.EN_PROCESO,
+          status: Status.PREMATRICULADO,
         });
 
         await this.enrollmentRepository.save(enrollment);
@@ -355,27 +358,6 @@ export class EnrollmentService {
       // Otros datos
     };
   }
-  /**script para crear un codigo para todos las matriculas */
-
-  // async scripting() {
-  //   const enrollments = await this.enrollmentRepository.find({
-  //     relations: {
-  //       activityClassroom: true,
-  //     },
-  //   });
-  //   for (const enroll of enrollments) {
-  //     const codeGe = `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${enroll.student.id}`;
-  //     const uptEnrroll: Enrollment = {
-  //       id: enroll.id,
-  //       code: codeGe,
-  //       status: Status.DEFINITIVA,
-
-  //       activityClassroom: enroll.activityClassroom,
-  //     };
-  //     await this.enrollmentRepository.save(uptEnrroll);
-  //   }
-  //   return enrollments;
-  // }
 
   async getVacantsTest() {
     try {
@@ -950,4 +932,26 @@ export class EnrollmentService {
     // console.log('normal', res);
     return res;
   }
+
+  /**script para crear un codigo para todos las matriculas */
+
+  // async scripting() {
+  //   const enrollments = await this.enrollmentRepository.find({
+  //     relations: {
+  //       activityClassroom: true,
+  //     },
+  //   });
+  //   for (const enroll of enrollments) {
+  //     const codeGe = `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${enroll.student.id}`;
+  //     const uptEnrroll: Enrollment = {
+  //       id: enroll.id,
+  //       code: codeGe,
+  //       status: Status.DEFINITIVA,
+
+  //       activityClassroom: enroll.activityClassroom,
+  //     };
+  //     await this.enrollmentRepository.save(uptEnrroll);
+  //   }
+  //   return enrollments;
+  // }
 }

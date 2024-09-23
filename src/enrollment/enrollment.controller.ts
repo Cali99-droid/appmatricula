@@ -27,6 +27,9 @@ import { SetRatifiedDto } from './dto/set-ratified.dto';
 import { FindVacantsDto } from './dto/find-vacants.dto';
 import { CreateAscentDto } from './dto/create-ascent.dto';
 import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
+import { GetUser } from 'src/auth/decorators/get-user.decorator';
+import { User } from 'src/user/entities/user.entity';
+import { Auth } from 'src/auth/decorators/auth.decorator';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -42,8 +45,12 @@ export class EnrollmentController {
     status: 400,
     description: 'those enrolled exceed the capacity of the classroom ',
   })
-  create(@Body() createEnrollmentDto: CreateEnrollChildrenDto) {
-    return this.enrollmentService.create(createEnrollmentDto);
+  @Auth()
+  create(
+    @Body() createEnrollmentDto: CreateEnrollChildrenDto,
+    @GetUser() user: User,
+  ) {
+    return this.enrollmentService.create(createEnrollmentDto, user);
   }
   @Post('many')
   @ApiResponse({

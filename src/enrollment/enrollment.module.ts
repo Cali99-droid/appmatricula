@@ -9,6 +9,8 @@ import { ActivityClassroom } from 'src/activity_classroom/entities/activity_clas
 
 import { StudentModule } from 'src/student/student.module';
 import { Ascent } from './entities/ascent.entity';
+import { User } from 'src/user/entities/user.entity';
+import { Permission } from 'src/permissions/entities/permission.entity';
 
 @Module({
   controllers: [EnrollmentController],
@@ -20,6 +22,8 @@ import { Ascent } from './entities/ascent.entity';
       Student,
       ActivityClassroom,
       Ascent,
+      User,
+      Permission,
     ]),
     StudentModule,
   ],
