@@ -52,9 +52,10 @@ export class StudentService {
         parentOne: student.family
           ? `${student.family.parentOneId.lastname} ${student.family.parentOneId.mLastname}, ${student.family.parentOneId.name}`
           : undefined,
-        parentTwo: student.family
-          ? `${student.family.parentTwoId.lastname} ${student.family.parentTwoId.mLastname}, ${student.family.parentTwoId.name}`
-          : undefined,
+        parentTwo:
+          student.family && student.family.parentTwoId
+            ? `${student.family.parentTwoId.lastname} ${student.family.parentTwoId.mLastname}, ${student.family.parentTwoId.name}`
+            : undefined,
         level:
           student.enrollment.length !== 0
             ? student.enrollment[lastEnrollment - 1].activityClassroom.grade
@@ -89,6 +90,9 @@ export class StudentService {
       where: { id, enrollment: { isActive: true } },
       relations: {
         enrollment: { activityClassroom: { grade: { level: true } } },
+        respAcademic: true,
+        respEconomic: true,
+        respEnrollment: true,
       },
     });
     if (!student)
