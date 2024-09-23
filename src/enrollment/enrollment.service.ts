@@ -28,6 +28,7 @@ import {
   VacantsClassrooms,
 } from './interfaces/available.interface';
 import { Vacants } from './interfaces/res-vacants.interface';
+import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -44,32 +45,41 @@ export class EnrollmentService {
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
     private readonly studentService: StudentService,
   ) {}
-  async create(createEnrollmentDto: CreateEnrollmentDto) {
+  async create(createEnrollmentDto: CreateEnrollChildrenDto) {
+    console.log(createEnrollmentDto.enrrollments);
     try {
-      const classroom = await this.activityClassroomRepository.findOneBy({
-        id: createEnrollmentDto.activityClassroomId,
-      });
-      const capacity = classroom.classroom.capacity;
-      const enrollmentsByActivityClassroom =
-        await this.enrollmentRepository.find({
-          where: {
-            activityClassroom: {
-              id: createEnrollmentDto.activityClassroomId,
+      const codes = [];
+      for (const ce of createEnrollmentDto.enrrollments) {
+        const classroom =
+          await this.activityClassroomRepository.findOneByOrFail({
+            id: ce.activityClassroomId,
+          });
+        const capacity = classroom.classroom.capacity;
+        const enrollmentsByActivityClassroom =
+          await this.enrollmentRepository.find({
+            where: {
+              activityClassroom: {
+                id: ce.activityClassroomId,
+              },
             },
-          },
+          });
+        if (enrollmentsByActivityClassroom.length >= capacity) {
+          throw new BadRequestException(
+            'those enrolled exceed the capacity of the classroom ',
+          );
+        }
+        const enrollment = this.enrollmentRepository.create({
+          student: { id: ce.studentId },
+          activityClassroom: { id: ce.activityClassroomId },
+          code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
+          status: Status.EN_PROCESO,
         });
-      if (enrollmentsByActivityClassroom.length >= capacity) {
-        throw new BadRequestException(
-          'those enrolled exceed the capacity of the classroom ',
-        );
+
+        await this.enrollmentRepository.save(enrollment);
+        codes.push(enrollment.code);
       }
-      const enrollment = this.enrollmentRepository.create({
-        student: { id: createEnrollmentDto.studentId },
-        activityClassroom: { id: createEnrollmentDto.activityClassroomId },
-        status: createEnrollmentDto.status,
-      });
-      await this.enrollmentRepository.save(enrollment);
-      return enrollment;
+
+      return codes;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
