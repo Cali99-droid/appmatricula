@@ -90,6 +90,9 @@ export class StudentService {
       where: { id, enrollment: { isActive: true } },
       relations: {
         enrollment: { activityClassroom: { grade: { level: true } } },
+        respAcademic: true,
+        respEconomic: true,
+        respEnrollment: true,
       },
     });
     if (!student)
