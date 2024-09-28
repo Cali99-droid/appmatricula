@@ -8,8 +8,9 @@ import * as sharp from 'sharp';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { TypePhase } from 'src/phase/enum/type-phase.enum';
-
+import { addContractHeader } from './contract/header';
 import { Repository } from 'typeorm';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class PdfService {
@@ -346,7 +347,31 @@ export class PdfService {
       doc.end();
     });
   }
+  async generatePdfContract(user: User): Promise<Buffer> {
+    // const enroll = await this.enrollmentRepositoy.findOneBy({ id });
+    // if (!enroll) {
+    //   throw new NotFoundException('Not exits Enrrol');
+    // }
+    // const { student } = enroll;
 
+    return new Promise(async (resolve, reject) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: {
+          top: 47,
+          bottom: 47,
+          left: 47,
+          right: 66,
+        },
+      });
+      const buffers: Buffer[] = [];
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+
+      addContractHeader(doc);
+      doc.end();
+    });
+  }
   async fetchImage(url: string): Promise<ArrayBuffer> {
     const response = await fetch(url);
     const buffer = await response.arrayBuffer();

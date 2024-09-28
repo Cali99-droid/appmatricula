@@ -7,12 +7,20 @@ import { PdfService } from './pdf.service';
 import { ConfigModule } from '@nestjs/config';
 import { Student } from 'src/student/entities/student.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { User } from 'src/user/entities/user.entity';
+import { Permission } from 'src/permissions/entities/permission.entity';
 
 @Module({
   controllers: [DocsController],
   providers: [DocsService, PdfService],
   imports: [
-    TypeOrmModule.forFeature([ActivityClassroom, Student, Enrollment]),
+    TypeOrmModule.forFeature([
+      ActivityClassroom,
+      Student,
+      Enrollment,
+      User,
+      Permission,
+    ]),
     ConfigModule,
   ],
 })

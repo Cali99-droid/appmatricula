@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { UpdateFamilyDto } from './dto/update-family.dto';
-import { DataParentArrayDto } from '../relationship/dto/data-parent-array.dto';
+// import { DataParentArrayDto } from '../relationship/dto/data-parent-array.dto';
 import { Family } from './entities/family.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -113,7 +113,6 @@ export class FamilyService {
       handleDBExceptions(error, this.logger);
     }
   }
-
   async migrate(): Promise<any[] | 'Error'> {
     try {
       const relations = await this.relationShipRepository.find();
@@ -123,8 +122,14 @@ export class FamilyService {
         dniAssignee: string;
         dniAssignee2?: string;
       }
+      interface GroupedStudents {
+        nameFamily: string;
+        dniAssignee: string;
+        dniAssignee2?: string;
+        sonStudentCodes: string[];
+      }
       const uniqueStudents: { [key: string]: UniqueStudent } = {};
-
+      const groupedStudents: { [key: string]: GroupedStudents } = {};
       relations.forEach((student) => {
         const { nameFamily, dniAssignee, sonStudentCode } = student;
 
@@ -139,54 +144,27 @@ export class FamilyService {
         }
       });
       const result = Object.values(uniqueStudents);
-      const { withDniAssignee2, withoutDniAssignee2 } = result.reduce(
-        (acc, relation) => {
-          if (relation.dniAssignee2) {
-            acc.withDniAssignee2.push(relation);
-          } else {
-            acc.withoutDniAssignee2.push(relation);
-          }
-          return acc;
-        },
-        { withDniAssignee2: [], withoutDniAssignee2: [] },
-      );
-      // return withoutDniAssignee2;
-      withoutDniAssignee2.forEach(async (item) => {
-        const parent = await this.personRepository.findOne({
-          where: { docNumber: item.dniAssignee },
-        });
-        const student = await this.studentRepository.findOne({
-          where: {
-            studentCode: item.sonStudentCode,
-          },
-        });
-        if (!student) {
-          return withoutDniAssignee2;
-        }
-        const familyExist = await this.familyRepository.findOne({
-          where: { parentOneId: { id: parent.id } },
-        });
-        if (familyExist) {
-          const updateStudent = await this.studentRepository.preload({
-            id: student.id,
-            family: { id: familyExist.id },
-          });
-          await this.studentRepository.save(updateStudent);
+      result.forEach((relation) => {
+        const { nameFamily, dniAssignee, dniAssignee2, sonStudentCode } =
+          relation;
+
+        const key = [dniAssignee, dniAssignee2].sort().join('-');
+
+        if (groupedStudents[key]) {
+          groupedStudents[key].sonStudentCodes.push(sonStudentCode);
         } else {
-          console.log('entro 2');
-          const newEntry = this.familyRepository.create({
-            nameFamily: `${student.person.lastname} ${student.person.mLastname}`,
-            parentOneId: { id: parent.id },
-          });
-          const family = await this.familyRepository.save(newEntry);
-          const updateStudent = await this.studentRepository.preload({
-            id: student.id,
-            family: { id: family.id },
-          });
-          await this.studentRepository.save(updateStudent);
+          groupedStudents[key] = {
+            nameFamily,
+            dniAssignee,
+            dniAssignee2,
+            sonStudentCodes: [sonStudentCode],
+          };
         }
       });
-      withDniAssignee2.forEach(async (item) => {
+      const resultFinal = Object.values(groupedStudents);
+
+      resultFinal.forEach(async (item) => {
+        let familyId = undefined;
         const parent = await this.personRepository.find({
           where: [
             { docNumber: item.dniAssignee },
@@ -195,40 +173,60 @@ export class FamilyService {
         });
         const student = await this.studentRepository.findOne({
           where: {
-            studentCode: item.sonStudentCode,
+            studentCode: item.sonStudentCodes[0],
           },
         });
-        const familyExist = await this.familyRepository.findOne({
-          where: {
-            parentOneId: { id: parent[0].id },
-            parentTwoId: { id: parent[1].id },
-          },
+        const family = await this.familyRepository.findOne({
+          where: [
+            {
+              parentOneId:
+                item.dniAssignee != undefined
+                  ? { docNumber: item.dniAssignee }
+                  : undefined,
+              parentTwoId:
+                item.dniAssignee2 != undefined
+                  ? { docNumber: item.dniAssignee2 }
+                  : undefined,
+            },
+            {
+              parentOneId:
+                item.dniAssignee2 != undefined
+                  ? { docNumber: item.dniAssignee2 }
+                  : undefined,
+              parentTwoId:
+                item.dniAssignee != undefined
+                  ? { docNumber: item.dniAssignee }
+                  : undefined,
+            },
+          ],
         });
-        if (familyExist) {
-          // console.log('entro');
-          // console.log(student.id, familyExist.id);
-          const update = await this.studentRepository.preload({
-            id: student.id,
-            family: { id: familyExist.id },
-          });
-          const data = await this.studentRepository.save(update);
-          // console.log(data);
-        } else {
-          // console.log('entro a crear familia');
+        // if (student.id == 263) {
+        //   console.log(item.dniAssignee);
+        //   console.log(item.dniAssignee2);
+        //   console.log('entro', family);
+        // }
+        familyId = family ? family.id : undefined;
+        if (!family) {
           const newEntry = this.familyRepository.create({
             nameFamily: `${student.person.lastname} ${student.person.mLastname}`,
             parentOneId: { id: parent[0].id },
-            parentTwoId: { id: parent[1].id },
+            parentTwoId: parent.length == 2 ? { id: parent[1].id } : undefined,
           });
           const family = await this.familyRepository.save(newEntry);
-          const updateStudent = await this.studentRepository.preload({
-            id: student.id,
-            family: { id: family.id },
-          });
-          await this.studentRepository.save(updateStudent);
+          familyId = family.id;
         }
+        item.sonStudentCodes.forEach(async (code) => {
+          const student = await this.studentRepository.findOne({
+            where: { studentCode: code },
+          });
+          const update = await this.studentRepository.preload({
+            id: student.id,
+            family: { id: familyId },
+          });
+          await this.studentRepository.save(update);
+        });
       });
-      return result;
+      return resultFinal;
     } catch (error) {
       return `Error`;
     }
