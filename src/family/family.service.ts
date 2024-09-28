@@ -176,8 +176,9 @@ export class FamilyService {
             studentCode: item.sonStudentCodes[0],
           },
         });
-        if (!student) {
+        if (!student || !parent) {
           conta = conta + 1;
+          return resultFinal;
         }
         const family = await this.familyRepository.findOne({
           where: [
