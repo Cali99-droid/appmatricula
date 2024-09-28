@@ -200,11 +200,11 @@ export class FamilyService {
             },
           ],
         });
-        // if (student.id == 263) {
-        //   console.log(item.dniAssignee);
-        //   console.log(item.dniAssignee2);
-        //   console.log('entro', family);
-        // }
+        if (student.id == 263) {
+          console.log(item.dniAssignee);
+          console.log(item.dniAssignee2);
+          console.log('entro', family);
+        }
         familyId = family ? family.id : undefined;
         if (!family) {
           const newEntry = this.familyRepository.create({
