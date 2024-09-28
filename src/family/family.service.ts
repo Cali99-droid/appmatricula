@@ -162,7 +162,7 @@ export class FamilyService {
         }
       });
       const resultFinal = Object.values(groupedStudents);
-
+      let conta = 0;
       resultFinal.forEach(async (item) => {
         let familyId = undefined;
         const parent = await this.personRepository.find({
@@ -176,6 +176,9 @@ export class FamilyService {
             studentCode: item.sonStudentCodes[0],
           },
         });
+        if (!student) {
+          conta = conta + 1;
+        }
         const family = await this.familyRepository.findOne({
           where: [
             {
@@ -200,11 +203,11 @@ export class FamilyService {
             },
           ],
         });
-        if (student.id == 263) {
-          console.log(item.dniAssignee);
-          console.log(item.dniAssignee2);
-          console.log('entro', family);
-        }
+        // if (student.id == 263) {
+        //   console.log(item.dniAssignee);
+        //   console.log(item.dniAssignee2);
+        //   console.log('entro', family);
+        // }
         familyId = family ? family.id : undefined;
         if (!family) {
           const newEntry = this.familyRepository.create({
@@ -226,6 +229,7 @@ export class FamilyService {
           await this.studentRepository.save(update);
         });
       });
+      console.log(`Cantidad de nulos ${conta}`);
       return resultFinal;
     } catch (error) {
       return `Error`;
