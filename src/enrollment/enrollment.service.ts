@@ -878,7 +878,7 @@ export class EnrollmentService {
       return res;
     }
 
-    /**calcular vacantes normalmente segun correlacion */
+    /**calcular vacantes normalmente segun correlacion pero mateniendo a la sede */
     const enrollOrigin = await this.enrollmentRepository.find({
       where: {
         activityClassroom: {
@@ -892,6 +892,9 @@ export class EnrollmentService {
             year: {
               id: yearId - 1,
             },
+          },
+          classroom: {
+            campusDetail: { id: activityClassroom.classroom.campusDetail.id },
           },
         },
         ratified: true,
