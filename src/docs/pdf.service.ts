@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import * as PDFDocument from 'pdfkit';
+// import 'pdfkit-table';
 import * as QRCode from 'qrcode';
 import * as sharp from 'sharp';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
@@ -10,7 +11,8 @@ import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { TypePhase } from 'src/phase/enum/type-phase.enum';
 import { addContractHeader } from './contract/header';
 import { Repository } from 'typeorm';
-import { User } from 'src/user/entities/user.entity';
+// import { User } from 'src/user/entities/user.entity';
+// import { addClausesPart1 } from './contract/clauses-part1';
 
 @Injectable()
 export class PdfService {
@@ -347,7 +349,7 @@ export class PdfService {
       doc.end();
     });
   }
-  async generatePdfContract(user: User): Promise<Buffer> {
+  async generatePdfContract(idStudent: number): Promise<Buffer> {
     // const enroll = await this.enrollmentRepositoy.findOneBy({ id });
     // if (!enroll) {
     //   throw new NotFoundException('Not exits Enrrol');
@@ -369,6 +371,7 @@ export class PdfService {
       doc.on('end', () => resolve(Buffer.concat(buffers)));
 
       addContractHeader(doc);
+      // addClausesPart1(doc);
       doc.end();
     });
   }
