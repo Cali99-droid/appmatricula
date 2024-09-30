@@ -2,7 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
+// import PDFDocument from 'pdfkit';
 import * as PDFDocument from 'pdfkit';
+import 'pdfkit-table';
 // import 'pdfkit-table';
 import * as QRCode from 'qrcode';
 import * as sharp from 'sharp';
@@ -12,7 +14,7 @@ import { TypePhase } from 'src/phase/enum/type-phase.enum';
 import { addContractHeader } from './contract/header';
 import { Repository } from 'typeorm';
 // import { User } from 'src/user/entities/user.entity';
-// import { addClausesPart1 } from './contract/clauses-part1';
+import { addClausesPart1 } from './contract/clauses-part1';
 
 @Injectable()
 export class PdfService {
@@ -350,12 +352,17 @@ export class PdfService {
     });
   }
   async generatePdfContract(idStudent: number): Promise<Buffer> {
-    // const enroll = await this.enrollmentRepositoy.findOneBy({ id });
-    // if (!enroll) {
-    //   throw new NotFoundException('Not exits Enrrol');
-    // }
-    // const { student } = enroll;
+    // class MyPDFDocument extends PDFDocument {
+    //   constructor(options?: any) {
+    //     super(options);
+    //   }
 
+    //   table(table: any, options?: any) {
+    //     return (this as any).addTable(table, options); 
+    // }
+    // // Crear una instancia de MyPDFDocument
+    // doc = new MyPDFDocument();
+    // const doctumento = new MyPDFDocument();
     return new Promise(async (resolve, reject) => {
       const doc = new PDFDocument({
         size: 'A4',
@@ -366,6 +373,7 @@ export class PdfService {
           right: 66,
         },
       });
+      // const doc = new PDFDocument({ margin: 30, size: 'A4' });
       const buffers: Buffer[] = [];
       doc.on('data', buffers.push.bind(buffers));
       doc.on('end', () => resolve(Buffer.concat(buffers)));
