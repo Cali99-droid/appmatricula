@@ -291,6 +291,7 @@ export class FamilyService {
         parentTwoId: {
           user: true,
         },
+        student: true,
       },
     });
 
