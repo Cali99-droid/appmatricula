@@ -287,9 +287,12 @@ export class FamilyService {
       relations: {
         parentOneId: true,
         parentTwoId: true,
-        student: true,
+        student: {
+          enrollment: true,
+        },
       },
     });
+
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
     if (family.district) {
       const { district, ...rest } = family;
@@ -299,7 +302,42 @@ export class FamilyService {
         ...cities,
       };
     }
-    return family;
+    /**format temp families */
+    // const { student, ...parents } = family;
+    // const childrens = student.map((item) => {
+    //   const person = item.person;
+    //   const photo = item.photo;
+    //   const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
+    //     (previous, current) => {
+    //       return current.id > previous.id ? current : previous;
+    //     },
+    //   );
+    //   return {
+    //     person,
+    //     enrroll,
+    //     photo,
+    //   };
+    // });
+
+    // return { childrens, ...childrens };
+    /**Formato temporal */
+    const { student, ...rest } = family;
+    const childrens = student.map((item) => {
+      const person = item.person;
+      const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
+        (previous, current) => {
+          return current.id > previous.id ? current : previous;
+        },
+      );
+      const enrrollStatus = enrroll.status;
+      return {
+        person,
+        ...enrroll,
+        enrrollStatus,
+      };
+    });
+
+    return { student: childrens, ...rest };
   }
 
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
