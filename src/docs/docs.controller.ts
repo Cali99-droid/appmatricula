@@ -3,9 +3,9 @@ import { Controller, Get, Param, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { PdfService } from './pdf.service';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
-import { Auth } from 'src/auth/decorators/auth.decorator';
-import { User } from 'src/user/entities/user.entity';
+// import { GetUser } from 'src/auth/decorators/get-user.decorator';
+// import { Auth } from 'src/auth/decorators/auth.decorator';
+// import { User } from 'src/user/entities/user.entity';
 //cambio
 @ApiTags('Docs')
 @Controller('docs')
@@ -48,7 +48,7 @@ export class DocsController {
     res.send(pdfBuffer);
   }
 
-  @Get('download-contract')
+  @Get('download-contract/:idStudent')
   @ApiOperation({
     summary: 'download pdf with carnets students of Activity classroom',
   })
@@ -56,9 +56,18 @@ export class DocsController {
     status: 200,
     description: 'Pdf with carnets of de classroom',
   })
-  @Auth()
-  async downloadContract(@Res() res: Response, @GetUser() user: User) {
-    const pdfBuffer = await this.pdfService.generatePdfContract(user);
+  // @Auth()
+  // async downloadContract(@Res() res: Response, @GetUser() user: User) {
+  //   const pdfBuffer = await this.pdfService.generatePdfContract(user);
+  //   res.setHeader('Content-Type', 'application/pdf');
+  //   res.setHeader('Content-Disposition', 'attachment; filename=carnets.pdf');
+  //   res.send(pdfBuffer);
+  // }
+  async downloadContract(
+    @Res() res: Response,
+    @Param('idStudent') idStudent: string,
+  ) {
+    const pdfBuffer = await this.pdfService.generatePdfContract(+idStudent);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=carnets.pdf');
     res.send(pdfBuffer);
