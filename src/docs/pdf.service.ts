@@ -4,7 +4,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 // import PDFDocument from 'pdfkit';
 import * as PDFDocument from 'pdfkit';
-import 'pdfkit-table';
 // import 'pdfkit-table';
 import * as QRCode from 'qrcode';
 import * as sharp from 'sharp';
@@ -358,7 +357,7 @@ export class PdfService {
     //   }
 
     //   table(table: any, options?: any) {
-    //     return (this as any).addTable(table, options); 
+    //     return (this as any).addTable(table, options);
     // }
     // // Crear una instancia de MyPDFDocument
     // doc = new MyPDFDocument();

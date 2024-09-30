@@ -1,7 +1,7 @@
 // import PDFDocument from 'pdfkit';
 // import 'pdfkit-table';
 // const PDFDocument = require('pdfkit');
-import PDFDocument from 'pdfkit-table';
+import PDFDocument from 'pdfkit';
 export function addClausesPart1(doc: InstanceType<typeof PDFDocument>) {
   //TEXTO DE CLAUSULA PRIMERA
   const C1_P1A = `4.1 El PADRE O MADRE DE FAMILIA se compromete a pagar el monto de matrícula para cada uno de los tres niveles,`;
