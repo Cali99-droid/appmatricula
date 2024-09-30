@@ -307,6 +307,10 @@ export class FamilyService {
       family.parentOneId.user = { email: family.parentOneId.user.email } as any;
     }
 
+    if (family.parentTwoId?.user) {
+      family.parentTwoId.user = { email: family.parentTwoId.user.email } as any;
+    }
+
     /**format temp families */
     // const { student, ...parents } = family;
     // const childrens = student.map((item) => {

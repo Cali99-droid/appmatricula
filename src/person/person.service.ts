@@ -264,6 +264,7 @@ export class PersonService {
           person,
           ...enrroll,
           enrrollStatus,
+          photo: student.photo,
         };
       });
       return { student: childrens, ...rest };
