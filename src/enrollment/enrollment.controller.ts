@@ -179,7 +179,7 @@ export class EnrollmentController {
     @Param('yearId', ParseIntPipe) yearId: number,
     @Query() query: FindVacantsDto,
   ) {
-    //return this.enrollmentService.getVacantsTest();
+    // return this.enrollmentService.getVacantsTest();
     return this.enrollmentService.getVacants(yearId, query);
   }
 
