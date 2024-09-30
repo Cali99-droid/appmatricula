@@ -26,7 +26,6 @@ import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { SearchByDateDto } from '../common/dto/search-by-date.dto';
 
-
 @Injectable()
 export class PersonService {
   private readonly s3Client = new S3Client({
@@ -49,7 +48,6 @@ export class PersonService {
     private readonly enrollmentScheduleRepository: Repository<EnrollmentSchedule>,
     @InjectRepository(Attendance)
     private readonly attendanceRepository: Repository<Attendance>,
-
   ) {}
   create(createPersonDto: CreatePersonDto) {
     return 'This action adds a new person';
@@ -234,6 +232,8 @@ export class PersonService {
   }
   //MODULO DE PADRES
   async findStudentsByParents(user: User) {
+    /**TODO validar exsistencia de persona */
+
     const students = await this.familypRepository.find({
       where: [
         {
@@ -246,10 +246,30 @@ export class PersonService {
         },
       ],
       relations: {
-        student: true,
+        student: {
+          enrollment: true,
+        },
       },
     });
-    return students;
+    const resp = students.map((item) => {
+      const { student, ...rest } = item;
+      const childrens = student.map((item) => {
+        const person = item.person;
+        const { student, activityClassroom, ...enrroll } =
+          item.enrollment.reduce((previous, current) => {
+            return current.id > previous.id ? current : previous;
+          });
+        const enrrollStatus = enrroll.status;
+        return {
+          person,
+          ...enrroll,
+          enrrollStatus,
+        };
+      });
+      return { student: childrens, ...rest };
+    });
+    //
+    return resp;
   }
   async findAttendanceByStudent(id: number, searchByDateDto: SearchByDateDto) {
     if (isNaN(id)) {
