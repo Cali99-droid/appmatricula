@@ -285,10 +285,11 @@ export class FamilyService {
     const family = await this.familyRepository.findOne({
       where: { id: id },
       relations: {
-        parentOneId: true,
-        parentTwoId: true,
-        student: {
-          enrollment: true,
+        parentOneId: {
+          user: true,
+        },
+        parentTwoId: {
+          user: true,
         },
       },
     });
@@ -302,6 +303,10 @@ export class FamilyService {
         ...cities,
       };
     }
+    if (family.parentOneId?.user) {
+      family.parentOneId.user = { email: family.parentOneId.user.email } as any;
+    }
+
     /**format temp families */
     // const { student, ...parents } = family;
     // const childrens = student.map((item) => {
@@ -321,23 +326,23 @@ export class FamilyService {
 
     // return { childrens, ...childrens };
     /**Formato temporal */
-    const { student, ...rest } = family;
-    const childrens = student.map((item) => {
-      const person = item.person;
-      const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
-        (previous, current) => {
-          return current.id > previous.id ? current : previous;
-        },
-      );
-      const enrrollStatus = enrroll.status;
-      return {
-        person,
-        ...enrroll,
-        enrrollStatus,
-      };
-    });
+    // const { student, ...rest } = family;
+    // const childrens = student.map((item) => {
+    //   const person = item.person;
+    //   const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
+    //     (previous, current) => {
+    //       return current.id > previous.id ? current : previous;
+    //     },
+    //   );
+    //   const enrrollStatus = enrroll.status;
+    //   return {
+    //     person,
+    //     ...enrroll,
+    //     enrrollStatus,
+    //   };
+    // });
 
-    return { student: childrens, ...rest };
+    return family;
   }
 
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
