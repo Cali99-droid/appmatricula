@@ -637,7 +637,7 @@ export class EnrollmentService {
   }
   /**obtener grado y seccion permitido para el usario */
   async getAvailableClassrooms(studentId: number) {
-    //TODO  validar pertenecia del hijo */
+    //TODO  validar pertenecia del hijo s */
     const availables: AvailableClassroom[] = [];
     const currentEnrrollment = await this.enrollmentRepository
       .createQueryBuilder('enrollment')
@@ -645,6 +645,8 @@ export class EnrollmentService {
       .leftJoinAndSelect('ac.grade', 'grade')
       .leftJoinAndSelect('ac.phase', 'phase')
       .leftJoinAndSelect('phase.year', 'year')
+      .leftJoinAndSelect('ac.classroom', 'classroom')
+      .leftJoinAndSelect('classroom.campusDetail', 'campusDetail')
       .where('enrollment.studentId = :id', { id: studentId })
       .orderBy('enrollment.id', 'DESC')
       .getOne();
@@ -663,7 +665,7 @@ export class EnrollmentService {
           year: { id: yearId },
         },
       });
-
+      /**un destino */
       if (configAscent.length === 1) {
         console.log('one dest');
         const { destinationId } = configAscent[0];
@@ -677,28 +679,46 @@ export class EnrollmentService {
         availables.push(classroom);
         return availables;
       }
+      /**mas de un destino */
       if (configAscent.length > 1) {
         console.log('more dest');
         /**tiene mas de un destino, entonces es el aula que se parte*/
-        /**calcular las vacantes de sus destinos */
+        /**calcular las vacantes de sus destinos s*/
 
         for (const co of configAscent) {
           const dest = await this.calcVacantsToClassroom(co.destinationId.id);
-
-          if (dest.hasVacants) {
+          console.log(dest);
+          if (
+            dest.section === currentEnrrollment.activityClassroom.section ||
+            dest.detailOrigin.section ===
+              currentEnrrollment.activityClassroom.section ||
+            dest.hasVacants
+          ) {
             const classroom: AvailableClassroom = {
               id: co.destinationId.id,
               name:
                 co.destinationId.grade.name + ' ' + co.destinationId.section,
               vacants: dest.vacants,
-              suggested: false,
+              suggested: true,
             };
             availables.push(classroom);
           }
+          // if (dest.hasVacants) {
+          //   const classroom: AvailableClassroom = {
+          //     id: co.destinationId.id,
+          //     name:
+          //       co.destinationId.grade.name + ' ' + co.destinationId.section,
+          //     vacants: dest.vacants,
+          //     suggested: false,
+          //   };
+          //   availables.push(classroom);
+          // }
         }
         return availables;
       }
-
+      /**Normal available */
+      const campusId =
+        currentEnrrollment.activityClassroom.classroom.campusDetail.id;
       const classrooms = await this.activityClassroomRepository.find({
         where: {
           // section: currentEnrrollment.activityClassroom.section,
@@ -710,11 +730,18 @@ export class EnrollmentService {
               id: yearId + 1,
             },
           },
+          classroom: {
+            campusDetail: { id: campusId },
+          },
         },
       });
+
       for (const ac of classrooms) {
         const dest = await this.calcVacantsToClassroom(ac.id);
-        if (dest.section === currentEnrrollment.activityClassroom.section) {
+        if (
+          dest.section === currentEnrrollment.activityClassroom.section ||
+          dest.hasVacants
+        ) {
           const classroom: AvailableClassroom = {
             id: ac.id,
             name: ac.grade.name + ' ' + ac.section,
@@ -723,15 +750,15 @@ export class EnrollmentService {
           };
           availables.push(classroom);
         }
-        if (dest.hasVacants) {
-          const classroom: AvailableClassroom = {
-            id: ac.id,
-            name: ac.grade.name + ' ' + ac.section,
-            vacants: dest.vacants,
-            suggested: false,
-          };
-          availables.push(classroom);
-        }
+        // if (dest.hasVacants) {
+        //   const classroom: AvailableClassroom = {
+        //     id: ac.id,
+        //     name: ac.grade.name + ' ' + ac.section,
+        //     vacants: dest.vacants,
+        //     suggested: false,
+        //   };
+        //   availables.push(classroom);
+        // }
       }
       // const classroom = {
       //   id: availableClassroom.id,
@@ -765,18 +792,46 @@ export class EnrollmentService {
       /** calcular vacantes */
       const { originId, destinationId } = configAscent[0];
 
+      const enrolledInOther = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: {
+            // id: activityClassrooms[0].id,
+            grade: {
+              // id: ac.grade.id,
+              position: activityClassroom.grade.position,
+            },
+            section: Not(activityClassroom.section),
+            phase: {
+              year: {
+                id: yearId,
+              },
+            },
+            classroom: {
+              campusDetail: { id: activityClassroom.classroom.campusDetail.id },
+            },
+          },
+          ratified: true,
+        },
+      });
       const enrollOrigin = await this.enrollmentRepository.find({
         where: { activityClassroom: { id: originId.id }, ratified: true },
       });
+      /**problema acá destinoID */
       const currentEnrroll = await this.enrollmentRepository.find({
         where: {
           activityClassroom: { id: destinationId.id },
         },
       });
+
       const rtAndEnr = enrollOrigin.filter((item1) =>
         currentEnrroll.some((item2) => item1.student.id === item2.student.id),
       );
-      const ratifieds = enrollOrigin.length - rtAndEnr.length;
+
+      const rtAndEnrInOther = enrolledInOther.filter((item1) =>
+        enrollOrigin.some((item2) => item1.student.id === item2.student.id),
+      );
+      const ratifieds =
+        enrollOrigin.length - rtAndEnr.length - rtAndEnrInOther.length;
       const vacants =
         destinationId.classroom.capacity - ratifieds - currentEnrroll.length;
       const res: VacantsClassrooms = {
@@ -831,12 +886,34 @@ export class EnrollmentService {
       }
 
       /**calcular vacantes */
+      const enrolledInOther = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: {
+            // id: activityClassrooms[0].id,
+            grade: {
+              // id: ac.grade.id,
+              position: activityClassroom.grade.position,
+            },
+            section: Not(activityClassroom.section),
+            phase: {
+              year: {
+                id: yearId,
+              },
+            },
+            classroom: {
+              campusDetail: { id: activityClassroom.classroom.campusDetail.id },
+            },
+          },
+          ratified: true,
+        },
+      });
       const enrollPriority = await this.enrollmentRepository.find({
         where: {
           activityClassroom: { id: oneDest },
           ratified: true,
         },
       });
+
       // const enrollNotPriority = await this.enrollmentRepository.find({
       //   where: {
       //     activityClassroom: { id: hasTwoDest },
@@ -852,7 +929,12 @@ export class EnrollmentService {
       const rtAndEnr = enrollPriority.filter((item1) =>
         currentEnrroll.some((item2) => item1.student.id === item2.student.id),
       );
-      const ratifieds = enrollPriority.length - rtAndEnr.length;
+      const rtAndEnrInOther = enrolledInOther.filter((item1) =>
+        enrollPriority.some((item2) => item1.student.id === item2.student.id),
+      );
+
+      const ratifieds =
+        enrollPriority.length - rtAndEnr.length - rtAndEnrInOther.length;
 
       const vacants =
         activityClassroom.classroom.capacity -
