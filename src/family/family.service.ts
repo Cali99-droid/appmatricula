@@ -282,6 +282,7 @@ export class FamilyService {
     }
   }
   async findOne(id: number) {
+    console.log('llmando');
     const family = await this.familyRepository.findOne({
       where: { id: id },
       relations: {
@@ -300,14 +301,7 @@ export class FamilyService {
     });
 
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
-    if (family.district) {
-      const { district, ...rest } = family;
-      const cities = await this.getCites(district);
-      return {
-        ...rest,
-        ...cities,
-      };
-    }
+
     if (family.parentOneId?.user) {
       family.parentOneId.user = { email: family.parentOneId.user.email } as any;
     }
@@ -343,16 +337,26 @@ export class FamilyService {
           return current.id > previous.id ? current : previous;
         },
       );
-      const enrrollStatus = enrroll.status;
+
       return {
         person,
         ...enrroll,
-        enrrollStatus,
+
         actual: activityClassroom.grade.name + ' ' + activityClassroom.section,
       };
     });
+    const data = { student: childrens, ...rest };
 
-    return { student: childrens, ...rest };
+    if (data.district) {
+      const { district, ...rest } = data;
+      const cities = await this.getCites(district);
+      return {
+        ...rest,
+        ...cities,
+      };
+    }
+
+    // return { student: childrens, ...rest };
   }
 
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
