@@ -52,6 +52,7 @@ import { EmailsModule } from './emails/emails.module';
       autoLoadEntities: true,
       synchronize: true,
       subscribers: [YearSubscriber, PhaseSubscriber],
+      // logging: true,
     }),
 
     YearsModule,

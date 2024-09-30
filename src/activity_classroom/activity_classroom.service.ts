@@ -14,6 +14,7 @@ import { ActivityClassroom } from './entities/activity_classroom.entity';
 import { SearchClassroomsDto } from 'src/common/dto/search-classrooms.dto';
 import { ConfigService } from '@nestjs/config';
 import { User } from 'src/user/entities/user.entity';
+import { Ascent } from 'src/enrollment/entities/ascent.entity';
 @Injectable()
 export class ActivityClassroomService {
   private readonly logger = new Logger('ActivityClassroomService');
@@ -23,6 +24,8 @@ export class ActivityClassroomService {
     private readonly configService: ConfigService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Ascent)
+    private readonly ascentRepository: Repository<Ascent>,
   ) {}
   async create(createActivityClassroomDto: CreateActivityClassroomDto) {
     // Combinando las condiciones en un único objeto de consulta
@@ -138,76 +141,247 @@ export class ActivityClassroomService {
       throw new NotFoundException(error.message);
     }
   }
-  async searchClassrooms(searchClassroomsDto: SearchClassroomsDto, user: User) {
-    const { yearId, phaseId, campusId, levelId } = searchClassroomsDto;
-    // Obtener el usuario con las relaciones necesarias
-    const us = await this.userRepository.findOne({
-      where: {
-        email: user.email,
-      },
-      relations: {
-        assignmentsClassroom: {
-          activityClassroom: true,
+  async searchParams(searchClassroomsDto: SearchClassroomsDto, user: User) {
+    try {
+      const { yearId, phaseId, campusId, levelId } = searchClassroomsDto;
+      // Obtener el usuario con las relaciones necesarias
+      const us = await this.userRepository.findOne({
+        where: {
+          email: user.email,
         },
-        roles: {
-          permissions: true,
+        relations: {
+          assignmentsClassroom: {
+            activityClassroom: true,
+          },
+          roles: {
+            permissions: true,
+          },
         },
-      },
-    });
-    // Recopilar permisos del usuario
-    // const permissions = new Set(
-    //   us.roles.flatMap((role) => role.permissions.map((perm) => perm.name)),
-    // );
-    const per = us.roles.flatMap((role) =>
-      role.permissions.map((perm) => perm.name),
-    );
-
-    const whereCondition: any = {
-      phase: {
-        id: !isNaN(+phaseId) ? +phaseId : undefined,
-        year: { id: !isNaN(+yearId) ? +yearId : undefined },
-      },
-      classroom: {
-        campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
-      },
-      grade: {
-        level: !isNaN(+levelId) ? { id: +levelId } : {},
-      },
-    };
-    const autPerm = [
-      'admin',
-      'card-generator',
-      // 'report',
-      'students',
-      'families',
-    ];
-
-    const isAdmin = per.some((e) => autPerm.includes(e));
-    if (!isAdmin && !per.includes('report')) {
-      const acIds = us.assignmentsClassroom.map(
-        (item) => item.activityClassroom.id,
+      });
+      // Recopilar permisos del usuario
+      // const permissions = new Set(
+      //   us.roles.flatMap((role) => role.permissions.map((perm) => perm.name)),
+      // );
+      const per = us.roles.flatMap((role) =>
+        role.permissions.map((perm) => perm.name),
       );
-      whereCondition.assignmentClassroom = {
-        activityClassroom: { id: In(acIds) },
-      };
-    }
-    // let classrooms: ActivityClassroom[];d
 
-    const classrooms = await this.activityClassroomRepository.find({
-      where: whereCondition,
-      // relations: {
-      //   classroom: true,
-      //   phase: true,
-      //   grade: true,
-      //   // schoolShift: true,
-      //   assignmentClassroom: true,
-      // },
-      order: {
-        grade: { name: 'ASC' },
-        section: 'ASC',
-      },
-    });
-    return classrooms;
+      const whereCondition: any = {
+        phase: {
+          id: !isNaN(+phaseId) ? +phaseId : undefined,
+          year: { id: !isNaN(+yearId) ? +yearId : undefined },
+        },
+        classroom: {
+          campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
+        },
+        grade: {
+          level: !isNaN(+levelId) ? { id: +levelId } : {},
+        },
+      };
+      const autPerm = [
+        'admin',
+        'card-generator',
+        // 'report',
+        'students',
+        'families',
+      ];
+
+      const isAdmin = per.some((e) => autPerm.includes(e));
+      if (!isAdmin && !per.includes('report')) {
+        const acIds = us.assignmentsClassroom.map(
+          (item) => item.activityClassroom.id,
+        );
+        whereCondition.assignmentClassroom = {
+          activityClassroom: { id: In(acIds) },
+        };
+      }
+      // let classrooms: ActivityClassroom[];d
+
+      const classrooms = await this.activityClassroomRepository.find({
+        where: whereCondition,
+        // relations: {
+        //   classroom: true,
+        //   phase: true,
+        //   grade: true,
+        //   // schoolShift: true,
+        //   assignmentClassroom: true,
+        // },
+        order: {
+          grade: { name: 'ASC' },
+          section: 'ASC',
+        },
+      });
+      return classrooms;
+    } catch (error) {
+      handleDBExceptions(this.logger, error);
+    }
+  }
+  async searchClassrooms(searchClassroomsDto: SearchClassroomsDto, user: User) {
+    try {
+      const { yearId, phaseId, campusId, levelId } = searchClassroomsDto;
+      // Obtener el usuario con las relaciones necesarias
+      const us = await this.userRepository.findOne({
+        where: {
+          email: user.email,
+        },
+        relations: {
+          assignmentsClassroom: {
+            activityClassroom: true,
+          },
+          roles: {
+            permissions: true,
+          },
+        },
+      });
+      // Recopilar permisos del usuario
+      // const permissions = new Set(
+      //   us.roles.flatMap((role) => role.permissions.map((perm) => perm.name)),
+      // );
+      const per = us.roles.flatMap((role) =>
+        role.permissions.map((perm) => perm.name),
+      );
+
+      const whereCondition: any = {
+        phase: {
+          id: !isNaN(+phaseId) ? +phaseId : undefined,
+          year: { id: !isNaN(+yearId) ? +yearId : undefined },
+        },
+        classroom: {
+          campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
+        },
+        grade: {
+          level: !isNaN(+levelId) ? { id: +levelId } : {},
+        },
+      };
+      const autPerm = [
+        'admin',
+        'card-generator',
+        // 'report',
+        'students',
+        'families',
+      ];
+
+      const isAdmin = per.some((e) => autPerm.includes(e));
+      if (!isAdmin && !per.includes('report')) {
+        const acIds = us.assignmentsClassroom.map(
+          (item) => item.activityClassroom.id,
+        );
+        whereCondition.assignmentClassroom = {
+          activityClassroom: { id: In(acIds) },
+        };
+      }
+      // let classrooms: ActivityClassroom[];d
+
+      const classrooms = await this.activityClassroomRepository.find({
+        where: whereCondition,
+        // relations: {
+        //   classroom: true,
+        //   phase: true,
+        //   grade: true,
+        //   // schoolShift: true,
+        //   assignmentClassroom: true,
+        // },
+        order: {
+          // grade: { name: 'ASC' },
+          // section: 'ASC',
+        },
+      });
+      const formattedData = classrooms.map((c) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { level, ...grade } = c.grade;
+        const { campusDetail } = c.classroom;
+        return {
+          id: c.id,
+          grade: grade,
+          section: c.section,
+          phase: c.phase.type,
+          year: c.phase.year.name,
+          yearId: c.phase.year.id,
+          classroom: c.classroom.code,
+          campusId: campusDetail.id,
+          capacity: c.classroom.capacity,
+          level: c.grade.level.name,
+          modality: c.classroom.modality,
+        };
+      });
+      const data = await Promise.all(
+        formattedData.map(async (ac) => {
+          const configAscent = await this.ascentRepository.find({
+            where: { originId: { id: ac.id }, year: { id: ac.yearId } },
+          });
+
+          if (configAscent.length > 0) {
+            const data = configAscent.map((c) => {
+              return {
+                id: c.destinationId.id,
+                section: c.destinationId.section,
+                grade: c.destinationId.grade.name,
+                campus: c.destinationId.classroom.campusDetail.name,
+              };
+            });
+            return {
+              ...ac,
+              ascent: data,
+            };
+          } else {
+            // let nextYearClassroom;
+            // nextYearClassroom = await this.activityClassroomRepository.findOne({
+            //   where: {
+            //     grade: { position: ac.grade.position + 1 },
+            //     section: ac.section,
+            //     phase: { year: { name: (parseInt(ac.year) + 1).toString() } },
+            //   },
+            // });
+
+            // const campusNext = nextYearClassroom
+            //   ? nextYearClassroom.classroom.campusDetail.id
+            //   : 0;
+            // const campusAct = ac.campusId;
+
+            // if (campusNext !== campusAct) {
+            //   console.log('son diferentes', ac.id);
+            //   nextYearClassroom =
+            //     await this.activityClassroomRepository.findOne({
+            //       where: {
+            //         grade: { position: ac.grade.position + 1 },
+            //         classroom: { campusDetail: { id: campusAct } },
+            //         phase: {
+            //           year: { name: (parseInt(ac.year) + 1).toString() },
+            //         },
+            //       },
+            //     });
+            // }
+
+            const nextYearClassroom =
+              await this.activityClassroomRepository.findOne({
+                where: {
+                  grade: { position: ac.grade.position + 1 },
+                  section: ac.section,
+                  phase: { year: { name: (parseInt(ac.year) + 1).toString() } },
+                },
+              });
+
+            return {
+              ...ac,
+              ascent: nextYearClassroom
+                ? [
+                    {
+                      id: nextYearClassroom.id,
+                      section: nextYearClassroom.section,
+                      grade: nextYearClassroom.grade.name,
+                      campus: nextYearClassroom.classroom.campusDetail.name,
+                    },
+                  ]
+                : null,
+            };
+          }
+        }),
+      );
+
+      return data;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
   async findStudents(id: number) {
@@ -257,6 +431,39 @@ export class ActivityClassroomService {
       return formatData;
     } catch (error) {
       throw new NotFoundException(error.message);
+    }
+  }
+
+  /**config ascent */
+
+  async findAscent(id: number) {
+    try {
+      const ac = await this.activityClassroomRepository.findOneBy({ id });
+      const position = ac.grade.position;
+      const year = ac.phase.year.name;
+      //TODO la validación por año debe ser dinamica
+      const listAscent = await this.activityClassroomRepository.find({
+        where: {
+          grade: {
+            position: position + 1,
+          },
+          phase: {
+            year: {
+              name: (parseInt(year) + 1).toString(),
+            },
+          },
+        },
+      });
+      const format = listAscent.map((ac) => {
+        return {
+          id: ac.id,
+          section: ac.section,
+          grade: ac.grade.name,
+        };
+      });
+      return format;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
     }
   }
 }

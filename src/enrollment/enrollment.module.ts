@@ -8,12 +8,23 @@ import { Student } from 'src/student/entities/student.entity';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 
 import { StudentModule } from 'src/student/student.module';
+import { Ascent } from './entities/ascent.entity';
+import { User } from 'src/user/entities/user.entity';
+import { Permission } from 'src/permissions/entities/permission.entity';
 
 @Module({
   controllers: [EnrollmentController],
   providers: [EnrollmentService],
   imports: [
-    TypeOrmModule.forFeature([Enrollment, Person, Student, ActivityClassroom]),
+    TypeOrmModule.forFeature([
+      Enrollment,
+      Person,
+      Student,
+      ActivityClassroom,
+      Ascent,
+      User,
+      Permission,
+    ]),
     StudentModule,
   ],
 })

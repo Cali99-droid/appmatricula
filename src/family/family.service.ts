@@ -162,7 +162,7 @@ export class FamilyService {
         }
       });
       const resultFinal = Object.values(groupedStudents);
-
+      let conta = 0;
       resultFinal.forEach(async (item) => {
         let familyId = undefined;
         const parent = await this.personRepository.find({
@@ -176,6 +176,10 @@ export class FamilyService {
             studentCode: item.sonStudentCodes[0],
           },
         });
+        if (!student || !parent) {
+          conta = conta + 1;
+          return resultFinal;
+        }
         const family = await this.familyRepository.findOne({
           where: [
             {
@@ -226,6 +230,7 @@ export class FamilyService {
           await this.studentRepository.save(update);
         });
       });
+      console.log(`Cantidad de nulos ${conta}`);
       return resultFinal;
     } catch (error) {
       return `Error`;
@@ -239,9 +244,12 @@ export class FamilyService {
   }
 
   async getCites(idDistrict: string) {
+    console.log('first');
     //OBTENER TODOS LOS DISTRITOS
     const url = this.configService.get('API_ADMISION');
     try {
+      console.log('GET CITIES');
+      console.log(url);
       const dataDistrict = await firstValueFrom(
         this.httpService.get(`${url}/cities/district`),
       );
@@ -249,6 +257,7 @@ export class FamilyService {
       const district = dataDistrict.data.data.find(
         (district: any) => district.id === idDistrict,
       );
+      console.log(district);
       //OBTENER TODOS LAS PROVINCIAS
       const dataProvince = await firstValueFrom(
         this.httpService.get(`${url}/cities/province`),
@@ -278,9 +287,12 @@ export class FamilyService {
       relations: {
         parentOneId: true,
         parentTwoId: true,
-        student: true,
+        student: {
+          enrollment: true,
+        },
       },
     });
+
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
     if (family.district) {
       const { district, ...rest } = family;
@@ -290,7 +302,42 @@ export class FamilyService {
         ...cities,
       };
     }
-    return family;
+    /**format temp families */
+    // const { student, ...parents } = family;
+    // const childrens = student.map((item) => {
+    //   const person = item.person;
+    //   const photo = item.photo;
+    //   const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
+    //     (previous, current) => {
+    //       return current.id > previous.id ? current : previous;
+    //     },
+    //   );
+    //   return {
+    //     person,
+    //     enrroll,
+    //     photo,
+    //   };
+    // });
+
+    // return { childrens, ...childrens };
+    /**Formato temporal */
+    const { student, ...rest } = family;
+    const childrens = student.map((item) => {
+      const person = item.person;
+      const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
+        (previous, current) => {
+          return current.id > previous.id ? current : previous;
+        },
+      );
+      const enrrollStatus = enrroll.status;
+      return {
+        person,
+        ...enrroll,
+        enrrollStatus,
+      };
+    });
+
+    return { student: childrens, ...rest };
   }
 
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
