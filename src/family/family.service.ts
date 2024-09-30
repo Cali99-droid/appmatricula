@@ -291,7 +291,11 @@ export class FamilyService {
         parentTwoId: {
           user: true,
         },
-        student: true,
+        student: {
+          enrollment: {
+            activityClassroom: true,
+          },
+        },
       },
     });
 
@@ -331,23 +335,24 @@ export class FamilyService {
 
     // return { childrens, ...childrens };
     /**Formato temporal */
-    // const { student, ...rest } = family;
-    // const childrens = student.map((item) => {
-    //   const person = item.person;
-    //   const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
-    //     (previous, current) => {
-    //       return current.id > previous.id ? current : previous;
-    //     },
-    //   );
-    //   const enrrollStatus = enrroll.status;
-    //   return {
-    //     person,
-    //     ...enrroll,
-    //     enrrollStatus,
-    //   };
-    // });
+    const { student, ...rest } = family;
+    const childrens = student.map((item) => {
+      const person = item.person;
+      const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
+        (previous, current) => {
+          return current.id > previous.id ? current : previous;
+        },
+      );
+      const enrrollStatus = enrroll.status;
+      return {
+        person,
+        ...enrroll,
+        enrrollStatus,
+        actual: activityClassroom.grade.name + ' ' + activityClassroom.section,
+      };
+    });
 
-    return family;
+    return { student: childrens, ...rest };
   }
 
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
