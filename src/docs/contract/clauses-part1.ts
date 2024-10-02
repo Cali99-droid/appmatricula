@@ -1,7 +1,8 @@
 // import PDFDocument from 'pdfkit';
 // import 'pdfkit-table';
 // const PDFDocument = require('pdfkit');
-import PDFDocument from 'pdfkit';
+import * as PDFDocument from 'pdfkit';
+
 export function addClausesPart1(doc: InstanceType<typeof PDFDocument>) {
   //TEXTO DE CLAUSULA PRIMERA
   const C1_P1A = `4.1 El PADRE O MADRE DE FAMILIA se compromete a pagar el monto de matrícula para cada uno de los tres niveles,`;
@@ -34,19 +35,19 @@ export function addClausesPart1(doc: InstanceType<typeof PDFDocument>) {
   const C3_P1B = `disposiciones del Ministerio de Educación, de la UGEL HUARAZ o autoridad competente que obligue a modificar lo establecido en el presente numeral.`;
   const C3_P2A = `3.2	Los tres niveles educativos (inicial, primaria y secundaria) están organizados en 4 bimestres. Al finalizar cada periodo`;
   const C3_P2B = `académico los alumnos tendrán un periodo corto de descanso.`;
-  class MyPDFDocument extends PDFDocument {
-    constructor() {
-      super();
-    }
-    // Añadir el método `table` a nuestra clase extendida
-    table(table: any, options?: any) {
-      // `this` se refiere al documento PDF
-      return (this as any).addTable(table, options); // Llama al método table de pdfkit-table
-    }
-  }
+  // class MyPDFDocument extends PDFDocument {
+  //   constructor() {
+  //     super();
+  //   }
+  //   // Añadir el método `table` a nuestra clase extendida
+  //   table(table: any, options?: any) {
+  //     // `this` se refiere al documento PDF
+  //     return (this as any).addTable(table, options); // Llama al método table de pdfkit-table
+  //   }
+  // }
   // // Crear una instancia de MyPDFDocument
   // doc = new MyPDFDocument();
-  const doctumento = new MyPDFDocument();
+  // const doctumento = new MyPDFDocument();
   // }
   // CLAUSULA CUARTA
   doc.moveDown();
@@ -62,16 +63,39 @@ export function addClausesPart1(doc: InstanceType<typeof PDFDocument>) {
     .font('Helvetica')
     .fontSize(9)
     .text(`${C1_P1A} ${C1_P1B}`, { align: 'justify' });
-  const table = {
-    headers: ['Grado', 'Costo Anual', 'Pensión Mensual', 'Local'],
-    rows: [
-      ['INICIAL', 'S/ 3400.00', 'S/ 340.00', 'Local 1 y 2'],
-      ['PRIMARIA', 'S/ 3150.00', 'S/ 315.00', 'Local 1'],
-      ['', 'S/ 3450.00', 'S/ 345.00', 'Local 2'],
-      ['SECUNDARIA', 'S/ 3650.00', 'S/ 365.00', 'Turno Mañana'],
-      ['', 'S/ 3250.00', 'S/ 325.00', 'Turno Tarde'],
-    ],
-  };
+  // const table = {
+  //   headers: ['Grado', 'Costo Anual', 'Pensión Mensual', 'Local'],
+  //   rows: [
+  //     ['INICIAL', 'S/ 3400.00', 'S/ 340.00', 'Local 1 y 2'],
+  //     ['PRIMARIA', 'S/ 3150.00', 'S/ 315.00', 'Local 1'],
+  //     ['', 'S/ 3450.00', 'S/ 345.00', 'Local 2'],
+  //     ['SECUNDARIA', 'S/ 3650.00', 'S/ 365.00', 'Turno Mañana'],
+  //     ['', 'S/ 3250.00', 'S/ 325.00', 'Turno Tarde'],
+  //   ],
+  // };
+  const tableData = [
+    {
+      col1: 'Fila 1, Columna 1',
+      col2: 'Fila 1, Columna 2',
+      col3: 'Fila 1, Columna 3',
+      col4: 'Fila 1, Columna 3',
+    },
+    {
+      col1: 'Fila 2, Columna 1',
+      col2: 'Fila 2, Columna 2',
+      col3: 'Fila 2, Columna 3',
+      col4: 'Fila 1, Columna 3',
+    },
+    {
+      col1: 'Fila 3, Columna 1',
+      col2: 'Fila 3, Columna 2',
+      col3: 'Fila 3, Column a 3',
+      col4: 'Fila 1, Columna 3',
+    },
+  ];
+  const tableTop = doc.y;
+  doc.moveDown(2);
+  generateTable(doc, tableData, tableTop);
   // doctumento.table(table, {
   //   prepareHeader: () => doc.fontSize(10),
   //   prepareRow: (row, i) => doc.fontSize(10),
@@ -95,4 +119,68 @@ export function addClausesPart1(doc: InstanceType<typeof PDFDocument>) {
   //     .font('Helvetica')
   //     .fontSize(9)
   //     .text(`${C1_P4A} ${C1_P4B} ${C1_P4C}`, { align: 'justify' });
+}
+
+export function generateTable(doc: PDFKit.PDFDocument, data: any[], y: number) {
+  const columnWidths = [100, 100, 100, 100];
+  const rowHeight = 30;
+
+  // Dibujar encabezado de la tabla
+  // doc.fontSize(12).text('Columna 1', 50, y);
+  // doc.text('Columna 2', 200, y);
+  // doc.text('Columna 3', 350, y);
+
+  y += rowHeight;
+
+  // Dibujar filas de la tabla
+  data.forEach((row) => {
+    doc.fontSize(10).text(row.col1, 50, y);
+    doc.text(row.col2, 150, y);
+    doc.text(row.col3, 250, y);
+    doc.text(row.col4, 350, y); // Nueva columna
+    // Dibujar líneas de las filas
+    drawRowLines(doc, y, columnWidths, rowHeight);
+
+    y += rowHeight;
+  });
+}
+
+// Dibujar las líneas de cada fila
+export function // Dibujar las líneas de cada fila
+drawRowLines(
+  doc: PDFKit.PDFDocument,
+  y: number,
+  columnWidths: number[],
+  rowHeight: number,
+) {
+  doc.lineWidth(0.5);
+  doc.strokeColor('#000');
+
+  // Dibujar la línea superior de la fila
+  doc.moveTo(50, y).lineTo(450, y).stroke();
+
+  // Dibujar las líneas verticales (columnas)
+  let xPos = 50; // Posición inicial en x
+
+  // Dibuja todas las líneas de las columnas
+  columnWidths.forEach((width) => {
+    // Dibuja la línea vertical de cada columna
+    doc
+      .moveTo(xPos, y)
+      .lineTo(xPos, y + rowHeight)
+      .stroke();
+    xPos += width; // Avanza a la siguiente columna
+  });
+
+  // Dibuja la última línea vertical al final de la fila
+  doc
+    .moveTo(xPos, y)
+    .lineTo(xPos, y + rowHeight)
+    .stroke(); // Última línea vertical
+
+  // Dibujar la línea inferior de la fila
+  doc
+    .moveTo(50, y + rowHeight)
+    .lineTo(450, y + rowHeight)
+    .stroke();
 }

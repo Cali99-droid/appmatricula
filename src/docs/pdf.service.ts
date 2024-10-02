@@ -378,7 +378,7 @@ export class PdfService {
       doc.on('end', () => resolve(Buffer.concat(buffers)));
 
       addContractHeader(doc);
-      // addClausesPart1(doc);
+      addClausesPart1(doc);
       doc.end();
     });
   }
@@ -389,5 +389,61 @@ export class PdfService {
   }
   async convertWebPToPNG(buffer: ArrayBuffer): Promise<Buffer> {
     return sharp(buffer).png().resize({ width: 200, height: 250 }).toBuffer();
+  }
+
+  generateTable(doc: PDFKit.PDFDocument, data: any[]) {
+    const tableTop = 150;
+    const columnWidths = [150, 150, 150];
+    const rowHeight = 30;
+    let y = tableTop;
+
+    // Dibujar encabezado de la tabla
+    doc.fontSize(12).text('Columna 1', 50, y);
+    doc.text('Columna 2', 200, y);
+    doc.text('Columna 3', 350, y);
+
+    y += rowHeight;
+
+    // Dibujar filas de la tabla
+    data.forEach((row) => {
+      doc.fontSize(10).text(row.col1, 50, y);
+      doc.text(row.col2, 200, y);
+      doc.text(row.col3, 350, y);
+
+      // Dibujar líneas de las filas
+      this.drawRowLines(doc, y, columnWidths, rowHeight);
+
+      y += rowHeight;
+    });
+  }
+
+  // Dibujar las líneas de cada fila
+  drawRowLines(
+    doc: PDFKit.PDFDocument,
+    y: number,
+    columnWidths: number[],
+    rowHeight: number,
+  ) {
+    doc.lineWidth(0.5);
+    doc.strokeColor('#000');
+
+    // Dibujar la línea superior
+    doc.moveTo(50, y).lineTo(500, y).stroke();
+
+    // Dibujar las líneas verticales (columnas)
+    let xPos = 50;
+    columnWidths.forEach((width) => {
+      doc
+        .moveTo(xPos, y)
+        .lineTo(xPos, y + rowHeight)
+        .stroke();
+      xPos += width;
+    });
+
+    // Dibujar la línea inferior
+    doc
+      .moveTo(50, y + rowHeight)
+      .lineTo(500, y + rowHeight)
+      .stroke();
   }
 }
