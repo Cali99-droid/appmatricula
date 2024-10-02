@@ -7,6 +7,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { TypeSure } from '../enum/type-sure.enum';
+import { PaymentPref } from '../enum/payment-pref.enum';
 
 export class CreateFamilyDto {
   @ApiProperty({
@@ -83,4 +84,38 @@ export class CreateFamilyDto {
   @IsString()
   @IsOptional()
   addressSure?: string;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Reponsability Enrollment of the Student',
+  })
+  @IsNumber()
+  @IsOptional()
+  respEnrollment?: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Reponsability Economic of the Student',
+  })
+  @IsNumber()
+  @IsOptional()
+  respEconomic?: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Reponsability Academic of the Student',
+  })
+  @IsNumber()
+  @IsOptional()
+  respAcademic?: number;
+
+  @ApiProperty({
+    example: 'BBVA',
+    description: 'Type Sure ,ESSALUD or OTRO',
+  })
+  @IsEnum(PaymentPref, {
+    message: 'type value must be some values: [ESSALUD, OTRO] ',
+  })
+  @IsOptional()
+  paymentPref?: PaymentPref;
 }

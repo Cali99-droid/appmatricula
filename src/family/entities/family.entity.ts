@@ -10,6 +10,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { TypeSure } from '../enum/type-sure.enum';
+import { PaymentPref } from '../enum/payment-pref.enum';
 
 @Entity()
 export class Family {
@@ -76,4 +77,33 @@ export class Family {
     // eager: true,
   })
   student?: Student[];
+
+  /**RESP */
+  @ManyToOne(() => Person, (person) => person.respEnrollments, {
+    // eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'respEnrollment' })
+  respEnrollment?: Person;
+
+  @ManyToOne(() => Person, (person) => person.respEconomics, {
+    // eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'respEconomic' })
+  respEconomic?: Person;
+
+  @ManyToOne(() => Person, (person) => person.respAcademics, {
+    // eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'respAcademic' })
+  respAcademic?: Person;
+
+  @ApiProperty()
+  @Column({
+    type: 'enum',
+    enum: PaymentPref,
+  })
+  paymentPref?: PaymentPref;
 }

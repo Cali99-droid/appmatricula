@@ -297,6 +297,9 @@ export class FamilyService {
             activityClassroom: true,
           },
         },
+        respEnrollment: true,
+        respEconomic: true,
+        respAcademic: true,
       },
     });
 
@@ -304,6 +307,15 @@ export class FamilyService {
 
     if (family.parentOneId?.user) {
       family.parentOneId.user = { email: family.parentOneId.user.email } as any;
+    }
+    if (family.respEnrollment) {
+      family.respEnrollment = family.respEnrollment.id as any;
+    }
+    if (family.respEconomic) {
+      family.respEconomic = family.respEconomic.id as any;
+    }
+    if (family.respAcademic) {
+      family.respAcademic = family.respAcademic.id as any;
     }
 
     if (family.parentTwoId?.user) {
@@ -355,12 +367,19 @@ export class FamilyService {
         ...cities,
       };
     }
-
+    return data;
     // return { student: childrens, ...rest };
   }
 
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
-    const { parentOneId, parentTwoId, ...rest } = updateFamilyDto;
+    const {
+      parentOneId,
+      parentTwoId,
+      respAcademic,
+      respEconomic,
+      respEnrollment,
+      ...rest
+    } = updateFamilyDto;
     if (updateFamilyDto.district) {
       const url = this.configService.get('API_ADMISION');
       const dataDistrict = await firstValueFrom(
@@ -380,6 +399,9 @@ export class FamilyService {
       id: id,
       parentOneId: isNaN(parentOneId) ? undefined : { id: parentOneId },
       parentTwoId: isNaN(parentTwoId) ? undefined : { id: parentTwoId },
+      respEnrollment: { id: respEnrollment },
+      respEconomic: { id: respEconomic },
+      respAcademic: { id: respAcademic },
       ...rest,
     });
     if (!family) throw new NotFoundException(`Family with id: ${id} not found`);
