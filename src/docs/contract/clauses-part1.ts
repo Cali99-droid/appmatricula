@@ -93,9 +93,20 @@ export function addClausesPart1(doc: InstanceType<typeof PDFDocument>) {
       col4: 'Fila 1, Columna 3',
     },
   ];
-  const tableTop = doc.y;
-  doc.moveDown(2);
+  let tableTop = doc.y;
+
   generateTable(doc, tableData, tableTop);
+  // Incrementar 'y' para posicionar el texto debajo de la tabla
+  tableTop += 20; // Añade un espacio adicional debajo de la tabla para separar el texto
+
+  // Agregar texto debajo de la tabla
+  doc
+    .fontSize(12)
+    .text(
+      'Este es un texto adicional que aparece debajo de la tabla.',
+      50,
+      doc.y + 20,
+    );
   // doctumento.table(table, {
   //   prepareHeader: () => doc.fontSize(10),
   //   prepareRow: (row, i) => doc.fontSize(10),
@@ -135,7 +146,7 @@ export function generateTable(doc: PDFKit.PDFDocument, data: any[], y: number) {
   // Dibujar filas de la tabla
   data.forEach((row) => {
     doc.fontSize(10).text(row.col1, 50, y);
-    doc.text(row.col2, 150, y);
+    doc.text(row.col2, 155, y + 5);
     doc.text(row.col3, 250, y);
     doc.text(row.col4, 350, y); // Nueva columna
     // Dibujar líneas de las filas
