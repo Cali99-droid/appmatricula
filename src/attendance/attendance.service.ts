@@ -370,37 +370,37 @@ export class AttendanceService {
         classroom: classroomInfo,
         condition,
       };
-      // const family = await this.familyRepository.findOne({
-      //   where: { student: { id: enrollment.student.id } },
-      //   relations: {
-      //     student: true,
-      //     parentOneId: { user: true },
-      //     parentTwoId: { user: true },
-      //   },
-      // });
-      // if (family) {
-      //   const { parentOneId, parentTwoId, student } = family;
-      //   if (parentOneId && parentOneId.user) {
-      //     this.sendEmail(
-      //       parentOneId,
-      //       student[0],
-      //       currentTime,
-      //       attendance.arrivalDate,
-      //       shift,
-      //       condition,
-      //     );
-      //   }
-      //   if (parentTwoId && parentTwoId.user) {
-      //     this.sendEmail(
-      //       parentTwoId,
-      //       student[0],
-      //       currentTime,
-      //       attendance.arrivalDate,
-      //       shift,
-      //       condition,
-      //     );
-      //   }
-      // }
+      const family = await this.familyRepository.findOne({
+        where: { student: { id: enrollment.student.id } },
+        relations: {
+          student: true,
+          parentOneId: { user: true },
+          parentTwoId: { user: true },
+        },
+      });
+      if (family) {
+        const { parentOneId, parentTwoId, student } = family;
+        if (parentOneId && parentOneId.user) {
+          this.sendEmail(
+            parentOneId,
+            student[0],
+            currentTime,
+            attendance.arrivalDate,
+            shift,
+            condition,
+          );
+        }
+        if (parentTwoId && parentTwoId.user) {
+          this.sendEmail(
+            parentTwoId,
+            student[0],
+            currentTime,
+            attendance.arrivalDate,
+            shift,
+            condition,
+          );
+        }
+      }
 
       await this.attendanceRepository.save(attendance);
       return dataStudent;
@@ -418,12 +418,12 @@ export class AttendanceService {
   ) {
     const url = this.configService.get('GHL_ATTENDANCE_URL');
     try {
-      currentTime.setHours(currentTime.getHours() - 5);
+      // currentTime.setHours(currentTime.getHours() - 5);
       const hours = currentTime.getUTCHours().toString().padStart(2, '0');
       const minutes = currentTime.getUTCMinutes().toString().padStart(2, '0');
       const seconds = currentTime.getUTCSeconds().toString().padStart(2, '0');
       const formattedTime = `${hours}:${minutes}:${seconds}`;
-
+      const timeZone = 'America/Lima';
       await firstValueFrom(
         this.httpService.post(url, {
           full_name_son: `${student.person.name}`,
@@ -431,7 +431,7 @@ export class AttendanceService {
           last_name: `${parent.lastname} ${parent.mLastname}`,
           email: parent.user.email,
           cmrGHLId: parent.user.crmGHLId,
-          arrivalTime: formattedTime,
+          arrivalTime: moment.utc(currentTime).tz(timeZone).format('HH:mm:ss'),
           arribalDate: arrivalDate,
           shift: shift === 'M' ? 'Mañana' : 'Tarde',
           condition: condition === 'P' ? 'Temprano' : 'Tarde',

@@ -88,6 +88,7 @@ export class PersonService {
         idPerson = validatPerson.id;
       } else {
         const person = this.personRepository.create({
+          typeDoc: data.typeDoc,
           docNumber: data.docNumber,
           name: data.name,
           lastname: data.lastName,
@@ -122,7 +123,9 @@ export class PersonService {
         ],
         relations: {
           student: {
-            enrollment: { activityClassroom: { grade: { level: true } } },
+            enrollment: {
+              activityClassroom: { grade: { level: true }, phase: true },
+            },
           },
         },
       });
@@ -150,9 +153,12 @@ export class PersonService {
         crmGHLId: userCreated.crmGHLId,
         name: data.name,
         lastName: `${data.lastName} ${data.mLastname}`,
-        grade: getParent.student[0].enrollment[0].activityClassroom.grade.name,
+        year: getParent.student[0].enrollment[0].activityClassroom.phase.year
+          .name,
         level:
           getParent.student[0].enrollment[0].activityClassroom.grade.level.name,
+        grade: getParent.student[0].enrollment[0].activityClassroom.grade.name,
+        section: getParent.student[0].enrollment[0].activityClassroom.section,
       };
     } catch (error) {
       handleDBExceptions(error, this.logger);

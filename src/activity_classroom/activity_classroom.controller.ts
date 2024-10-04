@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   Res,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ActivityClassroomService } from './activity_classroom.service';
@@ -153,10 +154,53 @@ export class ActivityClassroomController {
     type: [ActivityClassroom],
   })
   @Auth()
+  searchParams(
+    @Query() searchClassroomsDto: SearchClassroomsDto,
+    @GetUser() user: User,
+  ) {
+    // return this.activityClassroomService.exampleGetac();
+    return this.activityClassroomService.searchParams(
+      searchClassroomsDto,
+      user,
+    );
+  }
+
+  @Get('search/classrooms')
+  @ApiQuery({
+    name: 'yearId',
+    required: true,
+    description: 'Id of the year',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'phaseId',
+    required: false,
+    description: 'Id of the phase',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'campusId',
+    required: false,
+    description: 'Id of the campus',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'levelId',
+    required: false,
+    description: 'Id of the level',
+    type: Number,
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: 'Array of classrooms from phase, year, campus or level',
+    type: [ActivityClassroom],
+  })
+  @Auth()
   searchClassrooms(
     @Query() searchClassroomsDto: SearchClassroomsDto,
     @GetUser() user: User,
   ) {
+    // return this.activityClassroomService.exampleGetac();
     return this.activityClassroomService.searchClassrooms(
       searchClassroomsDto,
       user,
@@ -175,9 +219,26 @@ export class ActivityClassroomController {
     description: 'Detail students of Activity Classroom',
     type: ActivityClassroom,
   })
-  findStudents(@Param('id') id: string) {
+  findStudents(@Param('id', ParseIntPipe) id: number) {
     return this.activityClassroomService.findStudents(+id);
   }
+
+  @Get('ascent/:id')
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Id of the activity classroom to find list of ascents',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'list of ascents',
+    type: ActivityClassroom,
+  })
+  findAscent(@Param('id', ParseIntPipe) id: number) {
+    return this.activityClassroomService.findAscent(id);
+  }
+
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',

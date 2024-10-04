@@ -17,6 +17,7 @@ import { Enrollment } from '../../enrollment/entities/enrollment.entity';
 import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { AssignmentClassroom } from 'src/user/entities/assignments-classroom.entity';
+import { Ascent } from 'src/enrollment/entities/ascent.entity';
 
 @Entity()
 export class ActivityClassroom {
@@ -74,4 +75,10 @@ export class ActivityClassroom {
     (assignmentClass) => assignmentClass.activityClassroom,
   )
   assignmentClassroom: AssignmentClassroom[];
+
+  /**ascent */
+  @OneToMany(() => Ascent, (acen) => acen.originId)
+  origin?: Ascent;
+  @OneToMany(() => Ascent, (acen) => acen.destinationId)
+  destination?: Ascent;
 }

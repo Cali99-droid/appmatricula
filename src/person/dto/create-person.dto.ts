@@ -10,17 +10,25 @@ import {
 } from 'class-validator';
 import { FamilyRole } from 'src/common/enum/family-role.enum';
 import { Gender } from 'src/common/enum/gender.enum';
+import { TypeDoc } from '../enum/typeDoc.enum';
 
 export class CreatePersonDto {
+  @ApiProperty({
+    example: 'DNI',
+    description: 'Gender value must be some values: [DNI, CE] ',
+  })
+  @IsString()
+  typeDoc: TypeDoc;
+
   @ApiProperty({
     example: '71562526',
     description: 'person DNI',
     uniqueItems: true,
   })
   @IsString()
-  @Length(8, 8)
-  @Matches(/^\d+$/, {
-    message: 'DNI debe ser una cadena numérica',
+  @Length(8, 12)
+  @Matches(/^[a-zA-Z0-9]+$/, {
+    message: 'El docNumber debe contener solo caracteres alfanuméricos',
   })
   docNumber: string;
 

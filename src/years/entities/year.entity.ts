@@ -4,6 +4,7 @@ import { Phase } from '../../phase/entities/phase.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Holiday } from 'src/holiday/entities/holiday.entity';
 import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
+import { Ascent } from 'src/enrollment/entities/ascent.entity';
 
 @Entity()
 export class Year {
@@ -66,6 +67,12 @@ export class Year {
     // eager: true,
   })
   phase?: Phase[];
+
+  @OneToMany(() => Ascent, (ascent) => ascent.year, {
+    // cascade: true,
+    // eager: true,
+  })
+  ascent?: Ascent[];
 
   @ApiProperty({
     description: 'array of Campus by Year ',
