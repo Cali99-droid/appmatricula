@@ -212,16 +212,16 @@ export class AttendanceService {
           finishAttendanceTime.setHours(startHour + 2, endMinute, endSecond, 0);
           cutoffTime.setHours(startHour, startMinute, startSecond, 0);
 
-           if (
-             !(
-               currentTime >= initAttendanceTime &&
-               currentTime <= finishAttendanceTime
-             )
-           ) {
-             throw new BadRequestException(
+          if (
+            !(
+              currentTime >= initAttendanceTime &&
+              currentTime <= finishAttendanceTime
+            )
+          ) {
+            throw new BadRequestException(
               `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
             );
-           }
+          }
 
           //**Mantener esto*/
           condition =
@@ -326,16 +326,16 @@ export class AttendanceService {
         initAttendanceTime.setHours(startHour - 1, startMinute, startSecond, 0);
         finishAttendanceTime.setHours(endHour - 2, endMinute, endSecond, 0);
 
-         if (
-           !(
+        if (
+          !(
             currentTime >= initAttendanceTime &&
-             currentTime <= finishAttendanceTime
+            currentTime <= finishAttendanceTime
           )
-         ) {
-           throw new BadRequestException(
+        ) {
+          throw new BadRequestException(
             `No puede verificar la asistencia en este momento, espere hasta: ${initAttendanceTime}`,
-           );
-         }
+          );
+        }
         cutoffTime.setHours(startHour, startMinute, startSecond, 0);
         if (currentTime.getHours() < 12) {
           condition =
@@ -505,10 +505,8 @@ export class AttendanceService {
 
       // Formatear datos finales de asistencias
       const formatAttendances = attendances.map((attendance) => {
-
         const { student, activityClassroom, arrivalTime, condition } =
           attendance;
-
 
         const personData = {
           name: student.person.name,
@@ -674,8 +672,8 @@ export class AttendanceService {
     let currentBimester;
     for (const bimestre of bimesters) {
       if (
-        currentDate >= new Date(bimestre.startDate) &&
-        currentDate <= new Date(bimestre.endDate)
+        currentDate >= normalizeDate(new Date(bimestre.startDate)) &&
+        currentDate <= normalizeDate(new Date(bimestre.startDate))
       ) {
         currentBimester = bimestre;
       }
@@ -816,8 +814,8 @@ export class AttendanceService {
     let currentBimester;
     for (const bimestre of bimesters) {
       if (
-        currentDate >= new Date(bimestre.startDate) &&
-        currentDate <= new Date(bimestre.endDate)
+        currentDate >= normalizeDate(new Date(bimestre.startDate)) &&
+        currentDate <= normalizeDate(new Date(bimestre.startDate))
       ) {
         currentBimester = bimestre;
       }
