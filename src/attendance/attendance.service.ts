@@ -648,7 +648,7 @@ export class AttendanceService {
     this.logger.log(`Running cron jobs for the shift:${shift}`);
     const currentDate = new Date();
     const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
-
+    const currentDateBimester = normalizeDate(new Date());
     //**Validar Fase  */
     const qbphase = this.phaseRepository.createQueryBuilder('phase');
     const phase = await qbphase
@@ -672,8 +672,8 @@ export class AttendanceService {
     let currentBimester;
     for (const bimestre of bimesters) {
       if (
-        currentDate >= normalizeDate(new Date(bimestre.startDate)) &&
-        currentDate <= normalizeDate(new Date(bimestre.startDate))
+        currentDateBimester >= normalizeDate(new Date(bimestre.startDate)) &&
+        currentDateBimester <= normalizeDate(new Date(bimestre.startDate))
       ) {
         currentBimester = bimestre;
       }
@@ -790,6 +790,7 @@ export class AttendanceService {
   async markAbsentStudentsCronIndividual(): Promise<void> {
     this.logger.log(`Running cron jobs for the Individual schedule`);
     const currentDate = new Date();
+    const currentDateBimester = normalizeDate(new Date());
     const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
     //**Validar Fase  */
     const qbphase = this.phaseRepository.createQueryBuilder('phase');
@@ -814,8 +815,8 @@ export class AttendanceService {
     let currentBimester;
     for (const bimestre of bimesters) {
       if (
-        currentDate >= normalizeDate(new Date(bimestre.startDate)) &&
-        currentDate <= normalizeDate(new Date(bimestre.startDate))
+        currentDateBimester >= normalizeDate(new Date(bimestre.startDate)) &&
+        currentDateBimester <= normalizeDate(new Date(bimestre.startDate))
       ) {
         currentBimester = bimestre;
       }
