@@ -678,12 +678,12 @@ export class AttendanceService {
         currentBimester = bimestre;
       }
     }
-    if (!currentBimester) {
-      this.logger.warn(
-        `There is no active bimester for this date: ${currentDate}, the cron jobs were not completed`,
-      );
-      return;
-    }
+    // if (!currentBimester) {
+    //   this.logger.warn(
+    //     `There is no active bimester for this date: ${currentDateBimester}, the cron jobs were not completed`,
+    //   );
+    //   return;
+    // }
     //**Validar si es feriado */
     const yearId = phase.year.id;
     const queryBuilderHoliday =
