@@ -294,7 +294,10 @@ export class FamilyService {
         },
         student: {
           enrollment: {
-            activityClassroom: true,
+            activityClassroom: {
+              classroom: true,
+              grade: true,
+            },
           },
         },
         respEnrollment: true,
@@ -349,12 +352,19 @@ export class FamilyService {
           return current.id > previous.id ? current : previous;
         },
       );
-
+      //Sede 1 - Primaria - 3A
       return {
         person,
         ...enrroll,
 
-        actual: activityClassroom.grade.name + ' ' + activityClassroom.section,
+        actual:
+          activityClassroom.classroom.campusDetail.name +
+          ' - ' +
+          activityClassroom.grade.level.name +
+          ' - ' +
+          activityClassroom.grade.name +
+          ' ' +
+          activityClassroom.section,
       };
     });
     const data = { student: childrens, ...rest };
