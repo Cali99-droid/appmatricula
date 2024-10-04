@@ -55,27 +55,27 @@ export class CreateStudentDto {
   @IsNumber()
   familyId: number;
 
-  @ApiProperty({
-    example: 1,
-    description: 'Reponsability Enrollment of the Student',
-  })
-  @IsString()
-  @IsOptional()
-  respEnrollment?: number;
+  // @ApiProperty({
+  //   example: 1,
+  //   description: 'Reponsability Enrollment of the Student',
+  // })
+  // @IsString()
+  // @IsOptional()
+  // respEnrollment?: number;
 
-  @ApiProperty({
-    example: 1,
-    description: 'Reponsability Economic of the Student',
-  })
-  @IsString()
-  @IsOptional()
-  respEconomic?: number;
+  // @ApiProperty({
+  //   example: 1,
+  //   description: 'Reponsability Economic of the Student',
+  // })
+  // @IsString()
+  // @IsOptional()
+  // respEconomic?: number;
 
-  @ApiProperty({
-    example: 1,
-    description: 'Reponsability Academic of the Student',
-  })
-  @IsString()
-  @IsOptional()
-  respAcademic?: number;
+  // @ApiProperty({
+  //   example: 1,
+  //   description: 'Reponsability Academic of the Student',
+  // })
+  // @IsString()
+  // @IsOptional()
+  // respAcademic?: number;
 }

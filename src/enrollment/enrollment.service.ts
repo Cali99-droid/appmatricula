@@ -699,7 +699,12 @@ export class EnrollmentService {
               name:
                 co.destinationId.grade.name + ' ' + co.destinationId.section,
               vacants: dest.vacants,
-              suggested: true,
+              suggested:
+                dest.section === currentEnrrollment.activityClassroom.section ||
+                dest.detailOrigin.section ===
+                  currentEnrrollment.activityClassroom.section
+                  ? true
+                  : false,
             };
             availables.push(classroom);
           }
@@ -746,7 +751,10 @@ export class EnrollmentService {
             id: ac.id,
             name: ac.grade.name + ' ' + ac.section,
             vacants: dest.vacants,
-            suggested: true,
+            suggested:
+              dest.section === currentEnrrollment.activityClassroom.section
+                ? true
+                : false,
           };
           availables.push(classroom);
         }

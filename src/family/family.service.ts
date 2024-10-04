@@ -282,26 +282,46 @@ export class FamilyService {
     }
   }
   async findOne(id: number) {
+    console.log('llmando');
     const family = await this.familyRepository.findOne({
       where: { id: id },
       relations: {
-        parentOneId: true,
-        parentTwoId: true,
-        student: {
-          enrollment: true,
+        parentOneId: {
+          user: true,
         },
+        parentTwoId: {
+          user: true,
+        },
+        student: {
+          enrollment: {
+            activityClassroom: true,
+          },
+        },
+        respEnrollment: true,
+        respEconomic: true,
+        respAcademic: true,
       },
     });
 
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
-    if (family.district) {
-      const { district, ...rest } = family;
-      const cities = await this.getCites(district);
-      return {
-        ...rest,
-        ...cities,
-      };
+
+    if (family.parentOneId?.user) {
+      family.parentOneId.user = { email: family.parentOneId.user.email } as any;
     }
+    if (family.respEnrollment) {
+      family.respEnrollment = family.respEnrollment.id as any;
+    }
+    if (family.respEconomic) {
+      family.respEconomic = family.respEconomic.id as any;
+    }
+    if (family.respAcademic) {
+      family.respAcademic = family.respAcademic.id as any;
+    }
+
+    if (family.parentTwoId?.user) {
+      family.parentTwoId.user = { email: family.parentTwoId.user.email } as any;
+    }
+
     /**format temp families */
     // const { student, ...parents } = family;
     // const childrens = student.map((item) => {
@@ -329,19 +349,37 @@ export class FamilyService {
           return current.id > previous.id ? current : previous;
         },
       );
-      const enrrollStatus = enrroll.status;
+
       return {
         person,
         ...enrroll,
-        enrrollStatus,
+
+        actual: activityClassroom.grade.name + ' ' + activityClassroom.section,
       };
     });
+    const data = { student: childrens, ...rest };
 
-    return { student: childrens, ...rest };
+    if (data.district) {
+      const { district, ...rest } = data;
+      const cities = await this.getCites(district);
+      return {
+        ...rest,
+        ...cities,
+      };
+    }
+    return data;
+    // return { student: childrens, ...rest };
   }
 
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
-    const { parentOneId, parentTwoId, ...rest } = updateFamilyDto;
+    const {
+      parentOneId,
+      parentTwoId,
+      respAcademic,
+      respEconomic,
+      respEnrollment,
+      ...rest
+    } = updateFamilyDto;
     if (updateFamilyDto.district) {
       const url = this.configService.get('API_ADMISION');
       const dataDistrict = await firstValueFrom(
@@ -361,6 +399,9 @@ export class FamilyService {
       id: id,
       parentOneId: isNaN(parentOneId) ? undefined : { id: parentOneId },
       parentTwoId: isNaN(parentTwoId) ? undefined : { id: parentTwoId },
+      respEnrollment: { id: respEnrollment },
+      respEconomic: { id: respEconomic },
+      respAcademic: { id: respAcademic },
       ...rest,
     });
     if (!family) throw new NotFoundException(`Family with id: ${id} not found`);

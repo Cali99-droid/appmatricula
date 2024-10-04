@@ -90,9 +90,6 @@ export class StudentService {
       where: { id, enrollment: { isActive: true } },
       relations: {
         enrollment: { activityClassroom: { grade: { level: true } } },
-        respAcademic: true,
-        respEconomic: true,
-        respEnrollment: true,
       },
     });
     if (!student)
@@ -123,18 +120,14 @@ export class StudentService {
     const {
       personId,
       familyId,
-      respEnrollment,
-      respAcademic,
-      respEconomic,
+
       ...rest
     } = updateStudentDto;
     const student = await this.studentRepository.preload({
       id: id,
       person: isNaN(personId) ? undefined : { id: personId },
       family: isNaN(familyId) ? undefined : { id: familyId },
-      respEnrollment: isNaN(respEnrollment) ? undefined : { id: familyId },
-      respAcademic: isNaN(respAcademic) ? undefined : { id: respAcademic },
-      respEconomic: isNaN(respEconomic) ? undefined : { id: respEconomic },
+
       ...rest,
     });
     if (!student)
