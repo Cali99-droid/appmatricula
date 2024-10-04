@@ -672,8 +672,8 @@ export class AttendanceService {
     let currentBimester;
     for (const bimestre of bimesters) {
       if (
-        currentDate >= new Date(bimestre.startDate) &&
-        currentDate <= new Date(bimestre.endDate)
+        currentDate >= normalizeDate(new Date(bimestre.startDate)) &&
+        currentDate <= normalizeDate(new Date(bimestre.startDate))
       ) {
         currentBimester = bimestre;
       }
@@ -814,8 +814,8 @@ export class AttendanceService {
     let currentBimester;
     for (const bimestre of bimesters) {
       if (
-        currentDate >= new Date(bimestre.startDate) &&
-        currentDate <= new Date(bimestre.endDate)
+        currentDate >= normalizeDate(new Date(bimestre.startDate)) &&
+        currentDate <= normalizeDate(new Date(bimestre.startDate))
       ) {
         currentBimester = bimestre;
       }
