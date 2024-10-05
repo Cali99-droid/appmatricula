@@ -14,6 +14,12 @@ import { addContractHeader } from './contract/header';
 import { Repository } from 'typeorm';
 // import { User } from 'src/user/entities/user.entity';
 import { addClausesPart1 } from './contract/clauses-part1';
+import { addClausesPart2 } from './contract/clauses-part2';
+import { addClausesPart3 } from './contract/clauses-part3';
+import { addAnexo } from './contract/anexo';
+import { Student } from 'src/student/entities/student.entity';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class PdfService {
@@ -22,6 +28,10 @@ export class PdfService {
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
     @InjectRepository(Enrollment)
     private readonly enrollmentRepositoy: Repository<Enrollment>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
+    private readonly httpService: HttpService,
+
     private readonly configService: ConfigService,
   ) {}
   async generatePdfWithQRCodes(id: number): Promise<Buffer> {
@@ -351,18 +361,38 @@ export class PdfService {
     });
   }
   async generatePdfContract(idStudent: number): Promise<Buffer> {
-    // class MyPDFDocument extends PDFDocument {
-    //   constructor(options?: any) {
-    //     super(options);
-    //   }
+    const student = await this.studentRepository.findOne({
+      where: { id: idStudent },
+      relations: {
+        family: {
+          respEnrollment: {
+            user: true,
+          },
+        },
+      },
+    });
+    if (!student)
+      throw new NotFoundException(`Student with id ${idStudent} not found`);
+    if (!student.family.respEnrollment)
+      throw new NotFoundException(
+        `This student does not have a registration responsible`,
+      );
+    if (!student.family.district)
+      throw new NotFoundException(`This student does not have a district`);
+    const numContra = '123';
+    const name = `${student.family.respEnrollment.name} ${student.family.respEnrollment.lastname} ${student.family.respEnrollment.mLastname} `;
+    const typeDoc = student.family.respEnrollment.typeDoc;
+    const docNumber = student.family.respEnrollment.docNumber;
+    const address = student.family.address;
+    const dataCity = await this.getCites(student.family.district);
+    const district = dataCity.district;
+    const province = dataCity.province;
+    const department = dataCity.region;
 
-    //   table(table: any, options?: any) {
-    //     return (this as any).addTable(table, options);
-    // }
-    // // Crear una instancia de MyPDFDocument
-    // doc = new MyPDFDocument();
-    // const doctumento = new MyPDFDocument();
-    return new Promise(async (resolve, reject) => {
+    const email = student.family.respEnrollment.user.email;
+    const cellPhone = student.family.respEnrollment.cellPhone;
+
+    return new Promise(async (resolve) => {
       const doc = new PDFDocument({
         size: 'A4',
         margins: {
@@ -377,8 +407,84 @@ export class PdfService {
       doc.on('data', buffers.push.bind(buffers));
       doc.on('end', () => resolve(Buffer.concat(buffers)));
 
-      addContractHeader(doc);
+      addContractHeader(
+        doc,
+        numContra,
+        name,
+        typeDoc,
+        docNumber,
+        address,
+        district,
+        province,
+        department,
+      );
       addClausesPart1(doc);
+      addClausesPart2(doc);
+      addClausesPart3(doc, email, cellPhone);
+      const pageWidth = doc.page.width;
+      const margin = 100;
+      const imageWidth = 58;
+      doc.moveDown();
+      doc
+        .font('Helvetica')
+        .fontSize(9)
+        .text(`________________________`, {
+          align: 'left',
+          width: doc.page.width - margin * 2 - imageWidth,
+        });
+      doc
+        .font('Helvetica')
+        .fontSize(9)
+        .text(`PADRE O MADRE DE FAMILIA`, {
+          align: 'left',
+          width: doc.page.width - margin * 2 - imageWidth,
+        });
+      doc.moveDown();
+      doc
+        .font('Helvetica')
+        .fontSize(9)
+        .text(`NOMBRES:…………………………………………………`, {
+          align: 'left',
+          width: doc.page.width - margin * 2 - imageWidth,
+        });
+      doc.moveDown();
+      doc
+        .font('Helvetica')
+        .fontSize(9)
+        .text(`DNI:…………………………………`, {
+          align: 'left',
+          width: doc.page.width - margin * 2 - imageWidth,
+        });
+      const imageUrl = `https://caebucket.s3.us-west-2.amazonaws.com/colegio/1713420896762.webp`;
+
+      let imageBuffer = await this.fetchImage(imageUrl);
+      imageBuffer = await this.convertWebPToPNG(imageBuffer);
+
+      doc.image(imageBuffer, pageWidth - margin - imageWidth, doc.y - 40, {
+        width: imageWidth,
+        // align: 'center',
+      });
+      addAnexo(doc);
+      doc.image(imageBuffer, 55, doc.y - 250, {
+        width: imageWidth,
+        // align: 'center',
+      });
+      doc.image(imageBuffer, 130, doc.y - 250, {
+        width: imageWidth,
+        // align: 'center',
+      });
+      doc.image(imageBuffer, 55, doc.y - 150, {
+        width: imageWidth,
+        // align: 'center',
+      });
+      doc.image(imageBuffer, 130, doc.y - 150, {
+        width: imageWidth,
+        // align: 'center',
+      });
+      doc.image(imageBuffer, 55, doc.y - 40, {
+        width: imageWidth,
+        // align: 'center',
+      });
       doc.end();
     });
   }
@@ -445,5 +551,43 @@ export class PdfService {
       .moveTo(50, y + rowHeight)
       .lineTo(500, y + rowHeight)
       .stroke();
+  }
+  async getCites(idDistrict: string) {
+    console.log('first');
+    //OBTENER TODOS LOS DISTRITOS
+    const url = this.configService.get('API_ADMISION');
+    try {
+      console.log('GET CITIES');
+      console.log(url);
+      const dataDistrict = await firstValueFrom(
+        this.httpService.get(`${url}/cities/district`),
+      );
+      // const dataDistricts = dataDistrict.data;
+      const district = dataDistrict.data.data.find(
+        (district: any) => district.id === idDistrict,
+      );
+      console.log(district);
+      //OBTENER TODOS LAS PROVINCIAS
+      const dataProvince = await firstValueFrom(
+        this.httpService.get(`${url}/cities/province`),
+      );
+      const province = dataProvince.data.data.find(
+        (province: any) => province.id === district.province_id,
+      );
+      //OBTENER TODOS LAS REGION
+      const dataRegion = await firstValueFrom(
+        this.httpService.get(`${url}/cities/region`),
+      );
+      const region = dataRegion.data.data.find(
+        (region: any) => region.id === province.region_id,
+      );
+      return {
+        region: region.name,
+        province: province.name,
+        district: district.name,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 }

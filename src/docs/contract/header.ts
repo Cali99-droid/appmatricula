@@ -1,19 +1,15 @@
 import * as PDFDocument from 'pdfkit';
-export function addContractHeader(doc: InstanceType<typeof PDFDocument>) {
-  //   doc.registerFont('Arial', path.join(__dirname, '..', 'fonts', 'arial.ttf'));
-  //   doc.registerFont(
-  //     'Arial-Bold',
-  //     path.join(__dirname, '..', 'fonts', 'arial-bold.ttf'),
-  //   );
-  //   doc.registerFont('Arial Font', 'fonts/Arial.ttc', 'Arial-Bold');
-  // VARIABLES
-  const numContra = '123';
-  const nombre = 'Adnner Esperilla Ruiz';
-  const dni = '72277106';
-  const domicilio = 'San Borja #123';
-  const distrito = 'San Borja';
-  const provincia = 'Lima';
-  const departamento = 'Lima';
+export function addContractHeader(
+  doc: InstanceType<typeof PDFDocument>,
+  numContra: string,
+  nombre: string,
+  typeDoc: string,
+  dni: string,
+  domicilio: string,
+  distrito: string,
+  provincia: string,
+  departamento: string,
+) {
   //TEXTO DEL PRIMER PARRAFO
   const P1A =
     'con RUC N° 20531084587, con domicilio en Jr. Huaylas N° 220 interior 224, Distrito';
@@ -25,11 +21,11 @@ export function addContractHeader(doc: InstanceType<typeof PDFDocument>) {
     'Electrónica N° 11064876 del Registro de Personas Jurídicas de Huaraz, a quien en lo sucesivo se le denominará la “ASOCIACIÓN”.';
   //TEXTO DEL SEGUNDO PARRAFO
   const P2A = `Y de la otra parte:`;
-  const P2B = `identificado con DNI Nro.`;
+  const P2B = `identificado con ${typeDoc} Nro.`;
   const P2C = `con domicilio en`;
   const P2D = 'Distrito de';
   const P2E = 'Provincia de';
-  const P2F = 'DepartamentO de';
+  const P2F = 'Departamento de';
   const P2G =
     'en su calidad de Padre o Madre del menor, a quien en lo sucesivo se le denominará';
   const P2H = '“PADRE O MADRE DE FAMILIA”.';
