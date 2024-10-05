@@ -9,6 +9,9 @@ import { Student } from 'src/student/entities/student.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
+import { HttpModule } from '@nestjs/axios';
+import { Family } from 'src/family/entities/family.entity';
+import { Person } from 'src/person/entities/person.entity';
 
 @Module({
   controllers: [DocsController],
@@ -16,12 +19,16 @@ import { Permission } from 'src/permissions/entities/permission.entity';
   imports: [
     TypeOrmModule.forFeature([
       ActivityClassroom,
-      Student,
       Enrollment,
       User,
       Permission,
+      Family,
+      Person,
+      Student,
     ]),
+    HttpModule,
     ConfigModule,
   ],
+  exports: [TypeOrmModule],
 })
 export class DocsModule {}
