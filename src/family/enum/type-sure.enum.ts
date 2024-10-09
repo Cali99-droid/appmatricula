@@ -1,4 +1,7 @@
+/**('ESSALUD', 'SIS', 'PARTICULAR', 'OTROS') */
 export enum TypeSure {
   Essalud = 'ESSALUD',
-  Otro = 'OTRO',
+  Sis = 'SIS',
+  Particular = 'PARTICULAR',
+  Otros = 'OTROS',
 }

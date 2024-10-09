@@ -15,6 +15,7 @@ import { UpdateEmailDto } from './dto/update-email.dto';
 import { FindActivityClassroomDto } from './dto/find-activity_classroom.dto';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CreateEmailByStudentDto } from './dto/create-byStudent.dto';
+import { MailParams } from './interfaces/mail-params.interface';
 @ApiTags('Emails')
 @Controller('emails')
 export class EmailsController {
@@ -83,5 +84,16 @@ export class EmailsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.emailsService.remove(+id);
+  }
+
+  @Post('test')
+  sendEmailWithSES() {
+    const params: MailParams = {
+      to: 'orellano428@gmail.com',
+      subject: 'TEST EMAIL SES',
+      html: '<strong>ESTE ES UN TEST DE EMAIL DESDE SNS</strong>',
+      text: 'ESTE ES UN TEST DE EMAIL DESDE SNS',
+    };
+    return this.emailsService.sendEmailWithSES(params);
   }
 }

@@ -21,9 +21,15 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/student/entities/student.entity';
+import * as aws from '@aws-sdk/client-ses';
+import * as nodemailer from 'nodemailer';
+import { MailParams } from './interfaces/mail-params.interface';
 @Injectable()
 export class EmailsService {
   private readonly logger = new Logger('EmailsService');
+
+  private ses: aws.SES;
+  private transporter: nodemailer.Transporter;
   constructor(
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
@@ -41,7 +47,20 @@ export class EmailsService {
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
     private readonly httpService: HttpService,
-  ) {}
+  ) {
+    /**nodemailer SES */
+    this.ses = new aws.SES({
+      region: this.configService.get('AWS_REGION'),
+      credentials: {
+        accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY'),
+      },
+    });
+
+    this.transporter = nodemailer.createTransport({
+      SES: { aws, ses: this.ses },
+    });
+  }
   async create(
     createEmailDto: CreateEmailDto,
     findActivity: FindActivityClassroomDto,
@@ -329,5 +348,34 @@ export class EmailsService {
 
   remove(id: number) {
     return `This action removes a #${id} email`;
+  }
+
+  async sendEmailWithSES(params: MailParams): Promise<void> {
+    const { to, subject, text, html } = params;
+
+    const mailOptions = {
+      from:
+        '"Asistencia Colegio AE"' +
+        this.configService.getOrThrow<string>('AWS_SES_FROM'),
+      to,
+      subject,
+      text,
+      html,
+      // attachments: 'ni se que es',
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions as any);
+      this.logger.log(
+        'Email sent',
+        JSON.stringify({
+          ...mailOptions,
+          attachments: undefined,
+          html: undefined,
+        }),
+      );
+    } catch (error) {
+      this.logger.error(error);
+    }
   }
 }
