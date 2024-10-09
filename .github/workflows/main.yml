@@ -68,6 +68,7 @@ jobs:
             -e GHL_ATTENDANCE_URL=${{ secrets.GHL_ATTENDANCE_URL }} \
             -e GHL_EMAILS_URL=${{ secrets.GHL_EMAILS_URL }} \
             -e API_ADMISION=${{ secrets.API_ADMISION }} \
+            -e AWS_SES_FROM=${{ secrets.AWS_SES_FROM }} \
             -e TZ=America/Lima \
             --restart always \
             ghcr.io/cali99-droid/appmatricula-prod:latest

@@ -26,6 +26,6 @@ import { Student } from 'src/student/entities/student.entity';
     ConfigModule,
     HttpModule,
   ],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, EmailsService],
 })
 export class EmailsModule {}

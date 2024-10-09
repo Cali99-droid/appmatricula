@@ -29,6 +29,10 @@ import { firstValueFrom } from 'rxjs';
 import { Person } from 'src/person/entities/person.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { normalizeDate } from 'src/common/helpers/normalizeData';
+import { EmailsService } from 'src/emails/emails.service';
+import { MailParams } from 'src/emails/interfaces/mail-params.interface';
+
+import { getBodyEmail, getText } from './helpers/bodyEmail';
 // import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
@@ -55,7 +59,9 @@ export class AttendanceService {
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
     @InjectRepository(Family)
     private readonly familyRepository: Repository<Family>,
+    /**email service */
 
+    private readonly emailsService: EmailsService,
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
 
@@ -378,10 +384,12 @@ export class AttendanceService {
           parentTwoId: { user: true },
         },
       });
+
       if (family) {
         const { parentOneId, parentTwoId, student } = family;
+
         if (parentOneId && parentOneId.user) {
-          this.sendEmail(
+          this.sendEmailWithSES(
             parentOneId,
             student[0],
             currentTime,
@@ -391,7 +399,7 @@ export class AttendanceService {
           );
         }
         if (parentTwoId && parentTwoId.user) {
-          this.sendEmail(
+          this.sendEmailWithSES(
             parentTwoId,
             student[0],
             currentTime,
@@ -407,6 +415,22 @@ export class AttendanceService {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
+  }
+  async sendEmailWithSES(
+    parent: Person,
+    student: Student,
+    currentTime: Date,
+    arrivalDate: Date,
+    shift: Shift,
+    condition: ConditionAttendance,
+  ) {
+    const params: MailParams = {
+      to: parent.user.email,
+      subject: 'Notificación de Asistencia',
+      html: getBodyEmail(student, currentTime, arrivalDate, shift, condition),
+      text: getText(student, currentTime, arrivalDate, shift, condition),
+    };
+    this.emailsService.sendEmailWithSES(params);
   }
   async sendEmail(
     parent: Person,
