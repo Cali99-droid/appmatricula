@@ -373,6 +373,12 @@ export class PdfService {
     });
     if (!student)
       throw new NotFoundException(`Student with id ${idStudent} not found`);
+    if (!student.family)
+      throw new NotFoundException(`This student does not have family`);
+    if (!student.family.respEnrollment.user)
+      throw new NotFoundException(
+        `This student's family priest doesn't have a user`,
+      );
     if (!student.family.respEnrollment)
       throw new NotFoundException(
         `This student does not have a registration responsible`,
@@ -423,7 +429,7 @@ export class PdfService {
       addClausesPart3(doc, email, cellPhone);
       const pageWidth = doc.page.width;
       const margin = 100;
-      const imageWidth = 58;
+      const imageWidth = 120;
       doc.moveDown();
       doc
         .font('Helvetica')
@@ -455,34 +461,53 @@ export class PdfService {
           align: 'left',
           width: doc.page.width - margin * 2 - imageWidth,
         });
-      const imageUrl = `https://caebucket.s3.us-west-2.amazonaws.com/colegio/1713420896762.webp`;
+      const fullUrl = this.configService.getOrThrow('FULL_URL_S3');
+      // const imageUrlSignature = `https://caebucket.s3.us-west-2.amazonaws.com/colegio/1713420896762.webp`;
+      const imageUrlSignature = `${fullUrl}contrato/signature.jpg`;
+      const imageUrl1 = `${fullUrl}contrato/inicial-dos.jpg`;
+      const imageUrl2 = `${fullUrl}contrato/sede-celeste.jpg`;
+      const imageUrl3 = `${fullUrl}contrato/inicial.jpg`;
+      const imageUrl4 = `${fullUrl}contrato/sede-azul.jpg`;
+      const imageUrl5 = `${fullUrl}contrato/sede-moderna.jpg`;
+      console.log(imageUrl5);
+      const imageSignature = await this.fetchImage(imageUrlSignature);
+      const image1 = await this.fetchImage(imageUrl1);
+      const image2 = await this.fetchImage(imageUrl2);
+      const image3 = await this.fetchImage(imageUrl3);
+      const image4 = await this.fetchImage(imageUrl4);
+      const image5 = await this.fetchImage(imageUrl5);
 
-      let imageBuffer = await this.fetchImage(imageUrl);
-      imageBuffer = await this.convertWebPToPNG(imageBuffer);
+      // console.log(imageSignature);
+      // imageSignature = await this.convertWebPToPNG(imageSignature);
 
-      doc.image(imageBuffer, pageWidth - margin - imageWidth, doc.y - 40, {
-        width: imageWidth,
-        // align: 'center',
-      });
+      doc.image(
+        imageSignature,
+        pageWidth - margin - imageWidth + 30,
+        doc.y - 40,
+        {
+          width: imageWidth,
+          // align: 'center',
+        },
+      );
       addAnexo(doc);
-      doc.image(imageBuffer, 55, doc.y - 250, {
-        width: imageWidth,
+      doc.image(image1, 55, doc.y - 250, {
+        width: 80,
         // align: 'center',
       });
-      doc.image(imageBuffer, 130, doc.y - 250, {
-        width: imageWidth,
+      doc.image(image2, 140, doc.y - 250, {
+        width: 90,
         // align: 'center',
       });
-      doc.image(imageBuffer, 55, doc.y - 150, {
-        width: imageWidth,
+      doc.image(image3, 55, doc.y - 150, {
+        width: 80,
         // align: 'center',
       });
-      doc.image(imageBuffer, 130, doc.y - 150, {
-        width: imageWidth,
+      doc.image(image4, 140, doc.y - 150, {
+        width: 90,
         // align: 'center',
       });
-      doc.image(imageBuffer, 55, doc.y - 40, {
-        width: imageWidth,
+      doc.image(image5, 55, doc.y - 50, {
+        width: 80,
         // align: 'center',
       });
       doc.end();
