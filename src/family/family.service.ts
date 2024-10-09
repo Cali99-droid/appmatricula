@@ -356,7 +356,7 @@ export class FamilyService {
       return {
         person,
         ...enrroll,
-
+        photo: student.photo,
         actual:
           activityClassroom.classroom.campusDetail.name +
           ' - ' +
