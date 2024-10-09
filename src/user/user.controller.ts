@@ -12,6 +12,7 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CreateUserOfTestDto } from './dto/create-users-of-test.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -76,5 +77,10 @@ export class UserController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
+  }
+
+  @Post('/users-of-test')
+  createUsersOfTest(@Body() createUserDto: CreateUserOfTestDto) {
+    return this.userService.createUsersOfTest(createUserDto);
   }
 }

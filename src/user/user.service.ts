@@ -12,6 +12,8 @@ import { Assignment } from './entities/assignments.entity';
 
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 import { AssignmentClassroom } from './entities/assignments-classroom.entity';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { CreateUserOfTestDto } from './dto/create-users-of-test.dto';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger('UserService');
@@ -26,6 +28,8 @@ export class UserService {
     private readonly campusDetailRepository: Repository<CampusDetail>,
     @InjectRepository(AssignmentClassroom)
     private readonly assignmentClassroomRepository: Repository<AssignmentClassroom>,
+    @InjectRepository(Enrollment)
+    private readonly enrollmentRepository: Repository<Enrollment>,
   ) {}
   async create(createUserDto: CreateUserDto) {
     try {
@@ -348,7 +352,7 @@ export class UserService {
             WHEN person.name = :exactTerm THEN 3
             ELSE 3
           END`,
-            'relevance', 
+            'relevance',
           )
           .setParameters({ exactTerm: term });
 
@@ -369,6 +373,101 @@ export class UserService {
         total,
         page,
         lastPage: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+  async createUsersOfTest(createUserOfTestDto: CreateUserOfTestDto) {
+    try {
+      const enrollments = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: {
+            grade: { id: createUserOfTestDto.gradeId },
+            phase: { id: createUserOfTestDto.phaseId },
+          },
+        },
+        relations: {
+          student: {
+            family: {
+              parentOneId: true,
+            },
+          },
+        },
+      });
+      // const studentsWithoutFamily = enrollments.filter(
+      //   (enrollment) => !enrollment.student.family.parentOneId,
+      // );
+      // const countWithoutFamily = studentsWithoutFamily.length;
+      let contador = 1;
+      const usersToCreate = enrollments.map((enrollment) => {
+        const parentOneId = enrollment.student.family.parentOneId.id;
+
+        const email = `prueba${contador}-${enrollment.activityClassroom.grade.id}-${enrollment.activityClassroom.section}@gmail.com`;
+        const password = 'Prueba123';
+        contador++;
+        return {
+          parentOneId,
+          email,
+          password,
+        };
+      });
+      const sectionCounts = {
+        A: 0,
+        B: 0,
+        C: 0,
+        D: 0,
+        E: 0,
+      };
+      for (const enrollment of enrollments) {
+        const section = enrollment.activityClassroom.section;
+        if (sectionCounts.hasOwnProperty(section)) {
+          sectionCounts[section]++;
+        }
+      }
+      // let contuser = 0;
+      // for (const user of usersToCreate) {
+      //   const existuser = await this.userRepository.findOneBy({
+      //     id: user.parentOneId,
+      //   });
+      //   if (existuser) {
+      //     contuser = contuser + 1;
+      //   }
+      // }
+      let cratedUser = 0;
+      let updateUser = 0;
+      for (const user of usersToCreate) {
+        const existUser = await this.userRepository.findOne({
+          where: { person: { id: user.parentOneId } },
+        });
+        if (existUser) {
+          const data = this.userRepository.create({
+            id: existUser.id,
+            email: user.email,
+            person: { id: user.parentOneId },
+            password: bcrypt.hashSync(user.password, 10),
+          });
+          await this.userRepository.save(data);
+          updateUser = updateUser + 1;
+        } else {
+          const data = this.userRepository.create({
+            email: user.email,
+            person: { id: user.parentOneId },
+            password: bcrypt.hashSync(user.password, 10),
+          });
+          await this.userRepository.save(data);
+          cratedUser = cratedUser + 1;
+        }
+      }
+
+      return {
+        // totalSinFamilia: countWithoutFamily,
+        // usuarios: contuser,
+        cratedUser: cratedUser,
+        updateUser: updateUser,
+        sectionCounts,
+        total: enrollments.length,
+        usersToCreate,
       };
     } catch (error) {
       this.logger.error(error);
