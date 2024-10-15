@@ -353,9 +353,11 @@ export class FamilyService {
         },
       );
       //Sede 1 - Primaria - 3A
+      console.log(enrroll);
       return {
         person,
         ...enrroll,
+        studentId: student.id,
         photo: student.photo,
         actual:
           activityClassroom.classroom.campusDetail.name +
