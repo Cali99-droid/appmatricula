@@ -366,14 +366,14 @@ export class EmailsService {
 
     try {
       await this.transporter.sendMail(mailOptions as any);
-      this.logger.log(
-        'Email sent',
-        JSON.stringify({
-          ...mailOptions,
-          attachments: undefined,
-          html: undefined,
-        }),
-      );
+      // this.logger.log(
+      //   'Email sent',
+      //   JSON.stringify({
+      //     ...mailOptions,
+      //     attachments: undefined,
+      //     html: undefined,
+      //   }),
+      // );
     } catch (error) {
       this.logger.error(error);
     }

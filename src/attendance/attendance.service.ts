@@ -693,15 +693,17 @@ export class AttendanceService {
     }
     //** verificar que la fecha se encuentre en un bimestre*/
     const bimesters = phase.bimester;
+
     let currentBimester;
     for (const bimestre of bimesters) {
       if (
         currentDateBimester >= normalizeDate(new Date(bimestre.startDate)) &&
-        currentDateBimester <= normalizeDate(new Date(bimestre.startDate))
+        currentDateBimester <= normalizeDate(new Date(bimestre.endDate))
       ) {
         currentBimester = bimestre;
       }
     }
+
     if (!currentBimester) {
       this.logger.warn(
         `There is no active bimester for this date: ${currentDateBimester}, the cron jobs were not completed`,
@@ -840,14 +842,14 @@ export class AttendanceService {
     for (const bimestre of bimesters) {
       if (
         currentDateBimester >= normalizeDate(new Date(bimestre.startDate)) &&
-        currentDateBimester <= normalizeDate(new Date(bimestre.startDate))
+        currentDateBimester <= normalizeDate(new Date(bimestre.endDate))
       ) {
         currentBimester = bimestre;
       }
     }
     if (!currentBimester) {
       this.logger.warn(
-        `There is no active bimester for this date: ${currentDate}, the cron jobs were not completed`,
+        `There is no active bimester for this date: ${currentDateBimester}, the cron jobs were not completed`,
       );
       return;
     }
