@@ -652,7 +652,7 @@ export class EnrollmentService {
       .getOne();
     // await this.calcVacantsAc(12);
     if (!currentEnrrollment) {
-      throw new NotFoundException('Dont exists this fact');
+      throw new NotFoundException('Dont exists this data');
     }
 
     const yearId = currentEnrrollment.activityClassroom.phase.year.id;
@@ -675,6 +675,7 @@ export class EnrollmentService {
           name: destinationId.grade.name + ' ' + destinationId.section,
           vacants: dest.vacants,
           suggested: true,
+          campus: destinationId.classroom.campusDetail.name,
         };
         availables.push(classroom);
         return availables;
@@ -705,6 +706,7 @@ export class EnrollmentService {
                   currentEnrrollment.activityClassroom.section
                   ? true
                   : false,
+              campus: co.destinationId.classroom.campusDetail.name,
             };
             availables.push(classroom);
           }
@@ -755,6 +757,7 @@ export class EnrollmentService {
               dest.section === currentEnrrollment.activityClassroom.section
                 ? true
                 : false,
+            campus: ac.classroom.campusDetail.name,
           };
           availables.push(classroom);
         }

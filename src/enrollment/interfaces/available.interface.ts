@@ -3,6 +3,7 @@ export interface AvailableClassroom {
   name: string;
   vacants: number;
   suggested: boolean;
+  campus: string;
 }
 
 export interface VacantsClassrooms {
