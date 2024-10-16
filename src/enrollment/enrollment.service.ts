@@ -676,6 +676,7 @@ export class EnrollmentService {
           vacants: dest.vacants,
           suggested: true,
           campus: destinationId.classroom.campusDetail.name,
+          level: destinationId.grade.level.name,
         };
         availables.push(classroom);
         return availables;
@@ -707,6 +708,7 @@ export class EnrollmentService {
                   ? true
                   : false,
               campus: co.destinationId.classroom.campusDetail.name,
+              level: co.destinationId.grade.level.name,
             };
             availables.push(classroom);
           }
@@ -758,6 +760,7 @@ export class EnrollmentService {
                 ? true
                 : false,
             campus: ac.classroom.campusDetail.name,
+            level: ac.grade.level.name,
           };
           availables.push(classroom);
         }
