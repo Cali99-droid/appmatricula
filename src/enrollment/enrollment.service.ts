@@ -689,11 +689,11 @@ export class EnrollmentService {
 
         for (const co of configAscent) {
           const dest = await this.calcVacantsToClassroom(co.destinationId.id);
-          console.log(dest);
+
           if (
-            dest.section === currentEnrrollment.activityClassroom.section ||
-            dest.detailOrigin.section ===
-              currentEnrrollment.activityClassroom.section ||
+            (dest.section === currentEnrrollment.activityClassroom.section ||
+              dest.detailOrigin.section ===
+                currentEnrrollment.activityClassroom.section) &&
             dest.hasVacants
           ) {
             const classroom: AvailableClassroom = {
