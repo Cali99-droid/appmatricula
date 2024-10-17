@@ -689,13 +689,12 @@ export class EnrollmentService {
 
         for (const co of configAscent) {
           const dest = await this.calcVacantsToClassroom(co.destinationId.id);
-
-          if (
-            (dest.section === currentEnrrollment.activityClassroom.section ||
-              dest.detailOrigin.section ===
-                currentEnrrollment.activityClassroom.section) &&
-            dest.hasVacants
-          ) {
+          console.log(dest);
+          //dest.hasVacants
+          /**dest.section === currentEnrrollment.activityClassroom.section ||
+            dest.detailOrigin.section ===
+              currentEnrrollment.activityClassroom.section */
+          if (dest.hasVacants) {
             const classroom: AvailableClassroom = {
               id: co.destinationId.id,
               name:
@@ -710,6 +709,7 @@ export class EnrollmentService {
               campus: co.destinationId.classroom.campusDetail.name,
               level: co.destinationId.grade.level.name,
             };
+
             availables.push(classroom);
           }
           // if (dest.hasVacants) {
