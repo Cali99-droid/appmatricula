@@ -289,22 +289,22 @@ export class AttendanceService {
         if (family) {
           const { parentOneId, parentTwoId, student } = family;
           if (parentOneId && parentOneId.user) {
-            this.sendEmail(
+            this.sendEmailWithSES(
               parentOneId,
               student[0],
               currentTime,
               attendance.arrivalDate,
-              attendance.shift,
+              shift,
               condition,
             );
           }
           if (parentTwoId && parentTwoId.user) {
-            this.sendEmail(
-              parentTwoId,
+            this.sendEmailWithSES(
+              parentOneId,
               student[0],
               currentTime,
               attendance.arrivalDate,
-              attendance.shift,
+              shift,
               condition,
             );
           }
