@@ -244,12 +244,9 @@ export class FamilyService {
   }
 
   async getCites(idDistrict: string) {
-    console.log('first');
     //OBTENER TODOS LOS DISTRITOS
     const url = this.configService.get('API_ADMISION');
     try {
-      console.log('GET CITIES');
-      console.log(url);
       const dataDistrict = await firstValueFrom(
         this.httpService.get(`${url}/cities/district`),
       );
@@ -257,7 +254,7 @@ export class FamilyService {
       const district = dataDistrict.data.data.find(
         (district: any) => district.id === idDistrict,
       );
-      console.log(district);
+
       //OBTENER TODOS LAS PROVINCIAS
       const dataProvince = await firstValueFrom(
         this.httpService.get(`${url}/cities/province`),
@@ -282,7 +279,6 @@ export class FamilyService {
     }
   }
   async findOne(id: number) {
-    console.log('llmando');
     const family = await this.familyRepository.findOne({
       where: { id: id },
       relations: {
@@ -353,7 +349,7 @@ export class FamilyService {
         },
       );
       //Sede 1 - Primaria - 3A
-      console.log(enrroll);
+
       return {
         person,
         ...enrroll,
