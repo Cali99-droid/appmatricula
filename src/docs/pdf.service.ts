@@ -2,14 +2,24 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
+// import PDFDocument from 'pdfkit';
 import * as PDFDocument from 'pdfkit';
+// import 'pdfkit-table';
 import * as QRCode from 'qrcode';
 import * as sharp from 'sharp';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { TypePhase } from 'src/phase/enum/type-phase.enum';
-
+import { addContractHeader } from './contract/header';
 import { Repository } from 'typeorm';
+// import { User } from 'src/user/entities/user.entity';
+import { addClausesPart1 } from './contract/clauses-part1';
+import { addClausesPart2 } from './contract/clauses-part2';
+import { addClausesPart3 } from './contract/clauses-part3';
+import { addAnexo } from './contract/anexo';
+import { Student } from 'src/student/entities/student.entity';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class PdfService {
@@ -18,6 +28,10 @@ export class PdfService {
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
     @InjectRepository(Enrollment)
     private readonly enrollmentRepositoy: Repository<Enrollment>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
+    private readonly httpService: HttpService,
+
     private readonly configService: ConfigService,
   ) {}
   async generatePdfWithQRCodes(id: number): Promise<Buffer> {
@@ -346,7 +360,159 @@ export class PdfService {
       doc.end();
     });
   }
+  async generatePdfContract(idStudent: number): Promise<Buffer> {
+    const student = await this.studentRepository.findOne({
+      where: { id: idStudent },
+      relations: {
+        family: {
+          respEnrollment: {
+            user: true,
+          },
+        },
+      },
+    });
+    if (!student)
+      throw new NotFoundException(`Student with id ${idStudent} not found`);
+    if (!student.family)
+      throw new NotFoundException(`This student does not have family`);
+    if (!student.family.respEnrollment.user)
+      throw new NotFoundException(
+        `This student's family priest doesn't have a user`,
+      );
+    if (!student.family.respEnrollment)
+      throw new NotFoundException(
+        `This student does not have a registration responsible`,
+      );
+    if (!student.family.district)
+      throw new NotFoundException(`This student does not have a district`);
+    const numContra = '123';
+    const name = `${student.family.respEnrollment.name} ${student.family.respEnrollment.lastname} ${student.family.respEnrollment.mLastname} `;
+    const typeDoc = student.family.respEnrollment.typeDoc;
+    const docNumber = student.family.respEnrollment.docNumber;
+    const address = student.family.address;
+    const dataCity = await this.getCites(student.family.district);
+    const district = dataCity.district;
+    const province = dataCity.province;
+    const department = dataCity.region;
 
+    const email = student.family.respEnrollment.user.email;
+    const cellPhone = student.family.respEnrollment.cellPhone;
+
+    return new Promise(async (resolve) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: {
+          top: 47,
+          bottom: 47,
+          left: 47,
+          right: 66,
+        },
+      });
+      // const doc = new PDFDocument({ margin: 30, size: 'A4' });
+      const buffers: Buffer[] = [];
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+
+      addContractHeader(
+        doc,
+        numContra,
+        name,
+        typeDoc,
+        docNumber,
+        address,
+        district,
+        province,
+        department,
+      );
+      addClausesPart1(doc);
+      addClausesPart2(doc);
+      addClausesPart3(doc, email, cellPhone);
+      const pageWidth = doc.page.width;
+      const margin = 100;
+      const imageWidth = 120;
+      doc.moveDown();
+      doc
+        .font('Helvetica')
+        .fontSize(9)
+        .text(`________________________`, {
+          align: 'left',
+          width: doc.page.width - margin * 2 - imageWidth,
+        });
+      doc
+        .font('Helvetica')
+        .fontSize(9)
+        .text(`PADRE O MADRE DE FAMILIA`, {
+          align: 'left',
+          width: doc.page.width - margin * 2 - imageWidth,
+        });
+      doc.moveDown();
+      doc
+        .font('Helvetica')
+        .fontSize(9)
+        .text(`NOMBRES:…………………………………………………`, {
+          align: 'left',
+          width: doc.page.width - margin * 2 - imageWidth,
+        });
+      doc.moveDown();
+      doc
+        .font('Helvetica')
+        .fontSize(9)
+        .text(`DNI:…………………………………`, {
+          align: 'left',
+          width: doc.page.width - margin * 2 - imageWidth,
+        });
+      const fullUrl = this.configService.getOrThrow('FULL_URL_S3');
+      // const imageUrlSignature = `https://caebucket.s3.us-west-2.amazonaws.com/colegio/1713420896762.webp`;
+      const imageUrlSignature = `${fullUrl}contrato/signature.jpg`;
+      const imageUrl1 = `${fullUrl}contrato/inicial-dos.jpg`;
+      const imageUrl2 = `${fullUrl}contrato/sede-celeste.jpg`;
+      const imageUrl3 = `${fullUrl}contrato/inicial.jpg`;
+      const imageUrl4 = `${fullUrl}contrato/sede-azul.jpg`;
+      const imageUrl5 = `${fullUrl}contrato/sede-moderna.jpg`;
+      console.log(imageUrl5);
+      const imageSignature = await this.fetchImage(imageUrlSignature);
+      const image1 = await this.fetchImage(imageUrl1);
+      const image2 = await this.fetchImage(imageUrl2);
+      const image3 = await this.fetchImage(imageUrl3);
+      const image4 = await this.fetchImage(imageUrl4);
+      const image5 = await this.fetchImage(imageUrl5);
+
+      // console.log(imageSignature);
+      // imageSignature = await this.convertWebPToPNG(imageSignature);
+
+      doc.image(
+        imageSignature,
+        pageWidth - margin - imageWidth + 30,
+        doc.y - 40,
+        {
+          width: imageWidth,
+          // align: 'center',
+        },
+      );
+      addAnexo(doc);
+      doc.image(image1, 55, doc.y - 250, {
+        width: 80,
+        // align: 'center',
+      });
+      doc.image(image2, 140, doc.y - 250, {
+        width: 90,
+        // align: 'center',
+      });
+      doc.image(image3, 55, doc.y - 150, {
+        width: 80,
+        // align: 'center',
+      });
+      doc.image(image4, 140, doc.y - 150, {
+        width: 90,
+        // align: 'center',
+      });
+      doc.image(image5, 55, doc.y - 50, {
+        width: 80,
+        // align: 'center',
+      });
+      doc.end();
+    });
+  }
   async fetchImage(url: string): Promise<ArrayBuffer> {
     const response = await fetch(url);
     const buffer = await response.arrayBuffer();
@@ -354,5 +520,99 @@ export class PdfService {
   }
   async convertWebPToPNG(buffer: ArrayBuffer): Promise<Buffer> {
     return sharp(buffer).png().resize({ width: 200, height: 250 }).toBuffer();
+  }
+
+  generateTable(doc: PDFKit.PDFDocument, data: any[]) {
+    const tableTop = 150;
+    const columnWidths = [150, 150, 150];
+    const rowHeight = 30;
+    let y = tableTop;
+
+    // Dibujar encabezado de la tabla
+    doc.fontSize(12).text('Columna 1', 50, y);
+    doc.text('Columna 2', 200, y);
+    doc.text('Columna 3', 350, y);
+
+    y += rowHeight;
+
+    // Dibujar filas de la tabla
+    data.forEach((row) => {
+      doc.fontSize(10).text(row.col1, 50, y);
+      doc.text(row.col2, 200, y);
+      doc.text(row.col3, 350, y);
+
+      // Dibujar líneas de las filas
+      this.drawRowLines(doc, y, columnWidths, rowHeight);
+
+      y += rowHeight;
+    });
+  }
+
+  // Dibujar las líneas de cada fila
+  drawRowLines(
+    doc: PDFKit.PDFDocument,
+    y: number,
+    columnWidths: number[],
+    rowHeight: number,
+  ) {
+    doc.lineWidth(0.5);
+    doc.strokeColor('#000');
+
+    // Dibujar la línea superior
+    doc.moveTo(50, y).lineTo(500, y).stroke();
+
+    // Dibujar las líneas verticales (columnas)
+    let xPos = 50;
+    columnWidths.forEach((width) => {
+      doc
+        .moveTo(xPos, y)
+        .lineTo(xPos, y + rowHeight)
+        .stroke();
+      xPos += width;
+    });
+
+    // Dibujar la línea inferior
+    doc
+      .moveTo(50, y + rowHeight)
+      .lineTo(500, y + rowHeight)
+      .stroke();
+  }
+  async getCites(idDistrict: string) {
+    console.log('first');
+    //OBTENER TODOS LOS DISTRITOS
+    const url = this.configService.get('API_ADMISION');
+    try {
+      console.log('GET CITIES');
+      console.log(url);
+      const dataDistrict = await firstValueFrom(
+        this.httpService.get(`${url}/cities/district`),
+      );
+      // const dataDistricts = dataDistrict.data;
+      const district = dataDistrict.data.data.find(
+        (district: any) => district.id === idDistrict,
+      );
+      console.log(district);
+      //OBTENER TODOS LAS PROVINCIAS
+      const dataProvince = await firstValueFrom(
+        this.httpService.get(`${url}/cities/province`),
+      );
+      const province = dataProvince.data.data.find(
+        (province: any) => province.id === district.province_id,
+      );
+      //OBTENER TODOS LAS REGION
+      const dataRegion = await firstValueFrom(
+        this.httpService.get(`${url}/cities/region`),
+      );
+      const region = dataRegion.data.data.find(
+        (region: any) => region.id === province.region_id,
+      );
+      return {
+        region: region.name,
+        province: province.name,
+        district: district.name,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 }

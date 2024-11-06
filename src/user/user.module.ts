@@ -10,6 +10,7 @@ import { Assignment } from './entities/assignments.entity';
 
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 import { AssignmentClassroom } from './entities/assignments-classroom.entity';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 
 @Module({
   controllers: [UserController],
@@ -23,6 +24,7 @@ import { AssignmentClassroom } from './entities/assignments-classroom.entity';
       Assignment,
       CampusDetail,
       AssignmentClassroom,
+      Enrollment,
     ]),
   ],
   exports: [UserService, UserModule],

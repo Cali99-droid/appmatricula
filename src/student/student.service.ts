@@ -52,9 +52,10 @@ export class StudentService {
         parentOne: student.family
           ? `${student.family.parentOneId.lastname} ${student.family.parentOneId.mLastname}, ${student.family.parentOneId.name}`
           : undefined,
-        parentTwo: student.family
-          ? `${student.family.parentTwoId.lastname} ${student.family.parentTwoId.mLastname}, ${student.family.parentTwoId.name}`
-          : undefined,
+        parentTwo:
+          student.family && student.family.parentTwoId
+            ? `${student.family.parentTwoId.lastname} ${student.family.parentTwoId.mLastname}, ${student.family.parentTwoId.name}`
+            : undefined,
         level:
           student.enrollment.length !== 0
             ? student.enrollment[lastEnrollment - 1].activityClassroom.grade
@@ -119,18 +120,14 @@ export class StudentService {
     const {
       personId,
       familyId,
-      respEnrollment,
-      respAcademic,
-      respEconomic,
+
       ...rest
     } = updateStudentDto;
     const student = await this.studentRepository.preload({
       id: id,
       person: isNaN(personId) ? undefined : { id: personId },
       family: isNaN(familyId) ? undefined : { id: familyId },
-      respEnrollment: isNaN(respEnrollment) ? undefined : { id: familyId },
-      respAcademic: isNaN(respAcademic) ? undefined : { id: respAcademic },
-      respEconomic: isNaN(respEconomic) ? undefined : { id: respEconomic },
+
       ...rest,
     });
     if (!student)

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { UpdateFamilyDto } from './dto/update-family.dto';
-import { DataParentArrayDto } from '../relationship/dto/data-parent-array.dto';
+// import { DataParentArrayDto } from '../relationship/dto/data-parent-array.dto';
 import { Family } from './entities/family.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -113,7 +113,6 @@ export class FamilyService {
       handleDBExceptions(error, this.logger);
     }
   }
-
   async migrate(): Promise<any[] | 'Error'> {
     try {
       const relations = await this.relationShipRepository.find();
@@ -245,12 +244,9 @@ export class FamilyService {
   }
 
   async getCites(idDistrict: string) {
-    console.log('first');
     //OBTENER TODOS LOS DISTRITOS
     const url = this.configService.get('API_ADMISION');
     try {
-      console.log('GET CITIES');
-      console.log(url);
       const dataDistrict = await firstValueFrom(
         this.httpService.get(`${url}/cities/district`),
       );
@@ -258,7 +254,7 @@ export class FamilyService {
       const district = dataDistrict.data.data.find(
         (district: any) => district.id === idDistrict,
       );
-      console.log(district);
+
       //OBTENER TODOS LAS PROVINCIAS
       const dataProvince = await firstValueFrom(
         this.httpService.get(`${url}/cities/province`),
@@ -286,25 +282,112 @@ export class FamilyService {
     const family = await this.familyRepository.findOne({
       where: { id: id },
       relations: {
-        parentOneId: true,
-        parentTwoId: true,
-        student: true,
+        parentOneId: {
+          user: true,
+        },
+        parentTwoId: {
+          user: true,
+        },
+        student: {
+          enrollment: {
+            activityClassroom: {
+              classroom: true,
+              grade: true,
+            },
+          },
+        },
+        respEnrollment: true,
+        respEconomic: true,
+        respAcademic: true,
       },
     });
+
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
-    if (family.district) {
-      const { district, ...rest } = family;
+
+    if (family.parentOneId?.user) {
+      family.parentOneId.user = { email: family.parentOneId.user.email } as any;
+    }
+    if (family.respEnrollment) {
+      family.respEnrollment = family.respEnrollment.id as any;
+    }
+    if (family.respEconomic) {
+      family.respEconomic = family.respEconomic.id as any;
+    }
+    if (family.respAcademic) {
+      family.respAcademic = family.respAcademic.id as any;
+    }
+
+    if (family.parentTwoId?.user) {
+      family.parentTwoId.user = { email: family.parentTwoId.user.email } as any;
+    }
+
+    /**format temp families */
+    // const { student, ...parents } = family;
+    // const childrens = student.map((item) => {
+    //   const person = item.person;
+    //   const photo = item.photo;
+    //   const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
+    //     (previous, current) => {
+    //       return current.id > previous.id ? current : previous;
+    //     },
+    //   );
+    //   return {
+    //     person,
+    //     enrroll,
+    //     photo,
+    //   };
+    // });
+
+    // return { childrens, ...childrens };
+    /**Formato temporal */
+    const { student, ...rest } = family;
+    const childrens = student.map((item) => {
+      const person = item.person;
+      const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
+        (previous, current) => {
+          return current.id > previous.id ? current : previous;
+        },
+      );
+      //Sede 1 - Primaria - 3A
+
+      return {
+        person,
+        ...enrroll,
+        studentId: student.id,
+        photo: student.photo,
+        actual:
+          activityClassroom.classroom.campusDetail.name +
+          ' - ' +
+          activityClassroom.grade.level.name +
+          ' - ' +
+          activityClassroom.grade.name +
+          ' ' +
+          activityClassroom.section,
+      };
+    });
+    const data = { student: childrens, ...rest };
+
+    if (data.district) {
+      const { district, ...rest } = data;
       const cities = await this.getCites(district);
       return {
         ...rest,
         ...cities,
       };
     }
-    return family;
+    return data;
+    // return { student: childrens, ...rest };
   }
 
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
-    const { parentOneId, parentTwoId, ...rest } = updateFamilyDto;
+    const {
+      parentOneId,
+      parentTwoId,
+      respAcademic,
+      respEconomic,
+      respEnrollment,
+      ...rest
+    } = updateFamilyDto;
     if (updateFamilyDto.district) {
       const url = this.configService.get('API_ADMISION');
       const dataDistrict = await firstValueFrom(
@@ -324,6 +407,9 @@ export class FamilyService {
       id: id,
       parentOneId: isNaN(parentOneId) ? undefined : { id: parentOneId },
       parentTwoId: isNaN(parentTwoId) ? undefined : { id: parentTwoId },
+      respEnrollment: { id: respEnrollment },
+      respEconomic: { id: respEconomic },
+      respAcademic: { id: respAcademic },
       ...rest,
     });
     if (!family) throw new NotFoundException(`Family with id: ${id} not found`);

@@ -6,11 +6,13 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CreateUserOfTestDto } from './dto/create-users-of-test.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -37,11 +39,36 @@ export class UserController {
   reportUsers() {
     return this.userService.reportUsers();
   }
+  @Get('/parent')
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'page to user',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'page to user',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'term',
+    required: false,
+    description: 'this term can be email,lastname,mlastName and name to user',
+    type: String,
+  })
+  getParents(
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Query('term') term?: string,
+  ) {
+    return this.userService.findParentUser(+page, +limit, term);
+  }
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.userService.findOne(+id);
   }
-
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(+id, updateUserDto);
@@ -50,5 +77,10 @@ export class UserController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
+  }
+
+  @Post('/users-of-test')
+  createUsersOfTest(@Body() createUserDto: CreateUserOfTestDto) {
+    return this.userService.createUsersOfTest(createUserDto);
   }
 }
