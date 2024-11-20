@@ -888,6 +888,7 @@ export class EnrollmentService {
         const destings = await this.ascentRepository.find({
           where: {
             originId: { id: co.originId.id },
+            destinationId: { section: Not(co.originId.section) },
           },
         });
         if (destings.length === 1) {
