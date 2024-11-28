@@ -1064,6 +1064,59 @@ export class EnrollmentService {
     // console.log('normal', res);
     return res;
   }
+  async getVacantsGeneral(gradeId: number, yearId: number) {
+    const activityClassrooms = await this.activityClassroomRepository.find({
+      where: {
+        grade: { id: gradeId - 1 },
+        phase: {
+          year: { id: yearId - 1 },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const idsAc = activityClassrooms.map((ac) => ac.id);
+
+    const countEnrroll = await this.enrollmentRepository.count({
+      where: {
+        activityClassroom: {
+          id: In(idsAc),
+        },
+        ratified: true,
+      },
+    });
+
+    /**data destino, aulas configuradas para el grado solicitado */
+
+    const activityClassroomsDest = await this.activityClassroomRepository.find({
+      where: {
+        grade: { id: gradeId },
+        phase: {
+          year: { id: yearId },
+        },
+      },
+    });
+
+    const capacities = activityClassroomsDest.map(
+      (ac) => ac.classroom.capacity,
+    );
+
+    const capacity = capacities.reduce(
+      (accumulator, currentValue) => accumulator + currentValue,
+      0,
+    );
+
+    const vacants = capacity - countEnrroll;
+
+    return {
+      hasVacants: vacants > 0,
+      capacity: capacity,
+      enrrolls: countEnrroll,
+      vacants,
+    };
+  }
 
   /**script para crear un codigo para todos las matriculas */
 
