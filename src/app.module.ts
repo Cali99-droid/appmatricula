@@ -134,10 +134,14 @@ export class AppModule implements NestModule {
           path: '/enrollment/ratified/:code',
           method: RequestMethod.PUT,
         },
-        //MOMENTANEO LUEGO SE ELIMINA
+        //MOMENTANEO LUEGO SE ELIMINA vacants/:yearId/grade/:gradeId
         {
           path: '/user/users-of-test',
           method: RequestMethod.POST,
+        },
+        {
+          path: '/enrollment/vacants/:yearId/grade/:gradeId',
+          method: RequestMethod.GET,
         },
       )
       .forRoutes('/*');

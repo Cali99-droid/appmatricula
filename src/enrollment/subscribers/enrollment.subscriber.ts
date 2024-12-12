@@ -33,7 +33,7 @@ export class EnrollmentSubscriber
       .getRepository(Enrollment)
       .createQueryBuilder()
       .update(Enrollment)
-      .set({ status: Status.PROMOVIDO })
+      .set({ status: Status.FINALIZADO })
       .where('id != :id', { id: event.entity.id || 0 })
       .execute();
   }

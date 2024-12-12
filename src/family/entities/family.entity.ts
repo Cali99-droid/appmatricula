@@ -58,6 +58,7 @@ export class Family {
   @Column({
     type: 'enum',
     enum: TypeSure,
+    nullable: true,
   })
   type_sure: string;
 
@@ -104,6 +105,7 @@ export class Family {
   @Column({
     type: 'enum',
     enum: PaymentPref,
+    nullable: true,
   })
   paymentPref?: PaymentPref;
 }

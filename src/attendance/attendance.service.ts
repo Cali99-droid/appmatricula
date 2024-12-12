@@ -29,6 +29,10 @@ import { firstValueFrom } from 'rxjs';
 import { Person } from 'src/person/entities/person.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { normalizeDate } from 'src/common/helpers/normalizeData';
+import { EmailsService } from 'src/emails/emails.service';
+import { MailParams } from 'src/emails/interfaces/mail-params.interface';
+
+import { getBodyEmail, getText } from './helpers/bodyEmail';
 // import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
@@ -55,7 +59,9 @@ export class AttendanceService {
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
     @InjectRepository(Family)
     private readonly familyRepository: Repository<Family>,
+    /**email service */
 
+    private readonly emailsService: EmailsService,
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
 
@@ -283,22 +289,22 @@ export class AttendanceService {
         if (family) {
           const { parentOneId, parentTwoId, student } = family;
           if (parentOneId && parentOneId.user) {
-            this.sendEmail(
+            this.sendEmailWithSES(
               parentOneId,
               student[0],
               currentTime,
               attendance.arrivalDate,
-              attendance.shift,
+              shift,
               condition,
             );
           }
           if (parentTwoId && parentTwoId.user) {
-            this.sendEmail(
+            this.sendEmailWithSES(
               parentTwoId,
               student[0],
               currentTime,
               attendance.arrivalDate,
-              attendance.shift,
+              shift,
               condition,
             );
           }
@@ -378,10 +384,12 @@ export class AttendanceService {
           parentTwoId: { user: true },
         },
       });
+
       if (family) {
         const { parentOneId, parentTwoId, student } = family;
+
         if (parentOneId && parentOneId.user) {
-          this.sendEmail(
+          this.sendEmailWithSES(
             parentOneId,
             student[0],
             currentTime,
@@ -391,7 +399,7 @@ export class AttendanceService {
           );
         }
         if (parentTwoId && parentTwoId.user) {
-          this.sendEmail(
+          this.sendEmailWithSES(
             parentTwoId,
             student[0],
             currentTime,
@@ -407,6 +415,22 @@ export class AttendanceService {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
+  }
+  async sendEmailWithSES(
+    parent: Person,
+    student: Student,
+    currentTime: Date,
+    arrivalDate: Date,
+    shift: Shift,
+    condition: ConditionAttendance,
+  ) {
+    const params: MailParams = {
+      to: parent.user.email,
+      subject: 'Notificación de Asistencia',
+      html: getBodyEmail(student, currentTime, arrivalDate, shift, condition),
+      text: getText(student, currentTime, arrivalDate, shift, condition),
+    };
+    this.emailsService.sendEmailWithSES(params);
   }
   async sendEmail(
     parent: Person,
@@ -648,7 +672,7 @@ export class AttendanceService {
     this.logger.log(`Running cron jobs for the shift:${shift}`);
     const currentDate = new Date();
     const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
-
+    const currentDateBimester = normalizeDate(new Date());
     //**Validar Fase  */
     const qbphase = this.phaseRepository.createQueryBuilder('phase');
     const phase = await qbphase
@@ -669,18 +693,20 @@ export class AttendanceService {
     }
     //** verificar que la fecha se encuentre en un bimestre*/
     const bimesters = phase.bimester;
+
     let currentBimester;
     for (const bimestre of bimesters) {
       if (
-        currentDate >= new Date(bimestre.startDate) &&
-        currentDate <= new Date(bimestre.endDate)
+        currentDateBimester >= normalizeDate(new Date(bimestre.startDate)) &&
+        currentDateBimester <= normalizeDate(new Date(bimestre.endDate))
       ) {
         currentBimester = bimestre;
       }
     }
+
     if (!currentBimester) {
       this.logger.warn(
-        `There is no active bimester for this date: ${currentDate}, the cron jobs were not completed`,
+        `There is no active bimester for this date: ${currentDateBimester}, the cron jobs were not completed`,
       );
       return;
     }
@@ -790,6 +816,7 @@ export class AttendanceService {
   async markAbsentStudentsCronIndividual(): Promise<void> {
     this.logger.log(`Running cron jobs for the Individual schedule`);
     const currentDate = new Date();
+    const currentDateBimester = normalizeDate(new Date());
     const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
     //**Validar Fase  */
     const qbphase = this.phaseRepository.createQueryBuilder('phase');
@@ -814,15 +841,15 @@ export class AttendanceService {
     let currentBimester;
     for (const bimestre of bimesters) {
       if (
-        currentDate >= new Date(bimestre.startDate) &&
-        currentDate <= new Date(bimestre.endDate)
+        currentDateBimester >= normalizeDate(new Date(bimestre.startDate)) &&
+        currentDateBimester <= normalizeDate(new Date(bimestre.endDate))
       ) {
         currentBimester = bimestre;
       }
     }
     if (!currentBimester) {
       this.logger.warn(
-        `There is no active bimester for this date: ${currentDate}, the cron jobs were not completed`,
+        `There is no active bimester for this date: ${currentDateBimester}, the cron jobs were not completed`,
       );
       return;
     }

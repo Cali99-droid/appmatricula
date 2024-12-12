@@ -63,7 +63,7 @@ export class AuthService {
       throw new UnauthorizedException('Credentials are not valid(password)');
     const tokens = await this.getJwtTokens({ email: user.email, sub: user.id });
     await this.updateRefreshToken(user.id, tokens.refreshToken);
-    const { id, password, roles, person, ...result } = user;
+    const { password, roles, person, ...result } = user;
     const permissions = [];
 
     roles.forEach((role) => {

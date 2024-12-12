@@ -652,7 +652,7 @@ export class EnrollmentService {
       .getOne();
     // await this.calcVacantsAc(12);
     if (!currentEnrrollment) {
-      throw new NotFoundException('Dont exists this fact');
+      throw new NotFoundException('Dont exists this data');
     }
 
     const yearId = currentEnrrollment.activityClassroom.phase.year.id;
@@ -675,6 +675,8 @@ export class EnrollmentService {
           name: destinationId.grade.name + ' ' + destinationId.section,
           vacants: dest.vacants,
           suggested: true,
+          campus: destinationId.classroom.campusDetail.name,
+          level: destinationId.grade.level.name,
         };
         availables.push(classroom);
         return availables;
@@ -688,12 +690,11 @@ export class EnrollmentService {
         for (const co of configAscent) {
           const dest = await this.calcVacantsToClassroom(co.destinationId.id);
           console.log(dest);
-          if (
-            dest.section === currentEnrrollment.activityClassroom.section ||
+          //dest.hasVacants
+          /**dest.section === currentEnrrollment.activityClassroom.section ||
             dest.detailOrigin.section ===
-              currentEnrrollment.activityClassroom.section ||
-            dest.hasVacants
-          ) {
+              currentEnrrollment.activityClassroom.section */
+          if (dest.hasVacants) {
             const classroom: AvailableClassroom = {
               id: co.destinationId.id,
               name:
@@ -705,7 +706,10 @@ export class EnrollmentService {
                   currentEnrrollment.activityClassroom.section
                   ? true
                   : false,
+              campus: co.destinationId.classroom.campusDetail.name,
+              level: co.destinationId.grade.level.name,
             };
+
             availables.push(classroom);
           }
           // if (dest.hasVacants) {
@@ -755,6 +759,8 @@ export class EnrollmentService {
               dest.section === currentEnrrollment.activityClassroom.section
                 ? true
                 : false,
+            campus: ac.classroom.campusDetail.name,
+            level: ac.grade.level.name,
           };
           availables.push(classroom);
         }
@@ -882,6 +888,7 @@ export class EnrollmentService {
         const destings = await this.ascentRepository.find({
           where: {
             originId: { id: co.originId.id },
+            destinationId: { section: Not(co.originId.section) },
           },
         });
         if (destings.length === 1) {
@@ -1056,6 +1063,59 @@ export class EnrollmentService {
     };
     // console.log('normal', res);
     return res;
+  }
+  async getVacantsGeneral(gradeId: number, yearId: number) {
+    const activityClassrooms = await this.activityClassroomRepository.find({
+      where: {
+        grade: { id: gradeId - 1 },
+        phase: {
+          year: { id: yearId - 1 },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const idsAc = activityClassrooms.map((ac) => ac.id);
+
+    const countEnrroll = await this.enrollmentRepository.count({
+      where: {
+        activityClassroom: {
+          id: In(idsAc),
+        },
+        ratified: true,
+      },
+    });
+
+    /**data destino, aulas configuradas para el grado solicitado */
+
+    const activityClassroomsDest = await this.activityClassroomRepository.find({
+      where: {
+        grade: { id: gradeId },
+        phase: {
+          year: { id: yearId },
+        },
+      },
+    });
+
+    const capacities = activityClassroomsDest.map(
+      (ac) => ac.classroom.capacity,
+    );
+
+    const capacity = capacities.reduce(
+      (accumulator, currentValue) => accumulator + currentValue,
+      0,
+    );
+
+    const vacants = capacity - countEnrroll;
+
+    return {
+      hasVacants: vacants > 0,
+      capacity: capacity,
+      enrrolls: countEnrroll,
+      vacants,
+    };
   }
 
   /**script para crear un codigo para todos las matriculas */

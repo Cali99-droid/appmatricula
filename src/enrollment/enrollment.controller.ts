@@ -158,6 +158,32 @@ export class EnrollmentController {
     return this.enrollmentService.setRatified(query, code);
   }
 
+  /**Ascents */
+
+  @Post('config/ascent')
+  createAscent(@Body() createAscentDto: CreateAscentDto) {
+    return this.enrollmentService.createAscent(createAscentDto);
+  }
+
+  // @Get('config/ascent/:yearId')
+  // getAscent(@Param('yearId', ParseIntPipe) yearId: number) {
+  //   return this.enrollmentService.getAscent(yearId);
+  // }
+
+  /**Proceso de matricula */
+  @Get('available/:studentId')
+  @ApiOperation({
+    summary: 'get availables classroom for enrroll',
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: 'Array of availables classrooms',
+    //  type: [AvailableClassroom],
+  })
+  getAvailableClassrooms(@Param('studentId', ParseIntPipe) studentId: number) {
+    return this.enrollmentService.getAvailableClassrooms(studentId);
+  }
+
   @Get('vacants/:yearId')
   @ApiQuery({
     name: 'campusId',
@@ -183,29 +209,17 @@ export class EnrollmentController {
     return this.enrollmentService.getVacants(yearId, query);
   }
 
-  /**Ascents */
-
-  @Post('config/ascent')
-  createAscent(@Body() createAscentDto: CreateAscentDto) {
-    return this.enrollmentService.createAscent(createAscentDto);
-  }
-
-  // @Get('config/ascent/:yearId')
-  // getAscent(@Param('yearId', ParseIntPipe) yearId: number) {
-  //   return this.enrollmentService.getAscent(yearId);
-  // }
-
-  /**Proceso de matricula */
-  @Get('available/:studentId')
-  @ApiOperation({
-    summary: 'get availables classroom for enrroll',
-  })
+  @Get('vacants/:yearId/grade/:gradeId')
   @ApiOkResponse({
     status: 200,
-    description: 'Array of availables classrooms',
+    description: 'result of consult, hasVacants true or false',
     //  type: [AvailableClassroom],
   })
-  getAvailableClassrooms(@Param('studentId', ParseIntPipe) studentId: number) {
-    return this.enrollmentService.getAvailableClassrooms(studentId);
+  findVacantsByGrade(
+    @Param('yearId', ParseIntPipe) yearId: number,
+    @Param('gradeId', ParseIntPipe) gradeId: number,
+  ) {
+    // return this.enrollmentService.getVacantsTest();
+    return this.enrollmentService.getVacantsGeneral(gradeId, yearId);
   }
 }

@@ -244,12 +244,9 @@ export class FamilyService {
   }
 
   async getCites(idDistrict: string) {
-    console.log('first');
     //OBTENER TODOS LOS DISTRITOS
     const url = this.configService.get('API_ADMISION');
     try {
-      console.log('GET CITIES');
-      console.log(url);
       const dataDistrict = await firstValueFrom(
         this.httpService.get(`${url}/cities/district`),
       );
@@ -257,7 +254,7 @@ export class FamilyService {
       const district = dataDistrict.data.data.find(
         (district: any) => district.id === idDistrict,
       );
-      console.log(district);
+
       //OBTENER TODOS LAS PROVINCIAS
       const dataProvince = await firstValueFrom(
         this.httpService.get(`${url}/cities/province`),
@@ -282,7 +279,6 @@ export class FamilyService {
     }
   }
   async findOne(id: number) {
-    console.log('llmando');
     const family = await this.familyRepository.findOne({
       where: { id: id },
       relations: {
@@ -294,7 +290,10 @@ export class FamilyService {
         },
         student: {
           enrollment: {
-            activityClassroom: true,
+            activityClassroom: {
+              classroom: true,
+              grade: true,
+            },
           },
         },
         respEnrollment: true,
@@ -349,12 +348,21 @@ export class FamilyService {
           return current.id > previous.id ? current : previous;
         },
       );
+      //Sede 1 - Primaria - 3A
 
       return {
         person,
         ...enrroll,
-
-        actual: activityClassroom.grade.name + ' ' + activityClassroom.section,
+        studentId: student.id,
+        photo: student.photo,
+        actual:
+          activityClassroom.classroom.campusDetail.name +
+          ' - ' +
+          activityClassroom.grade.level.name +
+          ' - ' +
+          activityClassroom.grade.name +
+          ' ' +
+          activityClassroom.section,
       };
     });
     const data = { student: childrens, ...rest };
