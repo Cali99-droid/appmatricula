@@ -38,6 +38,7 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { RoleModule } from './role/role.module';
 import { EnrollmentScheduleModule } from './enrollment_schedule/enrollment_schedule.module';
 import { EmailsModule } from './emails/emails.module';
+import { KeycloakModule } from './keycloak/keycloak.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { EmailsModule } from './emails/emails.module';
     RoleModule,
     EnrollmentScheduleModule,
     EmailsModule,
+    KeycloakModule,
   ],
   providers: [ExistIdConstraint, AuthService],
 })
