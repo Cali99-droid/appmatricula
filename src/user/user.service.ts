@@ -474,6 +474,11 @@ export class UserService {
     }
   }
   async findByActivityClassroom(activityClassroomId: number) {
+    if (isNaN(activityClassroomId) || activityClassroomId <= 0) {
+      throw new NotFoundException(
+        `activityClassroomId must be a number greater than 0`,
+      );
+    }
     const enroll = await this.enrollmentRepository.find({
       where: { activityClassroom: { id: activityClassroomId } },
       relations: [
@@ -481,27 +486,6 @@ export class UserService {
         'student.family.parentTwoId.user',
         'student.person',
       ],
-      // select: {
-      //   student: {
-      //     person: {
-      //       name: true,
-      //       lastname: true,
-      //       mLastname: true,
-      //     },
-      //     family: {
-      //       parentOneId: {
-      //         name: true,
-      //         lastname: true,
-      //         mLastname: true,
-      //         familyRole: true,
-      //         cellPhone: true,
-      //         user: {
-      //           email: true,
-      //         },
-      //       },
-      //     },
-      //   },
-      // },
     });
     const filteredEnroll = enroll.map((e) => ({
       total: enroll.length,
