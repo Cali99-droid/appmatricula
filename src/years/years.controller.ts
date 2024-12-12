@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Req,
 } from '@nestjs/common';
 import { YearsService } from './years.service';
 import { CreateYearDto } from './dto/create-year.dto';
@@ -18,8 +19,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Year } from './entities/year.entity';
+import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
 @ApiTags('Year')
 @Controller('years')
+@Resource(Year.name)
 export class YearsController {
   constructor(private readonly yearsService: YearsService) {}
 
@@ -42,7 +45,10 @@ export class YearsController {
     description: 'Array of years',
     type: [Year],
   })
+  // @Roles({ roles: ['test-client:administrador-adm'] })
+  // findAll(@AuthenticatedUser() user: any) {
   findAll() {
+    // console.log(user);
     return this.yearsService.findAll();
   }
   // TODO revisar utilidad

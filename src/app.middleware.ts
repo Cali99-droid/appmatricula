@@ -15,16 +15,16 @@ export class AppMiddleware implements NestMiddleware {
   constructor(private readonly authService: AuthService) {}
 
   use(req: Request, res: Response, next: NextFunction) {
-    const token = getToken(req.headers.authorization);
+    // const token = getToken(req.headers.authorization);
 
-    if (!token) new UnauthorizedException();
-    try {
-      const data: { user: any } = this.authService.verify(token);
-    } catch (error) {
-      throw new UnauthorizedException(
-        'Authorization type missing and/or empty Token',
-      );
-    }
+    // if (!token) new UnauthorizedException();
+    // try {
+    //   const data: { user: any } = this.authService.verify(token);
+    // } catch (error) {
+    //   throw new UnauthorizedException(
+    //     'Authorization type missing and/or empty Token',
+    //   );
+    // }
 
     return next();
   }

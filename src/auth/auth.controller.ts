@@ -17,9 +17,11 @@ import { Request } from 'express';
 import { RefreshTokenGuard } from './guards/refreshToken.guard';
 
 import { RegisterUserDto } from './dto/register-user.dto';
+import { AuthenticatedUser, Resource } from 'nest-keycloak-connect';
 
 @ApiTags('Auth')
 @Controller('auth')
+@Resource('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -92,5 +94,22 @@ export class AuthController {
     const userId = req.user['sub'];
     const refreshToken = req.user['refreshToken'];
     return this.authService.refreshTokens(userId, refreshToken);
+  }
+
+  @Get('menu')
+  @ApiBearerAuth('refresh-token')
+  @ApiOperation({
+    summary: 'get menu by user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'user menu ',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'access denied ',
+  })
+  getMenu(@AuthenticatedUser() user: any) {
+    return this.authService.getMenu(user);
   }
 }

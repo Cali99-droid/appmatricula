@@ -38,7 +38,11 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { RoleModule } from './role/role.module';
 import { EnrollmentScheduleModule } from './enrollment_schedule/enrollment_schedule.module';
 import { EmailsModule } from './emails/emails.module';
+
 import { DebtorsHelperModule } from './debtors_helper/debtors_helper.module';
+
+import { KeycloakModule } from './keycloak/keycloak.module';
+
 
 @Module({
   imports: [
@@ -82,7 +86,11 @@ import { DebtorsHelperModule } from './debtors_helper/debtors_helper.module';
     RoleModule,
     EnrollmentScheduleModule,
     EmailsModule,
+
     DebtorsHelperModule,
+
+    KeycloakModule,
+
   ],
   providers: [ExistIdConstraint, AuthService],
 })
