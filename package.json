@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.556.0",
-    "@aws-sdk/client-ses": "^3.667.0",
+    "@aws-sdk/client-ses": "^3.709.0",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.2",
@@ -50,7 +50,7 @@
     "mysql2": "^3.9.1",
     "nest-keycloak-connect": "^1.10.1",
     "node-fetch": "^3.3.2",
-    "nodemailer": "^6.9.15",
+    "nodemailer": "^6.9.16",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",

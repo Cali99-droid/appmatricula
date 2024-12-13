@@ -11,7 +11,7 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateUserOfTestDto } from './dto/create-users-of-test.dto';
 
 @ApiTags('User')
@@ -82,5 +82,23 @@ export class UserController {
   @Post('/users-of-test')
   createUsersOfTest(@Body() createUserDto: CreateUserOfTestDto) {
     return this.userService.createUsersOfTest(createUserDto);
+  }
+  @Get('activity-classroom/:activityClassroomId')
+  @ApiOperation({
+    summary: 'get parents by ActivityClassroom',
+  })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'array whith data ',
+  //   type: [Person],
+  // })
+  @ApiResponse({
+    status: 400,
+    description: 'some data sending is bad ',
+  })
+  findByActivityClassroom(
+    @Param('activityClassroomId') activityClassroomId: number,
+  ) {
+    return this.userService.findByActivityClassroom(+activityClassroomId);
   }
 }
