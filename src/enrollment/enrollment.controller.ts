@@ -30,6 +30,7 @@ import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { Auth } from 'src/auth/decorators/auth.decorator';
+import { Public } from 'nest-keycloak-connect';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -215,6 +216,7 @@ export class EnrollmentController {
     description: 'result of consult, hasVacants true or false',
     //  type: [AvailableClassroom],
   })
+  @Public()
   findVacantsByGrade(
     @Param('yearId', ParseIntPipe) yearId: number,
     @Param('gradeId', ParseIntPipe) gradeId: number,
