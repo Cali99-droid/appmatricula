@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  Req,
 } from '@nestjs/common';
 import { YearsService } from './years.service';
 import { CreateYearDto } from './dto/create-year.dto';
@@ -19,7 +18,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Year } from './entities/year.entity';
-import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
+import { Resource } from 'nest-keycloak-connect';
 @ApiTags('Year')
 @Controller('years')
 @Resource(Year.name)
