@@ -141,30 +141,30 @@ export class ActivityClassroomService {
       throw new NotFoundException(error.message);
     }
   }
-  async searchParams(searchClassroomsDto: SearchClassroomsDto, user: User) {
+  async searchParams(searchClassroomsDto: SearchClassroomsDto, user: any) {
     try {
       const { yearId, phaseId, campusId, levelId } = searchClassroomsDto;
       // Obtener el usuario con las relaciones necesarias
-      const us = await this.userRepository.findOne({
-        where: {
-          email: user.email,
-        },
-        relations: {
-          assignmentsClassroom: {
-            activityClassroom: true,
-          },
-          roles: {
-            permissions: true,
-          },
-        },
-      });
+      // const us = await this.userRepository.findOne({
+      //   where: {
+      //     email: user.email,
+      //   },
+      //   relations: {
+      //     assignmentsClassroom: {
+      //       activityClassroom: true,
+      //     },
+      //     roles: {
+      //       permissions: true,
+      //     },
+      //   },
+      // });
       // Recopilar permisos del usuario
       // const permissions = new Set(
       //   us.roles.flatMap((role) => role.permissions.map((perm) => perm.name)),
       // );
-      const per = us.roles.flatMap((role) =>
-        role.permissions.map((perm) => perm.name),
-      );
+      // const per = us.roles.flatMap((role) =>
+      //   role.permissions.map((perm) => perm.name),
+      // );
 
       const whereCondition: any = {
         phase: {
@@ -178,23 +178,23 @@ export class ActivityClassroomService {
           level: !isNaN(+levelId) ? { id: +levelId } : {},
         },
       };
-      const autPerm = [
-        'admin',
-        'card-generator',
-        // 'report',
-        'students',
-        'families',
-      ];
+      // const autPerm = [
+      //   'admin',
+      //   'card-generator',
+      //   // 'report',
+      //   'students',
+      //   'families',
+      // ];
 
-      const isAdmin = per.some((e) => autPerm.includes(e));
-      if (!isAdmin && !per.includes('report')) {
-        const acIds = us.assignmentsClassroom.map(
-          (item) => item.activityClassroom.id,
-        );
-        whereCondition.assignmentClassroom = {
-          activityClassroom: { id: In(acIds) },
-        };
-      }
+      // const isAdmin = per.some((e) => autPerm.includes(e));
+      // if (!isAdmin && !per.includes('report')) {
+      //   const acIds = us.assignmentsClassroom.map(
+      //     (item) => item.activityClassroom.id,
+      //   );
+      //   whereCondition.assignmentClassroom = {
+      //     activityClassroom: { id: In(acIds) },
+      //   };
+      // }
       // let classrooms: ActivityClassroom[];d
 
       const classrooms = await this.activityClassroomRepository.find({
@@ -220,26 +220,26 @@ export class ActivityClassroomService {
     try {
       const { yearId, phaseId, campusId, levelId } = searchClassroomsDto;
       // Obtener el usuario con las relaciones necesarias
-      const us = await this.userRepository.findOne({
-        where: {
-          email: user.email,
-        },
-        relations: {
-          assignmentsClassroom: {
-            activityClassroom: true,
-          },
-          roles: {
-            permissions: true,
-          },
-        },
-      });
+      // const us = await this.userRepository.findOne({
+      //   where: {
+      //     email: user.email,
+      //   },
+      //   relations: {
+      //     assignmentsClassroom: {
+      //       activityClassroom: true,
+      //     },
+      //     roles: {
+      //       permissions: true,
+      //     },
+      //   },
+      // });
       // Recopilar permisos del usuario
       // const permissions = new Set(
       //   us.roles.flatMap((role) => role.permissions.map((perm) => perm.name)),
       // );
-      const per = us.roles.flatMap((role) =>
-        role.permissions.map((perm) => perm.name),
-      );
+      // const per = us.roles.flatMap((role) =>
+      //   role.permissions.map((perm) => perm.name),
+      // );
 
       const whereCondition: any = {
         phase: {
@@ -253,23 +253,23 @@ export class ActivityClassroomService {
           level: !isNaN(+levelId) ? { id: +levelId } : {},
         },
       };
-      const autPerm = [
-        'admin',
-        'card-generator',
-        // 'report',
-        'students',
-        'families',
-      ];
+      // const autPerm = [
+      //   'admin',
+      //   'card-generator',
+      //   // 'report',
+      //   'students',
+      //   'families',
+      // ];
 
-      const isAdmin = per.some((e) => autPerm.includes(e));
-      if (!isAdmin && !per.includes('report')) {
-        const acIds = us.assignmentsClassroom.map(
-          (item) => item.activityClassroom.id,
-        );
-        whereCondition.assignmentClassroom = {
-          activityClassroom: { id: In(acIds) },
-        };
-      }
+      // const isAdmin = per.some((e) => autPerm.includes(e));
+      // if (!isAdmin && !per.includes('report')) {
+      //   const acIds = us.assignmentsClassroom.map(
+      //     (item) => item.activityClassroom.id,
+      //   );
+      //   whereCondition.assignmentClassroom = {
+      //     activityClassroom: { id: In(acIds) },
+      //   };
+      // }
       // let classrooms: ActivityClassroom[];d
 
       const classrooms = await this.activityClassroomRepository.find({
