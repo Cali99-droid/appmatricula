@@ -18,6 +18,7 @@ import { UpdateCampusDto } from './dto/update-campus.dto';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { Auth } from 'src/auth/decorators/auth.decorator';
+import { AuthenticatedUser } from 'nest-keycloak-connect';
 @ApiTags('Campus')
 @Controller('campus')
 export class CampusController {
@@ -71,7 +72,7 @@ export class CampusController {
     description: 'campus  not found ',
   })
   // @Auth()
-  async findAllByYear(@Param('id') id: string, @GetUser() user: any) {
+  async findAllByYear(@Param('id') id: string, @AuthenticatedUser() user: any) {
     return this.campusService.findAllByYear(+id, user);
   }
   @Get(':id')
