@@ -154,7 +154,6 @@ export class ActivityClassroomController {
     description: 'Array of classrooms from phase, year, campus or level',
     type: [ActivityClassroom],
   })
-  @Auth()
   searchParams(
     @Query() searchClassroomsDto: SearchClassroomsDto,
     @AuthenticatedUser() user: any,
