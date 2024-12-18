@@ -211,4 +211,74 @@ export class StudentService {
 
     return newCodigo;
   }
+  async findByActivityClassroomDebTors(
+    activityClassroomId: number,
+    hasDebt: boolean,
+  ) {
+    if (isNaN(activityClassroomId) || activityClassroomId <= 0) {
+      throw new NotFoundException(
+        `activityClassroomId must be a number greater than 0`,
+      );
+    }
+    const students = await this.studentRepository.find({
+      where: {
+        enrollment: { activityClassroom: { id: activityClassroomId } },
+        hasDebt: hasDebt,
+      },
+      relations: [
+        'family.parentOneId.user',
+        'family.parentTwoId.user',
+        'person',
+        'enrollment',
+        'enrollment.activityClassroom',
+        // 'enrollment.activity_classroom.grade',
+        'enrollment.activityClassroom.grade.level',
+      ],
+    });
+    const filteredDebTors = students.map((e) => ({
+      student: {
+        person: {
+          name: e.person?.name ?? null,
+          lastname: e.person?.lastname ?? null,
+          mLastname: e.person?.mLastname ?? null,
+          grade: e.enrollment[0]?.activityClassroom.grade?.name,
+          level: e.enrollment[0]?.activityClassroom.grade?.level?.name,
+          section: e.enrollment[0]?.activityClassroom.section,
+          hasDebt: e.hasDebt,
+          behavior: e.enrollment[0].behavior,
+          behaviorDescription: e.enrollment[0].behaviorDescription,
+        },
+        // enrolllment: {
+        //   behavior: e.enrollment[0].behavior,
+        //   behaviorDescription: e.enrollment[0].behaviorDescription,
+        // },
+        family: {
+          parentOneId: {
+            name: e.family?.parentOneId?.name ?? null,
+            lastname: e.family?.parentOneId?.lastname ?? null,
+            mLastname: e.family?.parentOneId?.mLastname ?? null,
+            familyRole: e.family?.parentOneId?.familyRole ?? null,
+            cellPhone: e.family?.parentOneId?.cellPhone ?? null,
+            user: {
+              email: e.family?.parentOneId?.user?.email ?? null,
+            },
+          },
+          parentTwoId: {
+            name: e.family?.parentTwoId?.name ?? null,
+            lastname: e.family?.parentTwoId?.lastname ?? null,
+            mLastname: e.family?.parentTwoId?.mLastname ?? null,
+            familyRole: e.family?.parentTwoId?.familyRole ?? null,
+            cellPhone: e.family?.parentTwoId?.cellPhone ?? null,
+            user: {
+              email: e.family?.parentTwoId?.user?.email ?? null,
+            },
+          },
+        },
+      },
+    }));
+    return {
+      total: students.length,
+      filteredDebTors,
+    };
+  }
 }

@@ -109,4 +109,26 @@ export class StudentController {
       +id,
     );
   }
+  @Get('activity-classroom-debtors/:activityClassroomId/:hasDebt')
+  @ApiOperation({
+    summary: 'get debtors by ActivityClassroom',
+  })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'array whith data ',
+  //   type: [Person],
+  // })
+  @ApiResponse({
+    status: 400,
+    description: 'some data sending is bad ',
+  })
+  findByActivityClassroom(
+    @Param('activityClassroomId') activityClassroomId: number,
+    @Param('hasDebt') hasDebt: boolean,
+  ) {
+    return this.studentService.findByActivityClassroomDebTors(
+      +activityClassroomId,
+      hasDebt,
+    );
+  }
 }

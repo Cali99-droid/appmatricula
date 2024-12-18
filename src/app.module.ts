@@ -161,6 +161,14 @@ export class AppModule implements NestModule {
           path: '/family/migrate',
           method: RequestMethod.GET,
         },
+        {
+          path: '/debtors-helper',
+          method: RequestMethod.POST,
+        },
+        {
+          path: '/student/activity-classroom-debtors/:activityClassroomId/:hasDebt',
+          method: RequestMethod.GET,
+        },
       )
       .forRoutes('/*');
   }

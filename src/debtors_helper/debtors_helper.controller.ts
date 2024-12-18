@@ -8,16 +8,17 @@ import {
   Delete,
 } from '@nestjs/common';
 import { DebtorsHelperService } from './debtors_helper.service';
-import { CreateDebtorsHelperDto } from './dto/create-debtors_helper.dto';
+import { DataDebTorsArrayDto } from './dto/data-debtors-array.dto';
 import { UpdateDebtorsHelperDto } from './dto/update-debtors_helper.dto';
-
+import { ApiTags } from '@nestjs/swagger';
+@ApiTags('DebTors Helper')
 @Controller('debtors-helper')
 export class DebtorsHelperController {
   constructor(private readonly debtorsHelperService: DebtorsHelperService) {}
 
   @Post()
-  create(@Body() createDebtorsHelperDto: CreateDebtorsHelperDto) {
-    return this.debtorsHelperService.create(createDebtorsHelperDto);
+  create(@Body() dataDebTorsArrayDto: DataDebTorsArrayDto) {
+    return this.debtorsHelperService.create(dataDebTorsArrayDto);
   }
 
   @Get()
