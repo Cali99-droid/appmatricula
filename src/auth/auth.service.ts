@@ -139,6 +139,12 @@ export class AuthService {
     return tokens;
   }
 
+  async getMenu(user: any) {
+    const roles = user.resource_access['client-test-appae'].roles;
+    const menu = this.generateMenu(roles);
+    return menu;
+  }
+
   private generateMenu(userPermissions: string[]): any {
     const filterMenu = (menu) => {
       return menu
