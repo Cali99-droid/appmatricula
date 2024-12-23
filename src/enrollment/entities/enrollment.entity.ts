@@ -62,10 +62,19 @@ export class Enrollment {
   behavior: Behavior;
 
   @Column('varchar', {
-    unique: true,
     nullable: true,
   })
   behaviorDescription: string;
+
+  @Column('varchar', {
+    nullable: true,
+  })
+  commitmentDocumentURL: string;
+
+  @Column('boolean', {
+    default: true,
+  })
+  allowNextRegistration: boolean;
 
   @ApiProperty({
     example: '1',
