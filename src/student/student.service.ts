@@ -12,6 +12,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from './entities/student.entity';
 import { Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { UpdateBehaviorDto } from 'src/enrollment/dto/update-behavior.dto';
+import { Behavior } from 'src/enrollment/enum/behavior.enum';
+import { UpdateAllowNextRegistrationDto } from 'src/enrollment/dto/update-allowNextRegistration.dto';
 
 @Injectable()
 export class StudentService {
@@ -23,6 +27,8 @@ export class StudentService {
     private readonly configService: ConfigService,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(Enrollment)
+    private readonly enrollmentRepository: Repository<Enrollment>,
   ) {}
   create(createStudentDto: CreateStudentDto) {
     return 'This action adds a new student';
@@ -280,5 +286,173 @@ export class StudentService {
       total: students.length,
       filteredDebTors,
     };
+  }
+  async findByActivityClassroomBehavior(activityClassroomId: number) {
+    if (isNaN(activityClassroomId) || activityClassroomId <= 0) {
+      throw new NotFoundException(
+        `activityClassroomId must be a number greater than 0`,
+      );
+    }
+    const students = await this.studentRepository.find({
+      where: {
+        enrollment: { activityClassroom: { id: activityClassroomId } },
+      },
+      relations: [
+        'family.parentOneId.user',
+        'family.parentTwoId.user',
+        'person',
+        'enrollment',
+        'enrollment.activityClassroom',
+        'enrollment.activityClassroom.grade.level',
+      ],
+    });
+    const filteredBehavior = students.map((e) => ({
+      id: e.enrollment[0]?.id,
+      student: {
+        person: {
+          name: e.person?.name ?? null,
+          lastname: e.person?.lastname ?? null,
+          mLastname: e.person?.mLastname ?? null,
+          grade: e.enrollment[0]?.activityClassroom.grade?.name,
+          level: e.enrollment[0]?.activityClassroom.grade?.level?.name,
+          section: e.enrollment[0]?.activityClassroom.section,
+          hasDebt: e.hasDebt,
+          behavior: e.enrollment[0].behavior,
+          behaviorDescription: e.enrollment[0].behaviorDescription,
+          commitmentDocumentURL: e.enrollment[0].commitmentDocumentURL,
+        },
+        family: {
+          parentOneId: {
+            name: e.family?.parentOneId?.name ?? null,
+            lastname: e.family?.parentOneId?.lastname ?? null,
+            mLastname: e.family?.parentOneId?.mLastname ?? null,
+            familyRole: e.family?.parentOneId?.familyRole ?? null,
+            cellPhone: e.family?.parentOneId?.cellPhone ?? null,
+            user: {
+              email: e.family?.parentOneId?.user?.email ?? null,
+            },
+          },
+          parentTwoId: {
+            name: e.family?.parentTwoId?.name ?? null,
+            lastname: e.family?.parentTwoId?.lastname ?? null,
+            mLastname: e.family?.parentTwoId?.mLastname ?? null,
+            familyRole: e.family?.parentTwoId?.familyRole ?? null,
+            cellPhone: e.family?.parentTwoId?.cellPhone ?? null,
+            user: {
+              email: e.family?.parentTwoId?.user?.email ?? null,
+            },
+          },
+        },
+      },
+    }));
+    return {
+      total: students.length,
+      filteredBehavior,
+    };
+  }
+  async findOneBehavior(id: number) {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: { id: id },
+    });
+    if (!enrollment)
+      throw new NotFoundException(`Enrollment with id ${id} not found`);
+    const filteredBehavior = {
+      id: enrollment.id,
+      behavior: enrollment.behavior,
+      behaviorDescription: enrollment.behaviorDescription,
+    };
+    return filteredBehavior;
+  }
+
+  async updateBehavior(id: number, updateBehaviorDto: UpdateBehaviorDto) {
+    const enrollment = await this.enrollmentRepository.preload({
+      id: id,
+      behavior: updateBehaviorDto.behavior,
+      behaviorDescription: updateBehaviorDto.behaviorDescription,
+      allowNextRegistration:
+        updateBehaviorDto.behavior == Behavior.NORMAL ? true : false,
+    });
+    if (!enrollment)
+      throw new NotFoundException(`Enrollment with id: ${id} not found`);
+    try {
+      await this.enrollmentRepository.save(enrollment);
+      return enrollment;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async findOneCommitmentDocumentURL(id: number) {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: { id: id },
+    });
+    if (!enrollment)
+      throw new NotFoundException(`Enrollment with id ${id} not found`);
+    const filteredBehavior = {
+      id: enrollment.id,
+      commitmentDocumentURL: enrollment.commitmentDocumentURL,
+      allowNextRegistration: enrollment.allowNextRegistration,
+    };
+    return filteredBehavior;
+  }
+  async updateAllowNextRegistration(
+    id: number,
+    updateAllowNextRegistrationDto: UpdateAllowNextRegistrationDto,
+  ) {
+    const enrollment = await this.enrollmentRepository.preload({
+      id: id,
+      allowNextRegistration:
+        updateAllowNextRegistrationDto.allowNextRegistration,
+    });
+    if (!enrollment)
+      throw new NotFoundException(`Enrollment with id: ${id} not found`);
+    try {
+      await this.enrollmentRepository.save(enrollment);
+      return enrollment;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+  async uploadPDF(file: Buffer, id: number) {
+    try {
+      const enrollment = await this.enrollmentRepository.findOneByOrFail({
+        id,
+      });
+      const folderName = this.configService.getOrThrow('FOLDER_IMG_NAME');
+      const pdfFileName = `${Date.now()}.pdf`;
+
+      if (enrollment.commitmentDocumentURL) {
+        await this.s3Client.send(
+          new DeleteObjectCommand({
+            Bucket: this.configService.getOrThrow('BUCKET_NAME'),
+            Key: `${folderName}/${enrollment.commitmentDocumentURL}`,
+          }),
+        );
+      }
+
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: this.configService.getOrThrow('BUCKET_NAME'),
+          Key: `${folderName}/${pdfFileName}`,
+          Body: file,
+          ContentType: 'application/pdf',
+          ACL: 'public-read',
+        }),
+      );
+
+      const urlS3 = this.configService.getOrThrow('AWS_URL_BUCKET');
+      const urlPDF = `${urlS3}${folderName}/${pdfFileName}`;
+
+      await this.enrollmentRepository
+        .createQueryBuilder()
+        .update()
+        .set({ commitmentDocumentURL: pdfFileName })
+        .where('id = :id', { id })
+        .execute();
+      return { urlPDF };
+    } catch (error) {
+      console.error(error);
+      throw new NotFoundException(error.message);
+    }
   }
 }
