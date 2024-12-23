@@ -161,6 +161,7 @@ export class AppModule implements NestModule {
           path: '/family/migrate',
           method: RequestMethod.GET,
         },
+        //SOLO ES DE AYUDA,LUEGO SE BORRA
         {
           path: '/debtors-helper',
           method: RequestMethod.POST,
@@ -169,6 +170,23 @@ export class AppModule implements NestModule {
           path: '/student/activity-classroom-debtors/:activityClassroomId/:hasDebt',
           method: RequestMethod.GET,
         },
+        {
+          path: '/student/activity-classroom-behavior/:activityClassroomId',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/student/behavior/:id',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/student/behaviorDetails/:id',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/student/pdf/:id',
+          method: RequestMethod.PUT,
+        },
+        //HASTA AQUI
       )
       .forRoutes('/*');
   }
