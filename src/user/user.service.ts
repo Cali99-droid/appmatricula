@@ -488,7 +488,6 @@ export class UserService {
       ],
     });
     const filteredEnroll = enroll.map((e) => ({
-      total: enroll.length,
       student: {
         person: {
           name: e.student.person?.name ?? null,

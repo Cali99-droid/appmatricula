@@ -45,6 +45,10 @@ export class Student {
   @ApiProperty({
     description: 'Id of Person',
   })
+  @Column('bool', {
+    default: true,
+  })
+  hasDebt: boolean;
   @OneToOne(() => Person, (person) => person.student, {
     eager: true,
   })
