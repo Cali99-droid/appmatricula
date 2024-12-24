@@ -237,11 +237,19 @@ export class PersonService {
     const students = await this.familypRepository.find({
       where: [
         {
-          parentOneId: { id: user.person.id },
+          parentOneId: {
+            user: {
+              email: user.email,
+            },
+          },
           // student: { enrollment: { isActive: true } },
         },
         {
-          parentTwoId: { id: user.person.id },
+          parentTwoId: {
+            user: {
+              email: user.email,
+            },
+          },
           // student: { enrollment: { isActive: true } },
         },
       ],
