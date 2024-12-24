@@ -53,6 +53,7 @@ export class EnrollmentController {
   ) {
     return this.enrollmentService.create(createEnrollmentDto, user);
   }
+
   @Post('many')
   @ApiResponse({
     status: 200,
