@@ -226,7 +226,7 @@ export class StudentController {
     @Param('id') id: string,
   ) {
     if (!file) {
-      throw new BadRequestException('Make sure that the file is an pdf');
+      throw new BadRequestException('Make sure that the file is an image');
     }
 
     return await this.studentService.uploadPDF(file.buffer, +id);
