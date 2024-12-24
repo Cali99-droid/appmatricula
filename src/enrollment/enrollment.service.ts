@@ -30,6 +30,7 @@ import {
 import { Vacants } from './interfaces/res-vacants.interface';
 import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
 import { User } from 'src/user/entities/user.entity';
+import { Behavior } from './enum/behavior.enum';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -1117,7 +1118,62 @@ export class EnrollmentService {
       vacants,
     };
   }
-
+  async getStatusEnrollmentByUser(user: any) {
+    console.log('entras');
+    console.log(user);
+    // return {
+    //   status: false,
+    //   // message: user,
+    // };
+    const enrollments = await this.enrollmentRepository
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.student', 'student')
+      .leftJoinAndSelect('student.family', 'family')
+      .leftJoinAndSelect('family.parentOneId', 'parentOne')
+      .leftJoinAndSelect('parentOne.user', 'userOne')
+      .leftJoinAndSelect('family.parentTwoId', 'parentTwo')
+      .leftJoinAndSelect('parentTwo.user', 'userTwo')
+      .where('userOne.email = :email', { email: user.email })
+      .orWhere('userTwo.email = :email', { email: user.email })
+      .getMany();
+    if (!enrollments) {
+      return {
+        status: false,
+        message: 'No tiene hijos',
+      };
+    }
+    const hasDebt = enrollments.some(
+      (enrollment) => enrollment.student.hasDebt === true,
+    );
+    if (hasDebt) {
+      return {
+        status: false,
+        message: 'El usuario tiene un hijo con deuda.',
+      };
+    }
+    const hascConditional = enrollments.some(
+      (enrollment) => enrollment.behavior === Behavior.MATRICULA_CONDICIONADA,
+    );
+    if (hascConditional) {
+      return {
+        status: false,
+        message: 'El usuario tiene un hijo que con matricula condicionada.',
+      };
+    }
+    const hasLoss = enrollments.some(
+      (enrollment) => enrollment.behavior === Behavior.PERDIDA_VACANTE,
+    );
+    if (hasLoss) {
+      return {
+        status: false,
+        message: 'El usuario tiene un hijo que ha perdido su vacante.',
+      };
+    }
+    return {
+      status: true,
+      message: 'El usuario no tiene niguna restricción de matricula.',
+    };
+  }
   /**script para crear un codigo para todos las matriculas */
 
   // async scripting() {

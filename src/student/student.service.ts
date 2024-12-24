@@ -321,34 +321,20 @@ export class StudentService {
           behaviorDescription: e.enrollment[0].behaviorDescription,
           commitmentDocumentURL: e.enrollment[0].commitmentDocumentURL,
         },
-        family: {
-          parentOneId: {
-            name: e.family?.parentOneId?.name ?? null,
-            lastname: e.family?.parentOneId?.lastname ?? null,
-            mLastname: e.family?.parentOneId?.mLastname ?? null,
-            familyRole: e.family?.parentOneId?.familyRole ?? null,
-            cellPhone: e.family?.parentOneId?.cellPhone ?? null,
-            user: {
-              email: e.family?.parentOneId?.user?.email ?? null,
-            },
-          },
-          parentTwoId: {
-            name: e.family?.parentTwoId?.name ?? null,
-            lastname: e.family?.parentTwoId?.lastname ?? null,
-            mLastname: e.family?.parentTwoId?.mLastname ?? null,
-            familyRole: e.family?.parentTwoId?.familyRole ?? null,
-            cellPhone: e.family?.parentTwoId?.cellPhone ?? null,
-            user: {
-              email: e.family?.parentTwoId?.user?.email ?? null,
-            },
-          },
-        },
       },
     }));
     return {
       total: students.length,
       filteredBehavior,
     };
+  }
+  mapBehaviorToDescription(behavior: string | undefined): string | null {
+    const behaviorMap: { [key: string]: string } = {
+      normal: 'Normal',
+      'conditional registration': 'Matricula Condicionada',
+      'loss of vacancy': 'Perdida de Vacante',
+    };
+    return behavior !== undefined ? behaviorMap[behavior] ?? null : null;
   }
   async findOneBehavior(id: number) {
     const enrollment = await this.enrollmentRepository.findOne({
@@ -419,7 +405,8 @@ export class StudentService {
         id,
       });
       const folderName = this.configService.getOrThrow('FOLDER_IMG_NAME');
-      const pdfFileName = `${Date.now()}.pdf`;
+      const webpImage = await sharp(file).webp().toBuffer();
+      const pdfFileName = `${Date.now()}.webp`;
 
       if (enrollment.commitmentDocumentURL) {
         await this.s3Client.send(
@@ -434,8 +421,7 @@ export class StudentService {
         new PutObjectCommand({
           Bucket: this.configService.getOrThrow('BUCKET_NAME'),
           Key: `${folderName}/${pdfFileName}`,
-          Body: file,
-          ContentType: 'application/pdf',
+          Body: webpImage,
           ACL: 'public-read',
         }),
       );

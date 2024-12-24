@@ -30,7 +30,7 @@ import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { Auth } from 'src/auth/decorators/auth.decorator';
-import { Public } from 'nest-keycloak-connect';
+import { AuthenticatedUser, Public } from 'nest-keycloak-connect';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -224,5 +224,16 @@ export class EnrollmentController {
   ) {
     // return this.enrollmentService.getVacantsTest();
     return this.enrollmentService.getVacantsGeneral(gradeId, yearId);
+  }
+
+  @Get('/get/status')
+  @ApiResponse({
+    status: 404,
+    description: 'get status not found ',
+  })
+  // @Auth()
+  getStatusEnrollmentByUser(@AuthenticatedUser() user: any) {
+    console.log('entra al conrole');
+    return this.enrollmentService.getStatusEnrollmentByUser(user);
   }
 }
