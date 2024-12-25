@@ -17,7 +17,7 @@ export class Debt {
 
   @ApiProperty({
     example: '2023-01-01',
-    description: 'date of payment',
+    description: 'date of debt',
   })
   @Column('date')
   dateEnd: Date;

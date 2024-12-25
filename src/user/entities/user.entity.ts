@@ -24,6 +24,8 @@ export class User {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
+  @Column('text')
+  sub: string;
 
   @Column('varchar', {
     unique: true,

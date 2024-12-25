@@ -1,34 +1,31 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { TreasuryService } from './treasury.service';
 import { CreateTreasuryDto } from './dto/create-treasury.dto';
-import { UpdateTreasuryDto } from './dto/update-treasury.dto';
 
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Resource, Roles } from 'nest-keycloak-connect';
+
+@ApiTags('Treasury')
+@Resource('client-test-appae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
 
-  @Post()
-  create(@Body() createTreasuryDto: CreateTreasuryDto) {
-    return this.treasuryService.create(createTreasuryDto);
+  @Post('payment/:debtId')
+  @ApiResponse({ status: 201, description: 'pagado' })
+  createPaid(
+    @Body() createTreasuryDto: CreateTreasuryDto,
+    @Param('debtId') debtId: number,
+  ) {
+    return this.treasuryService.createPaid(createTreasuryDto, debtId);
   }
 
-  @Get()
-  findAll() {
-    return this.treasuryService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.treasuryService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTreasuryDto: UpdateTreasuryDto) {
-    return this.treasuryService.update(+id, updateTreasuryDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.treasuryService.remove(+id);
+  @Get('debts/:studentId')
+  @ApiResponse({ status: 201, description: 'deudas del alumno' })
+  @Roles({
+    roles: ['administrador-colegio', 'secretaria', 'padre-colegio'],
+  })
+  findDebts(@Param('studentId') studentId: number) {
+    return this.treasuryService.findDebts(+studentId);
   }
 }

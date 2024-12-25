@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
@@ -16,12 +17,15 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/user/user.service';
 import { AdminMenu } from './config/menu-config';
+import { Person } from 'src/person/entities/person.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Person)
+    private readonly personRepository: Repository<Person>,
     private usersService: UserService,
     private readonly jwtService: JwtService,
     private configService: ConfigService,
@@ -140,6 +144,39 @@ export class AuthService {
   }
 
   async getMenu(user: any) {
+    const userBD = await this.userRepository.findOneBy({
+      // sub: user.sub,
+      email: user.email,
+    });
+    console.log(userBD);
+    if (!userBD) {
+      const existPerson = await this.personRepository.findOneBy({
+        docNumber: user.dni,
+      });
+      if (!existPerson) {
+        const person = this.personRepository.create({
+          name: user.given_name,
+          lastname: user.family_name,
+          mLastname: user.family_name.split(' ')[1] || user.family_name,
+          docNumber: user.dni,
+        });
+        const newPerson = await this.personRepository.save(person);
+        const us = this.userRepository.create({
+          email: user.email,
+          password: user.dni,
+          sub: user.sub,
+          person: { id: newPerson.id },
+        });
+        await this.userRepository.save(us);
+      } else {
+        throw new BadRequestException(
+          'The document number is in use, contact the administrator',
+        );
+      }
+    }
+
+    userBD.sub = user.sub;
+    await this.userRepository.save(userBD);
     const roles = user.resource_access['client-test-appae'].roles;
     const menu = this.generateMenu(roles);
     return menu;

@@ -29,10 +29,6 @@ export class Bill {
     nullable: true,
   })
   serie: string;
-  @Column('varchar', {
-    nullable: true,
-  })
-  isNumber: string;
 
   /**Relaciones */
   @ApiProperty({

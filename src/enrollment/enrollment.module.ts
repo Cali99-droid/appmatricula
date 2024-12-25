@@ -11,6 +11,8 @@ import { StudentModule } from 'src/student/student.module';
 import { Ascent } from './entities/ascent.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
+import { Rates } from 'src/treasury/entities/rates.entity';
+import { Debt } from 'src/treasury/entities/debt.entity';
 
 @Module({
   controllers: [EnrollmentController],
@@ -24,6 +26,8 @@ import { Permission } from 'src/permissions/entities/permission.entity';
       Ascent,
       User,
       Permission,
+      Rates,
+      Debt,
     ]),
     StudentModule,
   ],
