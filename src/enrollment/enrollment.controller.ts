@@ -27,13 +27,17 @@ import { SetRatifiedDto } from './dto/set-ratified.dto';
 import { FindVacantsDto } from './dto/find-vacants.dto';
 import { CreateAscentDto } from './dto/create-ascent.dto';
 import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
-import { User } from 'src/user/entities/user.entity';
-import { Auth } from 'src/auth/decorators/auth.decorator';
-import { AuthenticatedUser, Public } from 'nest-keycloak-connect';
+
+import {
+  AuthenticatedUser,
+  Public,
+  Resource,
+  Roles,
+} from 'nest-keycloak-connect';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
+@Resource('client-test-appae')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
@@ -46,14 +50,36 @@ export class EnrollmentController {
     status: 400,
     description: 'those enrolled exceed the capacity of the classroom ',
   })
-  @Auth()
+  @Roles({
+    roles: ['administrador-colegio', 'padre-colegio', 'secretaria'],
+  })
   create(
     @Body() createEnrollmentDto: CreateEnrollChildrenDto,
-    @GetUser() user: User,
+    @AuthenticatedUser() user: any,
   ) {
     return this.enrollmentService.create(createEnrollmentDto, user);
   }
 
+  @Put(':studentId')
+  @ApiOperation({
+    summary: 'Enroll a student',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Current Enroll',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'The student does not have pre-registration ',
+  })
+  @Roles({
+    roles: ['administrador-colegio', 'secretaria'],
+  })
+  enrrollStudent(@Param('studentId') studentId: number) {
+    return this.enrollmentService.enrrollStudent(+studentId);
+  }
+
+  /** */
   @Post('many')
   @ApiResponse({
     status: 200,

@@ -3,6 +3,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
@@ -29,8 +30,10 @@ import {
 } from './interfaces/available.interface';
 import { Vacants } from './interfaces/res-vacants.interface';
 import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
-import { User } from 'src/user/entities/user.entity';
+
 import { Behavior } from './enum/behavior.enum';
+import { Rates } from 'src/treasury/entities/rates.entity';
+import { Debt } from 'src/treasury/entities/debt.entity';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -45,15 +48,60 @@ export class EnrollmentService {
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
+    @InjectRepository(Rates)
+    private readonly ratesRepository: Repository<Rates>,
+    @InjectRepository(Debt)
+    private readonly debtRepository: Repository<Debt>,
     private readonly studentService: StudentService,
   ) {}
-  async create(createEnrollmentDto: CreateEnrollChildrenDto, user: User) {
-    /**TODO: funcion paraValidar que sea el papá quien matricula */
-    /**TODO: llamar a la funcion para Validar se matricule a una de las aulas disponibles para este estudiante */
-    console.log(user);
+  async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
+    const roles = user.resource_access['client-test-appae'].roles;
+    const isAuth = roles.includes('administrador-colegio', 'secretaria');
     try {
       const codes = [];
+      const idsStudent = [];
       for (const ce of createEnrollmentDto.enrrollments) {
+        /**Validar que sea el papá quien matricula */
+        if (!isAuth) {
+          const father = await this.personRepository.findOneBy({
+            docNumber: user.dni,
+            user: {
+              email: user.email,
+            },
+          });
+
+          const student = await this.studentRepository.findOne({
+            where: {
+              id: ce.studentId,
+            },
+            relations: {
+              family: {
+                parentOneId: true,
+                parentTwoId: true,
+              },
+            },
+          });
+
+          if (
+            student.family.parentOneId?.id !== father.id &&
+            student.family.parentTwoId?.id !== father.id
+          ) {
+            throw new UnauthorizedException('This user is not authorized');
+          }
+        }
+
+        /** funcion para Validar se pre - matricule a una de las aulas disponibles para este estudiante */
+        const availables = await this.getAvailableClassrooms(ce.studentId);
+
+        const ids = availables.map((av) => av.id);
+
+        const isOkClassroom = ids.includes(ce.activityClassroomId);
+        if (!isOkClassroom) {
+          throw new BadRequestException('Incorrect Classroom or not available');
+        }
+
+        /**validar capacidad */
+
         const classroom =
           await this.activityClassroomRepository.findOneByOrFail({
             id: ce.activityClassroomId,
@@ -78,10 +126,55 @@ export class EnrollmentService {
           code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
           status: Status.PREMATRICULADO,
         });
-
         await this.enrollmentRepository.save(enrollment);
+        const activityClassroom =
+          await this.activityClassroomRepository.findOneBy({
+            id: ce.activityClassroomId,
+          });
+        /**generar deuda */
+        const levelId = activityClassroom.grade.level.id;
+        const campusDetailId = activityClassroom.classroom.campusDetail.id;
+
+        const rate = await this.ratesRepository.findOne({
+          where: {
+            level: { id: levelId },
+            campusDetail: { id: campusDetailId },
+          },
+          relations: {
+            concept: true,
+          },
+        });
+        const dateEnd = new Date();
+        const createdDebt = this.debtRepository.create({
+          dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
+          concept: { id: rate.concept.id },
+          student: { id: ce.studentId },
+          total: rate.total,
+          status: false,
+        });
+
+        await this.debtRepository.save(createdDebt);
+
         codes.push(enrollment.code);
+        idsStudent.push(ce.studentId);
       }
+
+      await this.enrollmentRepository
+        .createQueryBuilder()
+        .update(Enrollment)
+        .set({
+          isActive: false,
+          status: Status.FINALIZADO,
+        })
+        .where('code NOT IN (:...codes)', { codes })
+        .andWhere('studentId IN (:...idsStudent)', { idsStudent })
+        .andWhere('status = :statusEnrroll', {
+          statusEnrroll: Status.MATRICULADO,
+        })
+        .orWhere('status = :otherStatusEnrroll', {
+          otherStatusEnrroll: Status.EN_PROCESO,
+        })
+        .execute();
 
       return codes;
     } catch (error) {
@@ -1175,6 +1268,34 @@ export class EnrollmentService {
       message: 'El usuario no tiene niguna restricción de matricula.',
     };
   }
+
+  async enrrollStudent(studentId: number) {
+    const enrroll = await this.enrollmentRepository.find({
+      where: {
+        status: Status.PREMATRICULADO,
+        student: { id: studentId },
+      },
+      order: {
+        id: 'DESC',
+      },
+    });
+    if (enrroll.length === 0) {
+      throw new BadRequestException(
+        'The student does not have pre-registration',
+      );
+    }
+    /** TODO validar que haya pagado  */
+    try {
+      const currentEnrroll = enrroll[0];
+      currentEnrroll.status = Status.MATRICULADO;
+      currentEnrroll.isActive = true;
+      await this.enrollmentRepository.save(currentEnrroll);
+      return currentEnrroll;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
   /**script para crear un codigo para todos las matriculas */
 
   // async scripting() {
