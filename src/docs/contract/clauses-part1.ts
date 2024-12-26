@@ -3,10 +3,18 @@
 // const PDFDocument = require('pdfkit');
 import * as PDFDocument from 'pdfkit';
 
-export function addClausesPart1(doc: InstanceType<typeof PDFDocument>) {
+export function addClausesPart1(
+  doc: InstanceType<typeof PDFDocument>,
+  priceEnrollment: string,
+  priceAdmission: string,
+  levelName: string,
+  priceYear: string,
+  priceMounth: string,
+  campus: string,
+) {
   //TEXTO DE CLAUSULA PRIMERA
   const C4_P1A = `4.1 El PADRE O MADRE DE FAMILIA se compromete a pagar el monto de matrícula para cada uno de los tres niveles,`;
-  const C4_P1B = `ascendiente a S/ 300.00 (trescientos y 00/100 soles) y la cuota de ingreso (solo alumnos nuevos) es de S/ 310.00 (trescientos diez y 00/100 soles).`;
+  const C4_P1B = `ascendiente a S/ ${priceEnrollment}.00 (trescientos y 00/100 soles) y la cuota de ingreso (solo alumnos nuevos) es de S/ ${priceAdmission}.00 (trescientos diez y 00/100 soles).`;
   const C4_P2A = `4.2 El PADRE O MADRE DE FAMILIA conoce y acepta el monto anual del servicio educativo, el mismo que es financiado en 10 pensiones mensuales: `;
 
   const C4_P3A = `4.3	El PADRE O MADRE DE FAMILIA declara conocer la infraestructura de los locales de la ASOCIACIÓN señalados en el`;
@@ -32,7 +40,8 @@ export function addClausesPart1(doc: InstanceType<typeof PDFDocument>) {
   //TEXTO DE CLAUSULA QUINTA
   const C5_P1A = `5.1 Cumplir fielmente con el objeto del presente Contrato.`;
   const C5_P2A = `5.2 Cumplir con el Plan de Estudio de acuerdo a lo señalado en el presente Contrato.`;
-  const C5_P3A = `5.3 Informar al PADRE O MADRE DE FAMILIA al final de cada bimestre, sobre los resultados del proceso educativo del alumno.`;
+  const C5_P3A = `5.3 Informar al PADRE O MADRE DE FAMILIA al final de cada bimestre, sobre los resultados del proceso educativo del alumno.
+                  En tal sentido, salvo lo dispuesto en el presente literal, el colegio no realiza informes académicos a solicitud del Padre o Madre de familia.`;
   const C5_P4A = `5.4	Ejecutar los Servicios en estricto respeto de la persona humana, buscando siempre el desarrollo, bienestar y cumplimiento de los objetivos trazados por los alumnos.`;
   const C5_P5A = `5.5	Cumplir con el adecuado mantenimiento y accesibilidad de la plataforma virtual; sin embargo, de presentarse fallas en`;
   const C5_P5B = `la misma, el PADRE O MADRE DE FAMILIA reconoce que, al ser servicios provistos por terceros, el Colegio no puede`;
@@ -68,34 +77,10 @@ export function addClausesPart1(doc: InstanceType<typeof PDFDocument>) {
       col4: '           Local',
     },
     {
-      col1: 'INICIAL',
-      col2: 'S/ 3400.00',
-      col3: 'S/ 340.00',
-      col4: 'Local 1 y 2',
-    },
-    {
-      col1: 'PRIMARIA',
-      col2: 'S/ 3150.00',
-      col3: 'S/ 315.00',
-      col4: 'Local 1',
-    },
-    {
-      col1: 'PRIMARIA',
-      col2: 'S/ 3450.00',
-      col3: 'S/ 345.00',
-      col4: 'Local 2',
-    },
-    {
-      col1: 'SECUNDARIA',
-      col2: 'S/ 3650.00',
-      col3: 'S/ 365.00',
-      col4: 'Turno Mañana',
-    },
-    {
-      col1: 'SECUNDARIA',
-      col2: 'S/ 3250.00',
-      col3: 'S/ 325.00',
-      col4: 'Turno Tarde',
+      col1: levelName,
+      col2: `S/ ${priceYear}.00`,
+      col3: `S/ ${priceMounth}.00`,
+      col4: campus,
     },
   ];
   let tableTop = doc.y;

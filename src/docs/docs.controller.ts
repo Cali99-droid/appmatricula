@@ -1,8 +1,9 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res } from '@nestjs/common';
 
 import { Response } from 'express';
 import { PdfService } from './pdf.service';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { DownloadContractQueryDto } from './dto/downloadContractQuery.dto';
 // import { GetUser } from 'src/auth/decorators/get-user.decorator';
 // import { Auth } from 'src/auth/decorators/auth.decorator';
 // import { User } from 'src/user/entities/user.entity';
@@ -66,8 +67,12 @@ export class DocsController {
   async downloadContract(
     @Res() res: Response,
     @Param('idStudent') idStudent: string,
+    @Query() query: DownloadContractQueryDto,
   ) {
-    const pdfBuffer = await this.pdfService.generatePdfContract(+idStudent);
+    const pdfBuffer = await this.pdfService.generatePdfContract(
+      +idStudent,
+      query,
+    );
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=carnets.pdf');
     res.send(pdfBuffer);

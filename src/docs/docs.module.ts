@@ -12,6 +12,9 @@ import { Permission } from 'src/permissions/entities/permission.entity';
 import { HttpModule } from '@nestjs/axios';
 import { Family } from 'src/family/entities/family.entity';
 import { Person } from 'src/person/entities/person.entity';
+import { Year } from 'src/years/entities/year.entity';
+import { Level } from 'src/level/entities/level.entity';
+import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 
 @Module({
   controllers: [DocsController],
@@ -25,6 +28,9 @@ import { Person } from 'src/person/entities/person.entity';
       Family,
       Person,
       Student,
+      Year,
+      Level,
+      CampusDetail,
     ]),
     HttpModule,
     ConfigModule,
