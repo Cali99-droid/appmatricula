@@ -385,7 +385,7 @@ export class PdfService {
         },
       },
     });
-    console.log(student);
+
     if (!student)
       throw new NotFoundException(`Student with id ${idStudent} not found`);
     if (!student.family)
@@ -405,28 +405,24 @@ export class PdfService {
     if (!student.family.district)
       throw new NotFoundException(`This student does not have a district`);
 
-    const level = await this.levelRepository.findOne({
-      where: { id: query.level, grade: { id: query.grade } },
+    const classRoom = await this.activityClassroomRepository.findOne({
+      where: { id: query.activityClassRoomId },
       relations: {
-        grade: true,
+        grade: { level: true },
+        classroom: {
+          campusDetail: true,
+        },
+        phase: { year: true },
       },
     });
-    console.log(query);
-    console.log(level);
-
-    if (!level) throw new NotFoundException(`There is no exist level`);
-    const campusDetail = await this.campusDetailRepository.findOne({
-      where: { id: query.campus },
-    });
-
-    if (!campusDetail)
-      throw new NotFoundException(`There is no exist campusDetail`);
+    if (!classRoom)
+      throw new NotFoundException(`This classroom does not exist`);
     const year = await this.yearRepository.findOne({
       where: { status: true },
     });
     if (!year) throw new NotFoundException(`There is no active year`);
 
-    const numContra = `${query.campus}${query.level}${query.grade}${query.section}${student.family.id}${student.person.docNumber}`;
+    const numContra = `${classRoom.classroom.campusDetail.name.toUpperCase()} - ${classRoom.grade.level.name.toUpperCase()} - ${classRoom.grade.name.toUpperCase()} - ${classRoom.section} - ${student.family.nameFamily} - ${student.person.docNumber.slice(-2)}`;
     const name = `${student.family.respEnrollment.name} ${student.family.respEnrollment.lastname} ${student.family.respEnrollment.mLastname} `;
     const typeDoc = student.family.respEnrollment.typeDoc;
     const docNumber = student.family.respEnrollment.docNumber;
@@ -435,31 +431,32 @@ export class PdfService {
     const district = dataCity.district;
     const province = dataCity.province;
     const department = dataCity.region;
-    const yearName = '2025';
+    const yearName = classRoom.phase.year.name;
     const dayClassStart = '10';
     const dayClassEnd = '17';
     const priceEnrollment = '350';
     const priceAdmission = '350';
-    const levelName = level.name.toUpperCase();
-    const gradeName = level.grade[0].name.toUpperCase();
+    const levelName = classRoom.grade.level.name.toUpperCase();
+    const gradeName = classRoom.grade.name.toUpperCase();
+    const section = classRoom.section.toUpperCase();
     let priceYear: any;
     let priceMounth: any;
-    const campus = campusDetail.name;
+    const campus = classRoom.classroom.campusDetail.name.toUpperCase();
     const email = student.family.respEnrollment.user.email;
     const cellPhone = student.family.respEnrollment.cellPhone;
     const nameSon = `${student.person.lastname} ${student.person.mLastname}, ${student.person.name}`;
 
     //para calcular el precio por nivel
-    if (level.id === 1) {
+    if (classRoom.grade.level.id === 1) {
       console.log('entra lvel');
       priceYear = '3900';
       priceMounth = '390';
     }
-    if (level.id === 2) {
+    if (classRoom.grade.level.id === 2) {
       priceYear = '4000';
       priceMounth = '400';
     }
-    if (level.id === 3) {
+    if (classRoom.grade.level.id === 3) {
       priceYear = '4200';
       priceMounth = '420';
     }
@@ -509,7 +506,7 @@ export class PdfService {
         campus,
         levelName,
         gradeName,
-        query.section,
+        section,
         nameSon,
       );
       const pageWidth = doc.page.width;
@@ -577,23 +574,23 @@ export class PdfService {
         },
       );
       addAnexo(doc);
-      doc.image(image1, 55, doc.y - 260, {
+      doc.image(image1, 55, doc.y - 250, {
         width: 80,
         // align: 'center',
       });
-      doc.image(image2, 140, doc.y - 260, {
+      doc.image(image2, 140, doc.y - 250, {
         width: 90,
         // align: 'center',
       });
-      doc.image(image3, 55, doc.y - 160, {
+      doc.image(image3, 55, doc.y - 150, {
         width: 80,
         // align: 'center',
       });
-      doc.image(image4, 140, doc.y - 160, {
+      doc.image(image4, 140, doc.y - 150, {
         width: 90,
         // align: 'center',
       });
-      doc.image(image5, 55, doc.y - 60, {
+      doc.image(image5, 55, doc.y - 50, {
         width: 80,
         // align: 'center',
       });

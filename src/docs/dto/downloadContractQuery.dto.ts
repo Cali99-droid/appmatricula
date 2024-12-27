@@ -8,29 +8,29 @@ export class DownloadContractQueryDto {
   })
   @IsNotEmpty()
   @IsString()
-  campus: number;
+  activityClassRoomId: number;
 
-  @ApiProperty({
-    description: 'Nivel educativo del estudiante',
-    example: 1,
-  })
-  @IsNotEmpty()
-  @IsString()
-  level: number;
+  // @ApiProperty({
+  //   description: 'Nivel educativo del estudiante',
+  //   example: 1,
+  // })
+  // @IsNotEmpty()
+  // @IsString()
+  // studentId: number;
 
-  @ApiProperty({
-    description: 'Grado del estudiante',
-    example: 1,
-  })
-  @IsNotEmpty()
-  @IsString()
-  grade: number;
+  // @ApiProperty({
+  //   description: 'Grado del estudiante',
+  //   example: 1,
+  // })
+  // @IsNotEmpty()
+  // @IsString()
+  // grade: number;
 
-  @ApiProperty({
-    description: 'Sección del estudiante',
-    example: 'A',
-  })
-  @IsNotEmpty()
-  @IsString()
-  section: string;
+  // @ApiProperty({
+  //   description: 'Sección del estudiante',
+  //   example: 'A',
+  // })
+  // @IsNotEmpty()
+  // @IsString()
+  // section: string;
 }

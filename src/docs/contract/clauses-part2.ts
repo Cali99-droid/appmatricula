@@ -86,7 +86,7 @@ export function addClausesPart2(
   const C9_P1A = `El Colegio brindará los siguientes servicios de apoyo al Estudiante:`;
   const C9_P2A = `9.1 Servicio de Tutoría Académica`;
   const C9_P3A = `9.2 Servicio de Tutoría Psicológica `;
-  const C9_P4A = `9.3 Servicio de Tutoría Técnica `;
+  // const C9_P4A = `9.3 Servicio de Tutoría Técnica `;
   const C9_P5A = `Estos servicios serán brindados de acuerdo a la necesidad del alumno definida por la ASOCIACIÓN y/o a requerimiento del`;
   const C9_P5B = `PADRE O MADRE DE FAMILIA. Su no ejecución no condiciona el pago de pensiones ni de las demás obligaciones económicas`;
   const C9_P5C = `contempladas en el presente Contrato.`;
@@ -249,7 +249,7 @@ export function addClausesPart2(
   doc.font('Helvetica').fontSize(9).text(`${C9_P1A}`, { align: 'justify' });
   doc.font('Helvetica').fontSize(9).text(`${C9_P2A}`, { align: 'justify' });
   doc.font('Helvetica').fontSize(9).text(`${C9_P3A}`, { align: 'justify' });
-  doc.font('Helvetica').fontSize(9).text(`${C9_P4A}`, { align: 'justify' });
+  // doc.font('Helvetica').fontSize(9).text(`${C9_P4A}`, { align: 'justify' });
   doc
     .font('Helvetica')
     .fontSize(9)
