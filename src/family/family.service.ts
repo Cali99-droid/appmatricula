@@ -352,36 +352,38 @@ export class FamilyService {
     // return { childrens, ...childrens };
     /**Formato temporal */
     const { student, ...rest } = family;
-    const childrens = student.map((item) => {
-      const person = item.person;
+    const childrens = student
+      .map((item) => {
+        const person = item.person;
+        const { student, activityClassroom, ...enrroll } =
+          item.enrollment.reduce((previous, current) => {
+            return current.activityClassroom.grade.position >
+              previous.activityClassroom.grade.position
+              ? current
+              : previous;
+          });
 
-      const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
-        (previous, current) => {
-          return current.activityClassroom.grade.position >
-            previous.activityClassroom.grade.position
-            ? current
-            : previous;
-        },
-      );
+        if (activityClassroom.grade.position !== 14) {
+          return {
+            person,
+            ...enrroll,
+            studentId: student.id,
+            photo: student.photo,
+            activityClassroomId: activityClassroom.id,
+            actual:
+              activityClassroom.classroom.campusDetail.name +
+              ' - ' +
+              activityClassroom.grade.level.name +
+              ' - ' +
+              activityClassroom.grade.name +
+              ' ' +
+              activityClassroom.section,
+          };
+        }
+        return undefined; // Opcional, para dejar explícito que devolvemos undefined
+      })
+      .filter((child) => child !== undefined);
 
-      if (activityClassroom.grade.position !== 14) {
-        return {
-          person,
-          ...enrroll,
-          studentId: student.id,
-          photo: student.photo,
-          activityClassroomId: activityClassroom.id,
-          actual:
-            activityClassroom.classroom.campusDetail.name +
-            ' - ' +
-            activityClassroom.grade.level.name +
-            ' - ' +
-            activityClassroom.grade.name +
-            ' ' +
-            activityClassroom.section,
-        };
-      }
-    });
     const data = { student: childrens, ...rest };
 
     if (data.district) {
