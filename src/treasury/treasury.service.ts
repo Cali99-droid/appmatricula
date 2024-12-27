@@ -50,13 +50,14 @@ export class TreasuryService {
         respEconomic: true,
       },
     });
+
     const client = family.respEconomic;
     const igv = (debt.total / 1.18) * 0.18;
     const boletaData = {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2, // 2: Boleta
       serie: 'BBB1', // Cambia según tu configuración
-      numero: debt.id + 6, // Número correlativo de la boleta
+      numero: debt.id + 10, // Número correlativo de la boleta
       sunat_transaction: 1,
       cliente_tipo_de_documento: 1, // 1: DNI
       cliente_numero_de_documento: client.docNumber,
@@ -69,9 +70,11 @@ export class TreasuryService {
       fecha_de_emision: new Date(),
       moneda: 1, // 1: Soles
       tipo_de_cambio: '',
-      porcentaje_de_igv: 18,
-      total_gravada: debt.total,
-      total_igv: igv,
+      porcentaje_de_igv: 18.0,
+      total_gravada: '',
+      total_exonerada: debt.total,
+
+      total_igv: 0,
       total: debt.total,
       observaciones: 'Gracias por su compra.',
       items: [
@@ -84,7 +87,7 @@ export class TreasuryService {
           precio_unitario: debt.total,
           descuento: '',
           subtotal: debt.total,
-          tipo_de_igv: 17,
+          tipo_de_igv: 8,
           igv: 0.0,
           total: debt.total,
           anticipo_regularizacion: false,
