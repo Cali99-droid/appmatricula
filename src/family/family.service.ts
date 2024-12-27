@@ -282,15 +282,15 @@ export class FamilyService {
     const family = await this.familyRepository.findOne({
       where: {
         id: id,
-        student: {
-          enrollment: {
-            activityClassroom: {
-              grade: {
-                position: Not(14),
-              },
-            },
-          },
-        },
+        // student: {
+        //   enrollment: {
+        //     activityClassroom: {
+        //       grade: {
+        //         position: Not(14),
+        //       },
+        //     },
+        //   },
+        // },
       },
       relations: {
         parentOneId: {
@@ -354,28 +354,33 @@ export class FamilyService {
     const { student, ...rest } = family;
     const childrens = student.map((item) => {
       const person = item.person;
+
       const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
         (previous, current) => {
-          return current.id > previous.id ? current : previous;
+          return current.activityClassroom.grade.position >
+            previous.activityClassroom.grade.position
+            ? current
+            : previous;
         },
       );
-      //Sede 1 - Primaria - 3A
 
-      return {
-        person,
-        ...enrroll,
-        studentId: student.id,
-        photo: student.photo,
-        activityClassroomId: activityClassroom.id,
-        actual:
-          activityClassroom.classroom.campusDetail.name +
-          ' - ' +
-          activityClassroom.grade.level.name +
-          ' - ' +
-          activityClassroom.grade.name +
-          ' ' +
-          activityClassroom.section,
-      };
+      if (activityClassroom.grade.position !== 14) {
+        return {
+          person,
+          ...enrroll,
+          studentId: student.id,
+          photo: student.photo,
+          activityClassroomId: activityClassroom.id,
+          actual:
+            activityClassroom.classroom.campusDetail.name +
+            ' - ' +
+            activityClassroom.grade.level.name +
+            ' - ' +
+            activityClassroom.grade.name +
+            ' ' +
+            activityClassroom.section,
+        };
+      }
     });
     const data = { student: childrens, ...rest };
 
