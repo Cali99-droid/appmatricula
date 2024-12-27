@@ -56,7 +56,7 @@ export class TreasuryService {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2, // 2: Boleta
       serie: 'BBB1', // Cambia según tu configuración
-      numero: debt.id, // Número correlativo de la boleta
+      numero: debt.id + 6, // Número correlativo de la boleta
       sunat_transaction: 1,
       cliente_tipo_de_documento: 1, // 1: DNI
       cliente_numero_de_documento: client.docNumber,

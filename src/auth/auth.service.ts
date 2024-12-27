@@ -148,7 +148,7 @@ export class AuthService {
       // sub: user.sub,
       email: user.email,
     });
-    console.log(userBD);
+
     if (!userBD) {
       const existPerson = await this.personRepository.findOneBy({
         docNumber: user.dni,
@@ -177,7 +177,11 @@ export class AuthService {
 
     userBD.sub = user.sub;
     await this.userRepository.save(userBD);
-    const roles = user.resource_access['client-test-appae'].roles;
+    let roles = [];
+    if (user.resource_access['client-test-appae']) {
+      roles = user.resource_access['client-test-appae'].roles;
+    }
+
     const menu = this.generateMenu(roles);
     return menu;
   }

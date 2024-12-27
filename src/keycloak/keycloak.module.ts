@@ -8,6 +8,8 @@ import {
   RoleGuard,
 } from 'nest-keycloak-connect';
 import { APP_GUARD } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from 'src/user/entities/user.entity';
 
 @Module({
   controllers: [KeycloakController],
@@ -42,6 +44,7 @@ import { APP_GUARD } from '@nestjs/core';
     },
   ],
   imports: [
+    TypeOrmModule.forFeature([User]),
     KeycloakConnectModule.register({
       authServerUrl: 'https://login.colegioae.edu.pe',
       realm: 'test-login',
