@@ -15,4 +15,14 @@ export class SearchActivityClassroomDebTors {
   @IsNumber()
   @Type(() => Number)
   limit?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Boolean)
+  hasDebt?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  activityClassroomId?: number;
 }
