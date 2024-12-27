@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
+
 import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
 
@@ -15,21 +16,19 @@ export class KeycloakService {
     const token = await this.getAdminToken();
 
     // Reemplaza esto con la consulta a tu base de datos
-    const users = await this.userRepository.find({
-      relations: {
-        person: true,
-      },
-      take: 10,
-      order: {
-        id: 'DESC',
-      },
-    });
+
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.person', 'person')
+      .where('user.personId IS NOT NULL')
+      .getMany();
 
     const userMigrate = users.map((us) => {
       return {
         username: us.email,
         // DNI: us.person.docNumber,
         // parentesco: 'Padre',
+        emailVerified: true,
         email: us.email,
         enabled: true,
         firstName: us.person.name,
@@ -41,18 +40,22 @@ export class KeycloakService {
             temporary: true,
           },
         ],
+        groups: ['Padres'],
       };
     });
 
-    for (const user of userMigrate) {
-      await this.createUser(token, user);
+    // for (const user of userMigrate) {
+    //   await this.createUser(token, user);
+    // }
+    for (let index = 699; index < userMigrate.length; index++) {
+      await this.createUser(token, userMigrate[index]);
     }
   }
 
   async createUser(token, user) {
     try {
       const response = await axios.post(
-        `https://login.colegioae.edu.pe/admin/realms/test-login/users`,
+        `https://login.colegioae.edu.pe/admin/realms/colegioae/users`,
         user,
         {
           headers: {
@@ -73,13 +76,13 @@ export class KeycloakService {
   async getAdminToken() {
     try {
       const response = await axios.post(
-        `https://login.colegioae.edu.pe/realms/test-login/protocol/openid-connect/token`,
+        `https://login.colegioae.edu.pe/realms/colegioae/protocol/openid-connect/token`,
         new URLSearchParams({
-          client_id: 'client-test-appae',
-          username: 'carlosjhardel4@gmail.com',
+          client_id: 'appcolegioae',
+          username: 'no-borrar@keycloak.com',
           password: 'admin12',
           grant_type: 'password',
-          client_secret: 'hSJmFirjnB3s9VZosjrHFoq412qt8i9u',
+          client_secret: 'rjny3vNy8tHGJIuzvAmnoqXBuDt7GX3O',
         }),
         {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

@@ -45,6 +45,13 @@ export const AdminMenu = {
           link: '/admin/school/vacants',
           permissions: ['administrador-colegio', 'secretaria'],
         },
+        {
+          id: 5,
+          label: 'Datos de comunicación',
+          icon: 'user',
+          link: '/admin/staff/activity-users',
+          permissions: ['administrador-colegio', 'secretaria'],
+        },
       ],
     },
     {
@@ -151,13 +158,6 @@ export const AdminMenu = {
           permissions: ['administrador-colegio'],
         },
         {
-          id: 4,
-          label: 'Usuarios Activos',
-          icon: 'user',
-          link: '/admin/staff/activity-users',
-          permissions: ['administrador-colegio', 'secretaria'],
-        },
-        {
           id: 5,
           label: 'Usuarios Deudores',
           icon: 'user',
@@ -197,6 +197,23 @@ export const AdminMenu = {
           icon: 'user',
           link: '/admin/staff/user-behavior',
           permissions: ['secretaria'],
+        },
+      ],
+    },
+    {
+      id: 7,
+      label: 'Tesoreria',
+      link: '/admin/treasury/registerStudent',
+      icon: 'comunication',
+      tagSubMenu: true,
+      permissions: ['administrador-colegio', 'secretaria'],
+      subMenu: [
+        {
+          id: 1,
+          label: 'Pagos',
+          icon: 'email',
+          link: '/admin/treasury/registerStudent',
+          permissions: ['administrador-colegio', 'secretaria'],
         },
       ],
     },
