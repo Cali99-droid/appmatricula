@@ -51,7 +51,7 @@ export class TreasuryService {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2, // 2: Boleta
       serie: 'BBB1', // Cambia según tu configuración
-      numero: 1, // Número correlativo de la boleta
+      numero: debt.id, // Número correlativo de la boleta
       sunat_transaction: 1,
       cliente_tipo_de_documento: 1, // 1: DNI
       cliente_numero_de_documento: client.docNumber,
@@ -65,7 +65,7 @@ export class TreasuryService {
       moneda: 1, // 1: Soles
       tipo_de_cambio: '',
       porcentaje_de_igv: 18,
-      total_gravada: debt.total - igv,
+      total_gravada: debt.total,
       total_igv: igv,
       total: debt.total,
       observaciones: 'Gracias por su compra.',
@@ -75,12 +75,12 @@ export class TreasuryService {
           codigo: debt.concept.code,
           descripcion: debt.concept.description,
           cantidad: 1,
-          valor_unitario: debt.total - igv,
+          valor_unitario: debt.total,
           precio_unitario: debt.total,
           descuento: '',
-          subtotal: debt.total - igv,
-          tipo_de_igv: 1,
-          igv: igv,
+          subtotal: debt.total,
+          tipo_de_igv: 20,
+          igv: 0.0,
           total: debt.total,
           anticipo_regularizacion: false,
           anticipo_documento_serie: '',
