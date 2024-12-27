@@ -98,7 +98,7 @@ export function addClausesPart1(
       doc.y + 5,
     );
   doc.moveDown();
-  doc.font('Helvetica').fontSize(9).text(`${C4_P2A}`, { align: 'justify' });
+  // doc.font('Helvetica').fontSize(9).text(`${C4_P2A}`, { align: 'justify' });
   doc
     .font('Helvetica')
     .fontSize(9)
