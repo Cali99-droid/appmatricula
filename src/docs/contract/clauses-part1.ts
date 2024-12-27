@@ -27,8 +27,7 @@ export function addClausesPart1(
   // const C4_P5C = `Inicial no goza de este beneficio.`;
   const C4_P6A = `4.5	El Colegio aplicará la tasa de interés máxima legal sobre las pensiones mensuales vencidas, el mismo que correrá a`;
   const C4_P6B = `partir del día siguiente de la fecha de vencimiento, de acuerdo al cronograma señalado en el presente contrato.`;
-  const C4_P7A = `4.6	El pago realizado por concepto de cuota de ingreso efectuado por los Padres y Madres de Familia garantiza el 
-                  derecho del Alumno a una vacante en el Colegio, de acuerdo a lo establecido en la normativa educativa vigente.`;
+  const C4_P7A = `4.6	El pago realizado por concepto de cuota de ingreso efectuado por los Padres y Madres de Familia garantiza el derecho del Alumno a una vacante en el Colegio, de acuerdo a lo establecido en la normativa educativa vigente.`;
   const C4_P8A = `4.7 El Colegio podrá variar unilateralmente el monto de la pensión por los Servicios en razón de:`;
   const C4_P8B = `a)	La tasa de inflación supere el 10%, en dicho caso el aumento de las pensiones se dará proporcionalmente al aumento de la tasa de inflación.`;
   const C4_P8C = `b)  Causas objetivas, debidamente justificadas que afecten el equilibrio económico financiero del presente contrato.`;
@@ -159,7 +158,7 @@ export function addClausesPart1(
   doc
     .font('Helvetica')
     .fontSize(9)
-    .text(`${C4_P6A} ${C4_P6B}`, { align: 'justify' });
+    .text(`${C4_P6A} ${C4_P6B}`, 50, doc.y + 5, { align: 'justify' });
   doc.font('Helvetica').fontSize(9).text(`${C4_P7A}`, { align: 'justify' });
   doc.font('Helvetica').fontSize(9).text(`${C4_P8A}`, { align: 'justify' });
   doc.font('Helvetica').fontSize(9).text(`${C4_P8B}`, { align: 'justify' });
