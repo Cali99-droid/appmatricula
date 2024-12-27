@@ -50,7 +50,6 @@ export class AuthController {
   }
 
   @Get('check-status')
-  @Auth()
   checkAuthStatus(@GetUser() user: User) {
     return this.authService.checkAuthStatus(user);
   }

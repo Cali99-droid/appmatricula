@@ -16,6 +16,7 @@ import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { UpdateBehaviorDto } from 'src/enrollment/dto/update-behavior.dto';
 import { Behavior } from 'src/enrollment/enum/behavior.enum';
 import { UpdateAllowNextRegistrationDto } from 'src/enrollment/dto/update-allowNextRegistration.dto';
+import { SearchEstudiantesDto } from './dto/search-student.dto';
 
 @Injectable()
 export class StudentService {
@@ -89,6 +90,42 @@ export class StudentService {
       };
     });
     return students;
+  }
+
+  async findStudents(searchDto: SearchEstudiantesDto) {
+    const { searchTerm, page = 1, limit = 10 } = searchDto;
+
+    const query = this.studentRepository
+      .createQueryBuilder('student')
+      .leftJoinAndSelect('student.person', 'person')
+      .leftJoinAndSelect(
+        'student.enrollment',
+        'enrollment',
+        'enrollment.status = :estadoActivo',
+        { estadoActivo: 'registered' },
+      );
+
+    if (searchTerm) {
+      query.andWhere(
+        '(person.name LIKE :searchTerm OR person.mlastname LIKE :searchTerm)',
+        { searchTerm: `%${searchTerm}%` },
+      );
+    }
+
+    query.skip((page - 1) * limit).take(limit);
+
+    const [results, total] = await query.getManyAndCount();
+
+    const data = results.map((estudiante) => ({
+      ...estudiante,
+      tieneMatriculaActiva: estudiante.enrollment.length > 0,
+    }));
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
   }
 
   async findOne(id: number) {

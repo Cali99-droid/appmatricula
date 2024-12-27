@@ -71,7 +71,6 @@ export class CampusController {
     status: 404,
     description: 'campus  not found ',
   })
-  // @Auth()
   async findAllByYear(@Param('id') id: string, @AuthenticatedUser() user: any) {
     return this.campusService.findAllByYear(+id, user);
   }

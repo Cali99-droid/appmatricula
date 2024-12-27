@@ -144,7 +144,7 @@ export class TreasuryService {
     });
     const data = {
       debts: debts,
-      resp: family.respEconomic,
+      resp: family.respEconomic || 'No hay conf',
     };
     return data;
   }

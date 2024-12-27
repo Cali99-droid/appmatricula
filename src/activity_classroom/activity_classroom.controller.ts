@@ -195,16 +195,9 @@ export class ActivityClassroomController {
     description: 'Array of classrooms from phase, year, campus or level',
     type: [ActivityClassroom],
   })
-  @Auth()
-  searchClassrooms(
-    @Query() searchClassroomsDto: SearchClassroomsDto,
-    @GetUser() user: User,
-  ) {
+  searchClassrooms(@Query() searchClassroomsDto: SearchClassroomsDto) {
     // return this.activityClassroomService.exampleGetac();
-    return this.activityClassroomService.searchClassrooms(
-      searchClassroomsDto,
-      user,
-    );
+    return this.activityClassroomService.searchClassrooms(searchClassroomsDto);
   }
 
   @Get('students/:id')

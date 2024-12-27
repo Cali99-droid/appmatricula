@@ -18,7 +18,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { fileFilter } from './helpers';
 import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreatePersonCrmDto } from './dto/create-person-crm.dto';
-import { Auth } from 'src/auth/decorators/auth.decorator';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { SearchByDateDto } from 'src/common/dto/search-by-date.dto';
@@ -120,7 +119,6 @@ export class PersonController {
     return this.personService.findAttendanceByStudent(+id, searchByDateDto);
   }
   @Get('parents/profile')
-  @Auth()
   getProfileUser(@GetUser() user: User) {
     return this.personService.findProfileUser(user);
   }

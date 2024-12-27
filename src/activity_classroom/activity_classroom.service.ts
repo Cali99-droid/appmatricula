@@ -216,7 +216,7 @@ export class ActivityClassroomService {
       handleDBExceptions(this.logger, error);
     }
   }
-  async searchClassrooms(searchClassroomsDto: SearchClassroomsDto, user: User) {
+  async searchClassrooms(searchClassroomsDto: SearchClassroomsDto) {
     try {
       const { yearId, phaseId, campusId, levelId } = searchClassroomsDto;
       // Obtener el usuario con las relaciones necesarias

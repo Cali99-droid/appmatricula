@@ -257,9 +257,7 @@ export class EnrollmentController {
     status: 404,
     description: 'get status not found ',
   })
-  // @Auth()
   getStatusEnrollmentByUser(@AuthenticatedUser() user: any) {
-    console.log('entra al conrole');
     return this.enrollmentService.getStatusEnrollmentByUser(user);
   }
 }
