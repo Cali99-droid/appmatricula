@@ -44,11 +44,10 @@ export function generateTable(doc: PDFKit.PDFDocument, data: any[], y: number) {
       .font('Helvetica-Bold')
       .fontSize(7)
       .text(row.col1, 55, y + 50);
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(7)
-      .text('Celular: 943 861 219', 55, y + 65);
-
+    // doc
+    //   .font('Helvetica-Bold')
+    //   .fontSize(7)
+    //   .text('Celular: 954 101 793', 55, y + 65);
     if (index === 0) {
       doc
         .font('Helvetica-Bold')
@@ -61,16 +60,24 @@ export function generateTable(doc: PDFKit.PDFDocument, data: any[], y: number) {
       doc
         .font('Helvetica-Bold')
         .fontSize(7)
-        .text('Celular: 943 861 219', 310, y + 70);
+        .text('Celular: 908 922 752', 310, y + 70);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(7)
+        .text('Celular: 908 816 383', 310, y + 80);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(7)
+        .text('Celular: 954 101 793', 310, y + 165);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(7)
+        .text('Celular: 943 861 219', 310, y + 260);
     } else {
       doc
         .font('Helvetica-Bold')
         .fontSize(7)
         .text(row.col2, 310, y + 50);
-      doc
-        .font('Helvetica-Bold')
-        .fontSize(7)
-        .text('Celular: 943 861 219', 310, y + 65);
     }
     drawRowLines(doc, y, columnWidths, rowHeight);
 
