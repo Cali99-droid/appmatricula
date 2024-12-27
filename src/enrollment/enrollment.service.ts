@@ -1214,8 +1214,6 @@ export class EnrollmentService {
     };
   }
   async getStatusEnrollmentByUser(user: any) {
-    console.log('entras');
-    console.log(user);
     // return {
     //   status: false,
     //   // message: user,

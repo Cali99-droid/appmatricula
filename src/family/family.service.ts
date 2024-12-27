@@ -8,7 +8,7 @@ import { CreateFamilyDto } from './dto/create-family.dto';
 import { UpdateFamilyDto } from './dto/update-family.dto';
 // import { DataParentArrayDto } from '../relationship/dto/data-parent-array.dto';
 import { Family } from './entities/family.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/student/entities/student.entity';
@@ -280,7 +280,18 @@ export class FamilyService {
   }
   async findOne(id: number) {
     const family = await this.familyRepository.findOne({
-      where: { id: id },
+      where: {
+        id: id,
+        student: {
+          enrollment: {
+            activityClassroom: {
+              grade: {
+                position: Not(14),
+              },
+            },
+          },
+        },
+      },
       relations: {
         parentOneId: {
           user: true,

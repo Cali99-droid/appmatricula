@@ -98,6 +98,7 @@ export class StudentService {
     const query = this.studentRepository
       .createQueryBuilder('student')
       .leftJoinAndSelect('student.person', 'person')
+      .leftJoinAndSelect('student.family', 'family')
       .leftJoinAndSelect(
         'student.enrollment',
         'enrollment',
