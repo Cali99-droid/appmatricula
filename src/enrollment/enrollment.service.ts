@@ -1245,24 +1245,24 @@ export class EnrollmentService {
         message: 'El usuario tiene un hijo con deuda.',
       };
     }
-    const hascConditional = enrollments.some(
-      (enrollment) => enrollment.behavior === Behavior.MATRICULA_CONDICIONADA,
-    );
-    if (hascConditional) {
-      return {
-        status: false,
-        message: 'El usuario tiene un hijo que con matricula condicionada.',
-      };
-    }
-    const hasLoss = enrollments.some(
-      (enrollment) => enrollment.behavior === Behavior.PERDIDA_VACANTE,
-    );
-    if (hasLoss) {
-      return {
-        status: false,
-        message: 'El usuario tiene un hijo que ha perdido su vacante.',
-      };
-    }
+    // const hascConditional = enrollments.some(
+    //   (enrollment) => enrollment.behavior === Behavior.MATRICULA_CONDICIONADA,
+    // );
+    // if (hascConditional) {
+    //   return {
+    //     status: false,
+    //     message: 'El usuario tiene un hijo que con matricula condicionada.',
+    //   };
+    // }
+    // const hasLoss = enrollments.some(
+    //   (enrollment) => enrollment.behavior === Behavior.PERDIDA_VACANTE,
+    // );
+    // if (hasLoss) {
+    //   return {
+    //     status: false,
+    //     message: 'El usuario tiene un hijo que ha perdido su vacante.',
+    //   };
+    // }
     return {
       status: true,
       message: 'El usuario no tiene niguna restricción de matricula.',

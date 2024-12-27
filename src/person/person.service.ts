@@ -255,7 +255,12 @@ export class PersonService {
       ],
       relations: {
         student: {
-          enrollment: true,
+          enrollment: {
+            activityClassroom: {
+              classroom: true,
+              grade: true,
+            },
+          },
         },
       },
     });
@@ -265,13 +270,17 @@ export class PersonService {
         const person = item.person;
         const { student, activityClassroom, ...enrroll } =
           item.enrollment.reduce((previous, current) => {
-            return current.id > previous.id ? current : previous;
+            return current.activityClassroom.grade.position >
+              previous.activityClassroom.grade.position
+              ? current
+              : previous;
           });
         const enrrollStatus = enrroll.status;
         return {
           person,
           ...enrroll,
           enrrollStatus,
+          studentId: student.id,
           photo: student.photo,
         };
       });
