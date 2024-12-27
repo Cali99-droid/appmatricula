@@ -324,6 +324,96 @@ export class StudentService {
       filteredDebTors,
     };
   }
+  // async findByActivityClassroomDebTors(
+  //   activityClassroomId?: number,
+  //   hasDebt: boolean,
+  //   searchDto: SearchEstudiantesDto,
+  // ) {
+  //   if (
+  //     activityClassroomId !== undefined &&
+  //     (isNaN(activityClassroomId) || activityClassroomId <= 0)
+  //   ) {
+  //     throw new NotFoundException(
+  //       `activityClassroomId must be a number greater than 0`,
+  //     );
+  //   }
+
+  //   const { searchTerm, page = 1, limit = 10 } = searchDto;
+
+  //   const query = this.studentRepository
+  //     .createQueryBuilder('student')
+  //     .leftJoinAndSelect('student.person', 'person')
+  //     .leftJoinAndSelect(
+  //       'student.enrollment',
+  //       'enrollment',
+  //       'enrollment.status = :estadoActivo',
+  //       { estadoActivo: 'registered' },
+  //     );
+
+  //   if (searchTerm) {
+  //     query.andWhere(
+  //       '(person.name LIKE :searchTerm OR person.mlastname LIKE :searchTerm)',
+  //       { searchTerm: `%${searchTerm}%` },
+  //     );
+  //   }
+
+  //   if (activityClassroomId !== undefined) {
+  //     query.andWhere('enrollment.activityClassroom.id = :activityClassroomId', {
+  //       activityClassroomId,
+  //     });
+  //   }
+
+  //   query.andWhere('student.hasDebt = :hasDebt', { hasDebt });
+
+  //   query.skip((page - 1) * limit).take(limit);
+
+  //   const [results, total] = await query.getManyAndCount();
+
+  //   const data = results.map((e) => ({
+  //     student: {
+  //       person: {
+  //         name: e.person?.name ?? null,
+  //         lastname: e.person?.lastname ?? null,
+  //         mLastname: e.person?.mLastname ?? null,
+  //         grade: e.enrollment[0]?.activityClassroom.grade?.name,
+  //         level: e.enrollment[0]?.activityClassroom.grade?.level?.name,
+  //         section: e.enrollment[0]?.activityClassroom.section,
+  //         hasDebt: e.hasDebt,
+  //         behavior: e.enrollment[0].behavior,
+  //         behaviorDescription: e.enrollment[0].behaviorDescription,
+  //       },
+  //       family: {
+  //         parentOneId: {
+  //           name: e.family?.parentOneId?.name ?? null,
+  //           lastname: e.family?.parentOneId?.lastname ?? null,
+  //           mLastname: e.family?.parentOneId?.mLastname ?? null,
+  //           familyRole: e.family?.parentOneId?.familyRole ?? null,
+  //           cellPhone: e.family?.parentOneId?.cellPhone ?? null,
+  //           user: {
+  //             email: e.family?.parentOneId?.user?.email ?? null,
+  //           },
+  //         },
+  //         parentTwoId: {
+  //           name: e.family?.parentTwoId?.name ?? null,
+  //           lastname: e.family?.parentTwoId?.lastname ?? null,
+  //           mLastname: e.family?.parentTwoId?.mLastname ?? null,
+  //           familyRole: e.family?.parentTwoId?.familyRole ?? null,
+  //           cellPhone: e.family?.parentTwoId?.cellPhone ?? null,
+  //           user: {
+  //             email: e.family?.parentTwoId?.user?.email ?? null,
+  //           },
+  //         },
+  //       },
+  //     },
+  //   }));
+
+  //   return {
+  //     data,
+  //     total,
+  //     page,
+  //     limit,
+  //   };
+  // }
   async findByActivityClassroomBehavior(activityClassroomId: number) {
     if (isNaN(activityClassroomId) || activityClassroomId <= 0) {
       throw new NotFoundException(

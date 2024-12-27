@@ -38,7 +38,8 @@ export function addContractHeader(
   const C1_P2A = `1.2	El presente Contrato se celebra en virtud de la oferta educativa brindada por la ASOCIACIÓN y la decisión de libre`;
   const C1_P2B = `voluntad del PADRE O MADRE DE FAMILIA, de contratar los servicios educativos en el modo y forma contemplados `;
   const C1_P2C = `en el presente contrato, en base a información clara, relevante y suficiente que se explican en el presente documento y`;
-  const C1_P2D = `en información obrante en el portal institucional de la ASOCIACIÓN (http://www.ae.edu.pe/).`;
+  const C1_P2D = `en información obrante en el portal institucional de la ASOCIACIÓN (http://www.ae.edu.pe/),siendo que el PADRE O MADRE 
+                  DE FAMILIA manifiesta haber leído y entendido en su integridad la información proporcionada.`;
   const C1_P3A = `1.3	La ASOCIACIÓN ha desarrollado su plan de estudio ${year} en concordancia con la normatividad vigente y su adaptación`;
   const C1_P3B = `a la posibilidad de una educación semipresencial. La elaboración del nuevo plan de estudio; así como la implementación`;
   const C1_P3C = `en las diferentes modalidades han sido llevadas a cabo mediante la asesoría de instituciones y expertos en pedagogía`;
@@ -46,7 +47,8 @@ export function addContractHeader(
   const C1_P3E = `aplicada en cumplimiento de las disposiciones legales vigentes.`;
   const C1_P4A = `1.4	La modalidad de estudio PRESENCIAL O SEMIPRESENCIAL que adopte el COLEGIO por periodo, será respetando`;
   const C1_P4B = `los lineamientos de la autoridad educativas (MINEDU, UGEL, DREA, ETC) y de salud (MINSA), esta será oportunamente`;
-  const C1_P4C = `comunicada al PADRE O MADRE DE FAMILIA, el cual se compromete a respetarla y cumplirla.`;
+  const C1_P4C = `comunicada al PADRE O MADRE DE FAMILIA, el cual se compromete a respetarla y cumplirla.La modalidad de estudio 
+                  corresponde a una decisión institucional, por lo que su determinación no está sujeta a consulta o aprobación del PADRE O MADRE DE FAMILIA.`;
   //TEXTO DE CLAUSULA SEGUNDA
   const C2_P1A = `2.1	Por el presente Contrato La ASOCIACIÓN se obliga a prestar a favor del niño, niña o adolescente (en adelante el`;
   const C2_P1B = `“ALUMNO”) sus servicios de educación en el nivel inicial, primaria, secundaria, de acuerdo con el nivel educativo del`;

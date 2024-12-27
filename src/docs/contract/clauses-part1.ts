@@ -22,20 +22,21 @@ export function addClausesPart1(
   const C4_P4A = `4.4 El PADRE O MADRE DE FAMILIA se compromete a pagar oportunamente las diez (10) pensiones mensuales fijas de`;
   const C4_P4B = `marzo a diciembre, respetando las siguientes fechas de vencimiento de cada pensión:`;
 
-  const C4_P5A = `4.5	El PADRE O MADRE DE FAMILIA que tiene 2 o más hijos en el Colegio gozará de descuenta S/10.00 por hermano en`;
-  const C4_P5B = `las pensiones mensuales pagadas antes de su fecha de vencimiento, sólo en los niveles Primaria y Secundaria, el nivel`;
-  const C4_P5C = `Inicial no goza de este beneficio.`;
-  const C4_P6A = `4.6	El Colegio aplicará la tasa de interés máxima legal sobre las pensiones mensuales vencidas, el mismo que correrá a`;
+  // const C4_P5A = `4.5	El PADRE O MADRE DE FAMILIA que tiene 2 o más hijos en el Colegio gozará de descuenta S/10.00 por hermano en`;
+  // const C4_P5B = `las pensiones mensuales pagadas antes de su fecha de vencimiento, sólo en los niveles Primaria y Secundaria, el nivel`;
+  // const C4_P5C = `Inicial no goza de este beneficio.`;
+  const C4_P6A = `4.5	El Colegio aplicará la tasa de interés máxima legal sobre las pensiones mensuales vencidas, el mismo que correrá a`;
   const C4_P6B = `partir del día siguiente de la fecha de vencimiento, de acuerdo al cronograma señalado en el presente contrato.`;
-  const C4_P7A = `4.7	El pago realizado por concepto de cuota de ingreso efectuado por los Padres y Madres de Familia garantiza el derecho del Alumno a una vacante en el Colegio.`;
-  const C4_P8A = `4.8 El Colegio podrá variar unilateralmente el monto de la pensión por los Servicios en razón de:`;
+  const C4_P7A = `4.6	El pago realizado por concepto de cuota de ingreso efectuado por los Padres y Madres de Familia garantiza el 
+                  derecho del Alumno a una vacante en el Colegio, de acuerdo a lo establecido en la normativa educativa vigente.`;
+  const C4_P8A = `4.7 El Colegio podrá variar unilateralmente el monto de la pensión por los Servicios en razón de:`;
   const C4_P8B = `a)	La tasa de inflación supere el 10%, en dicho caso el aumento de las pensiones se dará proporcionalmente al aumento de la tasa de inflación.`;
   const C4_P8C = `b)  Causas objetivas, debidamente justificadas que afecten el equilibrio económico financiero del presente contrato.`;
   const C4_P8D = `Cualquier aumento en la pensión será debidamente comunicado al PADRE O MADRE DE FAMILIA con al menos treinta`;
   const C4_P8E = `(30) días naturales previos a la aplicación del aumento, el cual no requerirá la firma de una adenda.`;
-  const C4_P9A = `4.9	Si bien el incumplimiento de pago no impedirá el acceso a los servicios educativos señalados en el presente Contrato, `;
+  const C4_P9A = `4.8	Si bien el incumplimiento de pago no impedirá el acceso a los servicios educativos señalados en el presente Contrato, `;
   const C4_P9B = `el Colegio retendrá el Certificado de Estudio del Alumno hasta que la deuda sea totalmente cancelada.`;
-  const C4_P10A = `4.10	El atraso en el pago de pensiones, así como mantener cualquier tipo de deuda con el Colegio ocasionará la pérdida de`;
+  const C4_P10A = `4.9	El atraso en el pago de pensiones, así como mantener cualquier tipo de deuda con el Colegio ocasionará la pérdida de`;
   const C4_P10B = `la vacante asignada al Alumno para el año próximo inmediato.`;
   //TEXTO DE CLAUSULA QUINTA
   const C5_P1A = `5.1 Cumplir fielmente con el objeto del presente Contrato.`;
@@ -45,8 +46,8 @@ export function addClausesPart1(
   const C5_P4A = `5.4	Ejecutar los Servicios en estricto respeto de la persona humana, buscando siempre el desarrollo, bienestar y cumplimiento de los objetivos trazados por los alumnos.`;
   const C5_P5A = `5.5	Cumplir con el adecuado mantenimiento y accesibilidad de la plataforma virtual; sin embargo, de presentarse fallas en`;
   const C5_P5B = `la misma, el PADRE O MADRE DE FAMILIA reconoce que, al ser servicios provistos por terceros, el Colegio no puede`;
-  const C5_P5C = `garantizar la total disponibilidad del mismo. En este caso, el Colegio se obliga a recuperar la disponibilidad y accesibilidad`;
-  const C5_P5D = `de la plataforma virtual tan pronto sea posible, una vez detectada o comunicada la falla.`;
+  const C5_P5C = `garantizar la total disponibilidad del mismo. En este caso, el Colegio se compromete a recuperar la disponibilidad y accesibilidad`;
+  const C5_P5D = `de la plataforma virtual tan pronto sea posible, una vez detectada o comunicada la falla, lo cual será comunicado al correo electrónico.`;
   const C5_P6A = `5.6	Cumplir con tener un máximo de alumnos por grupo de estudio conforme lo señalado en el numeral 6.11 del presente Contrato.`;
 
   // CLAUSULA CUARTA
@@ -151,10 +152,10 @@ export function addClausesPart1(
   // Incrementar 'y' para posicionar el texto debajo de la tabla
   tableTop2 += 10;
   doc.moveDown();
-  doc
-    .font('Helvetica')
-    .fontSize(9)
-    .text(`${C4_P5A} ${C4_P5B} ${C4_P5C}`, 50, doc.y + 5, { align: 'justify' });
+  // doc
+  //   .font('Helvetica')
+  //   .fontSize(9)
+  //   .text(`${C4_P5A} ${C4_P5B} ${C4_P5C}`, 50, doc.y + 5, { align: 'justify' });
   doc
     .font('Helvetica')
     .fontSize(9)
