@@ -3,6 +3,11 @@ export async function addClausesPart3(
   doc: InstanceType<typeof PDFDocument>,
   email: string,
   telp: string,
+  campus: string,
+  levelName: string,
+  gradeName: string,
+  section: string,
+  nameSon: string,
 ) {
   //TEXTO DE DÉCIMO  PRIMERA
   const C11_P1A = `Para todas las cuestiones que no estén expresamente contempladas en el presente Contrato. Ambas partes se someten`;
@@ -148,16 +153,18 @@ export async function addClausesPart3(
   // doc.addPage();
   const tableData = [
     {
-      col1: 'LOCAL',
-      col2: 'NIVEL',
-      col3: 'GRADO',
-      col4: 'NOMBRE',
+      col1: 'NOMBRE',
+      col2: 'SEDE',
+      col3: 'NIVEL',
+      col4: 'GRADO',
+      col5: 'SECCION',
     },
     {
-      col1: 'LOCAL 1',
-      col2: 'INICIAL',
-      col3: '3 años',
-      col4: 'Jose miguel ramos',
+      col1: campus,
+      col2: levelName,
+      col3: gradeName,
+      col4: section,
+      col5: nameSon,
     },
   ];
   let tableTop = doc.y;
@@ -187,6 +194,7 @@ export async function addClausesPart3(
   doc.font('Helvetica').fontSize(9).text(`${C15_P2A} ${C15_P2B}`, {
     align: 'justify',
   });
+  doc.moveDown();
   doc.font('Helvetica-Bold').fontSize(9).text(`${C15_P2C}`, {
     align: 'justify',
   });
@@ -196,6 +204,7 @@ export async function addClausesPart3(
   doc.font('Helvetica-Bold').fontSize(9).text(`${C15_P2E}`, {
     align: 'justify',
   });
+  doc.moveDown();
   doc.font('Helvetica').fontSize(9).text(`${C15_P3A} ${C15_P3B}`, {
     align: 'justify',
   });

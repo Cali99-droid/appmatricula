@@ -20,6 +20,10 @@ import { addAnexo } from './contract/anexo';
 import { Student } from 'src/student/entities/student.entity';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
+import { DownloadContractQueryDto } from './dto/downloadContractQuery.dto';
+import { Year } from 'src/years/entities/year.entity';
+import { Level } from 'src/level/entities/level.entity';
+import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 
 @Injectable()
 export class PdfService {
@@ -30,6 +34,13 @@ export class PdfService {
     private readonly enrollmentRepositoy: Repository<Enrollment>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(Year)
+    private readonly yearRepository: Repository<Year>,
+    @InjectRepository(Level)
+    private readonly levelRepository: Repository<Level>,
+    @InjectRepository(CampusDetail)
+    private readonly campusDetailRepository: Repository<CampusDetail>,
+
     private readonly httpService: HttpService,
 
     private readonly configService: ConfigService,
@@ -360,7 +371,10 @@ export class PdfService {
       doc.end();
     });
   }
-  async generatePdfContract(idStudent: number): Promise<Buffer> {
+  async generatePdfContract(
+    idStudent: number,
+    query: DownloadContractQueryDto,
+  ): Promise<Buffer> {
     const student = await this.studentRepository.findOne({
       where: { id: idStudent },
       relations: {
@@ -371,10 +385,15 @@ export class PdfService {
         },
       },
     });
+    console.log(student);
     if (!student)
       throw new NotFoundException(`Student with id ${idStudent} not found`);
     if (!student.family)
       throw new NotFoundException(`This student does not have family`);
+    if (!student.family.respEnrollment)
+      throw new NotFoundException(
+        `This student's family priest doesn't responsible for enrollment`,
+      );
     if (!student.family.respEnrollment.user)
       throw new NotFoundException(
         `This student's family priest doesn't have a user`,
@@ -385,7 +404,29 @@ export class PdfService {
       );
     if (!student.family.district)
       throw new NotFoundException(`This student does not have a district`);
-    const numContra = '123';
+
+    const level = await this.levelRepository.findOne({
+      where: { id: query.level, grade: { id: query.grade } },
+      relations: {
+        grade: true,
+      },
+    });
+    console.log(query);
+    console.log(level);
+
+    if (!level) throw new NotFoundException(`There is no exist level`);
+    const campusDetail = await this.campusDetailRepository.findOne({
+      where: { id: query.campus },
+    });
+
+    if (!campusDetail)
+      throw new NotFoundException(`There is no exist campusDetail`);
+    const year = await this.yearRepository.findOne({
+      where: { status: true },
+    });
+    if (!year) throw new NotFoundException(`There is no active year`);
+
+    const numContra = `${query.campus}${query.level}${query.grade}${query.section}${student.family.id}${student.person.docNumber}`;
     const name = `${student.family.respEnrollment.name} ${student.family.respEnrollment.lastname} ${student.family.respEnrollment.mLastname} `;
     const typeDoc = student.family.respEnrollment.typeDoc;
     const docNumber = student.family.respEnrollment.docNumber;
@@ -394,10 +435,34 @@ export class PdfService {
     const district = dataCity.district;
     const province = dataCity.province;
     const department = dataCity.region;
-
+    const yearName = '2025';
+    const dayClassStart = '10';
+    const dayClassEnd = '17';
+    const priceEnrollment = '350';
+    const priceAdmission = '350';
+    const levelName = level.name.toUpperCase();
+    const gradeName = level.grade[0].name.toUpperCase();
+    let priceYear: any;
+    let priceMounth: any;
+    const campus = campusDetail.name;
     const email = student.family.respEnrollment.user.email;
     const cellPhone = student.family.respEnrollment.cellPhone;
+    const nameSon = `${student.person.lastname} ${student.person.mLastname}, ${student.person.name}`;
 
+    //para calcular el precio por nivel
+    if (level.id === 1) {
+      console.log('entra lvel');
+      priceYear = '3900';
+      priceMounth = '390';
+    }
+    if (level.id === 2) {
+      priceYear = '4000';
+      priceMounth = '400';
+    }
+    if (level.id === 3) {
+      priceYear = '4200';
+      priceMounth = '420';
+    }
     return new Promise(async (resolve) => {
       const doc = new PDFDocument({
         size: 'A4',
@@ -423,13 +488,35 @@ export class PdfService {
         district,
         province,
         department,
+        yearName,
+        dayClassStart,
+        dayClassEnd,
       );
-      addClausesPart1(doc);
-      addClausesPart2(doc);
-      addClausesPart3(doc, email, cellPhone);
+      addClausesPart1(
+        doc,
+        priceEnrollment,
+        priceAdmission,
+        levelName,
+        priceYear,
+        priceMounth,
+        campus,
+      );
+      addClausesPart2(doc, yearName, dayClassStart, dayClassEnd);
+      addClausesPart3(
+        doc,
+        email,
+        cellPhone,
+        campus,
+        levelName,
+        gradeName,
+        query.section,
+        nameSon,
+      );
       const pageWidth = doc.page.width;
       const margin = 100;
       const imageWidth = 120;
+      doc.moveDown();
+      doc.moveDown();
       doc.moveDown();
       doc
         .font('Helvetica')
@@ -440,24 +527,24 @@ export class PdfService {
         });
       doc
         .font('Helvetica')
-        .fontSize(9)
-        .text(`PADRE O MADRE DE FAMILIA`, {
+        .fontSize(6)
+        .text(`${name}`, {
           align: 'left',
           width: doc.page.width - margin * 2 - imageWidth,
         });
+      // doc.moveDown();
+      // doc
+      //   .font('Helvetica')
+      //   .fontSize(9)
+      //   .text(`NOMBRES:…………………………………………………`, {
+      //     align: 'left',
+      //     width: doc.page.width - margin * 2 - imageWidth,
+      //   });
       doc.moveDown();
       doc
         .font('Helvetica')
-        .fontSize(9)
-        .text(`NOMBRES:…………………………………………………`, {
-          align: 'left',
-          width: doc.page.width - margin * 2 - imageWidth,
-        });
-      doc.moveDown();
-      doc
-        .font('Helvetica')
-        .fontSize(9)
-        .text(`DNI:…………………………………`, {
+        .fontSize(7)
+        .text(`                    ${typeDoc.toUpperCase()}: ${docNumber}`, {
           align: 'left',
           width: doc.page.width - margin * 2 - imageWidth,
         });
@@ -490,23 +577,23 @@ export class PdfService {
         },
       );
       addAnexo(doc);
-      doc.image(image1, 55, doc.y - 250, {
+      doc.image(image1, 55, doc.y - 260, {
         width: 80,
         // align: 'center',
       });
-      doc.image(image2, 140, doc.y - 250, {
+      doc.image(image2, 140, doc.y - 260, {
         width: 90,
         // align: 'center',
       });
-      doc.image(image3, 55, doc.y - 150, {
+      doc.image(image3, 55, doc.y - 160, {
         width: 80,
         // align: 'center',
       });
-      doc.image(image4, 140, doc.y - 150, {
+      doc.image(image4, 140, doc.y - 160, {
         width: 90,
         // align: 'center',
       });
-      doc.image(image5, 55, doc.y - 50, {
+      doc.image(image5, 55, doc.y - 60, {
         width: 80,
         // align: 'center',
       });

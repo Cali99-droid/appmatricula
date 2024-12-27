@@ -1240,6 +1240,7 @@ export class EnrollmentService {
     const hasDebt = enrollments.some(
       (enrollment) => enrollment.student.hasDebt === true,
     );
+    console.log(hasDebt);
     if (hasDebt) {
       return {
         status: false,

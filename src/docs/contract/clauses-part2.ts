@@ -1,6 +1,11 @@
 import * as PDFDocument from 'pdfkit';
 
-export function addClausesPart2(doc: InstanceType<typeof PDFDocument>) {
+export function addClausesPart2(
+  doc: InstanceType<typeof PDFDocument>,
+  year: string,
+  dayClassStart: string,
+  dayClassEnd: string,
+) {
   //TEXTO DE CLAUSULA SEXTA
   const C6_P1 = `Por medio del presente Contrato, el PADRE O MADRE DE FAMILIA declara lo siguiente:`;
   const C6_P1A = `6.1 Que, ha leído, entendido y acepta sujetarse al reglamento interno del Colegio la misma que le fue informada con la`;
@@ -42,7 +47,7 @@ export function addClausesPart2(doc: InstanceType<typeof PDFDocument>) {
   const C6_P10A = `6.10 Que, si el Alumno repitiese de año, perderá el derecho de renovar la matrícula en el Colegio al siguiente año. En el caso`;
   const C6_P10B = `de primaria y secundaria será tomando en cuenta la normativa vigente.`;
 
-  const C6_P11A = `6.11 Acepta que, para el Año Académico 2024 se respetara el número máximo de alumnos por sección según la tabla:`;
+  const C6_P11A = `6.11 Acepta que, para el Año Académico ${year} se respetara el número máximo de alumnos por sección según la tabla:`;
 
   const C6_P12A = `6.12 Que, en caso el Alumno sea trasladado a otra Institución Educativa por cualquier motivo y dentro del plazo establecido`;
   const C6_P12B = `por la normativa vigente, será comunicado oportunamente a la Dirección del Colegio mediante el proceso definido por`;
@@ -70,7 +75,7 @@ export function addClausesPart2(doc: InstanceType<typeof PDFDocument>) {
 
   //TEXTO DE CLAUSULA SEPTIMA
   const C7_P1A = `La vigencia del Contrato se sujeta al calendario escolar dispuesto para este año para las tres modalidades, el mismo que se inicia`;
-  const C7_P1B = `el 11 de marzo y culmina el 17 de diciembre de 2024.`;
+  const C7_P1B = `el ${dayClassStart} de marzo y culmina el ${dayClassEnd} de diciembre de ${year}.`;
 
   //TEXTO DE CLAUSULA OTAVA
   const C8_P1A = `El PADRE O MADRE DE FAMILIA podrá controlar o verificar, a su propio costo y cargo, la ejecución de los Servicios`;
