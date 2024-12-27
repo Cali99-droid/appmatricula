@@ -43,8 +43,8 @@ export async function addClausesPart3(
   const C15_P2A = `15.2	De igual manera, las Partes declaran como correos electrónicos válidos para notificaciones de cualquier tipo como parte`;
   const C15_P2B = `de este CONTRATO los siguientes:`;
   const C15_P2C = `- El Colegio: soporte@colegioae.freshdesk.com`;
-  const C15_P2D = `- Email del padre o madre de familia: ${email}`;
-  const C15_P2E = `- Nro. de Celular: ${telp}`;
+  const C15_P2D = `- Email del padre o madre de familia: ${email == undefined ? '' : email}`;
+  const C15_P2E = `- Nro. de Celular: ${telp == undefined ? '' : telp}`;
   const C15_P3A = `15.3	Las Partes declaran que la sola recepción de un correo electrónico en su bandeja de entrada se considerará como válida`;
   const C15_P3B = `computándose los plazos a partir de dicha recepción.`;
   const C15_P4A = `15.4	El cambio de domicilio o de la dirección de correo electrónico de cualquiera de las Partes surtirá efecto a partir del`;

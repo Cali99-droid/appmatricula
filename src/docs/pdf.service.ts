@@ -394,10 +394,10 @@ export class PdfService {
       throw new NotFoundException(
         `This student's family priest doesn't responsible for enrollment`,
       );
-    if (!student.family.respEnrollment.user)
-      throw new NotFoundException(
-        `This student's family priest doesn't have a user`,
-      );
+    // if (!student.family.respEnrollment.user)
+    //   throw new NotFoundException(
+    //     `This student's family priest doesn't have a user`,
+    //   );
     if (!student.family.respEnrollment)
       throw new NotFoundException(
         `This student does not have a registration responsible`,
@@ -442,7 +442,7 @@ export class PdfService {
     let priceYear: any;
     let priceMounth: any;
     const campus = classRoom.classroom.campusDetail.name.toUpperCase();
-    const email = student.family.respEnrollment.user.email;
+    const email = student.family.respEnrollment.user?.email;
     const cellPhone = student.family.respEnrollment.cellPhone;
     const nameSon = `${student.person.lastname} ${student.person.mLastname}, ${student.person.name}`;
 
