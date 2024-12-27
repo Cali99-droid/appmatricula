@@ -44,11 +44,8 @@ export class KeycloakService {
       };
     });
 
-    // for (const user of userMigrate) {
-    //   await this.createUser(token, user);
-    // }
-    for (let index = 699; index < userMigrate.length; index++) {
-      await this.createUser(token, userMigrate[index]);
+    for (const user of userMigrate) {
+      await this.createUser(token, user);
     }
   }
 
