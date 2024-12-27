@@ -15,7 +15,7 @@ export const AdminMenu = {
       link: '/admin/school',
       icon: 'school',
       tagSubMenu: true,
-      permissions: ['administrador-colegio'],
+      permissions: ['administrador-colegio', 'secretaria'],
       subMenu: [
         {
           id: 1,
@@ -127,7 +127,7 @@ export const AdminMenu = {
       link: '/admin/users',
       icon: 'users',
       tagSubMenu: true,
-      permissions: ['administrador-colegio'],
+      permissions: ['administrador-colegio', 'secretaria'],
       subMenu: [
         {
           id: 1,
