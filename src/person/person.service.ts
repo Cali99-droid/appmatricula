@@ -266,24 +266,29 @@ export class PersonService {
     });
     const resp = students.map((item) => {
       const { student, ...rest } = item;
-      const childrens = student.map((item) => {
-        const person = item.person;
-        const { student, activityClassroom, ...enrroll } =
-          item.enrollment.reduce((previous, current) => {
-            return current.activityClassroom.grade.position >
-              previous.activityClassroom.grade.position
-              ? current
-              : previous;
-          });
-        const enrrollStatus = enrroll.status;
-        return {
-          person,
-          ...enrroll,
-          enrrollStatus,
-          studentId: student.id,
-          photo: student.photo,
-        };
-      });
+      const childrens = student
+        .map((item) => {
+          const person = item.person;
+          const { student, activityClassroom, ...enrroll } =
+            item.enrollment.reduce((previous, current) => {
+              return current.activityClassroom.grade.position >
+                previous.activityClassroom.grade.position
+                ? current
+                : previous;
+            });
+          const enrrollStatus = enrroll.status;
+          if (activityClassroom.grade.position !== 14) {
+            return {
+              person,
+              ...enrroll,
+              enrrollStatus,
+              studentId: student.id,
+              photo: student.photo,
+            };
+          }
+          return undefined;
+        })
+        .filter((child) => child !== undefined);
       return { student: childrens, ...rest };
     });
     //
