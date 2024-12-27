@@ -169,9 +169,16 @@ export class AuthService {
         });
         await this.userRepository.save(us);
       } else {
-        throw new BadRequestException(
-          'The document number is in use, contact the administrator',
-        );
+        const us = this.userRepository.create({
+          email: user.email,
+          password: user.dni,
+          sub: user.sub,
+          person: { id: existPerson.id },
+        });
+        await this.userRepository.save(us);
+        // throw new BadRequestException(
+        //   'The document number is in use, contact the administrator',
+        // );
       }
     }
 
