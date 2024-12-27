@@ -1,4 +1,9 @@
-import { HttpException, Injectable, Logger } from '@nestjs/common';
+import {
+  HttpException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateTreasuryDto } from './dto/create-treasury.dto';
 
 import { InjectRepository } from '@nestjs/typeorm';
@@ -133,6 +138,9 @@ export class TreasuryService {
         respEconomic: true,
       },
     });
+    if (!family) {
+      throw new NotFoundException('Don´t exist family for this student');
+    }
 
     const debts = await this.debtRepository.find({
       where: {
@@ -144,7 +152,7 @@ export class TreasuryService {
     });
     const data = {
       debts: debts,
-      resp: family.respEconomic || 'No hay conf',
+      resp: family.respEconomic || 'No hay reponsable económico ',
     };
     return data;
   }
