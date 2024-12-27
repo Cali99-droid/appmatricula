@@ -48,7 +48,7 @@ import { User } from 'src/user/entities/user.entity';
     KeycloakConnectModule.register({
       authServerUrl: 'https://login.colegioae.edu.pe',
       realm: 'test-login',
-      clientId: 'client-test-appae',
+      clientId: 'appcolegioae',
       secret: 'hSJmFirjnB3s9VZosjrHFoq412qt8i9u',
       // Secret key of the client taken from keycloak server
     }),

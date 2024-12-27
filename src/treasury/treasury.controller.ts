@@ -6,7 +6,7 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Resource, Roles } from 'nest-keycloak-connect';
 
 @ApiTags('Treasury')
-@Resource('client-test-appae')
+@Resource('appcolegioae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}

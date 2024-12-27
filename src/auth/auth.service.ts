@@ -185,8 +185,8 @@ export class AuthService {
     userBD.sub = user.sub;
     await this.userRepository.save(userBD);
     let roles = [];
-    if (user.resource_access['client-test-appae']) {
-      roles = user.resource_access['client-test-appae'].roles;
+    if (user.resource_access['appcolegioae']) {
+      roles = user.resource_access['appcolegioae'].roles;
     }
 
     const menu = this.generateMenu(roles);
