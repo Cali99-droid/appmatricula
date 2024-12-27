@@ -84,7 +84,7 @@ export class TreasuryService {
           precio_unitario: debt.total,
           descuento: '',
           subtotal: debt.total,
-          tipo_de_igv: 20,
+          tipo_de_igv: 17,
           igv: 0.0,
           total: debt.total,
           anticipo_regularizacion: false,
