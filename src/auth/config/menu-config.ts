@@ -206,7 +206,7 @@ export const AdminMenu = {
       link: '/admin/treasury/registerStudent',
       icon: 'comunication',
       tagSubMenu: true,
-      permissions: ['administrador-colegio'],
+      permissions: ['administrador-colegio', 'secretaria'],
       subMenu: [
         {
           id: 1,
