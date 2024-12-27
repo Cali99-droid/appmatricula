@@ -355,6 +355,7 @@ export class FamilyService {
         ...enrroll,
         studentId: student.id,
         photo: student.photo,
+        activityClassroomId: activityClassroom.id,
         actual:
           activityClassroom.classroom.campusDetail.name +
           ' - ' +
