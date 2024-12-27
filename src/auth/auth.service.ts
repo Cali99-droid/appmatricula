@@ -168,6 +168,13 @@ export class AuthService {
           person: { id: newPerson.id },
         });
         await this.userRepository.save(us);
+        let roles = [];
+        if (user.resource_access['client-test-appae']) {
+          roles = user.resource_access['client-test-appae'].roles;
+        }
+
+        const menu = this.generateMenu(roles);
+        return menu;
       } else {
         const us = this.userRepository.create({
           email: user.email,
@@ -176,6 +183,13 @@ export class AuthService {
           person: { id: existPerson.id },
         });
         await this.userRepository.save(us);
+        let roles = [];
+        if (user.resource_access['client-test-appae']) {
+          roles = user.resource_access['client-test-appae'].roles;
+        }
+
+        const menu = this.generateMenu(roles);
+        return menu;
         // throw new BadRequestException(
         //   'The document number is in use, contact the administrator',
         // );
