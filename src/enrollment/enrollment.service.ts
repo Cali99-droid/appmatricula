@@ -56,109 +56,111 @@ export class EnrollmentService {
   ) {}
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
     const roles = user.resource_access['client-test-appae'].roles;
-    const isAuth = roles.includes('administrador-colegio', 'secretaria');
-    try {
-      const codes = [];
-      const idsStudent = [];
-      for (const ce of createEnrollmentDto.enrrollments) {
-        /**Validar que sea el papá quien matricula */
-        if (!isAuth) {
-          const father = await this.personRepository.findOneBy({
-            docNumber: user.dni,
-            user: {
-              email: user.email,
-            },
-          });
 
-          const student = await this.studentRepository.findOne({
-            where: {
-              id: ce.studentId,
-            },
-            relations: {
-              family: {
-                parentOneId: true,
-                parentTwoId: true,
-              },
-            },
-          });
-
-          if (
-            student.family.parentOneId?.id !== father.id &&
-            student.family.parentTwoId?.id !== father.id
-          ) {
-            throw new UnauthorizedException('This user is not authorized');
-          }
-        }
-
-        /** funcion para Validar se pre - matricule a una de las aulas disponibles para este estudiante */
-        const availables = await this.getAvailableClassrooms(ce.studentId);
-
-        const ids = availables.map((av) => av.id);
-
-        const isOkClassroom = ids.includes(ce.activityClassroomId);
-        if (!isOkClassroom) {
-          throw new BadRequestException('Incorrect Classroom or not available');
-        }
-
-        /**validar capacidad */
-
-        const classroom =
-          await this.activityClassroomRepository.findOneByOrFail({
-            id: ce.activityClassroomId,
-          });
-        const capacity = classroom.classroom.capacity;
-        const enrollmentsByActivityClassroom =
-          await this.enrollmentRepository.find({
-            where: {
-              activityClassroom: {
-                id: ce.activityClassroomId,
-              },
-            },
-          });
-        if (enrollmentsByActivityClassroom.length >= capacity) {
-          throw new BadRequestException(
-            'those enrolled exceed the capacity of the classroom ',
-          );
-        }
-        const enrollment = this.enrollmentRepository.create({
-          student: { id: ce.studentId },
-          activityClassroom: { id: ce.activityClassroomId },
-          code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
-          status: Status.PREMATRICULADO,
+    const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
+      roles.includes(role),
+    );
+    const codes = [];
+    const idsStudent = [];
+    for (const ce of createEnrollmentDto.enrrollments) {
+      /**Validar que sea el papá quien prematricula */
+      if (!isAuth) {
+        const father = await this.personRepository.findOneBy({
+          docNumber: user.dni,
+          user: {
+            email: user.email,
+          },
         });
-        await this.enrollmentRepository.save(enrollment);
-        const activityClassroom =
-          await this.activityClassroomRepository.findOneBy({
-            id: ce.activityClassroomId,
-          });
-        /**generar deuda */
-        const levelId = activityClassroom.grade.level.id;
-        const campusDetailId = activityClassroom.classroom.campusDetail.id;
 
-        const rate = await this.ratesRepository.findOne({
+        const student = await this.studentRepository.findOne({
           where: {
-            level: { id: levelId },
-            campusDetail: { id: campusDetailId },
+            id: ce.studentId,
           },
           relations: {
-            concept: true,
+            family: {
+              parentOneId: true,
+              parentTwoId: true,
+            },
           },
         });
-        const dateEnd = new Date();
-        const createdDebt = this.debtRepository.create({
-          dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
-          concept: { id: rate.concept.id },
-          student: { id: ce.studentId },
-          total: rate.total,
-          status: false,
-        });
 
-        await this.debtRepository.save(createdDebt);
-
-        codes.push(enrollment.code);
-        idsStudent.push(ce.studentId);
+        if (
+          student.family.parentOneId?.id !== father.id &&
+          student.family.parentTwoId?.id !== father.id
+        ) {
+          throw new UnauthorizedException('This user is not authorized');
+        }
       }
 
+      /** funcion para Validar se pre - matricule a una de las aulas disponibles para este estudiante */
+      const availables = await this.getAvailableClassrooms(ce.studentId);
+
+      const ids = availables.map((av) => av.id);
+
+      const isOkClassroom = ids.includes(ce.activityClassroomId);
+      if (!isOkClassroom) {
+        throw new BadRequestException('Incorrect Classroom or not available');
+      }
+
+      /**validar capacidad */
+
+      const classroom = await this.activityClassroomRepository.findOneByOrFail({
+        id: ce.activityClassroomId,
+      });
+      const capacity = classroom.classroom.capacity;
+      const enrollmentsByActivityClassroom =
+        await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              id: ce.activityClassroomId,
+            },
+          },
+        });
+      if (enrollmentsByActivityClassroom.length >= capacity) {
+        throw new BadRequestException(
+          'those enrolled exceed the capacity of the classroom ',
+        );
+      }
+      const enrollment = this.enrollmentRepository.create({
+        student: { id: ce.studentId },
+        activityClassroom: { id: ce.activityClassroomId },
+        code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
+        status: Status.PREMATRICULADO,
+      });
+      await this.enrollmentRepository.save(enrollment);
+      const activityClassroom =
+        await this.activityClassroomRepository.findOneBy({
+          id: ce.activityClassroomId,
+        });
+      /**generar deuda */
+      const levelId = activityClassroom.grade.level.id;
+      const campusDetailId = activityClassroom.classroom.campusDetail.id;
+
+      const rate = await this.ratesRepository.findOne({
+        where: {
+          level: { id: levelId },
+          campusDetail: { id: campusDetailId },
+        },
+        relations: {
+          concept: true,
+        },
+      });
+      const dateEnd = new Date();
+      const createdDebt = this.debtRepository.create({
+        dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
+        concept: { id: rate.concept.id },
+        student: { id: ce.studentId },
+        total: rate.total,
+        status: false,
+      });
+
+      await this.debtRepository.save(createdDebt);
+
+      codes.push(enrollment.code);
+      idsStudent.push(ce.studentId);
+    }
+
+    try {
       await this.enrollmentRepository
         .createQueryBuilder()
         .update(Enrollment)
