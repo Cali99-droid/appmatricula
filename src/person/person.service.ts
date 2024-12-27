@@ -50,7 +50,7 @@ export class PersonService {
     private readonly attendanceRepository: Repository<Attendance>,
   ) {}
   create(createPersonDto: CreatePersonDto) {
-    return 'This action adds a new person';
+    return createPersonDto;
   }
   async createParentCRM(data: CreatePersonCrmDto) {
     try {
@@ -237,11 +237,19 @@ export class PersonService {
     const students = await this.familypRepository.find({
       where: [
         {
-          parentOneId: { id: user.person.id },
+          parentOneId: {
+            user: {
+              email: user.email,
+            },
+          },
           // student: { enrollment: { isActive: true } },
         },
         {
-          parentTwoId: { id: user.person.id },
+          parentTwoId: {
+            user: {
+              email: user.email,
+            },
+          },
           // student: { enrollment: { isActive: true } },
         },
       ],
@@ -341,7 +349,7 @@ export class PersonService {
 
   async uploadPhoto(fileName: string, file: Buffer, id: number) {
     const webpImage = await sharp(file).webp().toBuffer();
-
+    console.log(id);
     await this.s3Client.send(
       new PutObjectCommand({
         Bucket: 'caebucket',

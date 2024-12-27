@@ -27,12 +27,17 @@ import { SetRatifiedDto } from './dto/set-ratified.dto';
 import { FindVacantsDto } from './dto/find-vacants.dto';
 import { CreateAscentDto } from './dto/create-ascent.dto';
 import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
-import { User } from 'src/user/entities/user.entity';
-import { Auth } from 'src/auth/decorators/auth.decorator';
+
+import {
+  AuthenticatedUser,
+  Public,
+  Resource,
+  Roles,
+} from 'nest-keycloak-connect';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
+@Resource('client-test-appae')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
@@ -45,13 +50,36 @@ export class EnrollmentController {
     status: 400,
     description: 'those enrolled exceed the capacity of the classroom ',
   })
-  @Auth()
+  @Roles({
+    roles: ['administrador-colegio', 'padre-colegio', 'secretaria'],
+  })
   create(
     @Body() createEnrollmentDto: CreateEnrollChildrenDto,
-    @GetUser() user: User,
+    @AuthenticatedUser() user: any,
   ) {
     return this.enrollmentService.create(createEnrollmentDto, user);
   }
+
+  @Put(':studentId')
+  @ApiOperation({
+    summary: 'Enroll a student',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Current Enroll',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'The student does not have pre-registration ',
+  })
+  @Roles({
+    roles: ['administrador-colegio', 'secretaria'],
+  })
+  enrrollStudent(@Param('studentId') studentId: number) {
+    return this.enrollmentService.enrrollStudent(+studentId);
+  }
+
+  /** */
   @Post('many')
   @ApiResponse({
     status: 200,
@@ -158,6 +186,32 @@ export class EnrollmentController {
     return this.enrollmentService.setRatified(query, code);
   }
 
+  /**Ascents */
+
+  @Post('config/ascent')
+  createAscent(@Body() createAscentDto: CreateAscentDto) {
+    return this.enrollmentService.createAscent(createAscentDto);
+  }
+
+  // @Get('config/ascent/:yearId')
+  // getAscent(@Param('yearId', ParseIntPipe) yearId: number) {
+  //   return this.enrollmentService.getAscent(yearId);
+  // }
+
+  /**Proceso de matricula */
+  @Get('available/:studentId')
+  @ApiOperation({
+    summary: 'get availables classroom for enrroll',
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: 'Array of availables classrooms',
+    //  type: [AvailableClassroom],
+  })
+  getAvailableClassrooms(@Param('studentId', ParseIntPipe) studentId: number) {
+    return this.enrollmentService.getAvailableClassrooms(studentId);
+  }
+
   @Get('vacants/:yearId')
   @ApiQuery({
     name: 'campusId',
@@ -183,29 +237,27 @@ export class EnrollmentController {
     return this.enrollmentService.getVacants(yearId, query);
   }
 
-  /**Ascents */
-
-  @Post('config/ascent')
-  createAscent(@Body() createAscentDto: CreateAscentDto) {
-    return this.enrollmentService.createAscent(createAscentDto);
-  }
-
-  // @Get('config/ascent/:yearId')
-  // getAscent(@Param('yearId', ParseIntPipe) yearId: number) {
-  //   return this.enrollmentService.getAscent(yearId);
-  // }
-
-  /**Proceso de matricula */
-  @Get('available/:studentId')
-  @ApiOperation({
-    summary: 'get availables classroom for enrroll',
-  })
+  @Get('vacants/:yearId/grade/:gradeId')
   @ApiOkResponse({
     status: 200,
-    description: 'Array of availables classrooms',
+    description: 'result of consult, hasVacants true or false',
     //  type: [AvailableClassroom],
   })
-  getAvailableClassrooms(@Param('studentId', ParseIntPipe) studentId: number) {
-    return this.enrollmentService.getAvailableClassrooms(studentId);
+  @Public()
+  findVacantsByGrade(
+    @Param('yearId', ParseIntPipe) yearId: number,
+    @Param('gradeId', ParseIntPipe) gradeId: number,
+  ) {
+    // return this.enrollmentService.getVacantsTest();
+    return this.enrollmentService.getVacantsGeneral(gradeId, yearId);
+  }
+
+  @Get('/get/status')
+  @ApiResponse({
+    status: 404,
+    description: 'get status not found ',
+  })
+  getStatusEnrollmentByUser(@AuthenticatedUser() user: any) {
+    return this.enrollmentService.getStatusEnrollmentByUser(user);
   }
 }

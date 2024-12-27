@@ -39,6 +39,12 @@ import { RoleModule } from './role/role.module';
 import { EnrollmentScheduleModule } from './enrollment_schedule/enrollment_schedule.module';
 import { EmailsModule } from './emails/emails.module';
 
+import { DebtorsHelperModule } from './debtors_helper/debtors_helper.module';
+
+import { KeycloakModule } from './keycloak/keycloak.module';
+import { TreasuryModule } from './treasury/treasury.module';
+
+
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -81,6 +87,13 @@ import { EmailsModule } from './emails/emails.module';
     RoleModule,
     EnrollmentScheduleModule,
     EmailsModule,
+
+    DebtorsHelperModule,
+
+    KeycloakModule,
+
+    TreasuryModule,
+
   ],
   providers: [ExistIdConstraint, AuthService],
 })
@@ -134,11 +147,49 @@ export class AppModule implements NestModule {
           path: '/enrollment/ratified/:code',
           method: RequestMethod.PUT,
         },
-        //MOMENTANEO LUEGO SE ELIMINA
+        //MOMENTANEO LUEGO SE ELIMINA vacants/:yearId/grade/:gradeId
         {
           path: '/user/users-of-test',
           method: RequestMethod.POST,
         },
+        {
+          path: '/enrollment/vacants/:yearId/grade/:gradeId',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/user/activity-classroom/:activityClassroomId',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/family/migrate',
+          method: RequestMethod.GET,
+        },
+        //SOLO ES DE AYUDA,LUEGO SE BORRA
+        {
+          path: '/debtors-helper',
+          method: RequestMethod.POST,
+        },
+        {
+          path: '/student/activity-classroom-debtors/:activityClassroomId/:hasDebt',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/student/activity-classroom-behavior/:activityClassroomId',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/student/behavior/:id',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/student/behaviorDetails/:id',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/student/pdf/:id',
+          method: RequestMethod.PUT,
+        },
+        //HASTA AQUI
       )
       .forRoutes('/*');
   }

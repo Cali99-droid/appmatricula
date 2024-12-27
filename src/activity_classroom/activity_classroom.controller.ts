@@ -27,6 +27,7 @@ import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { Auth } from 'src/auth/decorators/auth.decorator';
+import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 @ApiTags('Activity Classroom')
 @Controller('activity-classroom')
@@ -153,10 +154,9 @@ export class ActivityClassroomController {
     description: 'Array of classrooms from phase, year, campus or level',
     type: [ActivityClassroom],
   })
-  @Auth()
   searchParams(
     @Query() searchClassroomsDto: SearchClassroomsDto,
-    @GetUser() user: User,
+    @AuthenticatedUser() user: any,
   ) {
     // return this.activityClassroomService.exampleGetac();
     return this.activityClassroomService.searchParams(
@@ -195,16 +195,9 @@ export class ActivityClassroomController {
     description: 'Array of classrooms from phase, year, campus or level',
     type: [ActivityClassroom],
   })
-  @Auth()
-  searchClassrooms(
-    @Query() searchClassroomsDto: SearchClassroomsDto,
-    @GetUser() user: User,
-  ) {
+  searchClassrooms(@Query() searchClassroomsDto: SearchClassroomsDto) {
     // return this.activityClassroomService.exampleGetac();
-    return this.activityClassroomService.searchClassrooms(
-      searchClassroomsDto,
-      user,
-    );
+    return this.activityClassroomService.searchClassrooms(searchClassroomsDto);
   }
 
   @Get('students/:id')

@@ -9,6 +9,7 @@ import {
 import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
 import { Student } from '../../student/entities/student.entity';
 import { Status } from '../enum/status.enum';
+import { Behavior } from '../enum/behavior.enum';
 @Entity()
 export class Enrollment {
   @ApiProperty()
@@ -50,6 +51,30 @@ export class Enrollment {
   })
   @Column({ type: 'enum', enum: Status })
   status: Status;
+
+  @ApiProperty({
+    example: 'NORMAL',
+    default: 'normal',
+    description:
+      'status, must be normal, MATRICULA_CONDICIONADA  or PERDIDA_VACANTE',
+  })
+  @Column({ type: 'enum', enum: Behavior })
+  behavior: Behavior;
+
+  @Column('varchar', {
+    nullable: true,
+  })
+  behaviorDescription: string;
+
+  @Column('varchar', {
+    nullable: true,
+  })
+  commitmentDocumentURL: string;
+
+  @Column('boolean', {
+    default: true,
+  })
+  allowNextRegistration: boolean;
 
   @ApiProperty({
     example: '1',

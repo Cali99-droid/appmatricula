@@ -9,6 +9,9 @@ export function addContractHeader(
   distrito: string,
   provincia: string,
   departamento: string,
+  year: string,
+  dayClassStart: string,
+  dayClassEnd: string,
 ) {
   //TEXTO DEL PRIMER PARRAFO
   const P1A =
@@ -23,9 +26,9 @@ export function addContractHeader(
   const P2A = `Y de la otra parte:`;
   const P2B = `identificado con ${typeDoc} Nro.`;
   const P2C = `con domicilio en`;
-  const P2D = 'Distrito de';
-  const P2E = 'Provincia de';
-  const P2F = 'Departamento de';
+  const P2D = ' Distrito de';
+  const P2E = ' Provincia de';
+  const P2F = ' Departamento de';
   const P2G =
     'en su calidad de Padre o Madre del menor, a quien en lo sucesivo se le denominará';
   const P2H = '“PADRE O MADRE DE FAMILIA”.';
@@ -35,15 +38,15 @@ export function addContractHeader(
   const C1_P2A = `1.2	El presente Contrato se celebra en virtud de la oferta educativa brindada por la ASOCIACIÓN y la decisión de libre`;
   const C1_P2B = `voluntad del PADRE O MADRE DE FAMILIA, de contratar los servicios educativos en el modo y forma contemplados `;
   const C1_P2C = `en el presente contrato, en base a información clara, relevante y suficiente que se explican en el presente documento y`;
-  const C1_P2D = `en información obrante en el portal institucional de la ASOCIACIÓN (http://www.ae.edu.pe/).`;
-  const C1_P3A = `1.3	La ASOCIACIÓN ha desarrollado su plan de estudio 2024 en concordancia con la normatividad vigente y su adaptación`;
+  const C1_P2D = `en información obrante en el portal institucional de la ASOCIACIÓN (http://www.ae.edu.pe/),siendo que el PADRE O MADRE DE FAMILIA manifiesta haber leído y entendido en su integridad la información proporcionada.`;
+  const C1_P3A = `1.3	La ASOCIACIÓN ha desarrollado su plan de estudio ${year} en concordancia con la normatividad vigente y su adaptación`;
   const C1_P3B = `a la posibilidad de una educación semipresencial. La elaboración del nuevo plan de estudio; así como la implementación`;
   const C1_P3C = `en las diferentes modalidades han sido llevadas a cabo mediante la asesoría de instituciones y expertos en pedagogía`;
   const C1_P3D = `de primer nivel, así como una adecuada capacitación de los docentes y personal administrativo del Colegio y será`;
   const C1_P3E = `aplicada en cumplimiento de las disposiciones legales vigentes.`;
   const C1_P4A = `1.4	La modalidad de estudio PRESENCIAL O SEMIPRESENCIAL que adopte el COLEGIO por periodo, será respetando`;
   const C1_P4B = `los lineamientos de la autoridad educativas (MINEDU, UGEL, DREA, ETC) y de salud (MINSA), esta será oportunamente`;
-  const C1_P4C = `comunicada al PADRE O MADRE DE FAMILIA, el cual se compromete a respetarla y cumplirla.`;
+  const C1_P4C = `comunicada al PADRE O MADRE DE FAMILIA, el cual se compromete a respetarla y cumplirla.La modalidad de estudio corresponde a una decisión institucional, por lo que su determinación no está sujeta a consulta o aprobación del PADRE O MADRE DE FAMILIA.`;
   //TEXTO DE CLAUSULA SEGUNDA
   const C2_P1A = `2.1	Por el presente Contrato La ASOCIACIÓN se obliga a prestar a favor del niño, niña o adolescente (en adelante el`;
   const C2_P1B = `“ALUMNO”) sus servicios de educación en el nivel inicial, primaria, secundaria, de acuerdo con el nivel educativo del`;
@@ -56,7 +59,7 @@ export function addContractHeader(
   const C2_P4B = `de parte de la ASOCIACIÓN, sin encontrar ninguna relación de dependencia o vinculación que genere obligaciones en`;
   const C2_P4C = `las actuaciones de la ASOCIACIÓN.`;
   //TEXTO DE CLAUSULA TERCERA
-  const C3_P1A = `3.1	El año académico se inicia el lunes 11 de marzo de 2024 y finaliza el viernes 17 de diciembre del 2024, salvo`;
+  const C3_P1A = `3.1	El año académico se inicia el lunes ${dayClassStart} de marzo de ${year} y finaliza el viernes ${dayClassEnd} de diciembre del ${year}, salvo`;
   const C3_P1B = `disposiciones del Ministerio de Educación, de la UGEL HUARAZ o autoridad competente que obligue a modificar lo establecido en el presente numeral.`;
   const C3_P2A = `3.2	Los tres niveles educativos (inicial, primaria y secundaria) están organizados en 4 bimestres. Al finalizar cada periodo`;
   const C3_P2B = `académico los alumnos tendrán un periodo corto de descanso.`;
@@ -70,7 +73,7 @@ export function addContractHeader(
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text(`N° ${numContra}-2024-ASELUC-C`, { align: 'center' });
+    .text(`N° ${numContra}-${year}`, { align: 'center' });
   // PARRAFO 1
   doc.moveDown(2);
   doc
@@ -100,7 +103,7 @@ export function addContractHeader(
     .fontSize(9)
     .text(`${nombre} `, { continued: true });
   doc.font('Helvetica').fontSize(9).text(`${P2B} `, { continued: true });
-  doc.font('Helvetica-Bold').fontSize(9).text(`${dni} `, { continued: true });
+  doc.font('Helvetica-Bold').fontSize(9).text(`${dni}, `, { continued: true });
   doc.font('Helvetica').fontSize(9).text(`${P2C} `, { continued: true });
   doc
     .font('Helvetica-Bold')

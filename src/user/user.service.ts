@@ -473,4 +473,52 @@ export class UserService {
       this.logger.error(error);
     }
   }
+  async findByActivityClassroom(activityClassroomId: number) {
+    if (isNaN(activityClassroomId) || activityClassroomId <= 0) {
+      throw new NotFoundException(
+        `activityClassroomId must be a number greater than 0`,
+      );
+    }
+    const enroll = await this.enrollmentRepository.find({
+      where: { activityClassroom: { id: activityClassroomId } },
+      relations: [
+        'student.family.parentOneId.user',
+        'student.family.parentTwoId.user',
+        'student.person',
+      ],
+    });
+    const filteredEnroll = enroll.map((e) => ({
+      student: {
+        person: {
+          name: e.student.person?.name ?? null,
+          lastname: e.student.person?.lastname ?? null,
+          mLastname: e.student.person?.mLastname ?? null,
+        },
+        family: {
+          parentOneId: {
+            name: e.student.family?.parentOneId?.name ?? null,
+            lastname: e.student.family?.parentOneId?.lastname ?? null,
+            mLastname: e.student.family?.parentOneId?.mLastname ?? null,
+            familyRole: e.student.family?.parentOneId?.familyRole ?? null,
+            cellPhone: e.student.family?.parentOneId?.cellPhone ?? null,
+            user: {
+              email: e.student.family?.parentOneId?.user?.email ?? null,
+            },
+          },
+          parentTwoId: {
+            name: e.student.family?.parentTwoId?.name ?? null,
+            lastname: e.student.family?.parentTwoId?.lastname ?? null,
+            mLastname: e.student.family?.parentTwoId?.mLastname ?? null,
+            familyRole: e.student.family?.parentTwoId?.familyRole ?? null,
+            cellPhone: e.student.family?.parentTwoId?.cellPhone ?? null,
+            user: {
+              email: e.student.family?.parentTwoId?.user?.email ?? null,
+            },
+          },
+        },
+      },
+    }));
+
+    return filteredEnroll;
+  }
 }

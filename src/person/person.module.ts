@@ -13,12 +13,10 @@ import { Permission } from 'src/permissions/entities/permission.entity';
 import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 
-
 @Module({
   controllers: [PersonController],
   providers: [PersonService],
   imports: [
-
     TypeOrmModule.forFeature([
       Person,
       Student,
@@ -31,5 +29,6 @@ import { Attendance } from 'src/attendance/entities/attendance.entity';
     ]),
     ConfigModule,
   ],
+  exports: [PersonService, PersonModule],
 })
 export class PersonModule {}
