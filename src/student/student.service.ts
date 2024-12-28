@@ -108,7 +108,7 @@ export class StudentService {
 
     if (searchTerm) {
       query.andWhere(
-        '(person.name LIKE :searchTerm OR person.mlastname LIKE :searchTerm)',
+        '(person.name LIKE :searchTerm OR person.mlastname LIKE :searchTerm OR person.lastname LIKE :searchTerm)',
         { searchTerm: `%${searchTerm}%` },
       );
     }
