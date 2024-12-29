@@ -66,11 +66,12 @@ export class EnrollmentService {
       /**Validar que sea el papá quien prematricula */
       if (!isAuth) {
         const father = await this.personRepository.findOneBy({
-          docNumber: user.dni,
+          // docNumber: user.dni,
           user: {
             email: user.email,
           },
         });
+        console.log(father);
 
         const student = await this.studentRepository.findOne({
           where: {

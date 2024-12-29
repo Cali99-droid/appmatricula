@@ -36,6 +36,13 @@ export class Payment {
   @Column('boolean')
   status: boolean;
 
+  @ApiProperty({
+    example: 'dhsdfhsfdhw',
+    description: 'sub of user',
+  })
+  @Column('varchar')
+  user: string;
+
   /**Relaciones */
   @ApiProperty({
     description: 'Id of concept',

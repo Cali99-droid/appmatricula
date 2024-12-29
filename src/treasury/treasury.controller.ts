@@ -3,7 +3,7 @@ import { TreasuryService } from './treasury.service';
 import { CreateTreasuryDto } from './dto/create-treasury.dto';
 
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Resource, Roles } from 'nest-keycloak-connect';
+import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
 
 @ApiTags('Treasury')
 @Resource('client-test-appae')
@@ -16,8 +16,9 @@ export class TreasuryController {
   createPaid(
     @Body() createTreasuryDto: CreateTreasuryDto,
     @Param('debtId') debtId: number,
+    @AuthenticatedUser() user: any,
   ) {
-    return this.treasuryService.createPaid(createTreasuryDto, debtId);
+    return this.treasuryService.createPaid(createTreasuryDto, debtId, user);
   }
 
   @Get('debts/:studentId')

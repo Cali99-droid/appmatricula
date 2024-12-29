@@ -55,7 +55,7 @@ export class KeycloakService {
   async createUser(token, user) {
     try {
       const response = await axios.post(
-        `https://login.colegioae.edu.pe/admin/realms/colegioae/users`,
+        `${process.env.URL_KEYCLOAK}/admin/realms/colegioae/users`,
         user,
         {
           headers: {
@@ -76,13 +76,13 @@ export class KeycloakService {
   async getAdminToken() {
     try {
       const response = await axios.post(
-        `https://login.colegioae.edu.pe/realms/colegioae/protocol/openid-connect/token`,
+        `${process.env.URL_KEYCLOAK}/realms/colegioae/protocol/openid-connect/token`,
         new URLSearchParams({
-          client_id: 'appcolegioae',
-          username: 'no-borrar@keycloak.com',
-          password: 'admin12',
+          client_id: process.env.CLIENT_ID_KEYCLOAK,
+          username: process.env.USERNAME_KEYCLOAK,
+          password: process.env.PASSWORD_KEYCLOAK,
           grant_type: 'password',
-          client_secret: 'rjny3vNy8tHGJIuzvAmnoqXBuDt7GX3O',
+          client_secret: process.env.CLIENT_SECRET_KEYCLOAK,
         }),
         {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
