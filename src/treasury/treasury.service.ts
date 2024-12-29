@@ -5,7 +5,6 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateTreasuryDto } from './dto/create-treasury.dto';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
@@ -17,6 +16,7 @@ import { Bill } from './entities/bill.entity';
 import { Correlative } from './entities/correlative.entity';
 
 import { Status } from 'src/enrollment/enum/status.enum';
+import { CreatePaidDto } from './dto/create-paid.dto';
 
 @Injectable()
 export class TreasuryService {
@@ -36,11 +36,7 @@ export class TreasuryService {
     private readonly correlativeRepository: Repository<Correlative>,
   ) {}
 
-  async createPaid(
-    createTreasuryDto: CreateTreasuryDto,
-    debtId: number,
-    user: any,
-  ) {
+  async createPaid(createPaidDto: CreatePaidDto, debtId: number, user: any) {
     const debt = await this.debtRepository.findOne({
       where: {
         id: debtId,
@@ -83,7 +79,7 @@ export class TreasuryService {
       },
     });
 
-    const serie = `B${createTreasuryDto.paymentMethod}${campus.id}${level.id}`;
+    const serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
 
     const tipoComprobante = 'BOLETA';
 
