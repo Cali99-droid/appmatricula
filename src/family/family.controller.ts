@@ -3,30 +3,11 @@ import { FamilyService } from './family.service';
 
 import { ApiTags } from '@nestjs/swagger';
 import { UpdateFamilyDto } from './dto/update-family.dto';
+import { AuthenticatedUser } from 'nest-keycloak-connect';
 @ApiTags('Family')
 @Controller('family')
 export class FamilyController {
   constructor(private readonly familyService: FamilyService) {}
-
-  // @Post('create-many')
-  // @ApiOperation({
-  //   summary: 'create many parents of family ',
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'object with number of family members and person created',
-  // })
-  // @ApiResponse({
-  //   status: 400,
-  //   description: 'some data of array is bad ',
-  // })
-  // createParents(@Body() dataParentArrayDto: DataParentArrayDto) {
-  //   return this.familyService.createParents(dataParentArrayDto);
-  // }
-  // @Post()
-  // create(@Body() createFamilyDto: CreateFamilyDto) {
-  //   return this.familyService.create(createFamilyDto);
-  // }
 
   @Get()
   findAll() {
@@ -37,8 +18,8 @@ export class FamilyController {
     return this.familyService.migrate();
   }
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.familyService.findOne(+id);
+  findOne(@Param('id') id: string, @AuthenticatedUser() user: any) {
+    return this.familyService.findOne(+id, user);
   }
 
   @Patch(':id')

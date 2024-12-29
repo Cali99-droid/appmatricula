@@ -31,7 +31,6 @@ import {
 import { Vacants } from './interfaces/res-vacants.interface';
 import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
 
-import { Behavior } from './enum/behavior.enum';
 import { Rates } from 'src/treasury/entities/rates.entity';
 import { Debt } from 'src/treasury/entities/debt.entity';
 @Injectable()
@@ -54,6 +53,8 @@ export class EnrollmentService {
     private readonly debtRepository: Repository<Debt>,
     private readonly studentService: StudentService,
   ) {}
+
+  /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
     const roles = user.resource_access['client-test-appae'].roles;
 
@@ -1286,6 +1287,16 @@ export class EnrollmentService {
       );
     }
     /** TODO validar que haya pagado  */
+    const debts = await this.debtRepository.find({
+      where: {
+        student: {
+          id: studentId,
+        },
+      },
+    });
+    if (debts.length > 0) {
+      throw new BadRequestException('The student does has debts');
+    }
     try {
       const currentEnrroll = enrroll[0];
       currentEnrroll.status = Status.MATRICULADO;
