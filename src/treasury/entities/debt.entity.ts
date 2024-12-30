@@ -38,6 +38,17 @@ export class Debt {
   @Column('boolean')
   status: boolean;
 
+  @Column('varchar', {
+    nullable: true,
+  })
+  description: string;
+
+  @Column('varchar', {
+    nullable: true,
+    unique: true,
+  })
+  code: string;
+
   /**Relaciones */
   @ApiProperty({
     description: 'Id of Student',

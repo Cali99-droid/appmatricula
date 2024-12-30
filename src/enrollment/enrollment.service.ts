@@ -129,7 +129,7 @@ export class EnrollmentService {
         code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
         status: Status.PREMATRICULADO,
       });
-      await this.enrollmentRepository.save(enrollment);
+      const enrroll = await this.enrollmentRepository.save(enrollment);
       const activityClassroom =
         await this.activityClassroomRepository.findOneBy({
           id: ce.activityClassroomId,
@@ -154,6 +154,8 @@ export class EnrollmentService {
         student: { id: ce.studentId },
         total: rate.total,
         status: false,
+        description: enrroll.code,
+        code: `MAT${enrroll.code}`,
       });
 
       await this.debtRepository.save(createdDebt);

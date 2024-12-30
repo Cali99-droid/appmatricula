@@ -18,6 +18,7 @@ import { Correlative } from './entities/correlative.entity';
 import { Status } from 'src/enrollment/enum/status.enum';
 import { CreatePaidDto } from './dto/create-paid.dto';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { Rates } from './entities/rates.entity';
 
 @Injectable()
 export class TreasuryService {
@@ -37,6 +38,8 @@ export class TreasuryService {
     private readonly correlativeRepository: Repository<Correlative>,
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
+    @InjectRepository(Rates)
+    private readonly ratesRepository: Repository<Rates>,
   ) {}
 
   async createPaid(createPaidDto: CreatePaidDto, debtId: number, user: any) {
@@ -65,6 +68,12 @@ export class TreasuryService {
         },
       },
     });
+
+    if (!debt) {
+      throw new BadRequestException(
+        'No existe deuda de matricula o estudiante ya matriculado',
+      );
+    }
     if (debt.status) {
       throw new BadRequestException('Deuda ya cancelada');
     }
@@ -82,6 +91,7 @@ export class TreasuryService {
       },
       relations: {
         respEconomic: true,
+        respEnrollment: true,
       },
     });
 
@@ -92,7 +102,10 @@ export class TreasuryService {
     // Obtener el número correlativo
     const numero = await this.getCorrelative(tipoComprobante, serie);
 
-    const client = family.respEconomic;
+    const client = family.respEnrollment;
+    if (!client) {
+      throw new NotFoundException('No existe responsable de matricula');
+    }
     const boletaData = {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2, // 2: Boleta
@@ -167,6 +180,19 @@ export class TreasuryService {
       await this.enrollmentRepository.save(enrroll);
       await this.debtRepository.save(debt);
 
+      /**generar deuda */
+      const rate = await this.ratesRepository.findOne({
+        where: {
+          level: { id: level.id },
+          campusDetail: { id: campus.id },
+          concept: { id: 2 },
+        },
+        relations: {
+          concept: true,
+        },
+      });
+      await this.generateMonthlyDebts(debt.student.id, rate, enrroll.code);
+
       return newBill;
     } catch (error) {
       await this.undoCorrelative(tipoComprobante, serie);
@@ -185,6 +211,7 @@ export class TreasuryService {
       },
       relations: {
         respEconomic: true,
+        respEnrollment: true,
       },
     });
     if (!family) {
@@ -202,7 +229,7 @@ export class TreasuryService {
     });
     const data = {
       debts: debts,
-      resp: family.respEconomic || 'No hay reponsable económico ',
+      resp: family.respEnrollment || 'No hay reponsable matrícula ',
     };
     return data;
   }
@@ -226,6 +253,39 @@ export class TreasuryService {
     });
 
     return pay;
+  }
+
+  async generateMonthlyDebts(
+    studentId: number,
+    rate: Rates,
+    codeEnrroll: string,
+  ) {
+    const debts = [];
+    const targetYear = 2025; // Año fijo para las deudas
+
+    // Generar deudas desde marzo (2) hasta diciembre (11) para el año 2025
+    for (let month = 2; month <= 11; month++) {
+      const dateEnd = new Date(targetYear, month + 1, 0); // Último día del mes correspondiente
+      const formattedDateEnd = dateEnd.toISOString().split('T')[0]; // Convertir a 'YYYY-MM-DD'
+      debts.push(
+        this.debtRepository.create({
+          dateEnd: formattedDateEnd,
+          concept: { id: rate.concept.id },
+          student: { id: studentId },
+          code: `PEN${month}${dateEnd
+            .toLocaleString('es-ES', { month: 'long' })
+            .toUpperCase()}${codeEnrroll}`,
+          total: rate.total,
+          status: false,
+          description: dateEnd
+            .toLocaleString('es-ES', { month: 'long' })
+            .toUpperCase(), // Ej. 'MARZO'
+        }),
+      );
+    }
+
+    // Guardar todas las deudas en una sola operación
+    await this.debtRepository.save(debts);
   }
 
   async getCorrelative(type: string, serie: string): Promise<number> {
