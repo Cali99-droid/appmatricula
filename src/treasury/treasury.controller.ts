@@ -4,6 +4,7 @@ import { TreasuryService } from './treasury.service';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
 import { CreatePaidDto } from './dto/create-paid.dto';
+import { FindPaidDto } from './dto/find-paid.dto';
 
 @ApiTags('Treasury')
 @Resource('client-test-appae')
@@ -31,11 +32,9 @@ export class TreasuryController {
   }
 
   @Get('payment')
-  @ApiResponse({ status: 201, description: 'pagado' })
-  getPaid(
-    // @Body() createTreasuryDto: CreatePaidDto,
-    @AuthenticatedUser() user: any,
-  ) {
-    return this.treasuryService.getPaid(user);
+  @ApiResponse({ status: 201, description: 'datos de boletas' })
+  getPaid(@Body() findPaidDto: FindPaidDto, @AuthenticatedUser() user: any) {
+    const { startDate, endDate } = findPaidDto;
+    return this.treasuryService.findPaid(user, startDate, endDate);
   }
 }

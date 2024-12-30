@@ -8,7 +8,7 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { Family } from 'src/family/entities/family.entity';
 import axios from 'axios';
 import { Payment } from './entities/payment.entity';
@@ -234,25 +234,60 @@ export class TreasuryService {
     return data;
   }
 
-  async getPaid(user: any) {
+  async findPaid(user: any, startDate: string, endDate: string) {
     const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),
     );
-    let whereCondition: any;
 
-    if (!isAuth) {
-      whereCondition.user = {
-        user: user.sub,
-      };
-    }
+    const whereCondition: any = {
+      user: user.sub,
+    };
 
-    const pay = await this.paymentRepository.find({
-      where: whereCondition,
+    const boletas = await this.billRepository.find({
+      where: {
+        payment: {
+          ...(isAuth ? {} : whereCondition),
+          date: Between(startDate, endDate), // Filtrar entre las fechas dadas
+        },
+      },
+      relations: {
+        payment: {
+          concept: true,
+        },
+      },
     });
 
-    return pay;
+    // Formatear los datos para el frontend
+    const result = boletas.map((boleta) => ({
+      id: boleta.id,
+      date: boleta.date,
+      serie: boleta.serie,
+      numero: boleta.numero,
+      url: boleta.url,
+      payment: {
+        id: boleta.payment.id,
+        date: boleta.payment.date,
+        total: boleta.payment.total,
+        status: boleta.payment.status,
+        concept: {
+          description: boleta.payment.concept.description,
+          code: boleta.payment.concept.code,
+        },
+      },
+    }));
+
+    // Calcular el total de los pagos
+    const total = boletas.reduce(
+      (sum, boleta) => sum + boleta.payment.total,
+      0,
+    );
+
+    return {
+      data: result,
+      total,
+    };
   }
 
   async generateMonthlyDebts(
