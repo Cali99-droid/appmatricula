@@ -19,6 +19,8 @@ import { Status } from 'src/enrollment/enum/status.enum';
 import { CreatePaidDto } from './dto/create-paid.dto';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Rates } from './entities/rates.entity';
+import { PDFDocument, rgb } from 'pdf-lib';
+import { Response } from 'express';
 
 @Injectable()
 export class TreasuryService {
@@ -42,7 +44,12 @@ export class TreasuryService {
     private readonly ratesRepository: Repository<Rates>,
   ) {}
 
-  async createPaid(createPaidDto: CreatePaidDto, debtId: number, user: any) {
+  async createPaid(
+    createPaidDto: CreatePaidDto,
+    debtId: number,
+    user: any,
+    res: Response,
+  ) {
     const debt = await this.debtRepository.findOne({
       where: {
         id: debtId,
@@ -150,12 +157,12 @@ export class TreasuryService {
     };
 
     try {
-      const response = await axios.post(this.apiUrl, boletaData, {
-        headers: {
-          Authorization: `Token token=${this.apiToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      // const response = await axios.post(this.apiUrl, boletaData, {
+      //   headers: {
+      //     Authorization: `Token token=${this.apiToken}`,
+      //     'Content-Type': 'application/json',
+      //   },
+      // });
 
       const pay = this.paymentRepository.create({
         concept: { id: debt.concept.id },
@@ -168,10 +175,10 @@ export class TreasuryService {
       const newPay = await this.paymentRepository.save(pay);
       const bill = this.billRepository.create({
         date: new Date(),
-        url: response.data.enlace_del_pdf,
+        url: 'don',
         payment: { id: newPay.id },
-        serie: response.data.serie,
-        numero: response.data.numero,
+        serie: serie,
+        numero: numero,
       });
       const newBill = await this.billRepository.save(bill);
 
@@ -193,7 +200,14 @@ export class TreasuryService {
       });
       await this.generateMonthlyDebts(debt.student.id, rate, enrroll.code);
 
-      return newBill;
+      // return newBill;
+      return await this.generateTicketPdf(
+        res,
+        client,
+        debt.total,
+        serie,
+        numero,
+      );
     } catch (error) {
       await this.undoCorrelative(tipoComprobante, serie);
       this.logger.log(error);
@@ -355,5 +369,100 @@ export class TreasuryService {
       correlative.numero = correlative.numero - 1;
       await this.correlativeRepository.save(correlative);
     }
+  }
+
+  async generateTicketPdf(
+    res: Response,
+    client: any,
+    prices: number,
+    serie: string,
+    number: number,
+  ): Promise<void> {
+    // Crear un nuevo documento PDF
+    const pdfDoc = await PDFDocument.create();
+
+    // Agregar una página de tamaño personalizado para el ticket
+    const page = pdfDoc.addPage([200, 400]); // Ancho: 200 puntos, Alto: 400 puntos
+
+    // Configurar fuentes y estilos
+    const { width, height } = page.getSize();
+    const fontSize = 10;
+
+    // Encabezado de la boleta
+    page.drawText('Boleta de Venta', {
+      x: 50,
+      y: height - 30,
+      size: 14,
+      color: rgb(0, 0, 0),
+    });
+
+    page.drawText('Colegio Albert Eisntein', {
+      x: 50,
+      y: height - 50,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+    page.drawText(`${serie} - ${number}`, {
+      x: 50,
+      y: height - 60,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+
+    // Datos del cliente
+    const clientDetails = [
+      `Cliente: ${client.name + ' ' + client.lastname + ' ' + client.mLastname}`,
+      `DNI:${client.docNumber} `,
+      `Fecha: ${client.docNumber}`,
+    ];
+    clientDetails.forEach((text, idx) => {
+      page.drawText(text, {
+        x: 10,
+        y: height - 80 - idx * 15,
+        size: fontSize,
+        color: rgb(0, 0, 0),
+      });
+    });
+
+    // Detalles de la venta
+    const items = [{ description: 'MATRICULA', quantity: 1, price: prices }];
+
+    let yPosition = height - 130;
+    items.forEach((item) => {
+      page.drawText(
+        `${item.description}   x${item.quantity}   S/ ${item.price.toFixed(2)}`,
+        {
+          x: 10,
+          y: yPosition,
+          size: fontSize,
+          color: rgb(0, 0, 0),
+        },
+      );
+      yPosition -= 15;
+    });
+
+    // Total
+    const total = items.reduce((sum, item) => sum + item.price, 0);
+    page.drawText(`Total: S/ ${total.toFixed(2)}`, {
+      x: 10,
+      y: yPosition - 20,
+      size: fontSize + 2,
+      color: rgb(0, 0, 0),
+    });
+
+    // Pie de página
+    page.drawText('Gracias por su pago!', {
+      x: 50,
+      y: 20,
+      size: fontSize,
+      color: rgb(0, 0, 0),
+    });
+
+    // Guardar el PDF en un Buffer
+    const pdfBytes = await pdfDoc.save();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename=boleta.pdf');
+    res.send(Buffer.from(pdfBytes));
   }
 }

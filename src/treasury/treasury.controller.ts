@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Res } from '@nestjs/common';
 import { TreasuryService } from './treasury.service';
 
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
 import { CreatePaidDto } from './dto/create-paid.dto';
 import { FindPaidDto } from './dto/find-paid.dto';
+import { Response } from 'express';
 
 @ApiTags('Treasury')
 @Resource('client-test-appae')
@@ -18,8 +19,14 @@ export class TreasuryController {
     @Body() createTreasuryDto: CreatePaidDto,
     @Param('debtId') debtId: number,
     @AuthenticatedUser() user: any,
+    @Res() res: Response,
   ) {
-    return this.treasuryService.createPaid(createTreasuryDto, debtId, user);
+    return this.treasuryService.createPaid(
+      createTreasuryDto,
+      debtId,
+      user,
+      res,
+    );
   }
 
   @Get('debts/:studentId')
