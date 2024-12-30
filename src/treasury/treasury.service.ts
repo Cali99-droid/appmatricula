@@ -17,6 +17,7 @@ import { Correlative } from './entities/correlative.entity';
 
 import { Status } from 'src/enrollment/enum/status.enum';
 import { CreatePaidDto } from './dto/create-paid.dto';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 
 @Injectable()
 export class TreasuryService {
@@ -34,6 +35,8 @@ export class TreasuryService {
     private readonly billRepository: Repository<Bill>,
     @InjectRepository(Correlative)
     private readonly correlativeRepository: Repository<Correlative>,
+    @InjectRepository(Enrollment)
+    private readonly enrollmentRepository: Repository<Enrollment>,
   ) {}
 
   async createPaid(createPaidDto: CreatePaidDto, debtId: number, user: any) {
@@ -50,6 +53,7 @@ export class TreasuryService {
       relations: {
         concept: true,
         student: {
+          person: true,
           enrollment: {
             activityClassroom: {
               grade: {
@@ -68,7 +72,9 @@ export class TreasuryService {
       throw new NotFoundException('No tiene prematricula el estudiante');
     }
     const enrroll = debt.student.enrollment[0];
+    const student = debt.student.person;
     const level = enrroll.activityClassroom.grade.level;
+    const grade = enrroll.activityClassroom.grade;
     const campus = enrroll.activityClassroom.classroom.campusDetail;
     const family = await this.familyRepository.findOne({
       where: {
@@ -84,13 +90,13 @@ export class TreasuryService {
     const tipoComprobante = 'BOLETA';
 
     // Obtener el número correlativo
-    const numero = await this.getCorrelative(tipoComprobante, 'BBB1');
+    const numero = await this.getCorrelative(tipoComprobante, serie);
 
     const client = family.respEconomic;
     const boletaData = {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2, // 2: Boleta
-      serie: 'BBB1', // Cambia según tu configuración
+      serie: serie, // Cambia según tu configuración
       numero: numero, // Número correlativo de la boleta
       sunat_transaction: 1,
       cliente_tipo_de_documento: 1, // 1: DNI
@@ -107,7 +113,6 @@ export class TreasuryService {
       porcentaje_de_igv: 18.0,
       total_gravada: '',
       total_exonerada: debt.total,
-
       total_igv: 0,
       total: debt.total,
       observaciones: `Gracias por su compra. ${serie}`,
@@ -115,7 +120,7 @@ export class TreasuryService {
         {
           unidad_de_medida: 'NIU',
           codigo: debt.concept.code,
-          descripcion: debt.concept.description,
+          descripcion: `${debt.concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
           cantidad: 1,
           valor_unitario: debt.total,
           precio_unitario: debt.total,
@@ -152,12 +157,16 @@ export class TreasuryService {
         date: new Date(),
         url: response.data.enlace_del_pdf,
         payment: { id: newPay.id },
-        serie: response.data.enlace_del_pdf,
+        serie: response.data.serie,
+        numero: response.data.numero,
       });
       const newBill = await this.billRepository.save(bill);
 
       debt.status = true;
+      enrroll.status = Status.MATRICULADO;
+      await this.enrollmentRepository.save(enrroll);
       await this.debtRepository.save(debt);
+
       return newBill;
     } catch (error) {
       await this.undoCorrelative(tipoComprobante, serie);
@@ -185,6 +194,7 @@ export class TreasuryService {
     const debts = await this.debtRepository.find({
       where: {
         student: { id: studentId },
+        status: false,
       },
       relations: {
         concept: true,
@@ -195,6 +205,27 @@ export class TreasuryService {
       resp: family.respEconomic || 'No hay reponsable económico ',
     };
     return data;
+  }
+
+  async getPaid(user: any) {
+    const roles = user.resource_access['client-test-appae'].roles;
+
+    const isAuth = ['administrador-colegio'].some((role) =>
+      roles.includes(role),
+    );
+    let whereCondition: any;
+
+    if (!isAuth) {
+      whereCondition.user = {
+        user: user.sub,
+      };
+    }
+
+    const pay = await this.paymentRepository.find({
+      where: whereCondition,
+    });
+
+    return pay;
   }
 
   async getCorrelative(type: string, serie: string): Promise<number> {

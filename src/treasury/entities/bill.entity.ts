@@ -29,6 +29,10 @@ export class Bill {
     nullable: true,
   })
   serie: string;
+  @Column('varchar', {
+    nullable: true,
+  })
+  numero: number;
 
   /**Relaciones */
   @ApiProperty({

@@ -29,4 +29,13 @@ export class TreasuryController {
   findDebts(@Param('studentId') studentId: number) {
     return this.treasuryService.findDebts(+studentId);
   }
+
+  @Get('payment')
+  @ApiResponse({ status: 201, description: 'pagado' })
+  getPaid(
+    // @Body() createTreasuryDto: CreatePaidDto,
+    @AuthenticatedUser() user: any,
+  ) {
+    return this.treasuryService.getPaid(user);
+  }
 }

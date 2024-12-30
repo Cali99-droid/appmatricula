@@ -9,6 +9,7 @@ import { Payment } from './entities/payment.entity';
 import { Rates } from './entities/rates.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { Correlative } from './entities/correlative.entity';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 
 @Module({
   controllers: [TreasuryController],
@@ -22,6 +23,7 @@ import { Correlative } from './entities/correlative.entity';
       Rates,
       Family,
       Correlative,
+      Enrollment,
     ]),
   ],
 })
