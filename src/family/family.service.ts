@@ -286,7 +286,7 @@ export class FamilyService {
               : previous;
           });
 
-        if (activityClassroom.grade.position !== 14) {
+        if (activityClassroom.grade.position !== 14 || enrroll.isActive) {
           return {
             person,
             ...enrroll,
