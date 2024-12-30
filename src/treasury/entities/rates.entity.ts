@@ -3,10 +3,12 @@ import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 import { Level } from 'src/level/entities/level.entity';
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Concept } from './concept.entity';
 
@@ -37,4 +39,20 @@ export class Rates {
   @ManyToOne(() => Concept)
   @JoinColumn({ name: 'conceptId' })
   concept?: Concept;
+
+  /**TIMESTAMPS */
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    select: false,
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+    select: false,
+  })
+  updatedAt: Date;
 }
