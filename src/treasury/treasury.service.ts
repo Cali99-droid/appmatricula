@@ -1,10 +1,10 @@
 import {
+  BadRequestException,
   HttpException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateTreasuryDto } from './dto/create-treasury.dto';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
@@ -13,13 +13,16 @@ import { Family } from 'src/family/entities/family.entity';
 import axios from 'axios';
 import { Payment } from './entities/payment.entity';
 import { Bill } from './entities/bill.entity';
+import { Correlative } from './entities/correlative.entity';
+
+import { Status } from 'src/enrollment/enum/status.enum';
+import { CreatePaidDto } from './dto/create-paid.dto';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 
 @Injectable()
 export class TreasuryService {
-  private readonly apiUrl =
-    'https://api.nubefact.com/api/v1/58874885-716a-4d06-9e92-46b3c6b1a439'; // Reemplaza con el URL de tu cuenta NUBEFACT
-  private readonly apiToken =
-    '0f5d1d4c483d493a8ad63f8aade67e24e8bbf7c11340444da2eb9056ab41d381'; // Reemplaza con tu token de acceso
+  private readonly apiUrl = process.env.NUBEFACT_API_URL;
+  private readonly apiToken = process.env.NUBEFACT_TOKEN;
   private readonly logger = new Logger('TreasuryService');
   constructor(
     @InjectRepository(Debt)
@@ -30,18 +33,49 @@ export class TreasuryService {
     private readonly paymentRepository: Repository<Payment>,
     @InjectRepository(Bill)
     private readonly billRepository: Repository<Bill>,
+    @InjectRepository(Correlative)
+    private readonly correlativeRepository: Repository<Correlative>,
+    @InjectRepository(Enrollment)
+    private readonly enrollmentRepository: Repository<Enrollment>,
   ) {}
 
-  async createPaid(createTreasuryDto: CreateTreasuryDto, debtId: number) {
+  async createPaid(createPaidDto: CreatePaidDto, debtId: number, user: any) {
     const debt = await this.debtRepository.findOne({
       where: {
         id: debtId,
+        student: {
+          enrollment: {
+            // student: { id: debt.student.id },
+            status: Status.PREMATRICULADO,
+          },
+        },
       },
       relations: {
         concept: true,
-        student: true,
+        student: {
+          person: true,
+          enrollment: {
+            activityClassroom: {
+              grade: {
+                level: true,
+              },
+              classroom: true,
+            },
+          },
+        },
       },
     });
+    if (debt.status) {
+      throw new BadRequestException('Deuda ya cancelada');
+    }
+    if (debt.student.enrollment.length === 0) {
+      throw new NotFoundException('No tiene prematricula el estudiante');
+    }
+    const enrroll = debt.student.enrollment[0];
+    const student = debt.student.person;
+    const level = enrroll.activityClassroom.grade.level;
+    const grade = enrroll.activityClassroom.grade;
+    const campus = enrroll.activityClassroom.classroom.campusDetail;
     const family = await this.familyRepository.findOne({
       where: {
         student: { id: debt.student.id },
@@ -51,13 +85,19 @@ export class TreasuryService {
       },
     });
 
+    const serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
+
+    const tipoComprobante = 'BOLETA';
+
+    // Obtener el número correlativo
+    const numero = await this.getCorrelative(tipoComprobante, serie);
+
     const client = family.respEconomic;
-    const igv = (debt.total / 1.18) * 0.18;
     const boletaData = {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2, // 2: Boleta
-      serie: 'BBB1', // Cambia según tu configuración
-      numero: debt.id + 10, // Número correlativo de la boleta
+      serie: serie, // Cambia según tu configuración
+      numero: numero, // Número correlativo de la boleta
       sunat_transaction: 1,
       cliente_tipo_de_documento: 1, // 1: DNI
       cliente_numero_de_documento: client.docNumber,
@@ -73,15 +113,14 @@ export class TreasuryService {
       porcentaje_de_igv: 18.0,
       total_gravada: '',
       total_exonerada: debt.total,
-
       total_igv: 0,
       total: debt.total,
-      observaciones: 'Gracias por su compra.',
+      observaciones: `Gracias por su compra. ${serie}`,
       items: [
         {
           unidad_de_medida: 'NIU',
           codigo: debt.concept.code,
-          descripcion: debt.concept.description,
+          descripcion: `${debt.concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
           cantidad: 1,
           valor_unitario: debt.total,
           precio_unitario: debt.total,
@@ -111,20 +150,27 @@ export class TreasuryService {
         status: true,
         total: debt.total,
         student: { id: debt.student.id },
+        user: user.sub,
       });
       const newPay = await this.paymentRepository.save(pay);
       const bill = this.billRepository.create({
         date: new Date(),
         url: response.data.enlace_del_pdf,
         payment: { id: newPay.id },
-        serie: response.data.enlace_del_pdf,
+        serie: response.data.serie,
+        numero: response.data.numero,
       });
       const newBill = await this.billRepository.save(bill);
-      return newBill;
 
       debt.status = true;
+      enrroll.status = Status.MATRICULADO;
+      await this.enrollmentRepository.save(enrroll);
       await this.debtRepository.save(debt);
+
+      return newBill;
     } catch (error) {
+      await this.undoCorrelative(tipoComprobante, serie);
+      this.logger.log(error);
       throw new HttpException(
         `Error al emitir la boleta: ${error.response?.data?.errors || error.message}`,
         error.response?.status || 500,
@@ -148,6 +194,7 @@ export class TreasuryService {
     const debts = await this.debtRepository.find({
       where: {
         student: { id: studentId },
+        status: false,
       },
       relations: {
         concept: true,
@@ -158,5 +205,60 @@ export class TreasuryService {
       resp: family.respEconomic || 'No hay reponsable económico ',
     };
     return data;
+  }
+
+  async getPaid(user: any) {
+    const roles = user.resource_access['client-test-appae'].roles;
+
+    const isAuth = ['administrador-colegio'].some((role) =>
+      roles.includes(role),
+    );
+    let whereCondition: any;
+
+    if (!isAuth) {
+      whereCondition.user = {
+        user: user.sub,
+      };
+    }
+
+    const pay = await this.paymentRepository.find({
+      where: whereCondition,
+    });
+
+    return pay;
+  }
+
+  async getCorrelative(type: string, serie: string): Promise<number> {
+    // Inicia una transacción
+    return await this.correlativeRepository.manager.transaction(
+      async (manager) => {
+        // Busca el correlativo para el tipo de comprobante y serie
+        let correlative = await manager.findOne(Correlative, {
+          where: { type, serie },
+        });
+
+        if (!correlative) {
+          // Si no existe, crea un nuevo registro con el número inicial
+          correlative = manager.create(Correlative, { type, serie, numero: 1 });
+          await manager.save(Correlative, correlative);
+        } else {
+          // Incrementa el número correlativo existente
+          correlative.numero += 1;
+          await manager.save(Correlative, correlative);
+        }
+
+        return correlative.numero;
+      },
+    );
+  }
+
+  async undoCorrelative(type: string, serie: string) {
+    const correlative = await this.correlativeRepository.findOne({
+      where: { type, serie },
+    });
+    if (correlative) {
+      correlative.numero = correlative.numero - 1;
+      await this.correlativeRepository.save(correlative);
+    }
   }
 }

@@ -2,10 +2,12 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Student } from 'src/student/entities/student.entity';
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Concept } from './concept.entity';
 
@@ -50,4 +52,20 @@ export class Debt {
   @ManyToOne(() => Concept, { nullable: true })
   @JoinColumn({ name: 'conceptId' })
   concept?: Concept;
+
+  /**TIMESTAMPS */
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    select: false,
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+    select: false,
+  })
+  updatedAt: Date;
 }

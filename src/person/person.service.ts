@@ -277,7 +277,7 @@ export class PersonService {
                 : previous;
             });
           const enrrollStatus = enrroll.status;
-          if (activityClassroom.grade.position !== 14) {
+          if (activityClassroom.grade.position !== 14 || enrroll.isActive) {
             return {
               person,
               ...enrroll,

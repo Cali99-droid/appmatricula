@@ -107,12 +107,21 @@ export class StudentService {
       );
 
     if (searchTerm) {
-      query.andWhere(
-        '(person.name LIKE :searchTerm OR person.mlastname LIKE :searchTerm OR person.lastname LIKE :searchTerm)',
-        { searchTerm: `%${searchTerm}%` },
-      );
+      const searchTerms = searchTerm
+        .split(' ')
+        .map((term) => term.trim())
+        .filter((term) => term.length > 0);
+
+      searchTerms.forEach((term, index) => {
+        query.andWhere(
+          `(LOWER(person.name) LIKE LOWER(:term${index}) OR LOWER(person.lastname) LIKE LOWER(:term${index}) OR LOWER(person.mLastname) LIKE LOWER(:term${index}))`,
+          { [`term${index}`]: `%${term}%` },
+        );
+      });
     }
 
+    // Ordenar alfabéticamente por nombre
+    query.orderBy('person.lastname', 'ASC');
     query.skip((page - 1) * limit).take(limit);
 
     const [results, total] = await query.getManyAndCount();

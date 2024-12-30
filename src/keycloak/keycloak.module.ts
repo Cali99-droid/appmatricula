@@ -10,6 +10,7 @@ import {
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   controllers: [KeycloakController],
@@ -44,12 +45,13 @@ import { User } from 'src/user/entities/user.entity';
     },
   ],
   imports: [
+    ConfigModule.forRoot(),
     TypeOrmModule.forFeature([User]),
     KeycloakConnectModule.register({
-      authServerUrl: 'https://login.colegioae.edu.pe',
-      realm: 'colegioae',
-      clientId: 'appcolegioae',
-      secret: 'rjny3vNy8tHGJIuzvAmnoqXBuDt7GX3O',
+      authServerUrl: process.env.URL_KEYCLOAK,
+      realm: process.env.REALM_KEYCLOAK,
+      clientId: process.env.CLIENT_ID_KEYCLOAK,
+      secret: process.env.CLIENT_SECRET_KEYCLOAK,
       // Secret key of the client taken from keycloak server
     }),
   ],
