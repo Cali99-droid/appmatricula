@@ -25,7 +25,6 @@ import { Family } from 'src/family/entities/family.entity';
 import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { SearchByDateDto } from '../common/dto/search-by-date.dto';
-import { Status } from 'src/enrollment/enum/status.enum';
 
 @Injectable()
 export class PersonService {
