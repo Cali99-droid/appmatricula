@@ -225,14 +225,25 @@ export class FamilyService {
       id: id,
     };
     if (!isAuth) {
-      whereCondition.parentOneId = {
-        user: {
-          email: user.email,
+      whereCondition.or = [
+        {
+          parentOneId: {
+            user: {
+              email: user.email,
+            },
+          },
         },
-      };
+        {
+          parentTwoId: {
+            user: {
+              email: user.email,
+            },
+          },
+        },
+      ];
     }
     const family = await this.familyRepository.findOne({
-      where: whereCondition,
+      where: isAuth ? whereCondition : whereCondition.or,
       relations: {
         parentOneId: {
           user: true,
