@@ -235,7 +235,7 @@ export class TreasuryService {
   }
 
   async getPaid(user: any) {
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),
