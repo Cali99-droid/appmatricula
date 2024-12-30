@@ -24,6 +24,7 @@ import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
       Family,
       Correlative,
       Enrollment,
+      Rates,
     ]),
   ],
 })
