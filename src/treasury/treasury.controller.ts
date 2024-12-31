@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Res, Query } from '@nestjs/common';
 import { TreasuryService } from './treasury.service';
 
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -40,7 +40,7 @@ export class TreasuryController {
 
   @Get('payment')
   @ApiResponse({ status: 201, description: 'datos de boletas' })
-  getPaid(@Body() findPaidDto: FindPaidDto, @AuthenticatedUser() user: any) {
+  getPaid(@Query() findPaidDto: FindPaidDto, @AuthenticatedUser() user: any) {
     const { startDate, endDate } = findPaidDto;
     return this.treasuryService.findPaid(user, startDate, endDate);
   }
