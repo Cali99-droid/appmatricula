@@ -19,6 +19,7 @@ import { Status } from 'src/enrollment/enum/status.enum';
 import { CreatePaidDto } from './dto/create-paid.dto';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Rates } from './entities/rates.entity';
+import { User } from 'src/user/entities/user.entity';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 
@@ -42,6 +43,8 @@ export class TreasuryService {
     private readonly enrollmentRepository: Repository<Enrollment>,
     @InjectRepository(Rates)
     private readonly ratesRepository: Repository<Rates>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async createPaid(createPaidDto: CreatePaidDto, debtId: number, user: any) {
@@ -244,7 +247,12 @@ export class TreasuryService {
     return data;
   }
 
-  async findPaid(user: any, startDate: string, endDate: string) {
+  async findPaid(
+    user: any,
+    startDate: string,
+    endDate: string,
+    userId: number,
+  ) {
     const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
@@ -254,39 +262,76 @@ export class TreasuryService {
     const whereCondition: any = {
       user: user.sub,
     };
+    const whereConditionTwo: any = {};
+    if (userId) {
+      const userConsult = await this.userRepository.findOneBy({ id: userId });
+      whereConditionTwo.user = userConsult.sub;
+    }
 
     const boletas = await this.billRepository.find({
       where: {
         payment: {
-          ...(isAuth ? {} : whereCondition),
+          ...(isAuth ? whereConditionTwo : whereCondition),
           date: Between(startDate, endDate), // Filtrar entre las fechas dadas
+          student: {
+            enrollment: {
+              // student: { id: debt.student.id },
+              status: Status.MATRICULADO,
+            },
+          },
         },
       },
       relations: {
         payment: {
           concept: true,
+          student: {
+            person: true,
+            enrollment: {
+              activityClassroom: {
+                grade: {
+                  level: true,
+                },
+                classroom: true,
+              },
+            },
+          },
         },
       },
     });
 
     // Formatear los datos para el frontend
-    const result = boletas.map((boleta) => ({
-      id: boleta.id,
-      date: boleta.date,
-      serie: boleta.serie,
-      numero: boleta.numero,
-      url: boleta.url,
-      payment: {
-        id: boleta.payment.id,
-        date: boleta.payment.date,
-        total: boleta.payment.total,
-        status: boleta.payment.status,
-        concept: {
-          description: boleta.payment.concept.description,
-          code: boleta.payment.concept.code,
+    const result = boletas.map((boleta) => {
+      // const enrroll = debt.student.enrollment[0];
+
+      const student = boleta.payment.student.person;
+      const level =
+        boleta.payment.student.enrollment[0].activityClassroom.grade.level;
+      const grade =
+        boleta.payment.student.enrollment[0].activityClassroom.grade;
+      const campus =
+        boleta.payment.student.enrollment[0].activityClassroom.classroom
+          .campusDetail;
+      return {
+        id: boleta.id,
+        date: boleta.date,
+        serie: boleta.serie,
+        numero: boleta.numero,
+        cod: `${boleta.serie}-${boleta.numero}`,
+        url: boleta.url,
+        description: `MAT ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
+        user: this.getUser(boleta.payment.user),
+        payment: {
+          id: boleta.payment.id,
+          date: boleta.payment.date,
+          total: boleta.payment.total,
+          status: boleta.payment.status,
+          concept: {
+            description: boleta.payment.concept.description,
+            code: boleta.payment.concept.code,
+          },
         },
-      },
-    }));
+      };
+    });
 
     // Calcular el total de los pagos
     const total = boletas.reduce(
@@ -367,6 +412,49 @@ export class TreasuryService {
     }
   }
 
+  async getStatistics() {
+    const registered = await this.enrollmentRepository.count({
+      where: {
+        status: Status.MATRICULADO,
+      },
+    });
+    const pre_registered = await this.enrollmentRepository.count({
+      where: {
+        status: Status.PREMATRICULADO,
+      },
+    });
+
+    const total = await this.paymentRepository
+      .createQueryBuilder('payment')
+      .select('SUM(payment.total)', 'total')
+      .where('payment.status = :status', { status: true }) // Considerar solo pagos exitosos
+      .getRawOne();
+
+    return {
+      registered,
+      'pre-registered': pre_registered,
+      total: total.total,
+    };
+  }
+
+  getUser(sub: string) {
+    switch (sub) {
+      case '272550ea-be37-4d3e-8ee3-b4597ac75fda':
+        return 'Jusleth Mejia';
+      case '856d8fb4-a94a-4885-9afa-50dd73582933':
+        return 'Sonia Huaman';
+      case '9f0cfdcf-7176-4244-a057-4488ef85be84':
+        return 'Yeraldin  Eugenio';
+      default:
+        break;
+    }
+  }
+  /**
+   *  Jusleth Mejia ID: 974
+   *  Sonia Huaman ID: 913
+   *  Yeraldin  Eugenio ID: 942
+   *
+   */
   // async generateTicketPdf(
   //   res: Response,
   //   client: any,

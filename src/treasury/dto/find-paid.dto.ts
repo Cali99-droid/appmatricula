@@ -1,4 +1,4 @@
-import { IsDateString, IsNotEmpty } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class FindPaidDto {
   @IsNotEmpty({ message: 'La fecha de inicio es obligatoria.' })
@@ -20,4 +20,7 @@ export class FindPaidDto {
     },
   )
   endDate: string;
+
+  @IsOptional()
+  userId: number;
 }
