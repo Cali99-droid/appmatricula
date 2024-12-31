@@ -215,6 +215,13 @@ export const AdminMenu = {
           link: '/admin/treasury/registerStudent',
           permissions: ['administrador-colegio', 'secretaria'],
         },
+        {
+          id: 2,
+          label: 'Reporte de Pagos',
+          icon: 'email',
+          link: '/admin/treasury/payments',
+          permissions: ['administrador-colegio', 'secretaria'],
+        },
       ],
     },
   ],
