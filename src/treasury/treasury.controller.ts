@@ -19,14 +19,8 @@ export class TreasuryController {
     @Body() createTreasuryDto: CreatePaidDto,
     @Param('debtId') debtId: number,
     @AuthenticatedUser() user: any,
-    @Res() res: Response,
   ) {
-    return this.treasuryService.createPaid(
-      createTreasuryDto,
-      debtId,
-      user,
-      res,
-    );
+    return this.treasuryService.createPaid(createTreasuryDto, debtId, user);
   }
 
   @Get('debts/:studentId')
@@ -43,5 +37,11 @@ export class TreasuryController {
   getPaid(@Query() findPaidDto: FindPaidDto, @AuthenticatedUser() user: any) {
     const { startDate, endDate } = findPaidDto;
     return this.treasuryService.findPaid(user, startDate, endDate);
+  }
+
+  @Get('migrate')
+  @ApiResponse({ status: 201, description: 'datos de boletas' })
+  migrateToNubeFact() {
+    return this.treasuryService.migrateToNubeFact();
   }
 }
