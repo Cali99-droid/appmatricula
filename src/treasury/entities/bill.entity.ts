@@ -35,6 +35,13 @@ export class Bill {
     nullable: true,
   })
   numero: number;
+
+  @ApiProperty({
+    example: 'true',
+    description: 'if acepteds',
+  })
+  @Column('boolean')
+  accepted: boolean;
   /**TIMESTAMPS */
   @CreateDateColumn({
     type: 'timestamp',
