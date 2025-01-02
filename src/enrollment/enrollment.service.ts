@@ -789,7 +789,7 @@ export class EnrollmentService {
 
         for (const co of configAscent) {
           const dest = await this.calcVacantsToClassroom(co.destinationId.id);
-          console.log(dest);
+
           //dest.hasVacants
           /**dest.section === currentEnrrollment.activityClassroom.section ||
             dest.detailOrigin.section ===
@@ -973,6 +973,7 @@ export class EnrollmentService {
 
     /**si tiene mas de dos origenes -> buscar cual tiene dos destinos*/
     if (configAscent.length > 1) {
+      console.log('doble dest');
       /**verificar cual tiene dos destinos */
       // let hasTwoDest;
       let oneDest;
@@ -995,6 +996,7 @@ export class EnrollmentService {
           oneDest = co.originId.id;
           origin = co.originId;
         }
+        console.log(destings);
         // else {
         //   hasTwoDest = co.originId.id;
         // }
@@ -1050,11 +1052,18 @@ export class EnrollmentService {
 
       const ratifieds =
         enrollPriority.length - rtAndEnr.length - rtAndEnrInOther.length;
-
+      console.log('priorti', enrollPriority.length);
+      console.log('rat y mat', rtAndEnr.length);
+      console.log('rat y other', rtAndEnrInOther.length);
+      console.log('capacidad', activityClassroom.classroom.capacity);
+      console.log('ratificados', ratifieds);
+      console.log('mat act', currentEnrroll.length);
+      // const vacants =
+      //   activityClassroom.classroom.capacity -
+      //   ratifieds -
+      //   currentEnrroll.length;
       const vacants =
-        activityClassroom.classroom.capacity -
-        ratifieds -
-        currentEnrroll.length;
+        activityClassroom.classroom.capacity - currentEnrroll.length;
 
       const res: VacantsClassrooms = {
         id: activityClassroom.id,

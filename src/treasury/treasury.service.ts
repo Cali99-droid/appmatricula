@@ -318,7 +318,7 @@ export class TreasuryService {
         numero: boleta.numero,
         cod: `${boleta.serie}-${boleta.numero}`,
         url: boleta.url,
-        description: `MAT ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
+        description: `${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
         user: this.getUser(boleta.payment.user),
         payment: {
           id: boleta.payment.id,
