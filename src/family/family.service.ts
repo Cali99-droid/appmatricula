@@ -8,7 +8,7 @@ import { CreateFamilyDto } from './dto/create-family.dto';
 import { UpdateFamilyDto } from './dto/update-family.dto';
 // import { DataParentArrayDto } from '../relationship/dto/data-parent-array.dto';
 import { Family } from './entities/family.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/student/entities/student.entity';
@@ -221,12 +221,16 @@ export class FamilyService {
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
     );
-    const whereCondition: any = {
-      id: id,
-    };
-    if (!isAuth) {
-      whereCondition.or = [
+    let whereCondition: FindOptionsWhere<Family>[] | FindOptionsWhere<Family>;
+
+    if (isAuth) {
+      whereCondition = {
+        id: id,
+      };
+    } else {
+      whereCondition = [
         {
+          id: id,
           parentOneId: {
             user: {
               email: user.email,
@@ -234,6 +238,7 @@ export class FamilyService {
           },
         },
         {
+          id: id,
           parentTwoId: {
             user: {
               email: user.email,
@@ -242,8 +247,10 @@ export class FamilyService {
         },
       ];
     }
+
     const family = await this.familyRepository.findOne({
-      where: isAuth ? whereCondition : whereCondition.or,
+      where: whereCondition,
+
       relations: {
         parentOneId: {
           user: true,
