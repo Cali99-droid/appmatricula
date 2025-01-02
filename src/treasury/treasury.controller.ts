@@ -5,7 +5,7 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
 import { CreatePaidDto } from './dto/create-paid.dto';
 import { FindPaidDto } from './dto/find-paid.dto';
-import { Response } from 'express';
+// import { Response } from 'express';
 
 @ApiTags('Treasury')
 @Resource('appcolegioae')
@@ -35,13 +35,19 @@ export class TreasuryController {
   @Get('payment')
   @ApiResponse({ status: 201, description: 'datos de boletas' })
   getPaid(@Query() findPaidDto: FindPaidDto, @AuthenticatedUser() user: any) {
-    const { startDate, endDate } = findPaidDto;
-    return this.treasuryService.findPaid(user, startDate, endDate);
+    const { startDate, endDate, userId } = findPaidDto;
+    return this.treasuryService.findPaid(user, startDate, endDate, +userId);
   }
 
-  @Get('migrate')
-  @ApiResponse({ status: 201, description: 'datos de boletas' })
-  migrateToNubeFact() {
-    return this.treasuryService.migrateToNubeFact();
+  @Get('statistics')
+  @ApiResponse({ status: 201, description: 'Statistics' })
+  getStatistics() {
+    return this.treasuryService.getStatistics();
   }
+
+  // @Get('migrate')
+  // @ApiResponse({ status: 201, description: 'datos de boletas' })
+  // migrateToNubeFact() {
+  //   return this.treasuryService.migrateToNubeFact();
+  // }
 }
