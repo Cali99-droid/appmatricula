@@ -14,7 +14,7 @@ export function addClausesPart1(
 ) {
   //TEXTO DE CLAUSULA PRIMERA
   const C4_P1A = `4.1 El PADRE O MADRE DE FAMILIA se compromete a pagar el monto de matrícula para cada uno de los tres niveles,`;
-  const C4_P1B = `ascendiente a S/ ${priceEnrollment}.00 (trescientos y 00/100 soles) y la cuota de ingreso (solo alumnos nuevos) es de S/ ${priceAdmission}.00 (trescientos diez y 00/100 soles).`;
+  const C4_P1B = `ascendiente a S/ ${priceEnrollment}.00 (trescientos cincuenta y 00/100 soles) y la cuota de ingreso (solo alumnos nuevos) es de S/ ${priceAdmission}.00 (trescientos cincuenta y 00/100 soles).`;
   const C4_P2A = `4.2 El PADRE O MADRE DE FAMILIA conoce y acepta el monto anual del servicio educativo, el mismo que es financiado en 10 pensiones mensuales: `;
 
   const C4_P3A = `4.3	El PADRE O MADRE DE FAMILIA declara conocer la infraestructura de los locales de la ASOCIACIÓN señalados en el`;
