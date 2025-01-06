@@ -247,7 +247,15 @@ export class FamilyService {
         },
       ];
     }
-
+    const familyss = await this.familyRepository.findOne({
+      where: {
+        id: 404,
+      },
+      relations: {
+        student: true,
+      },
+    });
+    console.log('faasgfas', familyss);
     const family = await this.familyRepository.findOne({
       where: whereCondition,
 
@@ -271,7 +279,7 @@ export class FamilyService {
         respAcademic: true,
       },
     });
-
+    console.log(family);
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
 
     if (family.parentOneId?.user) {
@@ -296,6 +304,10 @@ export class FamilyService {
     const childrens = student
       .map((item) => {
         const person = item.person;
+        // Verifica si `enrollment` tiene elementos
+        if (item.enrollment.length === 0) {
+          return undefined; // O manejar de otra manera según tu lógica
+        }
         const { student, activityClassroom, ...enrroll } =
           item.enrollment.reduce((previous, current) => {
             return current.activityClassroom.grade.position >
