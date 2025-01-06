@@ -247,15 +247,7 @@ export class FamilyService {
         },
       ];
     }
-    const familyss = await this.familyRepository.findOne({
-      where: {
-        id: 404,
-      },
-      relations: {
-        student: true,
-      },
-    });
-    console.log('faasgfas', familyss);
+
     const family = await this.familyRepository.findOne({
       where: whereCondition,
 
@@ -279,7 +271,7 @@ export class FamilyService {
         respAcademic: true,
       },
     });
-    console.log(family);
+
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
 
     if (family.parentOneId?.user) {
