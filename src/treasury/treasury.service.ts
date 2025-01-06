@@ -96,21 +96,23 @@ export class TreasuryService {
       },
       relations: {
         respEconomic: true,
-        respEnrollment: true,
+        respEnrollment: {
+          user: true,
+        },
       },
     });
 
     const serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
 
     const tipoComprobante = 'BOLETA';
-
-    // Obtener el número correlativo
-    const numero = await this.getCorrelative(tipoComprobante, serie);
-
     const client = family.respEnrollment;
+
     if (!client) {
       throw new NotFoundException('No existe responsable de matricula');
     }
+
+    // Obtener el número correlativo
+    const numero = await this.getCorrelative(tipoComprobante, serie);
     const boletaData = {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2, // 2: Boleta
@@ -133,6 +135,8 @@ export class TreasuryService {
       total_exonerada: debt.total,
       total_igv: 0,
       total: debt.total,
+      enviar_automaticamente_a_la_sunat: true,
+      enviar_automaticamente_al_cliente: client.user?.email ? true : false,
       observaciones: `Gracias por su preferencia.`,
       items: [
         {
