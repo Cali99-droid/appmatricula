@@ -45,6 +45,11 @@ export class Payment {
   @Column('varchar')
   user: string;
 
+  @Column('varchar', {
+    nullable: true,
+  })
+  receipt: string;
+
   /**Relaciones */
   @ApiProperty({
     description: 'Id of concept',
