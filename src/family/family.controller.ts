@@ -27,7 +27,7 @@ export class FamilyController {
   update(@Param('id') id: string, @Body() updateFamilyDto: UpdateFamilyDto) {
     return this.familyService.update(+id, updateFamilyDto);
   }
-  @Post()
+  @Post('parents-student')
   create(@Body() createFamilyParentsStudentDto: CreateFamilyParentsStudentDto) {
     return this.familyService.createFamilyFromAdmision(
       createFamilyParentsStudentDto,
