@@ -414,7 +414,6 @@ export class TreasuryService {
       porcentaje_de_igv: 0,
       total_gravada: '',
       total_inafecta: debt.total,
-      total_igv: 0,
       total: debt.total,
       enviar_automaticamente_a_la_sunat: true,
       enviar_automaticamente_al_cliente: !!client.user?.email,
