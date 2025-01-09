@@ -17,6 +17,7 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { CreateFamilyParentsStudentDto } from './dto/create-family-parents-student.dto';
 
 @Injectable()
 export class FamilyService {
@@ -382,5 +383,119 @@ export class FamilyService {
 
   remove(id: number) {
     return `This action removes a #${id} family`;
+  }
+  async createFamilyFromAdmision(
+    createFamilyParentsStudentDto: CreateFamilyParentsStudentDto,
+  ) {
+    const { parentOne, parentTwo, student } = createFamilyParentsStudentDto;
+    try {
+      // const parentOneId;
+      let parentOneId = undefined;
+      let parentTwoId = undefined;
+      let studentId = undefined;
+      let familyId = undefined;
+      const existParentOne = await this.personRepository.findOne({
+        where: {
+          docNumber: parentOne.docNumber,
+        },
+      });
+      const existParentTwo = await this.personRepository.findOne({
+        where: {
+          docNumber: parentTwo.docNumber,
+        },
+      });
+      const existStudent = await this.personRepository.findOne({
+        where: {
+          docNumber: student.docNumber,
+        },
+      });
+      console.log(existStudent);
+      if (existParentOne != null) {
+        parentOneId = existParentOne.id;
+      } else {
+        const person = this.personRepository.create({
+          typeDoc: parentOne.typeDoc,
+          docNumber: parentOne.docNumber,
+          name: parentOne.name.toUpperCase(),
+          lastname: parentOne.lastname.toUpperCase(),
+          mLastname: parentOne.mLastname.toUpperCase(),
+          gender: parentOne.gender,
+          familyRole: parentOne.familyRole,
+          birthDate: parentOne.birthDate,
+        });
+        const personCreated = await this.personRepository.save(person);
+        parentOneId = personCreated.id;
+      }
+
+      if (existParentTwo != null) {
+        parentTwoId = existParentTwo.id;
+      } else {
+        const person = this.personRepository.create({
+          typeDoc: parentTwo.typeDoc,
+          docNumber: parentTwo.docNumber,
+          name: parentTwo.name.toUpperCase(),
+          lastname: parentTwo.lastname.toUpperCase(),
+          mLastname: parentTwo.mLastname.toUpperCase(),
+          gender: parentTwo.gender,
+          familyRole: parentTwo.familyRole,
+          birthDate: parentTwo.birthDate,
+        });
+        const personCreated = await this.personRepository.save(person);
+        parentTwoId = personCreated.id;
+      }
+      if (existStudent != null) {
+        studentId = existStudent.id;
+      } else {
+        const person = this.personRepository.create({
+          typeDoc: student.typeDoc,
+          docNumber: student.docNumber,
+          name: student.name.toUpperCase(),
+          lastname: student.lastname.toUpperCase(),
+          mLastname: student.mLastname.toUpperCase(),
+          gender: student.gender,
+          familyRole: student.familyRole,
+          birthDate: student.birthDate,
+        });
+        const personCreated = await this.personRepository.save(person);
+        studentId = personCreated.id;
+      }
+      const existFamily = await this.familyRepository.findOne({
+        where: {
+          parentOneId: { id: parentOneId },
+          parentTwoId: { id: parentTwoId },
+        },
+      });
+      if (existFamily) {
+        familyId = existFamily.id;
+      } else {
+        const family = this.familyRepository.create({
+          nameFamily: createFamilyParentsStudentDto.nameFamily.toUpperCase(),
+          parentOneId: { id: parentOneId },
+          parentTwoId: { id: parentTwoId },
+        });
+        const familyCreated = await this.familyRepository.save(family);
+        familyId = familyCreated.id;
+      }
+      const existStudentC = await this.studentRepository.findOne({
+        where: {
+          person: { id: studentId },
+        },
+      });
+      console.log(existStudentC);
+      if (existStudentC == null) {
+        const studentC = this.studentRepository.create({
+          person: { id: studentId },
+          family: { id: familyId },
+          hasDebt: false,
+        });
+        await this.studentRepository.save(studentC);
+      }
+      return {
+        nameFamily: createFamilyParentsStudentDto.nameFamily.toUpperCase(),
+      };
+    } catch (error) {
+      // this.logger.error(error);
+      handleDBExceptions(error, this.logger);
+    }
   }
 }
