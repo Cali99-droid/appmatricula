@@ -26,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { UpdateBehaviorDto } from 'src/enrollment/dto/update-behavior.dto';
 import { UpdateAllowNextRegistrationDto } from 'src/enrollment/dto/update-allowNextRegistration.dto';
+import { SearchEstudiantesDto } from './dto/search-student.dto';
 
 @ApiTags('Student')
 @Controller('student')
@@ -40,6 +41,10 @@ export class StudentController {
   @Get()
   findAll() {
     return this.studentService.findAll();
+  }
+  @Get('/search')
+  findStudents(@Query() searchDto: SearchEstudiantesDto) {
+    return this.studentService.findStudents(searchDto);
   }
   @Get('autocomplete')
   findAllAutocomplete(@Query('value') value: string) {
@@ -226,7 +231,7 @@ export class StudentController {
     @Param('id') id: string,
   ) {
     if (!file) {
-      throw new BadRequestException('Make sure that the file is an pdf');
+      throw new BadRequestException('Make sure that the file is an image');
     }
 
     return await this.studentService.uploadPDF(file.buffer, +id);

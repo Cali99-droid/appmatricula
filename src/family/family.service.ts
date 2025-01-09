@@ -8,7 +8,7 @@ import { CreateFamilyDto } from './dto/create-family.dto';
 import { UpdateFamilyDto } from './dto/update-family.dto';
 // import { DataParentArrayDto } from '../relationship/dto/data-parent-array.dto';
 import { Family } from './entities/family.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/student/entities/student.entity';
@@ -34,69 +34,6 @@ export class FamilyService {
     private readonly configService: ConfigService,
   ) {}
 
-  // async createParents(dataParentArrayDto: DataParentArrayDto) {
-  //   const { data } = dataParentArrayDto;
-
-  //   // Pre-fetch existing records to minimize DB calls
-  //   const docNumbers = data.map((item) => item.docNumber);
-  //   const existingPersons = await this.personRepository.find({
-  //     where: { docNumber: In(docNumbers) },
-  //   });
-  //   const existingDocsSet = new Set(existingPersons.map((p) => p.docNumber));
-
-  //   const personsToSave = data.filter(
-  //     (item) => !existingDocsSet.has(item.docNumber),
-  //   );
-  //   let savedPersons = [];
-  //   const personsToSaveFormat = personsToSave.map((item) => {
-  //     return {
-  //       name: item.name,
-  //       lastname: item.lastname,
-  //       mLastname: item.mLastname,
-  //       docNumber: item.docNumber,
-  //       gender: item.gender,
-  //       familyRole: item.familyRole,
-  //     };
-  //   });
-  //   if (personsToSave.length > 0) {
-  //     savedPersons = await this.personRepository.save(
-  //       this.personRepository.create(personsToSaveFormat),
-  //     );
-  //   }
-
-  //   const studentCodes = data.map((item) => ({
-  //     dniAssignee: item.docNumber,
-  //     sonStudentCode: item.studentCode,
-  //   }));
-  //   const existingFamilies = await this.familyRepository.find({
-  //     where: studentCodes,
-  //   });
-  //   const existingFamiliesSet = new Set(
-  //     existingFamilies.map((f) => `${f.dniAssignee}_${f.sonStudentCode}`),
-  //   );
-
-  //   const familiesToSave = data.filter(
-  //     (item) =>
-  //       !existingFamiliesSet.has(`${item.docNumber}_${item.studentCode}`),
-  //   );
-  //   let savedFamilies = [];
-  //   const familiesToSaveFormat = familiesToSave.map((item) => {
-  //     return {
-  //       dniAssignee: item.docNumber,
-  //       sonStudentCode: item.studentCode,
-  //     };
-  //   });
-  //   if (familiesToSave.length > 0) {
-  //     savedFamilies = await this.familyRepository.save(
-  //       this.familyRepository.create(familiesToSaveFormat),
-  //     );
-  //   }
-
-  //   return {
-  //     savedFamiliesMembers: savedFamilies.length,
-  //     savedPersons: savedPersons.length,
-  //   };
-  // }
   async create(createfamilyDto: CreateFamilyDto) {
     try {
       const family = this.familyRepository.create({
@@ -278,9 +215,42 @@ export class FamilyService {
       throw error;
     }
   }
-  async findOne(id: number) {
+  async findOne(id: number, user: any) {
+    const roles = user.resource_access['client-test-appae'].roles;
+
+    const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
+      roles.includes(role),
+    );
+    let whereCondition: FindOptionsWhere<Family>[] | FindOptionsWhere<Family>;
+
+    if (isAuth) {
+      whereCondition = {
+        id: id,
+      };
+    } else {
+      whereCondition = [
+        {
+          id: id,
+          parentOneId: {
+            user: {
+              email: user.email,
+            },
+          },
+        },
+        {
+          id: id,
+          parentTwoId: {
+            user: {
+              email: user.email,
+            },
+          },
+        },
+      ];
+    }
+
     const family = await this.familyRepository.findOne({
-      where: { id: id },
+      where: whereCondition,
+
       relations: {
         parentOneId: {
           user: true,
@@ -321,50 +291,40 @@ export class FamilyService {
       family.parentTwoId.user = { email: family.parentTwoId.user.email } as any;
     }
 
-    /**format temp families */
-    // const { student, ...parents } = family;
-    // const childrens = student.map((item) => {
-    //   const person = item.person;
-    //   const photo = item.photo;
-    //   const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
-    //     (previous, current) => {
-    //       return current.id > previous.id ? current : previous;
-    //     },
-    //   );
-    //   return {
-    //     person,
-    //     enrroll,
-    //     photo,
-    //   };
-    // });
-
-    // return { childrens, ...childrens };
     /**Formato temporal */
     const { student, ...rest } = family;
-    const childrens = student.map((item) => {
-      const person = item.person;
-      const { student, activityClassroom, ...enrroll } = item.enrollment.reduce(
-        (previous, current) => {
-          return current.id > previous.id ? current : previous;
-        },
-      );
-      //Sede 1 - Primaria - 3A
+    const childrens = student
+      .map((item) => {
+        const person = item.person;
+        const { student, activityClassroom, ...enrroll } =
+          item.enrollment.reduce((previous, current) => {
+            return current.activityClassroom.grade.position >
+              previous.activityClassroom.grade.position
+              ? current
+              : previous;
+          });
 
-      return {
-        person,
-        ...enrroll,
-        studentId: student.id,
-        photo: student.photo,
-        actual:
-          activityClassroom.classroom.campusDetail.name +
-          ' - ' +
-          activityClassroom.grade.level.name +
-          ' - ' +
-          activityClassroom.grade.name +
-          ' ' +
-          activityClassroom.section,
-      };
-    });
+        if (activityClassroom.grade.position !== 14 || enrroll.isActive) {
+          return {
+            person,
+            ...enrroll,
+            studentId: student.id,
+            photo: student.photo,
+            activityClassroomId: activityClassroom.id,
+            actual:
+              activityClassroom.classroom.campusDetail.name +
+              ' - ' +
+              activityClassroom.grade.level.name +
+              ' - ' +
+              activityClassroom.grade.name +
+              ' ' +
+              activityClassroom.section,
+          };
+        }
+        return undefined; // Opcional, para dejar explícito que devolvemos undefined
+      })
+      .filter((child) => child !== undefined);
+
     const data = { student: childrens, ...rest };
 
     if (data.district) {
@@ -376,7 +336,6 @@ export class FamilyService {
       };
     }
     return data;
-    // return { student: childrens, ...rest };
   }
 
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {

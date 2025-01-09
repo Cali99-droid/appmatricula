@@ -16,6 +16,7 @@ import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { UpdateBehaviorDto } from 'src/enrollment/dto/update-behavior.dto';
 import { Behavior } from 'src/enrollment/enum/behavior.enum';
 import { UpdateAllowNextRegistrationDto } from 'src/enrollment/dto/update-allowNextRegistration.dto';
+import { SearchEstudiantesDto } from './dto/search-student.dto';
 
 @Injectable()
 export class StudentService {
@@ -89,6 +90,52 @@ export class StudentService {
       };
     });
     return students;
+  }
+
+  async findStudents(searchDto: SearchEstudiantesDto) {
+    const { searchTerm, page = 1, limit = 10 } = searchDto;
+
+    const query = this.studentRepository
+      .createQueryBuilder('student')
+      .leftJoinAndSelect('student.person', 'person')
+      .leftJoinAndSelect('student.family', 'family')
+      .leftJoinAndSelect(
+        'student.enrollment',
+        'enrollment',
+        'enrollment.status = :estadoActivo',
+        { estadoActivo: 'registered' },
+      );
+
+    if (searchTerm) {
+      const searchTerms = searchTerm
+        .split(' ')
+        .map((term) => term.trim())
+        .filter((term) => term.length > 0);
+
+      searchTerms.forEach((term, index) => {
+        query.andWhere(
+          `(LOWER(person.name) LIKE LOWER(:term${index}) OR LOWER(person.lastname) LIKE LOWER(:term${index}) OR LOWER(person.mLastname) LIKE LOWER(:term${index}))`,
+          { [`term${index}`]: `%${term}%` },
+        );
+      });
+    }
+
+    // Ordenar alfabéticamente por nombre
+    query.orderBy('person.lastname', 'ASC');
+    query.skip((page - 1) * limit).take(limit);
+
+    const [results, total] = await query.getManyAndCount();
+
+    const data = results.map((estudiante) => ({
+      ...estudiante,
+      tieneMatriculaActiva: estudiante.enrollment.length > 0,
+    }));
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
   }
 
   async findOne(id: number) {
@@ -287,6 +334,96 @@ export class StudentService {
       filteredDebTors,
     };
   }
+  // async findByActivityClassroomDebTors(
+  //   activityClassroomId?: number,
+  //   hasDebt: boolean,
+  //   searchDto: SearchEstudiantesDto,
+  // ) {
+  //   if (
+  //     activityClassroomId !== undefined &&
+  //     (isNaN(activityClassroomId) || activityClassroomId <= 0)
+  //   ) {
+  //     throw new NotFoundException(
+  //       `activityClassroomId must be a number greater than 0`,
+  //     );
+  //   }
+
+  //   const { searchTerm, page = 1, limit = 10 } = searchDto;
+
+  //   const query = this.studentRepository
+  //     .createQueryBuilder('student')
+  //     .leftJoinAndSelect('student.person', 'person')
+  //     .leftJoinAndSelect(
+  //       'student.enrollment',
+  //       'enrollment',
+  //       'enrollment.status = :estadoActivo',
+  //       { estadoActivo: 'registered' },
+  //     );
+
+  //   if (searchTerm) {
+  //     query.andWhere(
+  //       '(person.name LIKE :searchTerm OR person.mlastname LIKE :searchTerm)',
+  //       { searchTerm: `%${searchTerm}%` },
+  //     );
+  //   }
+
+  //   if (activityClassroomId !== undefined) {
+  //     query.andWhere('enrollment.activityClassroom.id = :activityClassroomId', {
+  //       activityClassroomId,
+  //     });
+  //   }
+
+  //   query.andWhere('student.hasDebt = :hasDebt', { hasDebt });
+
+  //   query.skip((page - 1) * limit).take(limit);
+
+  //   const [results, total] = await query.getManyAndCount();
+
+  //   const data = results.map((e) => ({
+  //     student: {
+  //       person: {
+  //         name: e.person?.name ?? null,
+  //         lastname: e.person?.lastname ?? null,
+  //         mLastname: e.person?.mLastname ?? null,
+  //         grade: e.enrollment[0]?.activityClassroom.grade?.name,
+  //         level: e.enrollment[0]?.activityClassroom.grade?.level?.name,
+  //         section: e.enrollment[0]?.activityClassroom.section,
+  //         hasDebt: e.hasDebt,
+  //         behavior: e.enrollment[0].behavior,
+  //         behaviorDescription: e.enrollment[0].behaviorDescription,
+  //       },
+  //       family: {
+  //         parentOneId: {
+  //           name: e.family?.parentOneId?.name ?? null,
+  //           lastname: e.family?.parentOneId?.lastname ?? null,
+  //           mLastname: e.family?.parentOneId?.mLastname ?? null,
+  //           familyRole: e.family?.parentOneId?.familyRole ?? null,
+  //           cellPhone: e.family?.parentOneId?.cellPhone ?? null,
+  //           user: {
+  //             email: e.family?.parentOneId?.user?.email ?? null,
+  //           },
+  //         },
+  //         parentTwoId: {
+  //           name: e.family?.parentTwoId?.name ?? null,
+  //           lastname: e.family?.parentTwoId?.lastname ?? null,
+  //           mLastname: e.family?.parentTwoId?.mLastname ?? null,
+  //           familyRole: e.family?.parentTwoId?.familyRole ?? null,
+  //           cellPhone: e.family?.parentTwoId?.cellPhone ?? null,
+  //           user: {
+  //             email: e.family?.parentTwoId?.user?.email ?? null,
+  //           },
+  //         },
+  //       },
+  //     },
+  //   }));
+
+  //   return {
+  //     data,
+  //     total,
+  //     page,
+  //     limit,
+  //   };
+  // }
   async findByActivityClassroomBehavior(activityClassroomId: number) {
     if (isNaN(activityClassroomId) || activityClassroomId <= 0) {
       throw new NotFoundException(
@@ -321,34 +458,20 @@ export class StudentService {
           behaviorDescription: e.enrollment[0].behaviorDescription,
           commitmentDocumentURL: e.enrollment[0].commitmentDocumentURL,
         },
-        family: {
-          parentOneId: {
-            name: e.family?.parentOneId?.name ?? null,
-            lastname: e.family?.parentOneId?.lastname ?? null,
-            mLastname: e.family?.parentOneId?.mLastname ?? null,
-            familyRole: e.family?.parentOneId?.familyRole ?? null,
-            cellPhone: e.family?.parentOneId?.cellPhone ?? null,
-            user: {
-              email: e.family?.parentOneId?.user?.email ?? null,
-            },
-          },
-          parentTwoId: {
-            name: e.family?.parentTwoId?.name ?? null,
-            lastname: e.family?.parentTwoId?.lastname ?? null,
-            mLastname: e.family?.parentTwoId?.mLastname ?? null,
-            familyRole: e.family?.parentTwoId?.familyRole ?? null,
-            cellPhone: e.family?.parentTwoId?.cellPhone ?? null,
-            user: {
-              email: e.family?.parentTwoId?.user?.email ?? null,
-            },
-          },
-        },
       },
     }));
     return {
       total: students.length,
       filteredBehavior,
     };
+  }
+  mapBehaviorToDescription(behavior: string | undefined): string | null {
+    const behaviorMap: { [key: string]: string } = {
+      normal: 'Normal',
+      'conditional registration': 'Matricula Condicionada',
+      'loss of vacancy': 'Perdida de Vacante',
+    };
+    return behavior !== undefined ? behaviorMap[behavior] ?? null : null;
   }
   async findOneBehavior(id: number) {
     const enrollment = await this.enrollmentRepository.findOne({
@@ -419,7 +542,8 @@ export class StudentService {
         id,
       });
       const folderName = this.configService.getOrThrow('FOLDER_IMG_NAME');
-      const pdfFileName = `${Date.now()}.pdf`;
+      const webpImage = await sharp(file).webp().toBuffer();
+      const pdfFileName = `${Date.now()}.webp`;
 
       if (enrollment.commitmentDocumentURL) {
         await this.s3Client.send(
@@ -434,8 +558,7 @@ export class StudentService {
         new PutObjectCommand({
           Bucket: this.configService.getOrThrow('BUCKET_NAME'),
           Key: `${folderName}/${pdfFileName}`,
-          Body: file,
-          ContentType: 'application/pdf',
+          Body: webpImage,
           ACL: 'public-read',
         }),
       );

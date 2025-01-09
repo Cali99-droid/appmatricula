@@ -50,7 +50,7 @@ export class PersonService {
     private readonly attendanceRepository: Repository<Attendance>,
   ) {}
   create(createPersonDto: CreatePersonDto) {
-    return 'This action adds a new person';
+    return createPersonDto;
   }
   async createParentCRM(data: CreatePersonCrmDto) {
     try {
@@ -237,36 +237,58 @@ export class PersonService {
     const students = await this.familypRepository.find({
       where: [
         {
-          parentOneId: { id: user.person.id },
+          parentOneId: {
+            user: {
+              email: user.email,
+            },
+          },
           // student: { enrollment: { isActive: true } },
         },
         {
-          parentTwoId: { id: user.person.id },
+          parentTwoId: {
+            user: {
+              email: user.email,
+            },
+          },
           // student: { enrollment: { isActive: true } },
         },
       ],
       relations: {
         student: {
-          enrollment: true,
+          enrollment: {
+            activityClassroom: {
+              classroom: true,
+              grade: true,
+            },
+          },
         },
       },
     });
     const resp = students.map((item) => {
       const { student, ...rest } = item;
-      const childrens = student.map((item) => {
-        const person = item.person;
-        const { student, activityClassroom, ...enrroll } =
-          item.enrollment.reduce((previous, current) => {
-            return current.id > previous.id ? current : previous;
-          });
-        const enrrollStatus = enrroll.status;
-        return {
-          person,
-          ...enrroll,
-          enrrollStatus,
-          photo: student.photo,
-        };
-      });
+      const childrens = student
+        .map((item) => {
+          const person = item.person;
+          const { student, activityClassroom, ...enrroll } =
+            item.enrollment.reduce((previous, current) => {
+              return current.activityClassroom.grade.position >
+                previous.activityClassroom.grade.position
+                ? current
+                : previous;
+            });
+          const enrrollStatus = enrroll.status;
+          if (activityClassroom.grade.position !== 14 || enrroll.isActive) {
+            return {
+              person,
+              ...enrroll,
+              enrrollStatus,
+              studentId: student.id,
+              photo: student.photo,
+            };
+          }
+          return undefined;
+        })
+        .filter((child) => child !== undefined);
       return { student: childrens, ...rest };
     });
     //
@@ -341,7 +363,7 @@ export class PersonService {
 
   async uploadPhoto(fileName: string, file: Buffer, id: number) {
     const webpImage = await sharp(file).webp().toBuffer();
-
+    console.log(id);
     await this.s3Client.send(
       new PutObjectCommand({
         Bucket: 'caebucket',

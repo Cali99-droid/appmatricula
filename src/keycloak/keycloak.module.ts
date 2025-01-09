@@ -8,6 +8,9 @@ import {
   RoleGuard,
 } from 'nest-keycloak-connect';
 import { APP_GUARD } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from 'src/user/entities/user.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   controllers: [KeycloakController],
@@ -42,11 +45,13 @@ import { APP_GUARD } from '@nestjs/core';
     },
   ],
   imports: [
+    ConfigModule.forRoot(),
+    TypeOrmModule.forFeature([User]),
     KeycloakConnectModule.register({
-      authServerUrl: 'https://login.colegioae.edu.pe',
-      realm: 'test-login',
-      clientId: 'client-test-appae',
-      secret: 'hSJmFirjnB3s9VZosjrHFoq412qt8i9u',
+      authServerUrl: process.env.URL_KEYCLOAK,
+      realm: process.env.REALM_KEYCLOAK,
+      clientId: process.env.CLIENT_ID_KEYCLOAK,
+      secret: process.env.CLIENT_SECRET_KEYCLOAK,
       // Secret key of the client taken from keycloak server
     }),
   ],

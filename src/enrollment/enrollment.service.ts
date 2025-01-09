@@ -3,6 +3,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
@@ -29,7 +30,9 @@ import {
 } from './interfaces/available.interface';
 import { Vacants } from './interfaces/res-vacants.interface';
 import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
-import { User } from 'src/user/entities/user.entity';
+
+import { Rates } from 'src/treasury/entities/rates.entity';
+import { Debt } from 'src/treasury/entities/debt.entity';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -44,43 +47,140 @@ export class EnrollmentService {
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
+    @InjectRepository(Rates)
+    private readonly ratesRepository: Repository<Rates>,
+    @InjectRepository(Debt)
+    private readonly debtRepository: Repository<Debt>,
     private readonly studentService: StudentService,
   ) {}
-  async create(createEnrollmentDto: CreateEnrollChildrenDto, user: User) {
-    /**TODO: funcion paraValidar que sea el papá quien matricula */
-    /**TODO: llamar a la funcion para Validar se matricule a una de las aulas disponibles para este estudiante */
-    console.log(user);
-    try {
-      const codes = [];
-      for (const ce of createEnrollmentDto.enrrollments) {
-        const classroom =
-          await this.activityClassroomRepository.findOneByOrFail({
-            id: ce.activityClassroomId,
-          });
-        const capacity = classroom.classroom.capacity;
-        const enrollmentsByActivityClassroom =
-          await this.enrollmentRepository.find({
-            where: {
-              activityClassroom: {
-                id: ce.activityClassroomId,
-              },
+
+  /**PREMATRICULAR */
+  async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
+    const roles = user.resource_access['client-test-appae'].roles;
+
+    const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
+      roles.includes(role),
+    );
+    const codes = [];
+    const idsStudent = [];
+    for (const ce of createEnrollmentDto.enrrollments) {
+      /**Validar que sea el papá quien prematricula */
+      if (!isAuth) {
+        const father = await this.personRepository.findOneBy({
+          // docNumber: user.dni,
+          user: {
+            email: user.email,
+          },
+        });
+        console.log(father);
+
+        const student = await this.studentRepository.findOne({
+          where: {
+            id: ce.studentId,
+          },
+          relations: {
+            family: {
+              parentOneId: true,
+              parentTwoId: true,
             },
-          });
-        if (enrollmentsByActivityClassroom.length >= capacity) {
-          throw new BadRequestException(
-            'those enrolled exceed the capacity of the classroom ',
-          );
-        }
-        const enrollment = this.enrollmentRepository.create({
-          student: { id: ce.studentId },
-          activityClassroom: { id: ce.activityClassroomId },
-          code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
-          status: Status.PREMATRICULADO,
+          },
         });
 
-        await this.enrollmentRepository.save(enrollment);
-        codes.push(enrollment.code);
+        if (
+          student.family.parentOneId?.id !== father.id &&
+          student.family.parentTwoId?.id !== father.id
+        ) {
+          throw new UnauthorizedException('This user is not authorized');
+        }
       }
+
+      /** funcion para Validar se pre - matricule a una de las aulas disponibles para este estudiante */
+      const availables = await this.getAvailableClassrooms(ce.studentId);
+
+      const ids = availables.map((av) => av.id);
+
+      const isOkClassroom = ids.includes(ce.activityClassroomId);
+      if (!isOkClassroom) {
+        throw new BadRequestException('Incorrect Classroom or not available');
+      }
+
+      /**validar capacidad */
+
+      const classroom = await this.activityClassroomRepository.findOneByOrFail({
+        id: ce.activityClassroomId,
+      });
+      const capacity = classroom.classroom.capacity;
+      const enrollmentsByActivityClassroom =
+        await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              id: ce.activityClassroomId,
+            },
+          },
+        });
+      if (enrollmentsByActivityClassroom.length >= capacity) {
+        throw new BadRequestException(
+          'those enrolled exceed the capacity of the classroom ',
+        );
+      }
+      const enrollment = this.enrollmentRepository.create({
+        student: { id: ce.studentId },
+        activityClassroom: { id: ce.activityClassroomId },
+        code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
+        status: Status.PREMATRICULADO,
+      });
+      const enrroll = await this.enrollmentRepository.save(enrollment);
+      const activityClassroom =
+        await this.activityClassroomRepository.findOneBy({
+          id: ce.activityClassroomId,
+        });
+      /**generar deuda */
+      const levelId = activityClassroom.grade.level.id;
+      const campusDetailId = activityClassroom.classroom.campusDetail.id;
+
+      const rate = await this.ratesRepository.findOne({
+        where: {
+          level: { id: levelId },
+          campusDetail: { id: campusDetailId },
+        },
+        relations: {
+          concept: true,
+        },
+      });
+      const dateEnd = new Date();
+      const createdDebt = this.debtRepository.create({
+        dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
+        concept: { id: rate.concept.id },
+        student: { id: ce.studentId },
+        total: rate.total,
+        status: false,
+        description: enrroll.code,
+        code: `MAT${enrroll.code}`,
+      });
+
+      await this.debtRepository.save(createdDebt);
+
+      codes.push(enrollment.code);
+      idsStudent.push(ce.studentId);
+    }
+
+    try {
+      await this.enrollmentRepository
+        .createQueryBuilder()
+        .update(Enrollment)
+        .set({
+          isActive: false,
+          status: Status.FINALIZADO,
+        })
+        .where('code NOT IN (:...codes)', { codes })
+        .andWhere('studentId IN (:...idsStudent)', { idsStudent })
+        .andWhere('status = :statusEnrroll', {
+          statusEnrroll: Status.MATRICULADO,
+        })
+        .orWhere('status = :otherStatusEnrroll', {
+          otherStatusEnrroll: Status.EN_PROCESO,
+        })
+        .execute();
 
       return codes;
     } catch (error) {
@@ -689,7 +789,7 @@ export class EnrollmentService {
 
         for (const co of configAscent) {
           const dest = await this.calcVacantsToClassroom(co.destinationId.id);
-          console.log(dest);
+
           //dest.hasVacants
           /**dest.section === currentEnrrollment.activityClassroom.section ||
             dest.detailOrigin.section ===
@@ -873,6 +973,7 @@ export class EnrollmentService {
 
     /**si tiene mas de dos origenes -> buscar cual tiene dos destinos*/
     if (configAscent.length > 1) {
+      console.log('doble dest');
       /**verificar cual tiene dos destinos */
       // let hasTwoDest;
       let oneDest;
@@ -895,6 +996,7 @@ export class EnrollmentService {
           oneDest = co.originId.id;
           origin = co.originId;
         }
+        console.log(destings);
         // else {
         //   hasTwoDest = co.originId.id;
         // }
@@ -950,11 +1052,18 @@ export class EnrollmentService {
 
       const ratifieds =
         enrollPriority.length - rtAndEnr.length - rtAndEnrInOther.length;
-
+      console.log('priorti', enrollPriority.length);
+      console.log('rat y mat', rtAndEnr.length);
+      console.log('rat y other', rtAndEnrInOther.length);
+      console.log('capacidad', activityClassroom.classroom.capacity);
+      console.log('ratificados', ratifieds);
+      console.log('mat act', currentEnrroll.length);
+      // const vacants =
+      //   activityClassroom.classroom.capacity -
+      //   ratifieds -
+      //   currentEnrroll.length;
       const vacants =
-        activityClassroom.classroom.capacity -
-        ratifieds -
-        currentEnrroll.length;
+        activityClassroom.classroom.capacity - currentEnrroll.length;
 
       const res: VacantsClassrooms = {
         id: activityClassroom.id,
@@ -1116,6 +1225,98 @@ export class EnrollmentService {
       enrrolls: countEnrroll,
       vacants,
     };
+  }
+  async getStatusEnrollmentByUser(user: any) {
+    // return {
+    //   status: false,
+    //   // message: user,
+    // };
+    const enrollments = await this.enrollmentRepository
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.student', 'student')
+      .leftJoinAndSelect('student.family', 'family')
+      .leftJoinAndSelect('family.parentOneId', 'parentOne')
+      .leftJoinAndSelect('parentOne.user', 'userOne')
+      .leftJoinAndSelect('family.parentTwoId', 'parentTwo')
+      .leftJoinAndSelect('parentTwo.user', 'userTwo')
+      .where('userOne.email = :email', { email: user.email })
+      .orWhere('userTwo.email = :email', { email: user.email })
+      .getMany();
+    if (!enrollments) {
+      return {
+        status: false,
+        message: 'No tiene hijos',
+      };
+    }
+    const hasDebt = enrollments.some(
+      (enrollment) => enrollment.student.hasDebt === true,
+    );
+    console.log(hasDebt);
+    if (hasDebt) {
+      return {
+        status: false,
+        message: 'El usuario tiene un hijo con deuda.',
+      };
+    }
+    // const hascConditional = enrollments.some(
+    //   (enrollment) => enrollment.behavior === Behavior.MATRICULA_CONDICIONADA,
+    // );
+    // if (hascConditional) {
+    //   return {
+    //     status: false,
+    //     message: 'El usuario tiene un hijo que con matricula condicionada.',
+    //   };
+    // }
+    // const hasLoss = enrollments.some(
+    //   (enrollment) => enrollment.behavior === Behavior.PERDIDA_VACANTE,
+    // );
+    // if (hasLoss) {
+    //   return {
+    //     status: false,
+    //     message: 'El usuario tiene un hijo que ha perdido su vacante.',
+    //   };
+    // }
+    return {
+      status: true,
+      message: 'El usuario no tiene niguna restricción de matricula.',
+    };
+  }
+
+  async enrrollStudent(studentId: number) {
+    const enrroll = await this.enrollmentRepository.find({
+      where: {
+        status: Status.PREMATRICULADO,
+        student: { id: studentId },
+      },
+      order: {
+        id: 'DESC',
+      },
+    });
+    if (enrroll.length === 0) {
+      throw new BadRequestException(
+        'The student does not have pre-registration',
+      );
+    }
+    /** TODO validar que haya pagado  */
+    const debts = await this.debtRepository.find({
+      where: {
+        student: {
+          id: studentId,
+        },
+      },
+    });
+    if (debts.length > 0) {
+      throw new BadRequestException('The student does has debts');
+    }
+    try {
+      const currentEnrroll = enrroll[0];
+      currentEnrroll.status = Status.MATRICULADO;
+      currentEnrroll.isActive = true;
+      await this.enrollmentRepository.save(currentEnrroll);
+      return currentEnrroll;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
   /**script para crear un codigo para todos las matriculas */

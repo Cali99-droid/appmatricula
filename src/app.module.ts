@@ -42,6 +42,7 @@ import { EmailsModule } from './emails/emails.module';
 import { DebtorsHelperModule } from './debtors_helper/debtors_helper.module';
 
 import { KeycloakModule } from './keycloak/keycloak.module';
+import { TreasuryModule } from './treasury/treasury.module';
 
 
 @Module({
@@ -90,6 +91,8 @@ import { KeycloakModule } from './keycloak/keycloak.module';
     DebtorsHelperModule,
 
     KeycloakModule,
+
+    TreasuryModule,
 
   ],
   providers: [ExistIdConstraint, AuthService],

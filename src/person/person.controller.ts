@@ -18,10 +18,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { fileFilter } from './helpers';
 import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreatePersonCrmDto } from './dto/create-person-crm.dto';
-import { Auth } from 'src/auth/decorators/auth.decorator';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { SearchByDateDto } from 'src/common/dto/search-by-date.dto';
+import { AuthenticatedUser } from 'nest-keycloak-connect';
 @ApiTags('Person')
 @Controller('person')
 export class PersonController {
@@ -96,8 +96,7 @@ export class PersonController {
   }
   //MODULO DE PADRES
   @Get('parents/get-sons')
-  @Auth()
-  searchSons(@GetUser() user: User) {
+  searchSons(@AuthenticatedUser() user: any) {
     return this.personService.findStudentsByParents(user);
   }
   @Get('parents/attendance-student/:id')
@@ -120,7 +119,6 @@ export class PersonController {
     return this.personService.findAttendanceByStudent(+id, searchByDateDto);
   }
   @Get('parents/profile')
-  @Auth()
   getProfileUser(@GetUser() user: User) {
     return this.personService.findProfileUser(user);
   }

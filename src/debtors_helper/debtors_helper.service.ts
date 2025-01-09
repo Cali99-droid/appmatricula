@@ -37,10 +37,6 @@ export class DebtorsHelperService {
         await this.debTorRepository.save(
           personsToSave.map((item) => ({
             docNumber: item.docNumber,
-            student: item.student,
-            family: item.family,
-            phone: item.phone,
-            address: item.address,
           })),
         );
       }

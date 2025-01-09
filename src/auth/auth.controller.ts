@@ -26,7 +26,6 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @Auth()
   create(@Body() registerUserDto: RegisterUserDto) {
     return this.authService.create(registerUserDto);
   }
@@ -51,7 +50,6 @@ export class AuthController {
   }
 
   @Get('check-status')
-  @Auth()
   checkAuthStatus(@GetUser() user: User) {
     return this.authService.checkAuthStatus(user);
   }
