@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { FamilyService } from './family.service';
 
 import { ApiTags } from '@nestjs/swagger';
 import { UpdateFamilyDto } from './dto/update-family.dto';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
+import { CreateFamilyParentsStudentDto } from './dto/create-family-parents-student.dto';
 @ApiTags('Family')
 @Controller('family')
 export class FamilyController {
@@ -26,7 +27,12 @@ export class FamilyController {
   update(@Param('id') id: string, @Body() updateFamilyDto: UpdateFamilyDto) {
     return this.familyService.update(+id, updateFamilyDto);
   }
-
+  @Post('parents-student')
+  create(@Body() createFamilyParentsStudentDto: CreateFamilyParentsStudentDto) {
+    return this.familyService.createFamilyFromAdmision(
+      createFamilyParentsStudentDto,
+    );
+  }
   // @Delete(':id')
   // remove(@Param('id') id: string) {
   //   return this.familyService.remove(+id);
