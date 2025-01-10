@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   Logger,
   NotFoundException,
@@ -33,6 +34,10 @@ import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
 
 import { Rates } from 'src/treasury/entities/rates.entity';
 import { Debt } from 'src/treasury/entities/debt.entity';
+import axios from 'axios';
+import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
+import { FamilyService } from 'src/family/family.service';
+import { DataAdmision } from 'src/family/interfaces/data-admision';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -51,7 +56,10 @@ export class EnrollmentService {
     private readonly ratesRepository: Repository<Rates>,
     @InjectRepository(Debt)
     private readonly debtRepository: Repository<Debt>,
+
+    /**servicios */
     private readonly studentService: StudentService,
+    private readonly familyService: FamilyService,
   ) {}
 
   /**PREMATRICULAR */
@@ -1316,6 +1324,36 @@ export class EnrollmentService {
       return currentEnrroll;
     } catch (error) {
       handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async createNewStudent(
+    createNewEnrollmentDto: CreateNewEnrollmentDto,
+    user: any,
+  ) {
+    const body = {
+      docNumber: createNewEnrollmentDto.docNumber,
+    };
+
+    try {
+      /**Consultar si obtuvo vacante en admision */
+      const response = await axios.post(
+        `https://api-admision.dev-solware.com/api/admin/search-new`,
+        body,
+      );
+      const data = response.data.data as DataAdmision;
+      const { child } = data;
+      const created = await this.familyService.createFamilyFromAdmision(data);
+
+      return created;
+    } catch (error) {
+      this.logger.error(
+        `[ADMISION] Error consulta : ${createNewEnrollmentDto.docNumber}`,
+      );
+      throw new HttpException(
+        `[ADMISION] Error al consultar: ${error.response?.data?.errors || error.message}`,
+        error.response?.status || 500,
+      );
     }
   }
 

@@ -17,7 +17,10 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-import { CreateFamilyParentsStudentDto } from './dto/create-family-parents-student.dto';
+import { DataAdmision } from './interfaces/data-admision';
+import { TypeDoc } from 'src/person/enum/typeDoc.enum';
+import { Gender } from 'src/common/enum/gender.enum';
+import { FamilyRole } from 'src/common/enum/family-role.enum';
 
 @Injectable()
 export class FamilyService {
@@ -388,10 +391,10 @@ export class FamilyService {
   remove(id: number) {
     return `This action removes a #${id} family`;
   }
-  async createFamilyFromAdmision(
-    createFamilyParentsStudentDto: CreateFamilyParentsStudentDto,
-  ) {
-    const { parentOne, parentTwo, student } = createFamilyParentsStudentDto;
+  async createFamilyFromAdmision(createFamilyParentsStudentDto: DataAdmision) {
+    const { parents, child } = createFamilyParentsStudentDto;
+    const parentOne = parents[0];
+    const parentTwo = parents[1];
     try {
       // const parentOneId;
       let parentOneId = undefined;
@@ -400,32 +403,33 @@ export class FamilyService {
       let familyId = undefined;
       const existParentOne = await this.personRepository.findOne({
         where: {
-          docNumber: parentOne.docNumber,
+          docNumber: parentOne.doc_number,
         },
       });
       const existParentTwo = await this.personRepository.findOne({
         where: {
-          docNumber: parentTwo.docNumber,
+          docNumber: parentTwo.doc_number,
         },
       });
       const existStudent = await this.personRepository.findOne({
         where: {
-          docNumber: student.docNumber,
+          docNumber: child.doc_number,
         },
       });
-      console.log(existStudent);
+
       if (existParentOne != null) {
         parentOneId = existParentOne.id;
       } else {
         const person = this.personRepository.create({
-          typeDoc: parentOne.typeDoc,
-          docNumber: parentOne.docNumber,
-          name: parentOne.name.toUpperCase(),
-          lastname: parentOne.lastname.toUpperCase(),
-          mLastname: parentOne.mLastname.toUpperCase(),
-          gender: parentOne.gender,
-          familyRole: parentOne.familyRole,
-          birthDate: parentOne.birthDate,
+          name: parentOne.name,
+          lastname: parentOne.lastname,
+          mLastname: parentOne.mLastname,
+          docNumber: parentOne.doc_number,
+          birthDate: new Date(parentOne.birthdate),
+          cellPhone: parentOne.phone,
+          typeDoc: parentOne.type_doc as TypeDoc,
+          gender: parentOne.role === 'P' ? Gender.M : Gender.F,
+          familyRole: parentOne.role as FamilyRole,
         });
         const personCreated = await this.personRepository.save(person);
         parentOneId = personCreated.id;
@@ -435,30 +439,31 @@ export class FamilyService {
         parentTwoId = existParentTwo.id;
       } else {
         const person = this.personRepository.create({
-          typeDoc: parentTwo.typeDoc,
-          docNumber: parentTwo.docNumber,
+          docNumber: parentTwo.doc_number,
           name: parentTwo.name.toUpperCase(),
           lastname: parentTwo.lastname.toUpperCase(),
           mLastname: parentTwo.mLastname.toUpperCase(),
-          gender: parentTwo.gender,
-          familyRole: parentTwo.familyRole,
-          birthDate: parentTwo.birthDate,
+          familyRole: parentTwo.role as FamilyRole,
+          birthDate: new Date(parentTwo.birthdate),
+          typeDoc: parentTwo.type_doc as TypeDoc,
+          gender: parentTwo.role === 'P' ? Gender.M : Gender.F,
         });
         const personCreated = await this.personRepository.save(person);
         parentTwoId = personCreated.id;
       }
+
       if (existStudent != null) {
         studentId = existStudent.id;
       } else {
         const person = this.personRepository.create({
-          typeDoc: student.typeDoc,
-          docNumber: student.docNumber,
-          name: student.name.toUpperCase(),
-          lastname: student.lastname.toUpperCase(),
-          mLastname: student.mLastname.toUpperCase(),
-          gender: student.gender,
-          familyRole: student.familyRole,
-          birthDate: student.birthDate,
+          typeDoc: parentOne.type_doc as TypeDoc,
+          docNumber: child.doc_number,
+          name: child.name.toUpperCase(),
+          lastname: child.lastname.toUpperCase(),
+          mLastname: child.mLastname.toUpperCase(),
+          gender: child.gender as Gender,
+          familyRole: FamilyRole.HIJO,
+          birthDate: new Date(child.birthdate),
         });
         const personCreated = await this.personRepository.save(person);
         studentId = personCreated.id;
@@ -473,29 +478,31 @@ export class FamilyService {
         familyId = existFamily.id;
       } else {
         const family = this.familyRepository.create({
-          nameFamily: createFamilyParentsStudentDto.nameFamily.toUpperCase(),
+          nameFamily: child.lastname + ' ' + child.mLastname,
           parentOneId: { id: parentOneId },
           parentTwoId: { id: parentTwoId },
         });
         const familyCreated = await this.familyRepository.save(family);
         familyId = familyCreated.id;
       }
-      const existStudentC = await this.studentRepository.findOne({
+      let student = null;
+      student = await this.studentRepository.findOne({
         where: {
           person: { id: studentId },
         },
       });
-      console.log(existStudentC);
-      if (existStudentC == null) {
+
+      if (student == null) {
         const studentC = this.studentRepository.create({
           person: { id: studentId },
           family: { id: familyId },
           hasDebt: false,
         });
-        await this.studentRepository.save(studentC);
+        student = await this.studentRepository.save(studentC);
       }
       return {
-        nameFamily: createFamilyParentsStudentDto.nameFamily.toUpperCase(),
+        nameFamily: child.lastname + ' ' + child.mLastname,
+        student,
       };
     } catch (error) {
       // this.logger.error(error);

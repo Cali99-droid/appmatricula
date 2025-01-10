@@ -255,7 +255,7 @@ export class StudentService {
       take: 1,
     });
 
-    let newCodigo = '00000001'; // Default value if there are no students yet
+    let newCodigo = '00000001'; // Default
 
     if (lastStudent.length > 0) {
       const lastCodigo = parseInt(lastStudent[0].code, 10);
