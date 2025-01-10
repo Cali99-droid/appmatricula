@@ -21,7 +21,7 @@ import { DataAdmision } from './interfaces/data-admision';
 import { TypeDoc } from 'src/person/enum/typeDoc.enum';
 import { Gender } from 'src/common/enum/gender.enum';
 import { FamilyRole } from 'src/common/enum/family-role.enum';
-
+import { User } from 'src/user/entities/user.entity';
 @Injectable()
 export class FamilyService {
   private readonly logger = new Logger('FamilyService');
@@ -34,6 +34,8 @@ export class FamilyService {
     private readonly familyRepository: Repository<Family>,
     @InjectRepository(Relationship)
     private readonly relationShipRepository: Repository<Relationship>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {}
@@ -433,6 +435,19 @@ export class FamilyService {
         });
         const personCreated = await this.personRepository.save(person);
         parentOneId = personCreated.id;
+        if (parentOne.email != null) {
+          const existUser = await this.userRepository.findOne({
+            where: { email: parentOne.email },
+          });
+          if (existUser == null) {
+            const user = await this.userRepository.create({
+              email: parentOne.email,
+              password: personCreated.docNumber,
+              person: { id: personCreated.id },
+            });
+            await this.userRepository.save(user);
+          }
+        }
       }
 
       if (existParentTwo != null) {
@@ -450,6 +465,19 @@ export class FamilyService {
         });
         const personCreated = await this.personRepository.save(person);
         parentTwoId = personCreated.id;
+        if (parentTwoId.email != null) {
+          const existUser = await this.userRepository.findOne({
+            where: { email: parentTwoId.email },
+          });
+          if (existUser == null) {
+            const user = await this.userRepository.create({
+              email: parentTwoId.email,
+              password: personCreated.docNumber,
+              person: { id: personCreated.id },
+            });
+            await this.userRepository.save(user);
+          }
+        }
       }
 
       if (existStudent != null) {
@@ -493,13 +521,24 @@ export class FamilyService {
       });
 
       if (student == null) {
+        const lastStudent = await this.studentRepository.find({
+          order: { code: 'DESC' },
+          take: 1,
+        });
+        let newCodigo = '00000001'; // Default
+        if (lastStudent.length > 0) {
+          const lastCodigo = parseInt(lastStudent[0].code, 10);
+          newCodigo = (lastCodigo + 1).toString().padStart(8, '0');
+        }
         const studentC = this.studentRepository.create({
           person: { id: studentId },
           family: { id: familyId },
+          code: newCodigo,
           hasDebt: false,
         });
         student = await this.studentRepository.save(studentC);
       }
+
       return {
         nameFamily: child.lastname + ' ' + child.mLastname,
         student,
