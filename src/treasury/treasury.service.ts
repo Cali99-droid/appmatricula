@@ -306,6 +306,19 @@ export class TreasuryService {
     };
   }
 
+  async createPaymentAdmision(name: string, docNumber: string) {
+    const rate = await this.ratesRepository.findOne({
+      where: {
+        level: { id: levelId },
+        campusDetail: { id: campusDetailId },
+      },
+      relations: {
+        concept: true,
+      },
+    });
+    
+  }
+
   getUser(sub: string) {
     switch (sub) {
       case '272550ea-be37-4d3e-8ee3-b4597ac75fda':

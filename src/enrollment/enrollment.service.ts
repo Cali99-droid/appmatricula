@@ -666,7 +666,6 @@ export class EnrollmentService {
             // gradeId,
             grade,
             level,
-
             capacity: 0,
             ratified: 0,
             enrollments: 0,
@@ -677,9 +676,12 @@ export class EnrollmentService {
         acc[gradeId].sections.push({
           section,
           capacity,
-          ratified: previousEnrolls,
+          // ratified: previousEnrolls,
+          ratified: 0,
           enrollments: currentEnrroll,
-          vacant: capacity - previousEnrolls - currentEnrroll,
+          // vacant: capacity - previousEnrolls - currentEnrroll,
+
+          vacant: capacity - currentEnrroll,
           detailOrigin,
         });
         acc[gradeId].capacity += capacity;
@@ -954,8 +956,9 @@ export class EnrollmentService {
       );
       const ratifieds =
         enrollOrigin.length - rtAndEnr.length - rtAndEnrInOther.length;
-      const vacants =
-        destinationId.classroom.capacity - ratifieds - currentEnrroll.length;
+      // const vacants =
+      //   destinationId.classroom.capacity - ratifieds - currentEnrroll.length;
+      const vacants = destinationId.classroom.capacity - currentEnrroll.length;
       const res: VacantsClassrooms = {
         id: activityClassroom.id,
         gradeId: destinationId.grade.id,
@@ -1060,12 +1063,12 @@ export class EnrollmentService {
 
       const ratifieds =
         enrollPriority.length - rtAndEnr.length - rtAndEnrInOther.length;
-      console.log('priorti', enrollPriority.length);
-      console.log('rat y mat', rtAndEnr.length);
-      console.log('rat y other', rtAndEnrInOther.length);
-      console.log('capacidad', activityClassroom.classroom.capacity);
-      console.log('ratificados', ratifieds);
-      console.log('mat act', currentEnrroll.length);
+      // console.log('priorti', enrollPriority.length);
+      // console.log('rat y mat', rtAndEnr.length);
+      // console.log('rat y other', rtAndEnrInOther.length);
+      // console.log('capacidad', activityClassroom.classroom.capacity);
+      // console.log('ratificados', ratifieds);
+      // console.log('mat act', currentEnrroll.length);
       // const vacants =
       //   activityClassroom.classroom.capacity -
       //   ratifieds -
@@ -1156,8 +1159,11 @@ export class EnrollmentService {
     const ratifieds =
       enrollOrigin.length - rtAndEnr.length - rtAndEnrInOther.length;
 
+    // const vacants =
+    //   activityClassroom.classroom.capacity - ratifieds - currentEnrroll.length;
+
     const vacants =
-      activityClassroom.classroom.capacity - ratifieds - currentEnrroll.length;
+      activityClassroom.classroom.capacity - currentEnrroll.length;
     const res: VacantsClassrooms = {
       id: activityClassroom.id,
       gradeId: activityClassroom.grade.id,
@@ -1343,7 +1349,9 @@ export class EnrollmentService {
       );
       const data = response.data.data as DataAdmision;
       const { child } = data;
+      /**CREAR LA DATA */
       const created = await this.familyService.createFamilyFromAdmision(data);
+      /**crear Pago*/
 
       return created;
     } catch (error) {
