@@ -443,10 +443,10 @@ export class AttendanceService {
     const url = this.configService.get('GHL_ATTENDANCE_URL');
     try {
       // currentTime.setHours(currentTime.getHours() - 5);
-      const hours = currentTime.getUTCHours().toString().padStart(2, '0');
-      const minutes = currentTime.getUTCMinutes().toString().padStart(2, '0');
-      const seconds = currentTime.getUTCSeconds().toString().padStart(2, '0');
-      const formattedTime = `${hours}:${minutes}:${seconds}`;
+      // const hours = currentTime.getUTCHours().toString().padStart(2, '0');
+      // const minutes = currentTime.getUTCMinutes().toString().padStart(2, '0');
+      // const seconds = currentTime.getUTCSeconds().toString().padStart(2, '0');
+      // const formattedTime = `${hours}:${minutes}:${seconds}`;
       const timeZone = 'America/Lima';
       await firstValueFrom(
         this.httpService.post(url, {

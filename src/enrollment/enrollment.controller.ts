@@ -34,6 +34,7 @@ import {
   Resource,
   Roles,
 } from 'nest-keycloak-connect';
+import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -96,6 +97,17 @@ export class EnrollmentController {
   @Get()
   findAll() {
     return this.enrollmentService.findAll();
+  }
+
+  @Post('new')
+  createNewStudent(
+    @Body() createNewEnrollmentDto: CreateNewEnrollmentDto,
+    @AuthenticatedUser() user: any,
+  ) {
+    return this.enrollmentService.createNewStudent(
+      createNewEnrollmentDto,
+      user,
+    );
   }
 
   @Get('activity-classroom')

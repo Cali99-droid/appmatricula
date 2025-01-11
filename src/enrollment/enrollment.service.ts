@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   Logger,
   NotFoundException,
@@ -33,6 +34,10 @@ import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
 
 import { Rates } from 'src/treasury/entities/rates.entity';
 import { Debt } from 'src/treasury/entities/debt.entity';
+import axios from 'axios';
+import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
+import { FamilyService } from 'src/family/family.service';
+import { DataAdmision } from 'src/family/interfaces/data-admision';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -51,7 +56,10 @@ export class EnrollmentService {
     private readonly ratesRepository: Repository<Rates>,
     @InjectRepository(Debt)
     private readonly debtRepository: Repository<Debt>,
+
+    /**servicios */
     private readonly studentService: StudentService,
+    private readonly familyService: FamilyService,
   ) {}
 
   /**PREMATRICULAR */
@@ -658,7 +666,6 @@ export class EnrollmentService {
             // gradeId,
             grade,
             level,
-
             capacity: 0,
             ratified: 0,
             enrollments: 0,
@@ -669,9 +676,12 @@ export class EnrollmentService {
         acc[gradeId].sections.push({
           section,
           capacity,
-          ratified: previousEnrolls,
+          // ratified: previousEnrolls,
+          ratified: 0,
           enrollments: currentEnrroll,
-          vacant: capacity - previousEnrolls - currentEnrroll,
+          // vacant: capacity - previousEnrolls - currentEnrroll,
+
+          vacant: capacity - currentEnrroll,
           detailOrigin,
         });
         acc[gradeId].capacity += capacity;
@@ -946,8 +956,9 @@ export class EnrollmentService {
       );
       const ratifieds =
         enrollOrigin.length - rtAndEnr.length - rtAndEnrInOther.length;
-      const vacants =
-        destinationId.classroom.capacity - ratifieds - currentEnrroll.length;
+      // const vacants =
+      //   destinationId.classroom.capacity - ratifieds - currentEnrroll.length;
+      const vacants = destinationId.classroom.capacity - currentEnrroll.length;
       const res: VacantsClassrooms = {
         id: activityClassroom.id,
         gradeId: destinationId.grade.id,
@@ -1052,12 +1063,12 @@ export class EnrollmentService {
 
       const ratifieds =
         enrollPriority.length - rtAndEnr.length - rtAndEnrInOther.length;
-      console.log('priorti', enrollPriority.length);
-      console.log('rat y mat', rtAndEnr.length);
-      console.log('rat y other', rtAndEnrInOther.length);
-      console.log('capacidad', activityClassroom.classroom.capacity);
-      console.log('ratificados', ratifieds);
-      console.log('mat act', currentEnrroll.length);
+      // console.log('priorti', enrollPriority.length);
+      // console.log('rat y mat', rtAndEnr.length);
+      // console.log('rat y other', rtAndEnrInOther.length);
+      // console.log('capacidad', activityClassroom.classroom.capacity);
+      // console.log('ratificados', ratifieds);
+      // console.log('mat act', currentEnrroll.length);
       // const vacants =
       //   activityClassroom.classroom.capacity -
       //   ratifieds -
@@ -1148,8 +1159,11 @@ export class EnrollmentService {
     const ratifieds =
       enrollOrigin.length - rtAndEnr.length - rtAndEnrInOther.length;
 
+    // const vacants =
+    //   activityClassroom.classroom.capacity - ratifieds - currentEnrroll.length;
+
     const vacants =
-      activityClassroom.classroom.capacity - ratifieds - currentEnrroll.length;
+      activityClassroom.classroom.capacity - currentEnrroll.length;
     const res: VacantsClassrooms = {
       id: activityClassroom.id,
       gradeId: activityClassroom.grade.id,
@@ -1316,6 +1330,38 @@ export class EnrollmentService {
       return currentEnrroll;
     } catch (error) {
       handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async createNewStudent(
+    createNewEnrollmentDto: CreateNewEnrollmentDto,
+    user: any,
+  ) {
+    const body = {
+      docNumber: createNewEnrollmentDto.docNumber,
+    };
+
+    try {
+      /**Consultar si obtuvo vacante en admision */
+      const response = await axios.post(
+        `https://api-admision.dev-solware.com/api/admin/search-new`,
+        body,
+      );
+      const data = response.data.data as DataAdmision;
+      const { child } = data;
+      /**CREAR LA DATA */
+      const created = await this.familyService.createFamilyFromAdmision(data);
+      /**crear Pago*/
+
+      return created;
+    } catch (error) {
+      this.logger.error(
+        `[ADMISION] Error consulta : ${createNewEnrollmentDto.docNumber}`,
+      );
+      throw new HttpException(
+        `[ADMISION] Error al consultar: ${error.response?.data?.errors || error.message}`,
+        error.response?.status || 500,
+      );
     }
   }
 

@@ -5,6 +5,8 @@ import {
   PrimaryGeneratedColumn,
   OneToOne,
   OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 import { Student } from '../../student/entities/student.entity';
@@ -108,6 +110,22 @@ export class Person {
     nullable: true,
   })
   profession: string;
+
+  /**TIMESTAMPS */
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    select: false,
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+    select: false,
+  })
+  updatedAt: Date;
 
   @OneToOne(() => Student, (student) => student.person)
   student?: Student;

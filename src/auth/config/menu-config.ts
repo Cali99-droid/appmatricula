@@ -22,7 +22,7 @@ export const AdminMenu = {
           label: 'Est. por seccion',
           icon: 'table',
           link: '/admin/school/matricula',
-          permissions: ['administrador-colegio'],
+          permissions: ['administrador-colegio', 'secretaria'],
         },
         {
           id: 2,

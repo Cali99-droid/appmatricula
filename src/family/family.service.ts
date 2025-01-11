@@ -17,6 +17,10 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { DataAdmision } from './interfaces/data-admision';
+import { TypeDoc } from 'src/person/enum/typeDoc.enum';
+import { Gender } from 'src/common/enum/gender.enum';
+import { FamilyRole } from 'src/common/enum/family-role.enum';
 
 @Injectable()
 export class FamilyService {
@@ -386,5 +390,123 @@ export class FamilyService {
 
   remove(id: number) {
     return `This action removes a #${id} family`;
+  }
+  async createFamilyFromAdmision(createFamilyParentsStudentDto: DataAdmision) {
+    const { parents, child } = createFamilyParentsStudentDto;
+    const parentOne = parents[0];
+    const parentTwo = parents[1];
+    try {
+      // const parentOneId;
+      let parentOneId = undefined;
+      let parentTwoId = undefined;
+      let studentId = undefined;
+      let familyId = undefined;
+      const existParentOne = await this.personRepository.findOne({
+        where: {
+          docNumber: parentOne.doc_number,
+        },
+      });
+      const existParentTwo = await this.personRepository.findOne({
+        where: {
+          docNumber: parentTwo.doc_number,
+        },
+      });
+      const existStudent = await this.personRepository.findOne({
+        where: {
+          docNumber: child.doc_number,
+        },
+      });
+
+      if (existParentOne != null) {
+        parentOneId = existParentOne.id;
+      } else {
+        const person = this.personRepository.create({
+          name: parentOne.name,
+          lastname: parentOne.lastname,
+          mLastname: parentOne.mLastname,
+          docNumber: parentOne.doc_number,
+          birthDate: new Date(parentOne.birthdate),
+          cellPhone: parentOne.phone,
+          typeDoc: parentOne.type_doc as TypeDoc,
+          gender: parentOne.role === 'P' ? Gender.M : Gender.F,
+          familyRole: parentOne.role as FamilyRole,
+        });
+        const personCreated = await this.personRepository.save(person);
+        parentOneId = personCreated.id;
+      }
+
+      if (existParentTwo != null) {
+        parentTwoId = existParentTwo.id;
+      } else {
+        const person = this.personRepository.create({
+          docNumber: parentTwo.doc_number,
+          name: parentTwo.name.toUpperCase(),
+          lastname: parentTwo.lastname.toUpperCase(),
+          mLastname: parentTwo.mLastname.toUpperCase(),
+          familyRole: parentTwo.role as FamilyRole,
+          birthDate: new Date(parentTwo.birthdate),
+          typeDoc: parentTwo.type_doc as TypeDoc,
+          gender: parentTwo.role === 'P' ? Gender.M : Gender.F,
+        });
+        const personCreated = await this.personRepository.save(person);
+        parentTwoId = personCreated.id;
+      }
+
+      if (existStudent != null) {
+        studentId = existStudent.id;
+      } else {
+        const person = this.personRepository.create({
+          typeDoc: parentOne.type_doc as TypeDoc,
+          docNumber: child.doc_number,
+          name: child.name.toUpperCase(),
+          lastname: child.lastname.toUpperCase(),
+          mLastname: child.mLastname.toUpperCase(),
+          gender: child.gender as Gender,
+          familyRole: FamilyRole.HIJO,
+          birthDate: new Date(child.birthdate),
+        });
+        const personCreated = await this.personRepository.save(person);
+        studentId = personCreated.id;
+      }
+      const existFamily = await this.familyRepository.findOne({
+        where: {
+          parentOneId: { id: parentOneId },
+          parentTwoId: { id: parentTwoId },
+        },
+      });
+      if (existFamily) {
+        familyId = existFamily.id;
+      } else {
+        const family = this.familyRepository.create({
+          nameFamily: child.lastname + ' ' + child.mLastname,
+          parentOneId: { id: parentOneId },
+          parentTwoId: { id: parentTwoId },
+        });
+        const familyCreated = await this.familyRepository.save(family);
+        familyId = familyCreated.id;
+      }
+      let student = null;
+      student = await this.studentRepository.findOne({
+        where: {
+          person: { id: studentId },
+        },
+      });
+
+      if (student == null) {
+        const studentC = this.studentRepository.create({
+          person: { id: studentId },
+          family: { id: familyId },
+          hasDebt: false,
+        });
+        student = await this.studentRepository.save(studentC);
+      }
+      return {
+        nameFamily: child.lastname + ' ' + child.mLastname,
+        student,
+      };
+    } catch (error) {
+      // this.logger.error(error);
+      handleDBExceptions(error, this.logger);
+    }
   }
 }

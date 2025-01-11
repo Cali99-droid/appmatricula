@@ -17,6 +17,6 @@ import { ConfigModule } from '@nestjs/config';
     HttpModule,
     ConfigModule,
   ],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, FamilyService],
 })
 export class FamilyModule {}

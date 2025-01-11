@@ -70,6 +70,7 @@ export class CreatePersonDto {
   studentCode: string;
 
   @ApiProperty({
+    example: '952298329',
     description: 'cellPhone',
   })
   @IsString()
@@ -85,6 +86,7 @@ export class CreatePersonDto {
   birthDate: Date;
 
   @ApiProperty({
+    example: 'Zapatero Nuclear',
     description: 'profession',
   })
   @IsString()
@@ -92,6 +94,7 @@ export class CreatePersonDto {
   profession: string;
 
   @ApiProperty({
+    example: 'M',
     description: 'family Role  of student',
   })
   @IsEnum(FamilyRole, {
