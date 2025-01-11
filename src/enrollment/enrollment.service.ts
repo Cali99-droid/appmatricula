@@ -685,11 +685,12 @@ export class EnrollmentService {
           detailOrigin,
         });
         acc[gradeId].capacity += capacity;
-        acc[gradeId].ratified += previousEnrolls;
+        // acc[gradeId].ratified += previousEnrolls;
+        acc[gradeId].ratified += 0;
         acc[gradeId].enrollments += currentEnrroll;
         acc[gradeId].vacant =
           acc[gradeId].capacity -
-          acc[gradeId].ratified -
+          // acc[gradeId].ratified -
           acc[gradeId].enrollments;
 
         return acc;
