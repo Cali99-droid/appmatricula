@@ -306,18 +306,17 @@ export class TreasuryService {
     };
   }
 
-  async createPaymentAdmision(name: string, docNumber: string) {
-    const rate = await this.ratesRepository.findOne({
-      where: {
-        level: { id: levelId },
-        campusDetail: { id: campusDetailId },
-      },
-      relations: {
-        concept: true,
-      },
-    });
-    
-  }
+  // async createPaymentAdmision(name: string, docNumber: string) {
+  //   const rate = await this.ratesRepository.findOne({
+  //     where: {
+  //       level: { id: levelId },
+  //       campusDetail: { id: campusDetailId },
+  //     },
+  //     relations: {
+  //       concept: true,
+  //     },
+  //   });
+  // }
 
   getUser(sub: string) {
     switch (sub) {
