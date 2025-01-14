@@ -8,12 +8,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
+import { User } from 'src/user/entities/user.entity';
 
 @Module({
   controllers: [FamilyController],
   providers: [FamilyService],
   imports: [
-    TypeOrmModule.forFeature([Person, Student, Family, Relationship]),
+    TypeOrmModule.forFeature([Person, Student, Family, Relationship, User]),
     HttpModule,
     ConfigModule,
   ],
