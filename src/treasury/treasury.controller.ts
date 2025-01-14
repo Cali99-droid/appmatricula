@@ -8,7 +8,7 @@ import { FindPaidDto } from './dto/find-paid.dto';
 // import { Response } from 'express';
 
 @ApiTags('Treasury')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}

@@ -38,7 +38,7 @@ import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
