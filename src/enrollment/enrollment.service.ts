@@ -11,7 +11,7 @@ import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
 import { Enrollment } from './entities/enrollment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Not, Repository } from 'typeorm';
+import { In, Not, Or, Repository } from 'typeorm';
 import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/student/entities/student.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -1187,6 +1187,153 @@ export class EnrollmentService {
     };
     // console.log('normal', res);
     return res;
+  }
+
+  /**calculo para nuevos */
+  private async vacancyCalculation(activityClassroomId: number) {
+    // Obtener la información del aula y su capacidad
+    const ac = await this.activityClassroomRepository.findOne({
+      where: { id: activityClassroomId },
+      relations: ['classroom', 'grade'], // Traer las relaciones necesarias
+    });
+
+    if (!ac) {
+      throw new Error('Activity classroom not found');
+    }
+
+    // Obtener los conteos de los diferentes estados en una sola consulta
+    const enrollmentCounts = await this.enrollmentRepository
+      .createQueryBuilder('enrollment')
+      .select('enrollment.status', 'status')
+      .addSelect('COUNT(enrollment.id)', 'count')
+      .where('enrollment.activityClassroomId = :activityClassroomId', {
+        activityClassroomId,
+      })
+      .andWhere('enrollment.status IN (:...statuses)', {
+        statuses: [
+          Status.EN_PROCESO,
+          Status.RESERVADO,
+          Status.MATRICULADO,
+          Status.PREMATRICULADO,
+        ],
+      })
+      .groupBy('enrollment.status')
+      .getRawMany();
+
+    // Mapear los resultados en un objeto para facilitar el cálculo
+    const counts = enrollmentCounts.reduce(
+      (acc, row) => {
+        acc[row.status] = parseInt(row.count, 10);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const reserved = counts[Status.RESERVADO] || 0;
+    const enrollments = counts[Status.MATRICULADO] || 0;
+    const pre_registered = counts[Status.PREMATRICULADO] || 0;
+    const on_procces = counts[Status.EN_PROCESO] || 0;
+
+    const capacity = ac.classroom.capacity;
+    const vacant = capacity - reserved - enrollments - pre_registered;
+
+    return {
+      grade: ac.grade.name,
+      section: ac.section,
+      capacity,
+      enrollments,
+      pre_registered,
+      on_procces,
+      reserved,
+      vacant,
+    };
+  }
+
+  async getVacantsAll(yearId: number, query: FindVacantsDto) {
+    const { campusId, levelId } = query;
+    const vacants: any[] = [];
+    const whereCondition: any = {
+      phase: {
+        year: {
+          id: yearId,
+        },
+      },
+    };
+    if (campusId) {
+      whereCondition.classroom = {
+        campusDetail: {
+          id: campusId,
+        },
+      };
+    }
+    if (levelId) {
+      whereCondition.grade = {
+        level: {
+          id: levelId,
+        },
+      };
+    }
+
+    const activityClassrooms = await this.activityClassroomRepository.find({
+      where: whereCondition,
+    });
+
+    for (const ac of activityClassrooms) {
+      const data = await this.vacancyCalculation(ac.id);
+
+      vacants.push(data);
+    }
+
+    // Agrupamos los datos por grado, manteniendo las secciones
+    const groupedData = vacants.reduce(
+      (acc, item) => {
+        if (!acc[item.grade]) {
+          acc[item.grade] = {
+            grade: item.grade,
+            capacity: 0,
+            enrollments: 0,
+            totalPreRegistered: 0,
+            totalOnProcces: 0,
+            totalReserved: 0,
+            vacant: 0,
+            sections: [],
+          };
+        }
+
+        // Sumar totales generales
+        acc[item.grade].capacity += item.capacity;
+        acc[item.grade].enrollments += item.enrollments;
+        acc[item.grade].totalPreRegistered += item.pre_registered;
+        acc[item.grade].totalOnProcces += item.on_procces;
+        acc[item.grade].totalReserved += item.reserved;
+        acc[item.grade].vacant += item.vacant;
+
+        // Agregar la sección específica
+        acc[item.grade].sections.push({
+          section: item.section,
+          capacity: item.capacity,
+          enrollments: item.enrollments,
+          pre_registered: item.pre_registered,
+          on_procces: item.on_procces,
+          reserved: item.reserved,
+          vacants: item.vacant,
+          detailOrigin: {
+            id: 0,
+            grade: '0',
+            section: '0',
+            enrrolls: 0,
+          },
+        });
+
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
+
+    // Convertimos el objeto en un array
+    const result = Object.values(groupedData);
+
+    return result;
   }
   async getVacantsGeneral(gradeId: number, yearId: number) {
     const activityClassrooms = await this.activityClassroomRepository.find({

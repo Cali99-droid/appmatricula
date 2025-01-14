@@ -246,7 +246,8 @@ export class EnrollmentController {
     @Query() query: FindVacantsDto,
   ) {
     // return this.enrollmentService.getVacantsTest();
-    return this.enrollmentService.getVacants(yearId, query);
+    // return this.enrollmentService.getVacants(yearId, query);
+    return this.enrollmentService.getVacantsAll(yearId, query);
   }
 
   @Get('vacants/:yearId/grade/:gradeId')
