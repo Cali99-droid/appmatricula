@@ -244,10 +244,11 @@ export class TreasuryService {
       const response = await this.sendToNubefact(boletaData);
 
       // Crear registro de boleta
-      await this.saveBill(response, newPay.id, serie, numero);
+      const newBill = await this.saveBill(response, newPay.id, serie, numero);
 
       enrrollOnProccess.status = Status.RESERVADO;
-      return await this.enrollmentRepository.save(enrrollOnProccess);
+      await this.enrollmentRepository.save(enrrollOnProccess);
+      return newBill;
     } catch (error) {
       // Revertir correlativo en caso de error
       await this.undoCorrelative(tipoComprobante, serie);
