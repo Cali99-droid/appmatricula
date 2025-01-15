@@ -151,11 +151,11 @@ export class TreasuryService {
     });
     let resp;
 
-    if (family.parentOneId.familyRole === createPaidReservedDto.resp) {
+    if (family.parentOneId.id === createPaidReservedDto.parentId) {
       resp = family.parentOneId;
     }
 
-    if (family.parentTwoId.familyRole === createPaidReservedDto.resp) {
+    if (family.parentTwoId.id === createPaidReservedDto.parentId) {
       resp = family.parentTwoId;
     }
     const serie = `B${1}${enrrollOnProccess.activityClassroom.classroom.campusDetail.id}${enrrollOnProccess.activityClassroom.grade.level.id}`;

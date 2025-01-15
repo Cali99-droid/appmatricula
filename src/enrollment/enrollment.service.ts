@@ -1492,8 +1492,16 @@ export class EnrollmentService {
       where: {
         person: { docNumber: searchDto.docNumber },
       },
+      relations: {
+        family: {
+          parentOneId: true,
+          parentTwoId: true,
+        },
+      },
     });
-
+    if (!student) {
+      throw new BadRequestException('Not available student');
+    }
     const enrrollOnProccess = await this.enrollmentRepository.findOne({
       where: {
         status: Status.EN_PROCESO,
@@ -1502,8 +1510,10 @@ export class EnrollmentService {
     });
 
     if (!enrrollOnProccess) {
-      throw new BadRequestException('Not available ');
+      throw new BadRequestException('Not available enrroll');
     }
+
+    const family = student.family;
     const formatData = {
       student: enrrollOnProccess.student,
       code: enrrollOnProccess.code,
@@ -1513,6 +1523,7 @@ export class EnrollmentService {
         ' ' +
         enrrollOnProccess.activityClassroom.section,
       campus: enrrollOnProccess.activityClassroom.classroom.campusDetail.name,
+      family,
     };
 
     return formatData;

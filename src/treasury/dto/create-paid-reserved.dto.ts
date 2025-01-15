@@ -1,11 +1,20 @@
-import { IsEnum } from 'class-validator';
-import { FamilyRole } from 'src/common/enum/family-role.enum';
+import { ApiProperty } from '@nestjs/swagger';
 import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreatePaidReserved {
+  @ApiProperty({
+    description: 'student id ',
+    nullable: false,
+    minLength: 1,
+  })
   @ExistId({ tableName: 'student' })
-  studentId?: number;
+  studentId: number;
 
-  @IsEnum(FamilyRole)
-  resp: FamilyRole;
+  @ApiProperty({
+    description: 'id of parent for recip',
+    nullable: false,
+    minLength: 1,
+  })
+  @ExistId({ tableName: 'person' })
+  parentId: number;
 }

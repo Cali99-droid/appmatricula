@@ -352,7 +352,24 @@ export class FamilyService {
     }
     return data;
   }
+  async getFamily(id: number) {
+    const family = await this.familyRepository.findOne({
+      where: { id },
 
+      relations: {
+        parentOneId: {
+          user: true,
+        },
+        parentTwoId: {
+          user: true,
+        },
+      },
+    });
+
+    if (!family) throw new NotFoundException(`Family with id ${id} not found`);
+
+    return family;
+  }
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
     const {
       parentOneId,
