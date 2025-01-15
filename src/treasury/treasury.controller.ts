@@ -5,6 +5,7 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
 import { CreatePaidDto } from './dto/create-paid.dto';
 import { FindPaidDto } from './dto/find-paid.dto';
+import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
 // import { Response } from 'express';
 
 @ApiTags('Treasury')
@@ -21,6 +22,15 @@ export class TreasuryController {
     @AuthenticatedUser() user: any,
   ) {
     return this.treasuryService.createPaid(createTreasuryDto, debtId, user);
+  }
+  @Post('payment/reserved')
+  @ApiResponse({ status: 201, description: 'pagado' })
+  createPaidReserved(
+    @Body() createPaidReservedDto: CreatePaidReserved,
+
+    @AuthenticatedUser() user: any,
+  ) {
+    return this.treasuryService.createPaidReserved(createPaidReservedDto, user);
   }
 
   @Get('debts/:studentId')

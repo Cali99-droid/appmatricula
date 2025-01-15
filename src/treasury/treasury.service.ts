@@ -20,6 +20,9 @@ import { CreatePaidDto } from './dto/create-paid.dto';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Rates } from './entities/rates.entity';
 import { User } from 'src/user/entities/user.entity';
+import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
+import { FamilyRole } from 'src/common/enum/family-role.enum';
+import { Concept } from './entities/concept.entity';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 
@@ -43,6 +46,8 @@ export class TreasuryService {
     private readonly enrollmentRepository: Repository<Enrollment>,
     @InjectRepository(Rates)
     private readonly ratesRepository: Repository<Rates>,
+    @InjectRepository(Concept)
+    private readonly conceptRepository: Repository<Concept>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
@@ -104,6 +109,145 @@ export class TreasuryService {
       await this.generateMonthlyDebts(debt.student.id, rate, enrroll.code);
 
       return newBill;
+    } catch (error) {
+      // Revertir correlativo en caso de error
+      await this.undoCorrelative(tipoComprobante, serie);
+      this.logger.error(
+        `[PAID] Error al emitir boleta: ${error.message} ${serie} ${numero}`,
+      );
+      throw new HttpException(
+        `[PAID] Error al emitir la boleta: ${error.response?.data?.errors || error.message} ${serie} ${numero} `,
+        error.response?.status || 500,
+      );
+    }
+  }
+
+  async createPaidReserved(
+    createPaidReservedDto: CreatePaidReserved,
+    user: any,
+  ) {
+    const enrrollOnProccess = await this.enrollmentRepository.findOne({
+      where: {
+        status: Status.EN_PROCESO,
+        student: { id: createPaidReservedDto.studentId },
+      },
+      relations: {
+        student: {
+          family: true,
+        },
+      },
+    });
+    if (!enrrollOnProccess) {
+      throw new BadRequestException('Not available ');
+    }
+    const family = await this.familyRepository.findOne({
+      where: {
+        id: enrrollOnProccess.student.family.id,
+      },
+      relations: {
+        parentOneId: true,
+        parentTwoId: true,
+      },
+    });
+    let resp;
+
+    if (family.parentOneId.familyRole === createPaidReservedDto.resp) {
+      resp = family.parentOneId;
+    }
+
+    if (family.parentTwoId.familyRole === createPaidReservedDto.resp) {
+      resp = family.parentTwoId;
+    }
+    const serie = `B${1}${enrrollOnProccess.activityClassroom.classroom.campusDetail.id}${enrrollOnProccess.activityClassroom.grade.level.id}`;
+    const tipoComprobante = 'BOLETA';
+    const numero = await this.getCorrelative(tipoComprobante, serie);
+    try {
+      const concept = await this.conceptRepository.findOne({
+        where: {
+          code: 'C003',
+        },
+      });
+      const student = enrrollOnProccess.student.person;
+      const grade = enrrollOnProccess.activityClassroom.grade;
+      const level = grade.level;
+      const campus = enrrollOnProccess.activityClassroom.classroom.campusDetail;
+      const boletaData = {
+        operacion: 'generar_comprobante',
+        tipo_de_comprobante: 2,
+        serie,
+        numero,
+        sunat_transaction: 1,
+        cliente_tipo_de_documento: 1,
+        cliente_numero_de_documento: resp.docNumber,
+        cliente_denominacion: `${resp.name} ${resp.lastname} ${resp.mLastname}`,
+        cliente_direccion: family.address,
+        cliente_email: resp.user?.email || '',
+        fecha_de_emision: new Date(),
+        moneda: 1,
+        porcentaje_de_igv: 0,
+        total_gravada: '',
+        total_inafecta: concept.total,
+        total: concept.total,
+        enviar_automaticamente_a_la_sunat: true,
+        enviar_automaticamente_al_cliente: !!resp.user?.email,
+        observaciones: `Gracias por su preferencia.`,
+        items: [
+          {
+            unidad_de_medida: 'NIU',
+            codigo: concept.code,
+            descripcion: `${concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
+            cantidad: 1,
+            valor_unitario: concept.total,
+            precio_unitario: concept.total,
+            descuento: '',
+            subtotal: concept.total,
+            tipo_de_igv: 9,
+            igv: 0.0,
+            total: concept.total,
+            anticipo_regularizacion: false,
+            anticipo_documento_serie: '',
+            anticipo_documento_numero: '',
+          },
+        ],
+      };
+      const existingPayment = await this.paymentRepository.findOne({
+        where: {
+          concept: { id: concept.id },
+          student: { id: createPaidReservedDto.studentId },
+        },
+      });
+
+      if (existingPayment) {
+        const bill = await this.billRepository.findOne({
+          where: {
+            payment: { id: existingPayment.id },
+          },
+        });
+        if (bill) {
+          throw new BadRequestException('Pago ya registrado para esta deuda.');
+        }
+        existingPayment.receipt = `${serie}-${numero}`;
+        return await this.paymentRepository.save(existingPayment);
+      }
+
+      const pay = this.paymentRepository.create({
+        concept: { id: concept.id },
+        date: new Date(),
+        status: true,
+        total: concept.total,
+        student: { id: createPaidReservedDto.studentId },
+        user: user.sub,
+        receipt: `${serie}-${numero}`,
+      });
+      const newPay = await this.paymentRepository.save(pay);
+      // Enviar datos a Nubefact
+      const response = await this.sendToNubefact(boletaData);
+
+      // Crear registro de boleta
+      await this.saveBill(response, newPay.id, serie, numero);
+
+      enrrollOnProccess.status = Status.RESERVADO;
+      return await this.enrollmentRepository.save(enrrollOnProccess);
     } catch (error) {
       // Revertir correlativo en caso de error
       await this.undoCorrelative(tipoComprobante, serie);

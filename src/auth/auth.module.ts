@@ -13,12 +13,14 @@ import { PermissionsModule } from 'src/permissions/permissions.module';
 import { Permission } from 'src/permissions/entities/permission.entity';
 import { Person } from 'src/person/entities/person.entity';
 import { PersonModule } from 'src/person/person.module';
+import { KeycloakModule } from 'src/keycloak/keycloak.module';
 
 @Module({
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
   imports: [
     UserModule,
+    KeycloakModule,
     PersonModule,
     PermissionsModule,
     ConfigModule,

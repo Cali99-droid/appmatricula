@@ -469,84 +469,6 @@ export class EnrollmentService {
 
   async getVacantsTest() {
     return await this.calcVacantsToClassroom(107);
-
-    // try {
-    //   let vacant;
-    //   const activityClassroom = await this.activityClassroomRepository.findOne({
-    //     where: {
-    //       id: 67,
-    //     },
-    //   });
-    //   const configAscent = await this.ascentRepository.find({
-    //     where: {
-    //       originId: { id: activityClassroom.id },
-    //       // year: { id: ac.yearId },
-    //     },
-    //   });
-
-    //   if (configAscent) {
-    //     /**calcular con el aula destino */
-    //     // const configAscent = await this.ascentRepository.findOne({
-    //     //   where: {
-    //     //     originId: { id: activityClassroom.id },
-    //     //     year: { id: activityClassroom.phase.year.id },
-    //     //   },
-    //     // });
-    //     const ac = configAscent[0].originId;
-    //     const enrrollmentRatified = await this.enrollmentRepository.find({
-    //       where: {
-    //         activityClassroom: ac,
-    //         ratified: true,
-    //       },
-    //     });
-
-    //     const capacity = activityClassroom.classroom.capacity;
-    //     const ratifieds = enrrollmentRatified.length;
-    //     const vacants = capacity - ratifieds;
-    //     vacant = {
-    //       origin: ac.grade.name + ' ' + ac.section,
-    //       grade: activityClassroom.grade.name + ' ' + activityClassroom.section,
-    //       capacity,
-    //       ratifieds,
-    //       vacants,
-    //     };
-    //   } else {
-    //     /**si no hay configuracion adicional */
-    //     console.log('no hay conf');
-    //     const enrrollmentRatified = await this.enrollmentRepository.find({
-    //       where: {
-    //         activityClassroom: {
-    //           grade: { position: activityClassroom.grade.position - 1 },
-    //           section: activityClassroom.section,
-    //           phase: {
-    //             year: {
-    //               name: (
-    //                 parseInt(activityClassroom.phase.year.name) - 1
-    //               ).toString(),
-    //             },
-    //           },
-    //         },
-    //         ratified: true,
-    //       },
-    //     });
-    //     const acor = enrrollmentRatified[0].activityClassroom;
-
-    //     const capacity = activityClassroom.classroom.capacity;
-    //     const ratifieds = enrrollmentRatified.length;
-    //     const vacants = capacity - ratifieds;
-    //     vacant = {
-    //       origin: acor.grade.name + ' ' + acor.section,
-    //       grade: activityClassroom.grade.name + ' ' + activityClassroom.section,
-    //       capacity,
-    //       ratifieds,
-    //       vacants,
-    //     };
-    //   }
-
-    //   return vacant;
-    // } catch (error) {
-    //   handleDBExceptions(error, this.logger);
-    // }
   }
   //: Promise<Vacants[]>
   async getVacants(yearId: number, query: FindVacantsDto): Promise<Vacants[]> {
@@ -1189,6 +1111,40 @@ export class EnrollmentService {
     return res;
   }
 
+  private async availableClassrooms(gradeId: number, campusId: number) {
+    /**TODO USAR AÑO ACTIVO */
+    const availableClassrooms = [];
+    const classrooms = await this.activityClassroomRepository.find({
+      where: {
+        phase: {
+          year: {
+            id: 16,
+          },
+        },
+        grade: { position: gradeId },
+        classroom: {
+          campusDetail: {
+            id: campusId,
+          },
+        },
+      },
+      relations: {
+        phase: {
+          year: true,
+        },
+      },
+    });
+
+    for (const ac of classrooms) {
+      const acv = await this.vacancyCalculation(ac.id);
+      if (acv.hasVacant) {
+        availableClassrooms.push(ac);
+      }
+    }
+
+    return availableClassrooms;
+  }
+
   /**calculo para nuevos */
   private async vacancyCalculation(activityClassroomId: number) {
     // Obtener la información del aula y su capacidad
@@ -1235,9 +1191,11 @@ export class EnrollmentService {
     const on_procces = counts[Status.EN_PROCESO] || 0;
 
     const capacity = ac.classroom.capacity;
-    const vacant = capacity - reserved - enrollments - pre_registered;
+    const vacant =
+      capacity - reserved - enrollments - on_procces - pre_registered;
 
     return {
+      id: ac.id,
       grade: ac.grade.name,
       section: ac.section,
       capacity,
@@ -1246,6 +1204,7 @@ export class EnrollmentService {
       on_procces,
       reserved,
       vacant,
+      hasVacant: vacant > 0,
     };
   }
 
@@ -1316,7 +1275,7 @@ export class EnrollmentService {
           pre_registered: item.pre_registered,
           on_procces: item.on_procces,
           reserved: item.reserved,
-          vacants: item.vacant,
+          vacant: item.vacant,
           detailOrigin: {
             id: 0,
             grade: '0',
@@ -1335,12 +1294,17 @@ export class EnrollmentService {
 
     return result;
   }
-  async getVacantsGeneral(gradeId: number, yearId: number) {
+  async getVacantsGeneral(gradeId: number, yearId: number, campusId: number) {
     const activityClassrooms = await this.activityClassroomRepository.find({
       where: {
-        grade: { id: gradeId - 1 },
+        grade: { id: gradeId },
         phase: {
-          year: { id: yearId - 1 },
+          year: { id: yearId },
+        },
+        classroom: {
+          campusDetail: {
+            id: campusId,
+          },
         },
       },
       select: {
@@ -1361,18 +1325,16 @@ export class EnrollmentService {
 
     /**data destino, aulas configuradas para el grado solicitado */
 
-    const activityClassroomsDest = await this.activityClassroomRepository.find({
-      where: {
-        grade: { id: gradeId },
-        phase: {
-          year: { id: yearId },
-        },
-      },
-    });
+    // const activityClassroomsDest = await this.activityClassroomRepository.find({
+    //   where: {
+    //     grade: { id: gradeId },
+    //     phase: {
+    //       year: { id: yearId },
+    //     },
+    //   },
+    // });
 
-    const capacities = activityClassroomsDest.map(
-      (ac) => ac.classroom.capacity,
-    );
+    const capacities = activityClassrooms.map((ac) => ac.classroom.capacity);
 
     const capacity = capacities.reduce(
       (accumulator, currentValue) => accumulator + currentValue,
@@ -1481,7 +1443,82 @@ export class EnrollmentService {
     }
   }
 
-  async createNewStudent(
+  /**recibe y verifica datos de admision */
+  async createNewStudent(createNewEnrollmentDto: CreateNewEnrollmentDto) {
+    const body = {
+      docNumber: createNewEnrollmentDto.docNumber,
+    };
+
+    try {
+      /**Consultar si obtuvo vacante en admision */
+      const response = await axios.post(
+        `https://api-admision.dev-solware.com/api/admin/search-new`,
+        body,
+      );
+      const data = response.data.data as DataAdmision;
+      const { child } = data;
+      /**validar que haya vacantes */
+      const availableClassrooms = await this.availableClassrooms(
+        child.grade,
+        child.campus,
+      );
+
+      // console.log(child.grade, child.campus);
+      // return availableClassrooms;
+      if (availableClassrooms.length === 0) {
+        throw new BadRequestException('not available vacants');
+      }
+      /**CREAR LA DATA */
+
+      const created = await this.familyService.createFamilyFromAdmision(
+        data,
+        availableClassrooms[0],
+      );
+
+      return created;
+    } catch (error) {
+      this.logger.error(
+        `[ADMISION] Error consulta : ${createNewEnrollmentDto.docNumber}`,
+      );
+      throw new HttpException(
+        `[ADMISION] Error al consultar: ${error.response?.data?.errors || error.message}`,
+        error.response?.status || 500,
+      );
+    }
+  }
+
+  async searchNewStudent(searchDto: CreateNewEnrollmentDto) {
+    const student = await this.studentRepository.findOne({
+      where: {
+        person: { docNumber: searchDto.docNumber },
+      },
+    });
+
+    const enrrollOnProccess = await this.enrollmentRepository.findOne({
+      where: {
+        status: Status.EN_PROCESO,
+        student: { id: student.id },
+      },
+    });
+
+    if (!enrrollOnProccess) {
+      throw new BadRequestException('Not available ');
+    }
+    const formatData = {
+      student: enrrollOnProccess.student,
+      code: enrrollOnProccess.code,
+      status: enrrollOnProccess.status,
+      grade:
+        enrrollOnProccess.activityClassroom.grade.name +
+        ' ' +
+        enrrollOnProccess.activityClassroom.section,
+      campus: enrrollOnProccess.activityClassroom.classroom.campusDetail.name,
+    };
+
+    return formatData;
+  }
+
+  async migrateStudentAdm(
     createNewEnrollmentDto: CreateNewEnrollmentDto,
     user: any,
   ) {
@@ -1498,10 +1535,10 @@ export class EnrollmentService {
       const data = response.data.data as DataAdmision;
       const { child } = data;
       /**CREAR LA DATA */
-      const created = await this.familyService.createFamilyFromAdmision(data);
-      /**crear Pago*/
+      // const created = await this.familyService.createFamilyFromAdmision(data, );
+      // /**crear Pago*/
 
-      return created;
+      // return created;
     } catch (error) {
       this.logger.error(
         `[ADMISION] Error consulta : ${createNewEnrollmentDto.docNumber}`,

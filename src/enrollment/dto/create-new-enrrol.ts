@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class CreateNewEnrollmentDto {
   @ApiProperty({
@@ -7,6 +7,6 @@ export class CreateNewEnrollmentDto {
     description: 'doc number the student',
     nullable: false,
   })
-  @IsNumber()
-  docNumber: number;
+  @IsString()
+  docNumber: string;
 }

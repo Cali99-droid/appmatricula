@@ -55,5 +55,6 @@ import { ConfigModule } from '@nestjs/config';
       // Secret key of the client taken from keycloak server
     }),
   ],
+  exports: [KeycloakService],
 })
 export class KeycloakModule {}

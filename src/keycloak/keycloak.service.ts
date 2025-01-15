@@ -12,6 +12,22 @@ export class KeycloakService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
+
+  async updateGroupKy(userId: string) {
+    const token = await this.getAdminToken();
+    const groupId = '307a6c20-1037-4594-965c-f82e0e00cb47';
+    await axios.put(
+      `${process.env.URL_KEYCLOAK}/admin/realms/${process.env.REALM_KEYCLOAK}/users/${userId}/groups/${groupId}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    console.log('Grupo actualizado correctamente');
+  }
   async migrateUsers() {
     const token = await this.getAdminToken();
 
@@ -73,7 +89,7 @@ export class KeycloakService {
   async getAdminToken() {
     try {
       const response = await axios.post(
-        `${process.env.URL_KEYCLOAK}/realms/colegioae/protocol/openid-connect/token`,
+        `${process.env.URL_KEYCLOAK}/realms/${process.env.REALM_KEYCLOAK}/protocol/openid-connect/token`,
         new URLSearchParams({
           client_id: process.env.CLIENT_ID_KEYCLOAK,
           username: process.env.USERNAME_KEYCLOAK,

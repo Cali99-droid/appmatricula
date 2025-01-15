@@ -22,6 +22,9 @@ import { TypeDoc } from 'src/person/enum/typeDoc.enum';
 import { Gender } from 'src/common/enum/gender.enum';
 import { FamilyRole } from 'src/common/enum/family-role.enum';
 import { User } from 'src/user/entities/user.entity';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { Status } from 'src/enrollment/enum/status.enum';
+import { TypePhase } from 'src/phase/enum/type-phase.enum';
 @Injectable()
 export class FamilyService {
   private readonly logger = new Logger('FamilyService');
@@ -36,6 +39,8 @@ export class FamilyService {
     private readonly relationShipRepository: Repository<Relationship>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Enrollment)
+    private readonly enrollRepository: Repository<Enrollment>,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {}
@@ -297,7 +302,7 @@ export class FamilyService {
       family.parentTwoId.user = { email: family.parentTwoId.user.email } as any;
     }
 
-    /**Formato temporal */
+    /**TODO Formato temporal */
     const { student, ...rest } = family;
     const childrens = student
       .map((item) => {
@@ -393,7 +398,10 @@ export class FamilyService {
   remove(id: number) {
     return `This action removes a #${id} family`;
   }
-  async createFamilyFromAdmision(createFamilyParentsStudentDto: DataAdmision) {
+  async createFamilyFromAdmision(
+    createFamilyParentsStudentDto: DataAdmision,
+    ac: any,
+  ) {
     const { parents, child } = createFamilyParentsStudentDto;
     const parentOne = parents[0];
     const parentTwo = parents[1];
@@ -421,6 +429,22 @@ export class FamilyService {
 
       if (existParentOne != null) {
         parentOneId = existParentOne.id;
+        if (parentOne.email != null) {
+          const existUser = await this.userRepository.findOne({
+            where: [
+              { email: parentOne.email },
+              { person: { id: existParentOne.id } },
+            ],
+          });
+          if (existUser == null) {
+            const user = this.userRepository.create({
+              email: parentOne.email,
+              password: existParentOne.docNumber,
+              person: { id: existParentOne.id },
+            });
+            await this.userRepository.save(user);
+          }
+        }
       } else {
         const person = this.personRepository.create({
           name: parentOne.name,
@@ -440,7 +464,7 @@ export class FamilyService {
             where: { email: parentOne.email },
           });
           if (existUser == null) {
-            const user = await this.userRepository.create({
+            const user = this.userRepository.create({
               email: parentOne.email,
               password: personCreated.docNumber,
               person: { id: personCreated.id },
@@ -452,6 +476,22 @@ export class FamilyService {
 
       if (existParentTwo != null) {
         parentTwoId = existParentTwo.id;
+        if (parentTwo.email != null) {
+          const existUser = await this.userRepository.findOne({
+            where: [
+              { email: parentOne.email },
+              { person: { id: existParentOne.id } },
+            ],
+          });
+          if (existUser == null) {
+            const user = this.userRepository.create({
+              email: parentTwo.email,
+              password: existParentTwo.docNumber,
+              person: { id: existParentTwo.id },
+            });
+            await this.userRepository.save(user);
+          }
+        }
       } else {
         const person = this.personRepository.create({
           docNumber: parentTwo.doc_number,
@@ -470,7 +510,7 @@ export class FamilyService {
             where: { email: parentTwoId.email },
           });
           if (existUser == null) {
-            const user = await this.userRepository.create({
+            const user = this.userRepository.create({
               email: parentTwoId.email,
               password: personCreated.docNumber,
               person: { id: personCreated.id },
@@ -539,9 +579,26 @@ export class FamilyService {
         student = await this.studentRepository.save(studentC);
       }
 
+      const existEnrroll = await this.enrollRepository.findOne({
+        where: {
+          code: `${ac.phase.year.name}${ac.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
+        },
+      });
+      let registered: Enrollment;
+      if (!existEnrroll) {
+        const resgisteredC = this.enrollRepository.create({
+          activityClassroom: { id: ac.id },
+          student: { id: student.id },
+          status: Status.EN_PROCESO,
+          code: `${ac.phase.year.name}${ac.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
+        });
+        registered = await this.enrollRepository.save(resgisteredC);
+      }
+
       return {
         nameFamily: child.lastname + ' ' + child.mLastname,
         student,
+        registered,
       };
     } catch (error) {
       // this.logger.error(error);

@@ -11,6 +11,7 @@ export interface ChildAdmision {
   type_doc: string;
   grade: number;
   level: number;
+  campus: number;
   schoolId: number;
   district_id: string;
   doc: string;
