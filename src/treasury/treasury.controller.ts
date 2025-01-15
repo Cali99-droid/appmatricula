@@ -23,7 +23,7 @@ export class TreasuryController {
   ) {
     return this.treasuryService.createPaid(createTreasuryDto, debtId, user);
   }
-  @Post('payment/reserved')
+  @Post('payment-reserved')
   @ApiResponse({ status: 201, description: 'pagado' })
   createPaidReserved(
     @Body() createPaidReservedDto: CreatePaidReserved,
