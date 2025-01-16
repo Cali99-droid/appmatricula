@@ -1523,7 +1523,28 @@ export class EnrollmentService {
     });
 
     if (!enrrollOnProccess) {
-      throw new BadRequestException('Not available enrroll');
+      const family = student.family;
+      const enrrollReserved = await this.enrollmentRepository.findOne({
+        where: {
+          status: Status.RESERVADO,
+          student: { id: student.id },
+        },
+      });
+      if (!enrrollReserved) {
+        throw new BadRequestException('Not available enrroll reserved');
+      }
+      const formatData = {
+        student: enrrollReserved.student,
+        code: enrrollReserved.code,
+        status: enrrollReserved.status,
+        grade:
+          enrrollReserved.activityClassroom.grade.name +
+          ' ' +
+          enrrollReserved.activityClassroom.section,
+        campus: enrrollReserved.activityClassroom.classroom.campusDetail.name,
+        family,
+      };
+      return formatData;
     }
 
     const family = student.family;
