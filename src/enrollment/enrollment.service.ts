@@ -179,6 +179,7 @@ export class EnrollmentService {
         idsStudent.push(ce.studentId);
       } else {
         existEnrroll.status = Status.PREMATRICULADO;
+        existEnrroll.activityClassroom.id = ce.activityClassroomId;
         await this.enrollmentRepository.save(existEnrroll);
         codes.push(existEnrroll.code);
         idsStudent.push(ce.studentId);
@@ -699,6 +700,31 @@ export class EnrollmentService {
     // await this.calcVacantsAc(12);
     if (!currentEnrrollment) {
       throw new NotFoundException('Dont exists this data');
+    }
+    if (currentEnrrollment.status === Status.RESERVADO) {
+      const ac = currentEnrrollment.activityClassroom;
+      const acs = await this.activityClassroomRepository.find({
+        where: {
+          grade: { id: ac.grade.id },
+          phase: { id: ac.phase.id },
+        },
+      });
+
+      for (const act of acs) {
+        const dest = await this.vacancyCalculation(act.id);
+        if (dest.hasVacant) {
+          const classroom: AvailableClassroom = {
+            id: dest.id,
+            name: dest.grade + ' ' + dest.section,
+            vacants: dest.vacant,
+            suggested: true,
+            campus: act.classroom.campusDetail.name,
+            level: act.grade.level.name,
+          };
+          availables.push(classroom);
+          return availables;
+        }
+      }
     }
 
     const yearId = currentEnrrollment.activityClassroom.phase.year.id;
