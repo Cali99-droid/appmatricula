@@ -62,7 +62,7 @@ export class TreasuryService {
 
     // Obtener y reservar correlativo
     const tipoComprobante = 'BOLETA';
-    const numero = await this.getCorrelative(tipoComprobante, serie);
+    const numero = await this.getCorrelative(tipoComprobante, 'BBB1');
 
     // Preparar datos para Nubefact
     const boletaData = this.generateBoletaData(
@@ -585,7 +585,7 @@ export class TreasuryService {
     return {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2,
-      serie,
+      serie: 'BBB1',
       numero,
       sunat_transaction: 1,
       cliente_tipo_de_documento: 1,
