@@ -608,6 +608,7 @@ export class FamilyService {
           student: { id: student.id },
           status: Status.EN_PROCESO,
           code: `${ac.phase.year.name}${ac.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
+          isActive: true,
         });
         registered = await this.enrollRepository.save(resgisteredC);
       }

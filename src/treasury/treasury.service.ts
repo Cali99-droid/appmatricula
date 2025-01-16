@@ -697,6 +697,7 @@ export class TreasuryService {
   private async finalizeDebtAndEnrollment(debt: any, enrroll: any) {
     debt.status = true;
     enrroll.status = Status.MATRICULADO;
+    enrroll.isActive = true;
     await this.enrollmentRepository.save(enrroll);
     await this.debtRepository.save(debt);
   }

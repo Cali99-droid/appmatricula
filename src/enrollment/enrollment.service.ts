@@ -191,7 +191,7 @@ export class EnrollmentService {
         .createQueryBuilder()
         .update(Enrollment)
         .set({
-          isActive: false,
+          // isActive: false,
           status: Status.FINALIZADO,
         })
         .where('code NOT IN (:...codes)', { codes })
