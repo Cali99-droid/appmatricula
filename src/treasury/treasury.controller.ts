@@ -27,9 +27,9 @@ export class TreasuryController {
   @ApiResponse({ status: 201, description: 'pagado' })
   createPaidReserved(
     @Body() createPaidReservedDto: CreatePaidReserved,
-
     @AuthenticatedUser() user: any,
   ) {
+    console.log('llamando');
     return this.treasuryService.createPaidReserved(createPaidReservedDto, user);
   }
 

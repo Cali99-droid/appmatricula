@@ -80,7 +80,6 @@ export class EnrollmentService {
             email: user.email,
           },
         });
-        console.log(father);
 
         const student = await this.studentRepository.findOne({
           where: {
@@ -131,45 +130,59 @@ export class EnrollmentService {
           'those enrolled exceed the capacity of the classroom ',
         );
       }
-      const enrollment = this.enrollmentRepository.create({
-        student: { id: ce.studentId },
-        activityClassroom: { id: ce.activityClassroomId },
-        code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
-        status: Status.PREMATRICULADO,
-      });
-      const enrroll = await this.enrollmentRepository.save(enrollment);
-      const activityClassroom =
-        await this.activityClassroomRepository.findOneBy({
-          id: ce.activityClassroomId,
-        });
-      /**generar deuda */
-      const levelId = activityClassroom.grade.level.id;
-      const campusDetailId = activityClassroom.classroom.campusDetail.id;
-
-      const rate = await this.ratesRepository.findOne({
+      const existEnrroll = await this.enrollmentRepository.findOne({
         where: {
-          level: { id: levelId },
-          campusDetail: { id: campusDetailId },
-        },
-        relations: {
-          concept: true,
+          student: { id: ce.studentId },
+          status: Status.RESERVADO,
+          code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
         },
       });
-      const dateEnd = new Date();
-      const createdDebt = this.debtRepository.create({
-        dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
-        concept: { id: rate.concept.id },
-        student: { id: ce.studentId },
-        total: rate.total,
-        status: false,
-        description: enrroll.code,
-        code: `MAT${enrroll.code}`,
-      });
+      if (!existEnrroll) {
+        const enrollment = this.enrollmentRepository.create({
+          student: { id: ce.studentId },
+          activityClassroom: { id: ce.activityClassroomId },
+          code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
+          status: Status.PREMATRICULADO,
+        });
+        const enrroll = await this.enrollmentRepository.save(enrollment);
+        const activityClassroom =
+          await this.activityClassroomRepository.findOneBy({
+            id: ce.activityClassroomId,
+          });
+        /**generar deuda */
+        const levelId = activityClassroom.grade.level.id;
+        const campusDetailId = activityClassroom.classroom.campusDetail.id;
 
-      await this.debtRepository.save(createdDebt);
+        const rate = await this.ratesRepository.findOne({
+          where: {
+            level: { id: levelId },
+            campusDetail: { id: campusDetailId },
+          },
+          relations: {
+            concept: true,
+          },
+        });
+        const dateEnd = new Date();
+        const createdDebt = this.debtRepository.create({
+          dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
+          concept: { id: rate.concept.id },
+          student: { id: ce.studentId },
+          total: rate.total,
+          status: false,
+          description: enrroll.code,
+          code: `MAT${enrroll.code}`,
+        });
 
-      codes.push(enrollment.code);
-      idsStudent.push(ce.studentId);
+        await this.debtRepository.save(createdDebt);
+
+        codes.push(enrollment.code);
+        idsStudent.push(ce.studentId);
+      } else {
+        existEnrroll.status = Status.PREMATRICULADO;
+        await this.enrollmentRepository.save(existEnrroll);
+        codes.push(existEnrroll.code);
+        idsStudent.push(ce.studentId);
+      }
     }
 
     try {

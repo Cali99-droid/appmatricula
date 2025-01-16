@@ -23,6 +23,7 @@ import { User } from 'src/user/entities/user.entity';
 import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
 import { FamilyRole } from 'src/common/enum/family-role.enum';
 import { Concept } from './entities/concept.entity';
+import { Person } from 'src/person/entities/person.entity';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 
@@ -149,7 +150,7 @@ export class TreasuryService {
         parentTwoId: true,
       },
     });
-    let resp;
+    let resp: Person;
 
     if (family.parentOneId.id === createPaidReservedDto.parentId) {
       resp = family.parentOneId;
@@ -160,13 +161,15 @@ export class TreasuryService {
     }
     const serie = `B${1}${enrrollOnProccess.activityClassroom.classroom.campusDetail.id}${enrrollOnProccess.activityClassroom.grade.level.id}`;
     const tipoComprobante = 'BOLETA';
-    const numero = await this.getCorrelative(tipoComprobante, serie);
+    const numero = await this.getCorrelative(tipoComprobante, 'BBB1');
     try {
       const concept = await this.conceptRepository.findOne({
         where: {
           code: 'C003',
         },
       });
+      // console.log(concept);
+      // return;
       const student = enrrollOnProccess.student.person;
       const grade = enrrollOnProccess.activityClassroom.grade;
       const level = grade.level;
@@ -174,7 +177,7 @@ export class TreasuryService {
       const boletaData = {
         operacion: 'generar_comprobante',
         tipo_de_comprobante: 2,
-        serie,
+        serie: 'BBB1',
         numero,
         sunat_transaction: 1,
         cliente_tipo_de_documento: 1,
@@ -189,8 +192,8 @@ export class TreasuryService {
         total_inafecta: concept.total,
         total: concept.total,
         enviar_automaticamente_a_la_sunat: true,
-        enviar_automaticamente_al_cliente: !!resp.user?.email,
-        observaciones: `Gracias por su preferencia.`,
+        // enviar_automaticamente_al_cliente: !!resp.user?.email,
+        observaciones: `Gracias por su preferencia. ${serie}-${numero}`,
         items: [
           {
             unidad_de_medida: 'NIU',
@@ -242,12 +245,35 @@ export class TreasuryService {
       const newPay = await this.paymentRepository.save(pay);
       // Enviar datos a Nubefact
       const response = await this.sendToNubefact(boletaData);
-
+      // console.log(response);
       // Crear registro de boleta
       const newBill = await this.saveBill(response, newPay.id, serie, numero);
 
       enrrollOnProccess.status = Status.RESERVADO;
       await this.enrollmentRepository.save(enrrollOnProccess);
+
+      /**genear deuda */
+      const dateEnd = new Date();
+      const rate = await this.ratesRepository.findOne({
+        where: {
+          level: { id: level.id },
+          campusDetail: { id: campus.id },
+        },
+        relations: {
+          concept: true,
+        },
+      });
+      const createdDebt = this.debtRepository.create({
+        dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
+        concept: { id: rate.concept.id },
+        student: { id: createPaidReservedDto.studentId },
+        total: rate.total - concept.total,
+        status: false,
+        description: enrrollOnProccess.code,
+        code: `MAT${enrrollOnProccess.code}`,
+      });
+
+      await this.debtRepository.save(createdDebt);
       return newBill;
     } catch (error) {
       // Revertir correlativo en caso de error
