@@ -199,9 +199,9 @@ export class EnrollmentService {
         .andWhere('status = :statusEnrroll', {
           statusEnrroll: Status.MATRICULADO,
         })
-        .orWhere('status = :otherStatusEnrroll', {
-          otherStatusEnrroll: Status.EN_PROCESO,
-        })
+        // .orWhere('status = :otherStatusEnrroll', {
+        //   otherStatusEnrroll: Status.EN_PROCESO,
+        // })
         .execute();
 
       return codes;
@@ -723,7 +723,7 @@ export class EnrollmentService {
             id: dest.id,
             name: dest.grade + ' ' + dest.section,
             vacants: dest.vacant,
-            suggested: true,
+            suggested: false,
             campus: act.classroom.campusDetail.name,
             level: act.grade.level.name,
           };
