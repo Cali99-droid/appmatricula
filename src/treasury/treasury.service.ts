@@ -600,7 +600,7 @@ export class TreasuryService {
       total_inafecta: debt.total,
       total: debt.total,
       enviar_automaticamente_a_la_sunat: true,
-      enviar_automaticamente_al_cliente: !!client.user?.email,
+      // enviar_automaticamente_al_cliente: !!client.user?.email,
       observaciones: `Gracias por su preferencia. ${debt.obs !== null ? debt.obs : ''}`,
       items: [
         {
