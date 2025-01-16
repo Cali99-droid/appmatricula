@@ -271,6 +271,7 @@ export class TreasuryService {
         status: false,
         description: enrrollOnProccess.code,
         code: `MAT${enrrollOnProccess.code}`,
+        obs: `Descontado de: ${serie}-${numero}`,
       });
 
       await this.debtRepository.save(createdDebt);
@@ -600,7 +601,7 @@ export class TreasuryService {
       total: debt.total,
       enviar_automaticamente_a_la_sunat: true,
       enviar_automaticamente_al_cliente: !!client.user?.email,
-      observaciones: `Gracias por su preferencia.`,
+      observaciones: `Gracias por su preferencia. ${debt.obs !== null ? debt.obs : ''}`,
       items: [
         {
           unidad_de_medida: 'NIU',
