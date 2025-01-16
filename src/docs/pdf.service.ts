@@ -24,6 +24,8 @@ import { DownloadContractQueryDto } from './dto/downloadContractQuery.dto';
 import { Year } from 'src/years/entities/year.entity';
 import { Level } from 'src/level/entities/level.entity';
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
+import { addConstancy } from './constancy/constancy';
+import { Status } from 'src/enrollment/enum/status.enum';
 
 @Injectable()
 export class PdfService {
@@ -594,6 +596,111 @@ export class PdfService {
         width: 80,
         // align: 'center',
       });
+      doc.end();
+    });
+  }
+  async generatePdfContancy(
+    idStudent: number,
+    query: DownloadContractQueryDto,
+  ): Promise<Buffer> {
+    const months = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+    const student = await this.studentRepository.findOne({
+      where: { id: idStudent },
+      relations: {
+        family: {
+          respEnrollment: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!student)
+      throw new NotFoundException(`Student with id ${idStudent} not found`);
+    if (!student.family)
+      throw new NotFoundException(`This student does not have family`);
+    if (!student.family.respEnrollment)
+      throw new NotFoundException(
+        `This student does not have a registration responsible`,
+      );
+
+    const classRoom = await this.enrollmentRepositoy.findOne({
+      where: { student: {id:idStudent},status:Status.reserved},
+      relations: {
+        grade: { level: true },
+        classroom: {
+          campusDetail: true,
+        },
+        phase: { year: true },
+      },
+    });
+
+    const today = new Date();
+    const day = today.getDate();
+    const month = months[today.getMonth()];
+    const year = today.getFullYear();
+    const parent = `${student.person.name.toUpperCase()} ${student.person.lastname.toUpperCase()} ${student.person.mLastname.toUpperCase()}`;
+    const children = `${student.person.name.toUpperCase()} ${student.person.lastname.toUpperCase()} ${student.person.mLastname.toUpperCase()}`;
+
+    const level = levels[childrenData.level];
+    const grade = grades[childrenData.grade];
+    const endVacant = `31-01-${year}`;
+    //para calcular el precio por nivel
+    return new Promise(async (resolve) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: {
+          top: 47,
+          bottom: 47,
+          left: 47,
+          right: 66,
+        },
+      });
+      // const doc = new PDFDocument({ margin: 30, size: 'A4' });
+      const buffers: Buffer[] = [];
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+      const fullUrl = this.configService.getOrThrow('FULL_URL_S3');
+      const imageUrl1 = `${fullUrl}contrato/inicial-dos.jpg`;
+      const imageUrlFirma = `${fullUrl}contrato/inicial-dos.jpg`;
+      const image1 = await this.fetchImage(imageUrl1);
+      const imageFirma = await this.fetchImage(imageUrlFirma);
+      doc.image(image1, 0, 0, { width: doc.page.width, align: 'center' });
+      doc.moveDown(6);
+
+      const data = {
+        parent,
+        children,
+        endVacant,
+        day,
+        month,
+        year,
+        level,
+        grade,
+      };
+      const imageWidth = 250;
+      const imageHeight = 100;
+      const pageWidth = doc.page.width;
+      const xPosition = (pageWidth - imageWidth) / 2;
+
+      doc.image(imageFirma, xPosition, 550, {
+        width: imageWidth,
+        height: imageHeight,
+      });
+      addConstancy(doc, data);
       doc.end();
     });
   }
