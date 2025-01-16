@@ -707,11 +707,17 @@ export class EnrollmentService {
         where: {
           grade: { id: ac.grade.id },
           phase: { id: ac.phase.id },
+          classroom: {
+            campusDetail: {
+              id: ac.classroom.campusDetail.id,
+            },
+          },
         },
       });
 
       for (const act of acs) {
         const dest = await this.vacancyCalculation(act.id);
+
         if (dest.hasVacant) {
           const classroom: AvailableClassroom = {
             id: dest.id,
@@ -722,9 +728,9 @@ export class EnrollmentService {
             level: act.grade.level.name,
           };
           availables.push(classroom);
-          return availables;
         }
       }
+      return availables;
     }
 
     const yearId = currentEnrrollment.activityClassroom.phase.year.id;
@@ -1232,8 +1238,7 @@ export class EnrollmentService {
     const capacity = ac.classroom.capacity;
     const vacant =
       capacity - reserved - enrollments - on_procces - pre_registered;
-
-    return {
+    const data = {
       id: ac.id,
       grade: ac.grade.name,
       section: ac.section,
@@ -1245,6 +1250,8 @@ export class EnrollmentService {
       vacant,
       hasVacant: vacant > 0,
     };
+
+    return data;
   }
 
   async getVacantsAll(yearId: number, query: FindVacantsDto) {
