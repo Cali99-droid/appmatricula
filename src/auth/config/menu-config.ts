@@ -217,6 +217,13 @@ export const AdminMenu = {
         },
         {
           id: 2,
+          label: 'Pagos Reserva',
+          icon: 'email',
+          link: '/admin/school/search-stundet',
+          permissions: ['administrador-colegio', 'secretaria'],
+        },
+        {
+          id: 3,
           label: 'Reporte de Pagos',
           icon: 'email',
           link: '/admin/treasury/payments',
