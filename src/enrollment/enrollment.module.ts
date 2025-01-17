@@ -13,6 +13,7 @@ import { User } from 'src/user/entities/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
 import { Rates } from 'src/treasury/entities/rates.entity';
 import { Debt } from 'src/treasury/entities/debt.entity';
+import { FamilyModule } from 'src/family/family.module';
 
 @Module({
   controllers: [EnrollmentController],
@@ -30,6 +31,7 @@ import { Debt } from 'src/treasury/entities/debt.entity';
       Debt,
     ]),
     StudentModule,
+    FamilyModule,
   ],
 })
 export class EnrollmentModule {}

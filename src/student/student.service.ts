@@ -102,8 +102,11 @@ export class StudentService {
       .leftJoinAndSelect(
         'student.enrollment',
         'enrollment',
-        'enrollment.status = :estadoActivo',
-        { estadoActivo: 'registered' },
+        'enrollment.status = :statusRe OR enrollment.status = :statusPre',
+        {
+          statusRe: 'registered',
+          statusPre: 'pre-registered',
+        },
       );
 
     if (searchTerm) {
@@ -126,10 +129,12 @@ export class StudentService {
 
     const [results, total] = await query.getManyAndCount();
 
-    const data = results.map((estudiante) => ({
+    let data = results.map((estudiante) => ({
       ...estudiante,
       tieneMatriculaActiva: estudiante.enrollment.length > 0,
     }));
+    data = data.filter((d) => d.tieneMatriculaActiva);
+
     return {
       data,
       total,
@@ -255,7 +260,7 @@ export class StudentService {
       take: 1,
     });
 
-    let newCodigo = '00000001'; // Default value if there are no students yet
+    let newCodigo = '00000001'; // Default
 
     if (lastStudent.length > 0) {
       const lastCodigo = parseInt(lastStudent[0].code, 10);
