@@ -24,6 +24,10 @@ import { DownloadContractQueryDto } from './dto/downloadContractQuery.dto';
 import { Year } from 'src/years/entities/year.entity';
 import { Level } from 'src/level/entities/level.entity';
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
+import { addConstancy } from './constancy/constancy';
+import { Status } from 'src/enrollment/enum/status.enum';
+import { Person } from 'src/person/entities/person.entity';
+import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
 
 @Injectable()
 export class PdfService {
@@ -40,6 +44,8 @@ export class PdfService {
     private readonly levelRepository: Repository<Level>,
     @InjectRepository(CampusDetail)
     private readonly campusDetailRepository: Repository<CampusDetail>,
+    @InjectRepository(Person)
+    private readonly personRepository: Repository<Person>,
 
     private readonly httpService: HttpService,
 
@@ -594,6 +600,111 @@ export class PdfService {
         width: 80,
         // align: 'center',
       });
+      doc.end();
+    });
+  }
+  async generatePdfContancy(
+    idStudent: number,
+    query: DownloadConstancyQueryDto,
+  ): Promise<Buffer> {
+    const months = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+    console.log(idStudent);
+    const student = await this.studentRepository.findOne({
+      where: { id: idStudent },
+      relations: {
+        family: {
+          respEnrollment: {
+            user: true,
+          },
+        },
+      },
+    });
+    if (!student)
+      throw new NotFoundException(`Student with id ${idStudent} not found`);
+    const parentData = await this.personRepository.findOne({
+      where: { id: query.parentId },
+    });
+
+    if (!parentData)
+      throw new NotFoundException(`Parent with id ${query.parentId} not found`);
+    const enrollment = await this.enrollmentRepositoy.findOne({
+      where: { student: { id: idStudent }, status: Status.RESERVADO },
+      relations: {
+        activityClassroom: {
+          grade: { level: true },
+        },
+      },
+    });
+    if (!enrollment)
+      throw new NotFoundException(
+        `The student does not have a registration with reserved status`,
+      );
+    const today = new Date();
+    const day = today.getDate();
+    const month = months[today.getMonth()];
+    const year = today.getFullYear();
+    const parent = `${parentData.name.toUpperCase()} ${parentData.lastname.toUpperCase()} ${parentData.mLastname.toUpperCase()}`;
+    const children = `${student.person.name.toUpperCase()} ${student.person.lastname.toUpperCase()} ${student.person.mLastname.toUpperCase()}`;
+
+    const level = enrollment.activityClassroom.grade.level.name.toUpperCase();
+    const grade = enrollment.activityClassroom.grade.name.toUpperCase();
+    const endVacant = `31-01-${year}`;
+    //para calcular el precio por nivel
+    return new Promise(async (resolve) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: {
+          top: 47,
+          bottom: 47,
+          left: 47,
+          right: 66,
+        },
+      });
+      // const doc = new PDFDocument({ margin: 30, size: 'A4' });
+      const buffers: Buffer[] = [];
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+      const fullUrl = this.configService.getOrThrow('AWS_URL_BUCKET');
+      const imageUrl1 = `${fullUrl}recursos/constancia-header.png`;
+      const imageUrlFirma = `${fullUrl}recursos/constancia-firma.png`;
+      const image1 = await this.fetchImage(imageUrl1);
+      const imageFirma = await this.fetchImage(imageUrlFirma);
+      doc.image(image1, 0, 0, { width: doc.page.width, align: 'center' });
+      doc.moveDown(6);
+
+      const data = {
+        parent,
+        children,
+        endVacant,
+        day,
+        month,
+        year,
+        level,
+        grade,
+      };
+      const imageWidth = 250;
+      const imageHeight = 100;
+      const pageWidth = doc.page.width;
+      const xPosition = (pageWidth - imageWidth) / 2;
+
+      doc.image(imageFirma, xPosition, 550, {
+        width: imageWidth,
+        height: imageHeight,
+      });
+      addConstancy(doc, data);
       doc.end();
     });
   }
