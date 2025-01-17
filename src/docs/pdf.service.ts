@@ -621,6 +621,7 @@ export class PdfService {
       'noviembre',
       'diciembre',
     ];
+    console.log(idStudent);
     const student = await this.studentRepository.findOne({
       where: { id: idStudent },
       relations: {
@@ -647,6 +648,10 @@ export class PdfService {
         },
       },
     });
+    if (!enrollment)
+      throw new NotFoundException(
+        `The student does not have a registration with reserved status`,
+      );
     const today = new Date();
     const day = today.getDate();
     const month = months[today.getMonth()];

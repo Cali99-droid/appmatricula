@@ -75,7 +75,7 @@ export class DocsController {
       query,
     );
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=carnets.pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=contracto.pdf');
     res.send(pdfBuffer);
   }
   @Get('download-constancy/:idStudent')
@@ -96,7 +96,7 @@ export class DocsController {
       query,
     );
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=carnets.pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=constancia.pdf');
     res.send(pdfBuffer);
   }
 }
