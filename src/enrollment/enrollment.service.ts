@@ -1540,8 +1540,12 @@ export class EnrollmentService {
       },
       relations: {
         family: {
-          parentOneId: true,
-          parentTwoId: true,
+          parentOneId: {
+            user: true,
+          },
+          parentTwoId: {
+            user: true,
+          },
         },
       },
     });
@@ -1581,6 +1585,9 @@ export class EnrollmentService {
     }
 
     const family = student.family;
+    // family.parentOneId.user;
+    // family.parentOneId.email = family.parentOneId.user.email;
+    // family.parentTwoId.email = family.parentOneId.user.email;
     const formatData = {
       student: enrrollOnProccess.student,
       code: enrrollOnProccess.code,
