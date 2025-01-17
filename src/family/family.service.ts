@@ -319,7 +319,11 @@ export class FamilyService {
               : previous;
           });
 
-        if (activityClassroom.grade.position !== 14 && enrroll.isActive) {
+        if (
+          (activityClassroom.grade.position !== 14 &&
+            enrroll.status !== Status.EN_PROCESO) ||
+          enrroll.isActive
+        ) {
           return {
             person,
             ...enrroll,
