@@ -31,7 +31,7 @@ import {
 } from './interfaces/available.interface';
 import { Vacants } from './interfaces/res-vacants.interface';
 import { CreateEnrollChildrenDto } from './dto/create-enroll-children.dto';
-
+import { ConfigService } from '@nestjs/config';
 import { Rates } from 'src/treasury/entities/rates.entity';
 import { Debt } from 'src/treasury/entities/debt.entity';
 import axios from 'axios';
@@ -42,6 +42,7 @@ import { DataAdmision } from 'src/family/interfaces/data-admision';
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
   constructor(
+    private readonly configService: ConfigService,
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
     @InjectRepository(Ascent)
@@ -60,6 +61,11 @@ export class EnrollmentService {
     /**servicios */
     private readonly studentService: StudentService,
     private readonly familyService: FamilyService,
+
+    /**env */
+    private readonly urlAdmision = this.configService.getOrThrow(
+      'API_ADMISION',
+    ),
   ) {}
 
   /**PREMATRICULAR */
@@ -1499,7 +1505,7 @@ export class EnrollmentService {
     try {
       /**Consultar si obtuvo vacante en admision */
       const response = await axios.post(
-        `https://api-admision.dev-solware.com/api/admin/search-new`,
+        `${this.urlAdmision}/admin/search-new`,
         body,
       );
       const data = response.data.data as DataAdmision;
@@ -1602,38 +1608,6 @@ export class EnrollmentService {
     };
 
     return formatData;
-  }
-
-  async migrateStudentAdm(
-    createNewEnrollmentDto: CreateNewEnrollmentDto,
-    user: any,
-  ) {
-    const body = {
-      docNumber: createNewEnrollmentDto.docNumber,
-    };
-
-    try {
-      /**Consultar si obtuvo vacante en admision */
-      const response = await axios.post(
-        `https://api-admision.dev-solware.com/api/admin/search-new`,
-        body,
-      );
-      const data = response.data.data as DataAdmision;
-      const { child } = data;
-      /**CREAR LA DATA */
-      // const created = await this.familyService.createFamilyFromAdmision(data, );
-      // /**crear Pago*/
-
-      // return created;
-    } catch (error) {
-      this.logger.error(
-        `[ADMISION] Error consulta : ${createNewEnrollmentDto.docNumber}`,
-      );
-      throw new HttpException(
-        `[ADMISION] Error al consultar: ${error.response?.data?.errors || error.message}`,
-        error.response?.status || 500,
-      );
-    }
   }
 
   /**script para crear un codigo para todos las matriculas */
