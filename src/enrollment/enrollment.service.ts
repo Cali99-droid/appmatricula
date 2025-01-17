@@ -179,6 +179,7 @@ export class EnrollmentService {
         idsStudent.push(ce.studentId);
       } else {
         existEnrroll.status = Status.PREMATRICULADO;
+        existEnrroll.isActive = true;
         existEnrroll.activityClassroom.id = ce.activityClassroomId;
         await this.enrollmentRepository.save(existEnrroll);
         codes.push(existEnrroll.code);

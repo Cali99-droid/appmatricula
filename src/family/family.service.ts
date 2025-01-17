@@ -319,11 +319,7 @@ export class FamilyService {
               : previous;
           });
 
-        if (
-          activityClassroom.grade.position !== 14 ||
-          enrroll.isActive ||
-          enrroll.status == Status.RESERVADO
-        ) {
+        if (activityClassroom.grade.position !== 14 && enrroll.isActive) {
           return {
             person,
             ...enrroll,
@@ -612,7 +608,7 @@ export class FamilyService {
           student: { id: student.id },
           status: Status.EN_PROCESO,
           code: `${ac.phase.year.name}${ac.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
-          isActive: true,
+          isActive: false,
         });
         registered = await this.enrollRepository.save(resgisteredC);
       }
