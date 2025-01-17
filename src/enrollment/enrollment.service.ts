@@ -187,22 +187,22 @@ export class EnrollmentService {
     }
 
     try {
-      await this.enrollmentRepository
-        .createQueryBuilder()
-        .update(Enrollment)
-        .set({
-          // isActive: false,
-          status: Status.FINALIZADO,
-        })
-        .where('code NOT IN (:...codes)', { codes })
-        .andWhere('studentId IN (:...idsStudent)', { idsStudent })
-        .andWhere('status = :statusEnrroll', {
-          statusEnrroll: Status.MATRICULADO,
-        })
-        // .orWhere('status = :otherStatusEnrroll', {
-        //   otherStatusEnrroll: Status.EN_PROCESO,
-        // })
-        .execute();
+      // await this.enrollmentRepository
+      //   .createQueryBuilder()
+      //   .update(Enrollment)
+      //   .set({
+      //     // isActive: false,
+      //     status: Status.FINALIZADO,
+      //   })
+      //   .where('code NOT IN (:...codes)', { codes })
+      //   .andWhere('studentId IN (:...idsStudent)', { idsStudent })
+      //   .andWhere('status = :statusEnrroll', {
+      //     statusEnrroll: Status.MATRICULADO,
+      //   })
+      //   // .orWhere('status = :otherStatusEnrroll', {
+      //   //   otherStatusEnrroll: Status.EN_PROCESO,
+      //   // })
+      //   .execute();
 
       return codes;
     } catch (error) {

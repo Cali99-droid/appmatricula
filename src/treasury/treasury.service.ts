@@ -330,7 +330,7 @@ export class TreasuryService {
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),
     );
-    console.log(isAuth);
+
     const whereCondition: any = {
       user: user.sub,
     };
@@ -346,10 +346,16 @@ export class TreasuryService {
           ...(isAuth ? whereConditionTwo : whereCondition),
           date: Between(startDate, endDate), // Filtrar entre las fechas dadas
           student: {
-            enrollment: {
-              // student: { id: debt.student.id },
-              status: Status.MATRICULADO,
-            },
+            enrollment: [
+              {
+                // student: { id: debt.student.id },
+                status: Status.MATRICULADO,
+              },
+              {
+                // student: { id: debt.student.id },
+                status: Status.RESERVADO,
+              },
+            ],
           },
         },
       },
@@ -499,7 +505,7 @@ export class TreasuryService {
       case '9f0cfdcf-7176-4244-a057-4488ef85be84':
         return 'Yeraldin  Eugenio';
       default:
-        break;
+        return sub;
     }
   }
   /**

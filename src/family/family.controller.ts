@@ -4,7 +4,7 @@ import { FamilyService } from './family.service';
 import { ApiTags } from '@nestjs/swagger';
 import { UpdateFamilyDto } from './dto/update-family.dto';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
-import { CreateFamilyParentsStudentDto } from './dto/create-family-parents-student.dto';
+
 @ApiTags('Family')
 @Controller('family')
 export class FamilyController {

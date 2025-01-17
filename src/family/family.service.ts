@@ -319,7 +319,11 @@ export class FamilyService {
               : previous;
           });
 
-        if (activityClassroom.grade.position !== 14 || enrroll.isActive) {
+        if (
+          activityClassroom.grade.position !== 14 ||
+          enrroll.isActive ||
+          enrroll.status == Status.RESERVADO
+        ) {
           return {
             person,
             ...enrroll,
@@ -367,7 +371,7 @@ export class FamilyService {
     });
 
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
-
+    console.log('llamo');
     return family;
   }
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {

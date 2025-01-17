@@ -102,8 +102,11 @@ export class StudentService {
       .leftJoinAndSelect(
         'student.enrollment',
         'enrollment',
-        'enrollment.status = :estadoActivo',
-        { estadoActivo: 'registered' },
+        'enrollment.status = :statusRe OR enrollment.status = :statusPre',
+        {
+          statusRe: 'registered',
+          statusPre: 'pre-registered',
+        },
       );
 
     if (searchTerm) {
@@ -126,10 +129,12 @@ export class StudentService {
 
     const [results, total] = await query.getManyAndCount();
 
-    const data = results.map((estudiante) => ({
+    let data = results.map((estudiante) => ({
       ...estudiante,
       tieneMatriculaActiva: estudiante.enrollment.length > 0,
     }));
+    data = data.filter((d) => d.tieneMatriculaActiva);
+
     return {
       data,
       total,
