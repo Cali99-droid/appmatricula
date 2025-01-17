@@ -4,6 +4,7 @@ import { Response } from 'express';
 import { PdfService } from './pdf.service';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DownloadContractQueryDto } from './dto/downloadContractQuery.dto';
+import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
 // import { GetUser } from 'src/auth/decorators/get-user.decorator';
 // import { Auth } from 'src/auth/decorators/auth.decorator';
 // import { User } from 'src/user/entities/user.entity';
@@ -51,11 +52,11 @@ export class DocsController {
 
   @Get('download-contract/:idStudent')
   @ApiOperation({
-    summary: 'download pdf with carnets students of Activity classroom',
+    summary: 'download pdf with contract students of Activity classroom',
   })
   @ApiResponse({
     status: 200,
-    description: 'Pdf with carnets of de classroom',
+    description: 'Pdf with contract of de classroom',
   })
   // @Auth()
   // async downloadContract(@Res() res: Response, @GetUser() user: User) {
@@ -74,7 +75,28 @@ export class DocsController {
       query,
     );
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=carnets.pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=contracto.pdf');
+    res.send(pdfBuffer);
+  }
+  @Get('download-constancy/:idStudent')
+  @ApiOperation({
+    summary: 'download pdf with constancy students',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Pdf with constancy',
+  })
+  async downloadConstancy(
+    @Res() res: Response,
+    @Param('idStudent') idStudent: string,
+    @Query() query: DownloadConstancyQueryDto,
+  ) {
+    const pdfBuffer = await this.pdfService.generatePdfContancy(
+      +idStudent,
+      query,
+    );
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=constancia.pdf');
     res.send(pdfBuffer);
   }
 }
