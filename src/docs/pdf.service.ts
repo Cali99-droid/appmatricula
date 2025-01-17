@@ -26,6 +26,8 @@ import { Level } from 'src/level/entities/level.entity';
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 import { addConstancy } from './constancy/constancy';
 import { Status } from 'src/enrollment/enum/status.enum';
+import { Person } from 'src/person/entities/person.entity';
+import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
 
 @Injectable()
 export class PdfService {
@@ -42,6 +44,8 @@ export class PdfService {
     private readonly levelRepository: Repository<Level>,
     @InjectRepository(CampusDetail)
     private readonly campusDetailRepository: Repository<CampusDetail>,
+    @InjectRepository(Person)
+    private readonly personRepository: Repository<Person>,
 
     private readonly httpService: HttpService,
 
@@ -601,7 +605,7 @@ export class PdfService {
   }
   async generatePdfContancy(
     idStudent: number,
-    query: DownloadContractQueryDto,
+    query: DownloadConstancyQueryDto,
   ): Promise<Buffer> {
     const months = [
       'enero',
@@ -627,36 +631,31 @@ export class PdfService {
         },
       },
     });
-
     if (!student)
       throw new NotFoundException(`Student with id ${idStudent} not found`);
-    if (!student.family)
-      throw new NotFoundException(`This student does not have family`);
-    if (!student.family.respEnrollment)
-      throw new NotFoundException(
-        `This student does not have a registration responsible`,
-      );
-
-    const classRoom = await this.enrollmentRepositoy.findOne({
-      where: { student: {id:idStudent},status:Status.reserved},
-      relations: {
-        grade: { level: true },
-        classroom: {
-          campusDetail: true,
-        },
-        phase: { year: true },
-      },
+    const parentData = await this.personRepository.findOne({
+      where: { id: query.parentId },
     });
 
+    if (!parentData)
+      throw new NotFoundException(`Parent with id ${query.parentId} not found`);
+    const enrollment = await this.enrollmentRepositoy.findOne({
+      where: { student: { id: idStudent }, status: Status.RESERVADO },
+      relations: {
+        activityClassroom: {
+          grade: { level: true },
+        },
+      },
+    });
     const today = new Date();
     const day = today.getDate();
     const month = months[today.getMonth()];
     const year = today.getFullYear();
-    const parent = `${student.person.name.toUpperCase()} ${student.person.lastname.toUpperCase()} ${student.person.mLastname.toUpperCase()}`;
+    const parent = `${parentData.name.toUpperCase()} ${parentData.lastname.toUpperCase()} ${parentData.mLastname.toUpperCase()}`;
     const children = `${student.person.name.toUpperCase()} ${student.person.lastname.toUpperCase()} ${student.person.mLastname.toUpperCase()}`;
 
-    const level = levels[childrenData.level];
-    const grade = grades[childrenData.grade];
+    const level = enrollment.activityClassroom.grade.level.name.toUpperCase();
+    const grade = enrollment.activityClassroom.grade.name.toUpperCase();
     const endVacant = `31-01-${year}`;
     //para calcular el precio por nivel
     return new Promise(async (resolve) => {
@@ -673,9 +672,9 @@ export class PdfService {
       const buffers: Buffer[] = [];
       doc.on('data', buffers.push.bind(buffers));
       doc.on('end', () => resolve(Buffer.concat(buffers)));
-      const fullUrl = this.configService.getOrThrow('FULL_URL_S3');
-      const imageUrl1 = `${fullUrl}contrato/inicial-dos.jpg`;
-      const imageUrlFirma = `${fullUrl}contrato/inicial-dos.jpg`;
+      const fullUrl = this.configService.getOrThrow('AWS_URL_BUCKET');
+      const imageUrl1 = `${fullUrl}recursos/constancia-header.png`;
+      const imageUrlFirma = `${fullUrl}recursos/constancia-firma.png`;
       const image1 = await this.fetchImage(imageUrl1);
       const imageFirma = await this.fetchImage(imageUrlFirma);
       doc.image(image1, 0, 0, { width: doc.page.width, align: 'center' });
