@@ -5,6 +5,8 @@ import {
   PrimaryGeneratedColumn,
   JoinColumn,
   Column,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
 import { Student } from '../../student/entities/student.entity';
@@ -82,4 +84,20 @@ export class Enrollment {
   })
   @Column('boolean', { default: '1' })
   isActive?: boolean;
+
+  /**TIMESTAMPS */
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    select: false,
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+    select: false,
+  })
+  updatedAt: Date;
 }

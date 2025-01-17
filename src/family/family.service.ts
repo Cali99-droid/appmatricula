@@ -17,8 +17,14 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-import { CreateFamilyParentsStudentDto } from './dto/create-family-parents-student.dto';
-
+import { DataAdmision } from './interfaces/data-admision';
+import { TypeDoc } from 'src/person/enum/typeDoc.enum';
+import { Gender } from 'src/common/enum/gender.enum';
+import { FamilyRole } from 'src/common/enum/family-role.enum';
+import { User } from 'src/user/entities/user.entity';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { Status } from 'src/enrollment/enum/status.enum';
+import { TypePhase } from 'src/phase/enum/type-phase.enum';
 @Injectable()
 export class FamilyService {
   private readonly logger = new Logger('FamilyService');
@@ -31,6 +37,10 @@ export class FamilyService {
     private readonly familyRepository: Repository<Family>,
     @InjectRepository(Relationship)
     private readonly relationShipRepository: Repository<Relationship>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Enrollment)
+    private readonly enrollRepository: Repository<Enrollment>,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {}
@@ -292,11 +302,15 @@ export class FamilyService {
       family.parentTwoId.user = { email: family.parentTwoId.user.email } as any;
     }
 
-    /**Formato temporal */
+    /**TODO Formato temporal */
     const { student, ...rest } = family;
     const childrens = student
       .map((item) => {
         const person = item.person;
+        // Verifica si `enrollment` tiene elementos
+        if (item.enrollment.length === 0) {
+          return undefined; // O manejar de otra manera según tu lógica
+        }
         const { student, activityClassroom, ...enrroll } =
           item.enrollment.reduce((previous, current) => {
             return current.activityClassroom.grade.position >
@@ -305,7 +319,11 @@ export class FamilyService {
               : previous;
           });
 
-        if (activityClassroom.grade.position !== 14 || enrroll.isActive) {
+        if (
+          (activityClassroom.grade.position !== 14 &&
+            enrroll.status !== Status.EN_PROCESO) ||
+          enrroll.isActive
+        ) {
           return {
             person,
             ...enrroll,
@@ -338,7 +356,24 @@ export class FamilyService {
     }
     return data;
   }
+  async getFamily(id: number) {
+    const family = await this.familyRepository.findOne({
+      where: { id },
 
+      relations: {
+        parentOneId: {
+          user: true,
+        },
+        parentTwoId: {
+          user: true,
+        },
+      },
+    });
+
+    if (!family) throw new NotFoundException(`Family with id ${id} not found`);
+    console.log('llamo');
+    return family;
+  }
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
     const {
       parentOneId,
@@ -385,9 +420,12 @@ export class FamilyService {
     return `This action removes a #${id} family`;
   }
   async createFamilyFromAdmision(
-    createFamilyParentsStudentDto: CreateFamilyParentsStudentDto,
+    createFamilyParentsStudentDto: DataAdmision,
+    ac: any,
   ) {
-    const { parentOne, parentTwo, student } = createFamilyParentsStudentDto;
+    const { parents, child } = createFamilyParentsStudentDto;
+    const parentOne = parents[0];
+    const parentTwo = parents[1];
     try {
       // const parentOneId;
       let parentOneId = undefined;
@@ -396,65 +434,125 @@ export class FamilyService {
       let familyId = undefined;
       const existParentOne = await this.personRepository.findOne({
         where: {
-          docNumber: parentOne.docNumber,
+          docNumber: parentOne.doc_number,
         },
       });
       const existParentTwo = await this.personRepository.findOne({
         where: {
-          docNumber: parentTwo.docNumber,
+          docNumber: parentTwo.doc_number,
         },
       });
       const existStudent = await this.personRepository.findOne({
         where: {
-          docNumber: student.docNumber,
+          docNumber: child.doc_number,
         },
       });
-      console.log(existStudent);
+
       if (existParentOne != null) {
         parentOneId = existParentOne.id;
+        if (parentOne.email != null) {
+          const existUser = await this.userRepository.findOne({
+            where: [
+              { email: parentOne.email },
+              { person: { id: existParentOne.id } },
+            ],
+          });
+          if (existUser == null) {
+            const user = this.userRepository.create({
+              email: parentOne.email,
+              password: existParentOne.docNumber,
+              person: { id: existParentOne.id },
+            });
+            await this.userRepository.save(user);
+          }
+        }
       } else {
         const person = this.personRepository.create({
-          typeDoc: parentOne.typeDoc,
-          docNumber: parentOne.docNumber,
-          name: parentOne.name.toUpperCase(),
-          lastname: parentOne.lastname.toUpperCase(),
-          mLastname: parentOne.mLastname.toUpperCase(),
-          gender: parentOne.gender,
-          familyRole: parentOne.familyRole,
-          birthDate: parentOne.birthDate,
+          name: parentOne.name,
+          lastname: parentOne.lastname,
+          mLastname: parentOne.mLastname,
+          docNumber: parentOne.doc_number,
+          birthDate: new Date(parentOne.birthdate),
+          cellPhone: parentOne.phone,
+          typeDoc: parentOne.type_doc as TypeDoc,
+          gender: parentOne.role === 'P' ? Gender.M : Gender.F,
+          familyRole: parentOne.role as FamilyRole,
         });
         const personCreated = await this.personRepository.save(person);
         parentOneId = personCreated.id;
+        if (parentOne.email != null) {
+          const existUser = await this.userRepository.findOne({
+            where: { email: parentOne.email },
+          });
+          if (existUser == null) {
+            const user = this.userRepository.create({
+              email: parentOne.email,
+              password: personCreated.docNumber,
+              person: { id: personCreated.id },
+            });
+            await this.userRepository.save(user);
+          }
+        }
       }
 
       if (existParentTwo != null) {
         parentTwoId = existParentTwo.id;
+        if (parentTwo.email != null) {
+          const existUser = await this.userRepository.findOne({
+            where: [
+              { email: parentOne.email },
+              { person: { id: existParentOne.id } },
+            ],
+          });
+          if (existUser == null) {
+            const user = this.userRepository.create({
+              email: parentTwo.email,
+              password: existParentTwo.docNumber,
+              person: { id: existParentTwo.id },
+            });
+            await this.userRepository.save(user);
+          }
+        }
       } else {
         const person = this.personRepository.create({
-          typeDoc: parentTwo.typeDoc,
-          docNumber: parentTwo.docNumber,
+          docNumber: parentTwo.doc_number,
           name: parentTwo.name.toUpperCase(),
           lastname: parentTwo.lastname.toUpperCase(),
           mLastname: parentTwo.mLastname.toUpperCase(),
-          gender: parentTwo.gender,
-          familyRole: parentTwo.familyRole,
-          birthDate: parentTwo.birthDate,
+          familyRole: parentTwo.role as FamilyRole,
+          birthDate: new Date(parentTwo.birthdate),
+          typeDoc: parentTwo.type_doc as TypeDoc,
+          gender: parentTwo.role === 'P' ? Gender.M : Gender.F,
         });
         const personCreated = await this.personRepository.save(person);
         parentTwoId = personCreated.id;
+        if (parentTwoId.email != null) {
+          const existUser = await this.userRepository.findOne({
+            where: { email: parentTwoId.email },
+          });
+          if (existUser == null) {
+            const user = this.userRepository.create({
+              email: parentTwoId.email,
+              password: personCreated.docNumber,
+              person: { id: personCreated.id },
+            });
+            await this.userRepository.save(user);
+          }
+        }
       }
+
       if (existStudent != null) {
         studentId = existStudent.id;
       } else {
         const person = this.personRepository.create({
-          typeDoc: student.typeDoc,
-          docNumber: student.docNumber,
-          name: student.name.toUpperCase(),
-          lastname: student.lastname.toUpperCase(),
-          mLastname: student.mLastname.toUpperCase(),
-          gender: student.gender,
-          familyRole: student.familyRole,
-          birthDate: student.birthDate,
+          typeDoc: parentOne.type_doc as TypeDoc,
+          docNumber: child.doc_number,
+          name: child.name.toUpperCase(),
+          lastname: child.lastname.toUpperCase(),
+          mLastname: child.mLastname.toUpperCase(),
+          gender: child.gender as Gender,
+          familyRole: FamilyRole.HIJO,
+          birthDate: new Date(child.birthdate),
         });
         const personCreated = await this.personRepository.save(person);
         studentId = personCreated.id;
@@ -469,29 +567,60 @@ export class FamilyService {
         familyId = existFamily.id;
       } else {
         const family = this.familyRepository.create({
-          nameFamily: createFamilyParentsStudentDto.nameFamily.toUpperCase(),
+          nameFamily: child.lastname + ' ' + child.mLastname,
           parentOneId: { id: parentOneId },
           parentTwoId: { id: parentTwoId },
         });
         const familyCreated = await this.familyRepository.save(family);
         familyId = familyCreated.id;
       }
-      const existStudentC = await this.studentRepository.findOne({
+      let student = null;
+      student = await this.studentRepository.findOne({
         where: {
           person: { id: studentId },
         },
       });
-      console.log(existStudentC);
-      if (existStudentC == null) {
+
+      if (student == null) {
+        const lastStudent = await this.studentRepository.find({
+          order: { code: 'DESC' },
+          take: 1,
+        });
+        let newCodigo = '00000001'; // Default
+        if (lastStudent.length > 0) {
+          const lastCodigo = parseInt(lastStudent[0].code, 10);
+          newCodigo = (lastCodigo + 1).toString().padStart(8, '0');
+        }
         const studentC = this.studentRepository.create({
           person: { id: studentId },
           family: { id: familyId },
+          code: newCodigo,
           hasDebt: false,
         });
-        await this.studentRepository.save(studentC);
+        student = await this.studentRepository.save(studentC);
       }
+
+      const existEnrroll = await this.enrollRepository.findOne({
+        where: {
+          code: `${ac.phase.year.name}${ac.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
+        },
+      });
+      let registered: Enrollment;
+      if (!existEnrroll) {
+        const resgisteredC = this.enrollRepository.create({
+          activityClassroom: { id: ac.id },
+          student: { id: student.id },
+          status: Status.EN_PROCESO,
+          code: `${ac.phase.year.name}${ac.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
+          isActive: false,
+        });
+        registered = await this.enrollRepository.save(resgisteredC);
+      }
+
       return {
-        nameFamily: createFamilyParentsStudentDto.nameFamily.toUpperCase(),
+        nameFamily: child.lastname + ' ' + child.mLastname,
+        student,
+        registered,
       };
     } catch (error) {
       // this.logger.error(error);

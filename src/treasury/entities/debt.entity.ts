@@ -49,6 +49,11 @@ export class Debt {
   })
   code: string;
 
+  @Column('varchar', {
+    nullable: true,
+  })
+  obs: string;
+
   /**Relaciones */
   @ApiProperty({
     description: 'Id of Student',

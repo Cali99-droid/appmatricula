@@ -34,6 +34,7 @@ import {
   Resource,
   Roles,
 } from 'nest-keycloak-connect';
+import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -96,6 +97,17 @@ export class EnrollmentController {
   @Get()
   findAll() {
     return this.enrollmentService.findAll();
+  }
+
+  @Post('new')
+  @Public()
+  createNewStudent(@Body() createNewEnrollmentDto: CreateNewEnrollmentDto) {
+    return this.enrollmentService.createNewStudent(createNewEnrollmentDto);
+  }
+
+  @Post('search/new')
+  searchNewStudent(@Body() createNewEnrollmentDto: CreateNewEnrollmentDto) {
+    return this.enrollmentService.searchNewStudent(createNewEnrollmentDto);
   }
 
   @Get('activity-classroom')
@@ -234,10 +246,12 @@ export class EnrollmentController {
     @Query() query: FindVacantsDto,
   ) {
     // return this.enrollmentService.getVacantsTest();
-    return this.enrollmentService.getVacants(yearId, query);
+    //return this.enrollmentService.getVacants(yearId, query);
+    /**calculo para nuevos */
+    return this.enrollmentService.getVacantsAll(yearId, query);
   }
 
-  @Get('vacants/:yearId/grade/:gradeId')
+  @Get('vacants/:yearId/grade/:gradeId/campus/:campusId')
   @ApiOkResponse({
     status: 200,
     description: 'result of consult, hasVacants true or false',
@@ -247,9 +261,10 @@ export class EnrollmentController {
   findVacantsByGrade(
     @Param('yearId', ParseIntPipe) yearId: number,
     @Param('gradeId', ParseIntPipe) gradeId: number,
+    @Param('campusId', ParseIntPipe) campusId: number,
   ) {
     // return this.enrollmentService.getVacantsTest();
-    return this.enrollmentService.getVacantsGeneral(gradeId, yearId);
+    return this.enrollmentService.getVacantsGeneral(gradeId, yearId, campusId);
   }
 
   @Get('/get/status')

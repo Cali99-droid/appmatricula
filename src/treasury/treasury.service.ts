@@ -20,6 +20,10 @@ import { CreatePaidDto } from './dto/create-paid.dto';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Rates } from './entities/rates.entity';
 import { User } from 'src/user/entities/user.entity';
+import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
+import { FamilyRole } from 'src/common/enum/family-role.enum';
+import { Concept } from './entities/concept.entity';
+import { Person } from 'src/person/entities/person.entity';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 
@@ -43,175 +47,243 @@ export class TreasuryService {
     private readonly enrollmentRepository: Repository<Enrollment>,
     @InjectRepository(Rates)
     private readonly ratesRepository: Repository<Rates>,
+    @InjectRepository(Concept)
+    private readonly conceptRepository: Repository<Concept>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
 
   async createPaid(createPaidDto: CreatePaidDto, debtId: number, user: any) {
-    const debt = await this.debtRepository.findOne({
-      where: {
-        id: debtId,
-        student: {
-          enrollment: {
-            // student: { id: debt.student.id },
-            status: Status.PREMATRICULADO,
-          },
-        },
-      },
-      relations: {
-        concept: true,
-        student: {
-          person: true,
-          enrollment: {
-            activityClassroom: {
-              grade: {
-                level: true,
-              },
-              classroom: true,
-            },
-          },
-        },
-      },
-    });
+    // Validar deuda y obtener datos iniciales
+    const { debt, serie, family, client, enrroll } = await this.validateDebt(
+      createPaidDto,
+      debtId,
+    );
 
-    if (!debt) {
-      throw new BadRequestException(
-        'No existe deuda de matricula o estudiante ya matriculado',
-      );
-    }
-    if (debt.status) {
-      throw new BadRequestException('Deuda ya cancelada');
-    }
-    if (debt.student.enrollment.length === 0) {
-      throw new NotFoundException('No tiene prematricula el estudiante');
-    }
-    const enrroll = debt.student.enrollment[0];
-    const student = debt.student.person;
-    const level = enrroll.activityClassroom.grade.level;
-    const grade = enrroll.activityClassroom.grade;
-    const campus = enrroll.activityClassroom.classroom.campusDetail;
-    const family = await this.familyRepository.findOne({
-      where: {
-        student: { id: debt.student.id },
-      },
-      relations: {
-        respEconomic: true,
-        respEnrollment: true,
-      },
-    });
-
-    const serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
-
+    // Obtener y reservar correlativo
     const tipoComprobante = 'BOLETA';
+    const numero = await this.getCorrelative(tipoComprobante, 'BBB1');
 
-    // Obtener el número correlativo
-    const numero = await this.getCorrelative(tipoComprobante, serie);
-
-    const client = family.respEnrollment;
-    if (!client) {
-      throw new NotFoundException('No existe responsable de matricula');
-    }
-    const boletaData = {
-      operacion: 'generar_comprobante',
-      tipo_de_comprobante: 2, // 2: Boleta
-      serie: serie, // Cambia según tu configuración
-      numero: numero, // Número correlativo de la boleta
-      sunat_transaction: 1,
-      cliente_tipo_de_documento: 1, // 1: DNI
-      cliente_numero_de_documento: client.docNumber,
-      cliente_denominacion:
-        client.name + ' ' + client.lastname + ' ' + client.mLastname,
-      cliente_direccion: family.address,
-      cliente_email: '',
-      cliente_email_1: '',
-      cliente_email_2: '',
-      fecha_de_emision: new Date(),
-      moneda: 1, // 1: Soles
-      tipo_de_cambio: '',
-      porcentaje_de_igv: 18.0,
-      total_gravada: '',
-      total_exonerada: debt.total,
-      total_igv: 0,
-      total: debt.total,
-      observaciones: `Gracias por su preferencia.`,
-      items: [
-        {
-          unidad_de_medida: 'NIU',
-          codigo: debt.concept.code,
-          descripcion: `${debt.concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
-          cantidad: 1,
-          valor_unitario: debt.total,
-          precio_unitario: debt.total,
-          descuento: '',
-          subtotal: debt.total,
-          tipo_de_igv: 8,
-          igv: 0.0,
-          total: debt.total,
-          anticipo_regularizacion: false,
-          anticipo_documento_serie: '',
-          anticipo_documento_numero: '',
-        },
-      ],
-    };
+    // Preparar datos para Nubefact
+    const boletaData = this.generateBoletaData(
+      createPaidDto,
+      debt,
+      family,
+      client,
+      numero,
+      serie,
+    );
 
     try {
-      const response = await axios.post(this.apiUrl, boletaData, {
-        headers: {
-          Authorization: `Token token=${this.apiToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      // Crear pago en la base de datos
+      const newPay = await this.savePayment(debt, user, `${serie}-${numero}`);
 
-      const pay = this.paymentRepository.create({
-        concept: { id: debt.concept.id },
-        date: new Date(),
-        status: true,
-        total: debt.total,
-        student: { id: debt.student.id },
-        user: user.sub,
-      });
-      const newPay = await this.paymentRepository.save(pay);
-      const bill = this.billRepository.create({
-        date: new Date(),
-        url: response.data.enlace_del_pdf,
-        payment: { id: newPay.id },
-        serie: serie,
-        numero: numero,
-        accepted: response.data.aceptada_por_sunat,
-      });
-      const newBill = await this.billRepository.save(bill);
+      // Enviar datos a Nubefact
+      const response = await this.sendToNubefact(boletaData);
 
-      debt.status = true;
-      enrroll.status = Status.MATRICULADO;
-      await this.enrollmentRepository.save(enrroll);
-      await this.debtRepository.save(debt);
+      // Crear registro de boleta
+      const newBill = await this.saveBill(response, newPay.id, serie, numero);
 
-      /**generar deuda */
+      // Actualizar deuda y matrícula
+      await this.finalizeDebtAndEnrollment(debt, enrroll);
+
+      // Generar nuevas deudas mensuales
       const rate = await this.ratesRepository.findOne({
         where: {
-          level: { id: level.id },
-          campusDetail: { id: campus.id },
-          concept: { id: 2 },
+          level: { id: enrroll.activityClassroom.grade.level.id },
+          campusDetail: {
+            id: enrroll.activityClassroom.classroom.campusDetail.id,
+          },
+          concept: { id: 2 }, // Concepto de mensualidades
         },
         relations: {
           concept: true,
         },
       });
+
+      if (!rate) {
+        throw new NotFoundException(
+          'No se encontró la tarifa para el nivel y sede',
+        );
+      }
+
       await this.generateMonthlyDebts(debt.student.id, rate, enrroll.code);
 
       return newBill;
-      // return await this.generateTicketPdf(
-      //   res,
-      //   client,
-      //   debt.total,
-      //   serie,
-      //   numero,
-      // );
     } catch (error) {
+      // Revertir correlativo en caso de error
       await this.undoCorrelative(tipoComprobante, serie);
-      this.logger.log(error);
+      this.logger.error(
+        `[PAID] Error al emitir boleta: ${error.message} ${serie} ${numero}`,
+      );
       throw new HttpException(
-        `Error al emitir la boleta: ${error.response?.data?.errors || error.message}`,
+        `[PAID] Error al emitir la boleta: ${error.response?.data?.errors || error.message} ${serie} ${numero} `,
+        error.response?.status || 500,
+      );
+    }
+  }
+
+  async createPaidReserved(
+    createPaidReservedDto: CreatePaidReserved,
+    user: any,
+  ) {
+    const enrrollOnProccess = await this.enrollmentRepository.findOne({
+      where: {
+        status: Status.EN_PROCESO,
+        student: { id: createPaidReservedDto.studentId },
+      },
+      relations: {
+        student: {
+          family: true,
+        },
+      },
+    });
+    if (!enrrollOnProccess) {
+      throw new BadRequestException('Not available ');
+    }
+    const family = await this.familyRepository.findOne({
+      where: {
+        id: enrrollOnProccess.student.family.id,
+      },
+      relations: {
+        parentOneId: true,
+        parentTwoId: true,
+      },
+    });
+    let resp: Person;
+
+    if (family.parentOneId.id === createPaidReservedDto.parentId) {
+      resp = family.parentOneId;
+    }
+
+    if (family.parentTwoId.id === createPaidReservedDto.parentId) {
+      resp = family.parentTwoId;
+    }
+    const serie = `B${1}${enrrollOnProccess.activityClassroom.classroom.campusDetail.id}${enrrollOnProccess.activityClassroom.grade.level.id}`;
+    const tipoComprobante = 'BOLETA';
+    const numero = await this.getCorrelative(tipoComprobante, 'BBB1');
+    try {
+      const concept = await this.conceptRepository.findOne({
+        where: {
+          code: 'C003',
+        },
+      });
+      // console.log(concept);
+      // return;
+      const student = enrrollOnProccess.student.person;
+      const grade = enrrollOnProccess.activityClassroom.grade;
+      const level = grade.level;
+      const campus = enrrollOnProccess.activityClassroom.classroom.campusDetail;
+      const boletaData = {
+        operacion: 'generar_comprobante',
+        tipo_de_comprobante: 2,
+        serie: 'BBB1',
+        numero,
+        sunat_transaction: 1,
+        cliente_tipo_de_documento: 1,
+        cliente_numero_de_documento: resp.docNumber,
+        cliente_denominacion: `${resp.name} ${resp.lastname} ${resp.mLastname}`,
+        cliente_direccion: family.address,
+        cliente_email: resp.user?.email || '',
+        fecha_de_emision: new Date(),
+        moneda: 1,
+        porcentaje_de_igv: 0,
+        total_gravada: '',
+        total_inafecta: concept.total,
+        total: concept.total,
+        enviar_automaticamente_a_la_sunat: true,
+        // enviar_automaticamente_al_cliente: !!resp.user?.email,
+        observaciones: `Gracias por su preferencia. ${serie}-${numero}`,
+        items: [
+          {
+            unidad_de_medida: 'NIU',
+            codigo: concept.code,
+            descripcion: `${concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
+            cantidad: 1,
+            valor_unitario: concept.total,
+            precio_unitario: concept.total,
+            descuento: '',
+            subtotal: concept.total,
+            tipo_de_igv: 9,
+            igv: 0.0,
+            total: concept.total,
+            anticipo_regularizacion: false,
+            anticipo_documento_serie: '',
+            anticipo_documento_numero: '',
+          },
+        ],
+      };
+      const existingPayment = await this.paymentRepository.findOne({
+        where: {
+          concept: { id: concept.id },
+          student: { id: createPaidReservedDto.studentId },
+        },
+      });
+
+      if (existingPayment) {
+        const bill = await this.billRepository.findOne({
+          where: {
+            payment: { id: existingPayment.id },
+          },
+        });
+        if (bill) {
+          throw new BadRequestException('Pago ya registrado para esta deuda.');
+        }
+        existingPayment.receipt = `${serie}-${numero}`;
+        return await this.paymentRepository.save(existingPayment);
+      }
+
+      const pay = this.paymentRepository.create({
+        concept: { id: concept.id },
+        date: new Date(),
+        status: true,
+        total: concept.total,
+        student: { id: createPaidReservedDto.studentId },
+        user: user.sub,
+        receipt: `${serie}-${numero}`,
+      });
+      const newPay = await this.paymentRepository.save(pay);
+      // Enviar datos a Nubefact
+      const response = await this.sendToNubefact(boletaData);
+      // console.log(response);
+      // Crear registro de boleta
+      const newBill = await this.saveBill(response, newPay.id, serie, numero);
+
+      enrrollOnProccess.status = Status.RESERVADO;
+      await this.enrollmentRepository.save(enrrollOnProccess);
+
+      /**genear deuda */
+      const dateEnd = new Date();
+      const rate = await this.ratesRepository.findOne({
+        where: {
+          level: { id: level.id },
+          campusDetail: { id: campus.id },
+        },
+        relations: {
+          concept: true,
+        },
+      });
+      const createdDebt = this.debtRepository.create({
+        dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
+        concept: { id: rate.concept.id },
+        student: { id: createPaidReservedDto.studentId },
+        total: rate.total - concept.total,
+        status: false,
+        description: enrrollOnProccess.code,
+        code: `MAT${enrrollOnProccess.code}`,
+        obs: `Descontado de: ${serie}-${numero}`,
+      });
+
+      await this.debtRepository.save(createdDebt);
+      return newBill;
+    } catch (error) {
+      // Revertir correlativo en caso de error
+      await this.undoCorrelative(tipoComprobante, serie);
+      this.logger.error(
+        `[PAID] Error al emitir boleta: ${error.message} ${serie} ${numero}`,
+      );
+      throw new HttpException(
+        `[PAID] Error al emitir la boleta: ${error.response?.data?.errors || error.message} ${serie} ${numero} `,
         error.response?.status || 500,
       );
     }
@@ -274,10 +346,16 @@ export class TreasuryService {
           ...(isAuth ? whereConditionTwo : whereCondition),
           date: Between(startDate, endDate), // Filtrar entre las fechas dadas
           student: {
-            enrollment: {
-              // student: { id: debt.student.id },
-              status: Status.MATRICULADO,
-            },
+            enrollment: [
+              {
+                // student: { id: debt.student.id },
+                status: Status.MATRICULADO,
+              },
+              {
+                // student: { id: debt.student.id },
+                status: Status.RESERVADO,
+              },
+            ],
           },
         },
       },
@@ -317,6 +395,7 @@ export class TreasuryService {
         serie: boleta.serie,
         numero: boleta.numero,
         cod: `${boleta.serie}-${boleta.numero}`,
+        isAccepted: boleta.accepted,
         url: boleta.url,
         description: `${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
         user: this.getUser(boleta.payment.user),
@@ -345,39 +424,6 @@ export class TreasuryService {
     };
   }
 
-  async generateMonthlyDebts(
-    studentId: number,
-    rate: Rates,
-    codeEnrroll: string,
-  ) {
-    const debts = [];
-    const targetYear = 2025; // Año fijo para las deudas
-
-    // Generar deudas desde marzo (2) hasta diciembre (11) para el año 2025
-    for (let month = 2; month <= 11; month++) {
-      const dateEnd = new Date(targetYear, month + 1, 0); // Último día del mes correspondiente
-      const formattedDateEnd = dateEnd.toISOString().split('T')[0]; // Convertir a 'YYYY-MM-DD'
-      debts.push(
-        this.debtRepository.create({
-          dateEnd: formattedDateEnd,
-          concept: { id: rate.concept.id },
-          student: { id: studentId },
-          code: `PEN${month}${dateEnd
-            .toLocaleString('es-ES', { month: 'long' })
-            .toUpperCase()}${codeEnrroll}`,
-          total: rate.total,
-          status: false,
-          description: dateEnd
-            .toLocaleString('es-ES', { month: 'long' })
-            .toUpperCase(), // Ej. 'MARZO'
-        }),
-      );
-    }
-
-    // Guardar todas las deudas en una sola operación
-    await this.debtRepository.save(debts);
-  }
-
   async getCorrelative(type: string, serie: string): Promise<number> {
     // Inicia una transacción
     return await this.correlativeRepository.manager.transaction(
@@ -394,6 +440,7 @@ export class TreasuryService {
         } else {
           // Incrementa el número correlativo existente
           correlative.numero += 1;
+          correlative.updatedAt = new Date();
           await manager.save(Correlative, correlative);
         }
 
@@ -437,6 +484,18 @@ export class TreasuryService {
     };
   }
 
+  // async createPaymentAdmision(name: string, docNumber: string) {
+  //   const rate = await this.ratesRepository.findOne({
+  //     where: {
+  //       level: { id: levelId },
+  //       campusDetail: { id: campusDetailId },
+  //     },
+  //     relations: {
+  //       concept: true,
+  //     },
+  //   });
+  // }
+
   getUser(sub: string) {
     switch (sub) {
       case '272550ea-be37-4d3e-8ee3-b4597ac75fda':
@@ -446,7 +505,7 @@ export class TreasuryService {
       case '9f0cfdcf-7176-4244-a057-4488ef85be84':
         return 'Yeraldin  Eugenio';
       default:
-        break;
+        return sub;
     }
   }
   /**
@@ -455,100 +514,239 @@ export class TreasuryService {
    *  Yeraldin  Eugenio ID: 942
    *
    */
-  // async generateTicketPdf(
-  //   res: Response,
-  //   client: any,
-  //   prices: number,
-  //   serie: string,
-  //   number: number,
-  // ): Promise<void> {
-  //   // Crear un nuevo documento PDF
-  //   const pdfDoc = await PDFDocument.create();
+  /**PRIVATE FUNCTIONS */
+  /** Validar Deuda */
+  private async validateDebt(createPaidDto: CreatePaidDto, debtId: number) {
+    const debt = await this.debtRepository.findOne({
+      where: {
+        id: debtId,
+        student: {
+          enrollment: {
+            status: Status.PREMATRICULADO,
+          },
+        },
+        status: false,
+      },
+      relations: {
+        concept: true,
+        student: {
+          person: true,
+          enrollment: {
+            activityClassroom: {
+              grade: { level: true },
+              classroom: true,
+            },
+          },
+        },
+      },
+    });
 
-  //   // Agregar una página de tamaño personalizado para el ticket
-  //   const page = pdfDoc.addPage([200, 400]); // Ancho: 200 puntos, Alto: 400 puntos
+    if (!debt) {
+      throw new BadRequestException(
+        'No existe deuda o estudiante ya matriculado',
+      );
+    }
 
-  //   // Configurar fuentes y estilos
-  //   const { width, height } = page.getSize();
-  //   const fontSize = 10;
+    if (debt.status) {
+      throw new BadRequestException('Deuda ya cancelada');
+    }
 
-  //   // Encabezado de la boleta
-  //   page.drawText('Boleta de Venta', {
-  //     x: 50,
-  //     y: height - 30,
-  //     size: 14,
-  //     color: rgb(0, 0, 0),
-  //   });
+    if (debt.student.enrollment.length === 0) {
+      throw new NotFoundException('No tiene prematricula el estudiante');
+    }
 
-  //   page.drawText('Colegio Albert Eisntein', {
-  //     x: 50,
-  //     y: height - 50,
-  //     size: 12,
-  //     color: rgb(0, 0, 0),
-  //   });
-  //   page.drawText(`${serie} - ${number}`, {
-  //     x: 50,
-  //     y: height - 60,
-  //     size: 12,
-  //     color: rgb(0, 0, 0),
-  //   });
+    const enrroll = debt.student.enrollment[0];
+    // const student = debt.student.person;
+    const level = enrroll.activityClassroom.grade.level;
+    const campus = enrroll.activityClassroom.classroom.campusDetail;
 
-  //   // Datos del cliente
-  //   const clientDetails = [
-  //     `Cliente: ${client.name + ' ' + client.lastname + ' ' + client.mLastname}`,
-  //     `DNI:${client.docNumber} `,
-  //     `Fecha: ${client.docNumber}`,
-  //   ];
-  //   clientDetails.forEach((text, idx) => {
-  //     page.drawText(text, {
-  //       x: 10,
-  //       y: height - 80 - idx * 15,
-  //       size: fontSize,
-  //       color: rgb(0, 0, 0),
-  //     });
-  //   });
+    const family = await this.familyRepository.findOne({
+      where: { student: { id: debt.student.id } },
+      relations: { respEconomic: true, respEnrollment: { user: true } },
+    });
 
-  //   // Detalles de la venta
-  //   const items = [{ description: 'MATRICULA', quantity: 1, price: prices }];
+    if (!family?.respEnrollment) {
+      throw new NotFoundException('No existe responsable de matrícula');
+    }
 
-  //   let yPosition = height - 130;
-  //   items.forEach((item) => {
-  //     page.drawText(
-  //       `${item.description}   x${item.quantity}   S/ ${item.price.toFixed(2)}`,
-  //       {
-  //         x: 10,
-  //         y: yPosition,
-  //         size: fontSize,
-  //         color: rgb(0, 0, 0),
-  //       },
-  //     );
-  //     yPosition -= 15;
-  //   });
+    const serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
 
-  //   // Total
-  //   const total = items.reduce((sum, item) => sum + item.price, 0);
-  //   page.drawText(`Total: S/ ${total.toFixed(2)}`, {
-  //     x: 10,
-  //     y: yPosition - 20,
-  //     size: fontSize + 2,
-  //     color: rgb(0, 0, 0),
-  //   });
+    return { debt, serie, family, client: family.respEnrollment, enrroll };
+  }
+  /**Generar Datos para Nubefact */
+  private generateBoletaData(
+    createPaidDto: CreatePaidDto,
+    debt: any,
+    family: any,
+    client: any,
+    numero: number,
+    serie: string,
+  ) {
+    const student = debt.student.person;
+    const grade = debt.student.enrollment[0].activityClassroom.grade;
+    const level = grade.level;
+    const campus =
+      debt.student.enrollment[0].activityClassroom.classroom.campusDetail;
 
-  //   // Pie de página
-  //   page.drawText('Gracias por su pago!', {
-  //     x: 50,
-  //     y: 20,
-  //     size: fontSize,
-  //     color: rgb(0, 0, 0),
-  //   });
+    return {
+      operacion: 'generar_comprobante',
+      tipo_de_comprobante: 2,
+      serie: 'BBB1',
+      numero,
+      sunat_transaction: 1,
+      cliente_tipo_de_documento: 1,
+      cliente_numero_de_documento: client.docNumber,
+      cliente_denominacion: `${client.name} ${client.lastname} ${client.mLastname}`,
+      cliente_direccion: family.address,
+      cliente_email: client.user?.email || '',
+      fecha_de_emision: new Date(),
+      moneda: 1,
+      porcentaje_de_igv: 0,
+      total_gravada: '',
+      total_inafecta: debt.total,
+      total: debt.total,
+      enviar_automaticamente_a_la_sunat: true,
+      // enviar_automaticamente_al_cliente: !!client.user?.email,
+      observaciones: `Gracias por su preferencia. ${debt.obs !== null ? debt.obs : ''}`,
+      items: [
+        {
+          unidad_de_medida: 'NIU',
+          codigo: debt.concept.code,
+          descripcion: `${debt.concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
+          cantidad: 1,
+          valor_unitario: debt.total,
+          precio_unitario: debt.total,
+          descuento: '',
+          subtotal: debt.total,
+          tipo_de_igv: 9,
+          igv: 0.0,
+          total: debt.total,
+          anticipo_regularizacion: false,
+          anticipo_documento_serie: '',
+          anticipo_documento_numero: '',
+        },
+      ],
+    };
+  }
+  /**enviar a nuberfact */
+  private async sendToNubefact(boletaData: any) {
+    try {
+      const response = await axios.post(this.apiUrl, boletaData, {
+        headers: {
+          Authorization: `Token token=${this.apiToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response;
+    } catch (error) {
+      this.logger.error(
+        `[SEND] Error al emitir boleta. Serie: ${boletaData.serie}, Número: ${boletaData.numero}, Detalles: ${JSON.stringify(error.response?.data || error.message)}`,
+      );
+      throw new HttpException(
+        `[SEND] Error al emitir la boleta: ${error.response?.data?.errors || error.message}`,
+        error.response?.status || 500,
+      );
+    }
+  }
+  /** Crear Pago */
+  private async savePayment(debt: any, user: any, receipt: string) {
+    const existingPayment = await this.paymentRepository.findOne({
+      where: {
+        concept: { id: debt.concept.id },
+        student: { id: debt.student.id },
+      },
+    });
 
-  //   // Guardar el PDF en un Buffer
-  //   const pdfBytes = await pdfDoc.save();
+    if (existingPayment) {
+      const bill = await this.billRepository.findOne({
+        where: {
+          payment: { id: existingPayment.id },
+        },
+      });
+      if (bill) {
+        throw new BadRequestException('Pago ya registrado para esta deuda.');
+      }
+      existingPayment.receipt = receipt;
+      return await this.paymentRepository.save(existingPayment);
+    }
 
-  //   res.setHeader('Content-Type', 'application/pdf');
-  //   res.setHeader('Content-Disposition', 'inline; filename=boleta.pdf');
-  //   res.send(Buffer.from(pdfBytes));
-  // }
+    const pay = this.paymentRepository.create({
+      concept: { id: debt.concept.id },
+      date: new Date(),
+      status: true,
+      total: debt.total,
+      student: { id: debt.student.id },
+      user: user.sub,
+      receipt,
+    });
+    return await this.paymentRepository.save(pay);
+  }
+  /**Crear boleta */
+  private async saveBill(
+    response: any,
+    paymentId: number,
+    serie: string,
+    numero: number,
+  ) {
+    const bill = this.billRepository.create({
+      date: new Date(),
+      url: response.data.enlace_del_pdf,
+      payment: { id: paymentId },
+      serie,
+      numero,
+      accepted: response.data.aceptada_por_sunat,
+    });
+    return await this.billRepository.save(bill);
+  }
+
+  /**Finalizar Deuda y Matrícula */
+  private async finalizeDebtAndEnrollment(debt: any, enrroll: any) {
+    debt.status = true;
+    enrroll.status = Status.MATRICULADO;
+    enrroll.isActive = true;
+    await this.enrollmentRepository.save(enrroll);
+    await this.debtRepository.save(debt);
+  }
+
+  /**generar deudas 10 meses */
+  private async generateMonthlyDebts(
+    studentId: number,
+    rate: Rates,
+    codeEnrroll: string,
+  ) {
+    const debts = [];
+    const targetYear = 2025; // Año fijo para las deudas
+
+    for (let month = 2; month <= 11; month++) {
+      const dateEnd = new Date(targetYear, month + 1, 0); // Último día del mes
+      const formattedDateEnd = dateEnd.toISOString().split('T')[0]; // Formato 'YYYY-MM-DD'
+
+      const debt = this.debtRepository.create({
+        dateEnd: formattedDateEnd,
+        concept: { id: rate.concept.id },
+        student: { id: studentId },
+        code: `PEN${month}${dateEnd
+          .toLocaleString('es-ES', { month: 'long' })
+          .toUpperCase()}${codeEnrroll}`,
+        total: rate.total,
+        status: false,
+        description: dateEnd
+          .toLocaleString('es-ES', { month: 'long' })
+          .toUpperCase(), // Ejemplo: 'MARZO'
+      });
+
+      debts.push(debt);
+    }
+
+    try {
+      await this.debtRepository.save(debts); // Guardar todas las deudas
+      this.logger.log(
+        `Deudas generadas correctamente para el estudiante ID: ${studentId}`,
+      );
+    } catch (error) {
+      this.logger.error;
+    }
+  }
 
   async migrateToNubeFact() {
     const boletas = await this.billRepository.find({

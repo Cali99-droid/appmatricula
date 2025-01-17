@@ -269,6 +269,10 @@ export class PersonService {
       const childrens = student
         .map((item) => {
           const person = item.person;
+          // Verifica si `enrollment` tiene elementos
+          if (item.enrollment.length === 0) {
+            return undefined; // O manejar de otra manera según tu lógica
+          }
           const { student, activityClassroom, ...enrroll } =
             item.enrollment.reduce((previous, current) => {
               return current.activityClassroom.grade.position >

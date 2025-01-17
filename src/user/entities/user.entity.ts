@@ -24,7 +24,9 @@ export class User {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
-  @Column('text')
+  @Column('text', {
+    nullable: true,
+  })
   sub: string;
 
   @Column('varchar', {
@@ -50,9 +52,7 @@ export class User {
   @ApiProperty({
     description: 'Id of Person',
   })
-  @OneToOne(() => Person, (person) => person.user, {
-    eager: true,
-  })
+  @OneToOne(() => Person, (person) => person.user)
   @JoinColumn({ name: 'personId' })
   person: Person;
 

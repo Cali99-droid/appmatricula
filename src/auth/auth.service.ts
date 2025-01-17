@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
@@ -18,6 +17,7 @@ import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/user/user.service';
 import { AdminMenu } from './config/menu-config';
 import { Person } from 'src/person/entities/person.entity';
+import { KeycloakService } from 'src/keycloak/keycloak.service';
 
 @Injectable()
 export class AuthService {
@@ -29,6 +29,8 @@ export class AuthService {
     private usersService: UserService,
     private readonly jwtService: JwtService,
     private configService: ConfigService,
+
+    private readonly keycloakService: KeycloakService,
   ) {}
   async create(registerUserDto: RegisterUserDto) {
     try {
@@ -196,8 +198,13 @@ export class AuthService {
       }
     }
 
-    userBD.sub = user.sub;
-    await this.userRepository.save(userBD);
+    if (userBD.sub === null) {
+      userBD.sub = user.sub;
+      /**actualizar permisos grupo */
+      await this.keycloakService.updateGroupKy(user.sub);
+      await this.userRepository.save(userBD);
+    }
+
     let roles = [];
     if (user.resource_access['client-test-appae']) {
       roles = user.resource_access['client-test-appae'].roles;

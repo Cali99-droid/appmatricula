@@ -1,11 +1,13 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Enrollment } from '../../enrollment/entities/enrollment.entity';
 import { Person } from '../../person/entities/person.entity';
@@ -70,4 +72,19 @@ export class Student {
     // eager: true,
   })
   email: Email[];
+  /**TIMESTAMPS */
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    select: false,
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+    select: false,
+  })
+  updatedAt: Date;
 }
