@@ -61,12 +61,9 @@ export class EnrollmentService {
     /**servicios */
     private readonly studentService: StudentService,
     private readonly familyService: FamilyService,
-
-    /**env */
-    private readonly urlAdmision = this.configService.getOrThrow(
-      'API_ADMISION',
-    ),
   ) {}
+  /**env */
+  private readonly urlAdmision = this.configService.getOrThrow('API_ADMISION');
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {

@@ -14,6 +14,7 @@ import { Permission } from 'src/permissions/entities/permission.entity';
 import { Rates } from 'src/treasury/entities/rates.entity';
 import { Debt } from 'src/treasury/entities/debt.entity';
 import { FamilyModule } from 'src/family/family.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   controllers: [EnrollmentController],
@@ -32,6 +33,7 @@ import { FamilyModule } from 'src/family/family.module';
     ]),
     StudentModule,
     FamilyModule,
+    ConfigModule,
   ],
 })
 export class EnrollmentModule {}
