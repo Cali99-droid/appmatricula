@@ -1516,7 +1516,10 @@ export class EnrollmentService {
       // console.log(child.grade, child.campus);
       // return availableClassrooms;
       if (availableClassrooms.length === 0) {
-        throw new BadRequestException('not available vacants');
+        throw new BadRequestException(
+          'not available vacants',
+          child.doc_number,
+        );
       }
       /**CREAR LA DATA */
 
