@@ -473,7 +473,7 @@ export class UserService {
       this.logger.error(error);
     }
   }
-  async findByActivityClassroom(activityClassroomId: number) {
+  async findByActivityClassroom1(activityClassroomId: number) {
     if (isNaN(activityClassroomId) || activityClassroomId <= 0) {
       throw new NotFoundException(
         `activityClassroomId must be a number greater than 0`,
@@ -518,6 +518,96 @@ export class UserService {
         },
       },
     }));
+
+    return filteredEnroll;
+  }
+  async findByActivityClassroom(activityClassroomId: number) {
+    if (isNaN(activityClassroomId) || activityClassroomId <= 0) {
+      throw new NotFoundException(
+        `activityClassroomId must be a number greater than 0`,
+      );
+    }
+
+    const enroll = await this.enrollmentRepository
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.student', 'student')
+      .leftJoinAndSelect('student.person', 'person')
+      .leftJoinAndSelect('student.family', 'family')
+      .leftJoinAndSelect('family.parentOneId', 'parentOne')
+      .leftJoinAndSelect('family.parentTwoId', 'parentTwo')
+      .leftJoinAndSelect('parentOne.user', 'parentOneUser')
+      .leftJoinAndSelect('parentTwo.user', 'parentTwoUser')
+      .where('enrollment.activityClassroomId = :activityClassroomId', {
+        activityClassroomId,
+      })
+      .orderBy('parentOne.familyRole', 'ASC')
+      .addOrderBy('parentTwo.familyRole', 'ASC')
+      .addOrderBy('person.lastname', 'ASC')
+      .addOrderBy('person.mLastname', 'ASC')
+      .addOrderBy('person.name', 'ASC')
+      .getMany();
+
+    const filteredEnroll = enroll.map((e) => {
+      const parentOne = e.student.family?.parentOneId || {};
+      const parentTwo = e.student.family?.parentTwoId || {};
+
+      const parentOneTyped = parentOne as {
+        name: string | null;
+        lastname: string | null;
+        mLastname: string | null;
+        familyRole: string | null;
+        cellPhone: string | null;
+        user?: { email: string | null };
+      };
+
+      const parentTwoTyped = parentTwo as {
+        name: string | null;
+        lastname: string | null;
+        mLastname: string | null;
+        familyRole: string | null;
+        cellPhone: string | null;
+        user?: { email: string | null };
+      };
+
+      const [firstParent, secondParent] =
+        parentOneTyped.familyRole === 'P'
+          ? [parentOneTyped, parentTwoTyped]
+          : parentTwoTyped.familyRole === 'P'
+            ? [parentTwoTyped, parentOneTyped]
+            : [parentOneTyped, parentTwoTyped];
+
+      return {
+        student: {
+          person: {
+            name: e.student.person?.name ?? null,
+            lastname: e.student.person?.lastname ?? null,
+            mLastname: e.student.person?.mLastname ?? null,
+          },
+          family: {
+            parentOneId: {
+              name: firstParent.name ?? null,
+              lastname: firstParent.lastname ?? null,
+              mLastname: firstParent.mLastname ?? null,
+              familyRole: firstParent.familyRole ?? null,
+              cellPhone: firstParent.cellPhone ?? null,
+              user: {
+                email: firstParent.user?.email ?? null,
+              },
+            },
+            parentTwoId: {
+              name: secondParent.name ?? null,
+              lastname: secondParent.lastname ?? null,
+              mLastname: secondParent.mLastname ?? null,
+              familyRole: secondParent.familyRole ?? null,
+              cellPhone: secondParent.cellPhone ?? null,
+              user: {
+                email: secondParent.user?.email ?? null,
+              },
+            },
+          },
+        },
+      };
+    });
 
     return filteredEnroll;
   }
