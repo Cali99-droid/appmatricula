@@ -102,11 +102,12 @@ export class StudentService {
       .leftJoinAndSelect(
         'student.enrollment',
         'enrollment',
-        'enrollment.status = :statusRe OR enrollment.status = :statusPre OR enrollment.status = :statusRes',
+        'enrollment.status = :statusRe OR enrollment.status = :statusPre OR enrollment.status = :statusRes OR enrollment.status = :statusFin',
         {
           statusRe: 'registered',
           statusPre: 'pre-registered',
           statusRes: 'reserved',
+          statusFin: 'finalized',
         },
       );
 
