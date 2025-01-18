@@ -654,6 +654,8 @@ export class PdfService {
       );
     const today = new Date();
     const day = today.getDate();
+    const futureDate = new Date(today);
+    futureDate.setDate(futureDate.getDate() + 25);
     const month = months[today.getMonth()];
     const year = today.getFullYear();
     const parent = `${parentData.name.toUpperCase()} ${parentData.lastname.toUpperCase()} ${parentData.mLastname.toUpperCase()}`;
@@ -661,7 +663,7 @@ export class PdfService {
 
     const level = enrollment.activityClassroom.grade.level.name.toUpperCase();
     const grade = enrollment.activityClassroom.grade.name.toUpperCase();
-    const endVacant = `31-01-${year}`;
+    const endVacant = `${String(futureDate.getDate()).padStart(2, '0')}-${String(futureDate.getMonth() + 1).padStart(2, '0')}-${futureDate.getFullYear()}`;
     //para calcular el precio por nivel
     return new Promise(async (resolve) => {
       const doc = new PDFDocument({
