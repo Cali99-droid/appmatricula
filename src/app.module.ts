@@ -43,7 +43,6 @@ import { DebtorsHelperModule } from './debtors_helper/debtors_helper.module';
 
 import { KeycloakModule } from './keycloak/keycloak.module';
 import { TreasuryModule } from './treasury/treasury.module';
-import { EnrollmentSubscriber } from './enrollment/subscribers/enrollment.subscriber';
 
 @Module({
   imports: [
@@ -57,7 +56,7 @@ import { EnrollmentSubscriber } from './enrollment/subscribers/enrollment.subscr
       database: process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: true,
-      subscribers: [YearSubscriber, PhaseSubscriber, EnrollmentSubscriber],
+      subscribers: [YearSubscriber, PhaseSubscriber],
       // logging: true,
     }),
 
