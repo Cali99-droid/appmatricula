@@ -15,7 +15,7 @@ export class KeycloakService {
 
   async updateGroupKy(userId: string) {
     const token = await this.getAdminToken();
-    const groupId = '307a6c20-1037-4594-965c-f82e0e00cb47';
+    const groupId = '8170365c-4417-44d9-929b-5115c82e4d81';
     await axios.put(
       `${process.env.URL_KEYCLOAK}/admin/realms/${process.env.REALM_KEYCLOAK}/users/${userId}/groups/${groupId}`,
       {},
