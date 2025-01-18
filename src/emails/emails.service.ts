@@ -378,4 +378,28 @@ export class EmailsService {
       this.logger.error(error);
     }
   }
+
+  async sendEmailWithAttachment(
+    to: string,
+    subject: string,
+    body: string,
+    attachment: Buffer,
+    filename: string,
+  ): Promise<void> {
+    const mailOptions = {
+      from:
+        '"Colegio AE"' + this.configService.getOrThrow<string>('AWS_SES_FROM'),
+      to,
+      subject,
+      text: body,
+      attachments: [
+        {
+          filename,
+          content: attachment,
+        },
+      ],
+    };
+
+    await this.transporter.sendMail(mailOptions);
+  }
 }
