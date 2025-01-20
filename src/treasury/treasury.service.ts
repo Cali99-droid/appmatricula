@@ -21,7 +21,6 @@ import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Rates } from './entities/rates.entity';
 import { User } from 'src/user/entities/user.entity';
 import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
-import { FamilyRole } from 'src/common/enum/family-role.enum';
 import { Concept } from './entities/concept.entity';
 import { Person } from 'src/person/entities/person.entity';
 // import { PDFDocument, rgb } from 'pdf-lib';
@@ -62,7 +61,7 @@ export class TreasuryService {
 
     // Obtener y reservar correlativo
     const tipoComprobante = 'BOLETA';
-    const numero = await this.getCorrelative(tipoComprobante, 'BBB1');
+    const numero = await this.getCorrelative(tipoComprobante, serie);
 
     // Preparar datos para Nubefact
     const boletaData = this.generateBoletaData(
@@ -161,7 +160,7 @@ export class TreasuryService {
     }
     const serie = `B${1}${enrrollOnProccess.activityClassroom.classroom.campusDetail.id}${enrrollOnProccess.activityClassroom.grade.level.id}`;
     const tipoComprobante = 'BOLETA';
-    const numero = await this.getCorrelative(tipoComprobante, 'BBB1');
+    const numero = await this.getCorrelative(tipoComprobante, serie);
     try {
       const concept = await this.conceptRepository.findOne({
         where: {
@@ -177,7 +176,7 @@ export class TreasuryService {
       const boletaData = {
         operacion: 'generar_comprobante',
         tipo_de_comprobante: 2,
-        serie: 'BBB1',
+        serie: serie,
         numero,
         sunat_transaction: 1,
         cliente_tipo_de_documento: 1,
@@ -591,7 +590,7 @@ export class TreasuryService {
     return {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2,
-      serie: 'BBB1',
+      serie: serie,
       numero,
       sunat_transaction: 1,
       cliente_tipo_de_documento: 1,
