@@ -352,6 +352,10 @@ export class TreasuryService {
               },
               {
                 // student: { id: debt.student.id },
+                status: Status.PREMATRICULADO,
+              },
+              {
+                // student: { id: debt.student.id },
                 status: Status.RESERVADO,
               },
             ],
