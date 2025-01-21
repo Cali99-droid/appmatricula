@@ -1540,8 +1540,8 @@ export class EnrollmentService {
     }
   }
 
-  async searchNewStudent(searchDto: SearchEstudiantesDto) {
-    const { searchTerm } = searchDto;
+  async searchNewStudent(searchDto: CreateNewEnrollmentDto) {
+    const { docNumber } = searchDto;
 
     const query = this.studentRepository
       .createQueryBuilder('student')
@@ -1559,8 +1559,8 @@ export class EnrollmentService {
           statusRe: 'on process',
         },
       );
-    if (searchTerm) {
-      const searchTerms = searchTerm
+    if (docNumber) {
+      const searchTerms = docNumber
         .split(' ')
         .map((term) => term.trim())
         .filter((term) => term.length > 0);
@@ -1571,6 +1571,8 @@ export class EnrollmentService {
           { [`term${index}`]: `%${term}%` },
         );
       });
+
+      query.orWhere('person.docNumber = :dni', { dni: docNumber });
     }
     query.orderBy('person.lastname', 'ASC');
     // query.skip((page - 1) * limit).take(limit);

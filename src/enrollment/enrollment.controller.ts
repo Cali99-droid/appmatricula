@@ -107,7 +107,7 @@ export class EnrollmentController {
   }
 
   @Post('search/new')
-  searchNewStudent(@Body() createNewEnrollmentDto: SearchEstudiantesDto) {
+  searchNewStudent(@Body() createNewEnrollmentDto: CreateNewEnrollmentDto) {
     return this.enrollmentService.searchNewStudent(createNewEnrollmentDto);
   }
 
