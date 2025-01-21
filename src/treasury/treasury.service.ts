@@ -108,26 +108,28 @@ export class TreasuryService {
       await this.finalizeDebtAndEnrollment(debt, enrroll);
 
       // Generar nuevas deudas mensuales
-      const rate = await this.ratesRepository.findOne({
-        where: {
-          level: { id: enrroll.activityClassroom.grade.level.id },
-          campusDetail: {
-            id: enrroll.activityClassroom.classroom.campusDetail.id,
+      if (debt.concept.code === 'C001') {
+        const rate = await this.ratesRepository.findOne({
+          where: {
+            level: { id: enrroll.activityClassroom.grade.level.id },
+            campusDetail: {
+              id: enrroll.activityClassroom.classroom.campusDetail.id,
+            },
+            concept: { id: 2 }, // Concepto de mensualidades
           },
-          concept: { id: 2 }, // Concepto de mensualidades
-        },
-        relations: {
-          concept: true,
-        },
-      });
+          relations: {
+            concept: true,
+          },
+        });
 
-      if (!rate) {
-        throw new NotFoundException(
-          'No se encontró la tarifa para el nivel y sede',
-        );
+        if (!rate) {
+          throw new NotFoundException(
+            'No se encontró la tarifa para el nivel y sede',
+          );
+        }
+
+        await this.generateMonthlyDebts(debt.student.id, rate, enrroll.code);
       }
-
-      await this.generateMonthlyDebts(debt.student.id, rate, enrroll.code);
 
       return newBill;
     } catch (error) {
