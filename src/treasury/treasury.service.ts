@@ -574,11 +574,18 @@ export class TreasuryService {
     const debt = await this.debtRepository.findOne({
       where: {
         id: debtId,
-        student: {
-          enrollment: {
-            status: Status.PREMATRICULADO,
+        student: [
+          {
+            enrollment: {
+              status: Status.PREMATRICULADO,
+            },
           },
-        },
+          {
+            enrollment: {
+              status: Status.MATRICULADO,
+            },
+          },
+        ],
         status: false,
       },
       relations: {
