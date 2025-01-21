@@ -104,11 +104,10 @@ export class TreasuryService {
       // Crear registro de boleta
       const newBill = await this.saveBill(response, newPay.id, serie, numero);
 
-      // Actualizar deuda y matrícula
-      await this.finalizeDebtAndEnrollment(debt, enrroll);
-
       // Generar nuevas deudas mensuales
       if (debt.concept.code === 'C001') {
+        // Actualizar deuda y matrícula
+        await this.finalizeDebtAndEnrollment(debt, enrroll);
         const rate = await this.ratesRepository.findOne({
           where: {
             level: { id: enrroll.activityClassroom.grade.level.id },
