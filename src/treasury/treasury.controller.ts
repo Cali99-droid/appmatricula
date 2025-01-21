@@ -9,7 +9,7 @@ import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
 // import { Response } from 'express';
 
 @ApiTags('Treasury')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
@@ -29,7 +29,6 @@ export class TreasuryController {
     @Body() createPaidReservedDto: CreatePaidReserved,
     @AuthenticatedUser() user: any,
   ) {
-    console.log('llamando');
     return this.treasuryService.createPaidReserved(createPaidReservedDto, user);
   }
 

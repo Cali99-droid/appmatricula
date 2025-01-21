@@ -68,7 +68,7 @@ export class EnrollmentService {
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -1547,6 +1547,10 @@ export class EnrollmentService {
       .createQueryBuilder('student')
       .leftJoinAndSelect('student.person', 'person')
       .leftJoinAndSelect('student.family', 'family')
+      .leftJoinAndSelect('family.parentOneId', 'parentOne')
+      .leftJoinAndSelect('parentOne.user', 'parentOneUser')
+      .leftJoinAndSelect('family.parentTwoId', 'parentTwo')
+      .leftJoinAndSelect('parentTwo.user', 'parentTwoUser')
       .leftJoinAndSelect(
         'student.enrollment',
         'enrollment',

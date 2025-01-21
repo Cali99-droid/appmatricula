@@ -23,6 +23,8 @@ import { User } from 'src/user/entities/user.entity';
 import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
 import { Concept } from './entities/concept.entity';
 import { Person } from 'src/person/entities/person.entity';
+import { ConfigService } from '@nestjs/config';
+
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 
@@ -31,7 +33,10 @@ export class TreasuryService {
   private readonly apiUrl = process.env.NUBEFACT_API_URL;
   private readonly apiToken = process.env.NUBEFACT_TOKEN;
   private readonly logger = new Logger('TreasuryService');
+  private readonly env = this.configService.getOrThrow('NODE_ENV');
+
   constructor(
+    private readonly configService: ConfigService,
     @InjectRepository(Debt)
     private readonly debtRepository: Repository<Debt>,
     @InjectRepository(Family)
@@ -61,17 +66,33 @@ export class TreasuryService {
 
     // Obtener y reservar correlativo
     const tipoComprobante = 'BOLETA';
-    const numero = await this.getCorrelative(tipoComprobante, serie);
+    let numero: number;
+    let boletaData: any;
+    if (this.env === 'prod') {
+      numero = await this.getCorrelative(tipoComprobante, serie);
 
-    // Preparar datos para Nubefact
-    const boletaData = this.generateBoletaData(
-      createPaidDto,
-      debt,
-      family,
-      client,
-      numero,
-      serie,
-    );
+      // Preparar datos para Nubefact prod
+      boletaData = this.generateBoletaData(
+        createPaidDto,
+        debt,
+        family,
+        client,
+        numero,
+        serie,
+      );
+    } else {
+      numero = await this.getCorrelative(tipoComprobante, 'BBB1');
+
+      // Preparar datos para Nubefact dev
+      boletaData = this.generateBoletaData(
+        createPaidDto,
+        debt,
+        family,
+        client,
+        numero,
+        'BBB1',
+      );
+    }
 
     try {
       // Crear pago en la base de datos
@@ -158,9 +179,20 @@ export class TreasuryService {
     if (family.parentTwoId.id === createPaidReservedDto.parentId) {
       resp = family.parentTwoId;
     }
-    const serie = `B${1}${enrrollOnProccess.activityClassroom.classroom.campusDetail.id}${enrrollOnProccess.activityClassroom.grade.level.id}`;
+    let serie = `B${1}${enrrollOnProccess.activityClassroom.classroom.campusDetail.id}${enrrollOnProccess.activityClassroom.grade.level.id}`;
     const tipoComprobante = 'BOLETA';
-    const numero = await this.getCorrelative(tipoComprobante, serie);
+    let numero: number;
+
+    if (this.env === 'prod') {
+      console.log('prod');
+
+      numero = await this.getCorrelative(tipoComprobante, serie);
+    } else {
+      console.log('dev');
+      serie = 'BBB1';
+      numero = await this.getCorrelative(tipoComprobante, 'BBB1');
+    }
+
     try {
       const concept = await this.conceptRepository.findOne({
         where: {
@@ -173,6 +205,7 @@ export class TreasuryService {
       const grade = enrrollOnProccess.activityClassroom.grade;
       const level = grade.level;
       const campus = enrrollOnProccess.activityClassroom.classroom.campusDetail;
+      const sendEmail = this.env === 'prod' ? !!resp.user?.email : false;
       const boletaData = {
         operacion: 'generar_comprobante',
         tipo_de_comprobante: 2,
@@ -191,8 +224,8 @@ export class TreasuryService {
         total_inafecta: concept.total,
         total: concept.total,
         enviar_automaticamente_a_la_sunat: true,
-        // enviar_automaticamente_al_cliente: !!resp.user?.email,
-        observaciones: `Gracias por su preferencia. ${serie}-${numero}`,
+        enviar_automaticamente_al_cliente: sendEmail,
+        observaciones: `Gracias por su preferencia.`,
         items: [
           {
             unidad_de_medida: 'NIU',
@@ -251,7 +284,7 @@ export class TreasuryService {
       enrrollOnProccess.status = Status.RESERVADO;
       await this.enrollmentRepository.save(enrrollOnProccess);
 
-      /**genear deuda */
+      /**genear deudas */
       const dateEnd = new Date();
       const rate = await this.ratesRepository.findOne({
         where: {
@@ -262,7 +295,7 @@ export class TreasuryService {
           concept: true,
         },
       });
-      const createdDebt = this.debtRepository.create({
+      const createdDebtEnrrol = this.debtRepository.create({
         dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
         concept: { id: rate.concept.id },
         student: { id: createPaidReservedDto.studentId },
@@ -273,7 +306,23 @@ export class TreasuryService {
         obs: `Descontado de: ${serie}-${numero}`,
       });
 
-      await this.debtRepository.save(createdDebt);
+      await this.debtRepository.save(createdDebtEnrrol);
+      const conceptCuota = await this.conceptRepository.findOne({
+        where: {
+          code: 'C004',
+        },
+      });
+      const createdDebtCuota = this.debtRepository.create({
+        dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
+        concept: { id: conceptCuota.id },
+        student: { id: createPaidReservedDto.studentId },
+        total: conceptCuota.total,
+        status: false,
+        description: enrrollOnProccess.code,
+        code: `CUOTA${enrrollOnProccess.code}`,
+        obs: `${conceptCuota.description}`,
+      });
+      await this.debtRepository.save(createdDebtCuota);
       return newBill;
     } catch (error) {
       // Revertir correlativo en caso de error
@@ -324,7 +373,7 @@ export class TreasuryService {
     endDate: string,
     userId: number,
   ) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),
@@ -590,7 +639,7 @@ export class TreasuryService {
     const level = grade.level;
     const campus =
       debt.student.enrollment[0].activityClassroom.classroom.campusDetail;
-
+    const sendEmail = this.env === 'prod' ? !!client.user?.email : false;
     return {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2,
@@ -609,7 +658,7 @@ export class TreasuryService {
       total_inafecta: debt.total,
       total: debt.total,
       enviar_automaticamente_a_la_sunat: true,
-      // enviar_automaticamente_al_cliente: !!client.user?.email,
+      enviar_automaticamente_al_cliente: sendEmail,
       observaciones: `Gracias por su preferencia. ${debt.obs !== null ? debt.obs : ''}`,
       items: [
         {

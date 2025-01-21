@@ -39,7 +39,7 @@ import { SearchEstudiantesDto } from 'src/student/dto/search-student.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
