@@ -38,6 +38,7 @@ import axios from 'axios';
 import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 import { FamilyService } from 'src/family/family.service';
 import { DataAdmision } from 'src/family/interfaces/data-admision';
+import { SearchEstudiantesDto } from 'src/student/dto/search-student.dto';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -1539,22 +1540,37 @@ export class EnrollmentService {
     }
   }
 
-  async searchNewStudent(searchDto: CreateNewEnrollmentDto) {
-    const student = await this.studentRepository.findOne({
-      where: {
-        person: { docNumber: searchDto.docNumber },
-      },
-      relations: {
-        family: {
-          parentOneId: {
-            user: true,
-          },
-          parentTwoId: {
-            user: true,
-          },
+  async searchNewStudent(searchDto: SearchEstudiantesDto) {
+    const { searchTerm } = searchDto;
+
+    const query = this.studentRepository
+      .createQueryBuilder('student')
+      .leftJoinAndSelect('student.person', 'person')
+      .leftJoinAndSelect('student.family', 'family')
+      .leftJoinAndSelect(
+        'student.enrollment',
+        'enrollment',
+        'enrollment.status = :statusRe',
+        {
+          statusRe: 'on process',
         },
-      },
-    });
+      );
+    if (searchTerm) {
+      const searchTerms = searchTerm
+        .split(' ')
+        .map((term) => term.trim())
+        .filter((term) => term.length > 0);
+
+      searchTerms.forEach((term, index) => {
+        query.andWhere(
+          `(LOWER(person.name) LIKE LOWER(:term${index}) OR LOWER(person.lastname) LIKE LOWER(:term${index}) OR LOWER(person.mLastname) LIKE LOWER(:term${index}))`,
+          { [`term${index}`]: `%${term}%` },
+        );
+      });
+    }
+    query.orderBy('person.lastname', 'ASC');
+    // query.skip((page - 1) * limit).take(limit);
+    const student = await query.getOne();
     if (!student) {
       throw new BadRequestException('Not available student');
     }

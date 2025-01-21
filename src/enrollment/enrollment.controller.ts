@@ -35,6 +35,7 @@ import {
   Roles,
 } from 'nest-keycloak-connect';
 import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
+import { SearchEstudiantesDto } from 'src/student/dto/search-student.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -106,7 +107,7 @@ export class EnrollmentController {
   }
 
   @Post('search/new')
-  searchNewStudent(@Body() createNewEnrollmentDto: CreateNewEnrollmentDto) {
+  searchNewStudent(@Body() createNewEnrollmentDto: SearchEstudiantesDto) {
     return this.enrollmentService.searchNewStudent(createNewEnrollmentDto);
   }
 
