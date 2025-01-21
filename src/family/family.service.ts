@@ -227,7 +227,7 @@ export class FamilyService {
     }
   }
   async findOne(id: number, user: any) {
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
