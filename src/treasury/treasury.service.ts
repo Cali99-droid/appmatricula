@@ -120,7 +120,8 @@ export class TreasuryService {
             concept: true,
           },
         });
-
+        debt.status = true;
+        await this.debtRepository.save(debt);
         if (!rate) {
           throw new NotFoundException(
             'No se encontró la tarifa para el nivel y sede',
