@@ -127,6 +127,7 @@ export class EnrollmentService {
             activityClassroom: {
               id: ce.activityClassroomId,
             },
+            status: Status.MATRICULADO,
           },
         });
       if (enrollmentsByActivityClassroom.length >= capacity) {
