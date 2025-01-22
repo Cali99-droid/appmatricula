@@ -723,7 +723,7 @@ export class EnrollmentService {
       for (const act of acs) {
         const dest = await this.vacancyCalculation(act.id);
 
-        if (dest.hasVacant) {
+        if (dest.hasVacant || ac.id === dest.id) {
           const classroom: AvailableClassroom = {
             id: dest.id,
             name: dest.grade + ' ' + dest.section,
