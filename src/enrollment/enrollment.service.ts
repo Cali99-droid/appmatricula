@@ -728,7 +728,7 @@ export class EnrollmentService {
             id: dest.id,
             name: dest.grade + ' ' + dest.section,
             vacants: dest.vacant,
-            suggested: false,
+            suggested: ac.id === dest.id,
             campus: act.classroom.campusDetail.name,
             level: act.grade.level.name,
           };
