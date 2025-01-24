@@ -35,6 +35,7 @@ import {
   Roles,
 } from 'nest-keycloak-connect';
 import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
+import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -138,11 +139,6 @@ export class EnrollmentController {
     @Query() searchEnrolledDto: SearchEnrolledDto,
   ): Promise<ResponseEnrrollDto[]> {
     return this.enrollmentService.findByActivityClassroom(searchEnrolledDto);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.enrollmentService.findOne(+id);
   }
 
   @Patch(':id')
@@ -267,12 +263,32 @@ export class EnrollmentController {
     return this.enrollmentService.getVacantsGeneral(gradeId, yearId, campusId);
   }
 
-  @Get('/get/status')
+  @Get('get/status')
   @ApiResponse({
     status: 404,
     description: 'get status not found ',
   })
   getStatusEnrollmentByUser(@AuthenticatedUser() user: any) {
     return this.enrollmentService.getStatusEnrollmentByUser(user);
+  }
+
+  @Get('report')
+  @ApiResponse({
+    status: 404,
+    description: 'get report not found ',
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: 'result of consult',
+    //  type: [AvailableClassroom],
+  })
+  getReport(@Query() getReportDto: GetReportEnrrollDto) {
+    console.log('llmandad');
+    return this.enrollmentService.getReport(getReportDto);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.enrollmentService.findOne(+id);
   }
 }

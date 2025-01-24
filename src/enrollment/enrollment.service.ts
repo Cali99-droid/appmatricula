@@ -39,6 +39,7 @@ import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 import { FamilyService } from 'src/family/family.service';
 import { DataAdmision } from 'src/family/interfaces/data-admision';
 import { SearchEstudiantesDto } from 'src/student/dto/search-student.dto';
+import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -1630,6 +1631,82 @@ export class EnrollmentService {
     };
 
     return formatData;
+  }
+
+  async getReport(getReportDto: GetReportEnrrollDto) {
+    const {
+      campusId,
+      gradeId,
+      yearId,
+      status = Status.EN_PROCESO,
+    } = getReportDto;
+
+    // Construimos dinámicamente las condiciones de la consulta
+    const classroomWhereClause: any = {
+      phase: { year: { id: +yearId } },
+      classroom: { campusDetail: { id: +campusId } },
+    };
+
+    if (gradeId) {
+      classroomWhereClause.grade = { id: +gradeId };
+    }
+
+    // Consulta a las aulas
+    const classrooms = await this.activityClassroomRepository.find({
+      where: classroomWhereClause,
+    });
+
+    const classroomIds = classrooms.map(({ id }) => id);
+
+    if (classroomIds.length === 0) {
+      // Si no hay aulas, devolvemos un array vacío
+      return [];
+    }
+
+    // Consulta a los registros de matrícula
+    const enrollments = await this.enrollmentRepository.find({
+      where: {
+        activityClassroom: { id: In(classroomIds) },
+        status,
+      },
+      order: {
+        student: {
+          person: { lastname: 'ASC', mLastname: 'ASC', name: 'ASC' },
+        },
+      },
+      relations: {
+        student: {
+          family: {
+            parentOneId: true,
+            parentTwoId: true,
+          },
+        },
+      },
+    });
+
+    // Transformamos los datos de matrícula
+    const reportData = enrollments.map(
+      ({ id, status, student, activityClassroom, createdAt }) => {
+        const parent = student.family.parentOneId?.cellPhone
+          ? student.family.parentOneId
+          : student.family.parentTwoId;
+
+        return {
+          id,
+          status,
+          student: `${student.person.lastname} ${student.person.mLastname} ${student.person.name}`,
+          grade: activityClassroom.grade.name,
+          section: activityClassroom.section,
+          parent,
+          creationDate: createdAt,
+          expirationDate: new Date(
+            createdAt.getTime() + 5 * 24 * 60 * 60 * 1000,
+          ), // Suma 5 días
+        };
+      },
+    );
+
+    return reportData;
   }
 
   /**script para crear un codigo para todos las matriculas */

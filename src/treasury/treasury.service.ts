@@ -808,7 +808,7 @@ export class TreasuryService {
       this.logger.error;
     }
   }
-
+  /**SCRIPTS */
   async migrateToNubeFact() {
     const boletas = await this.billRepository.find({
       where: {
@@ -917,5 +917,54 @@ export class TreasuryService {
       }
     }
     console.log('migrate succesfully');
+  }
+
+  async updateDebtCuota() {
+    // Obtener los IDs de los estudiantes
+    const studentIds = await this.paymentRepository
+      .createQueryBuilder('payment')
+      .select('payment.studentId')
+      .where('payment.conceptId = :conceptId', { conceptId: 3 })
+      .andWhere('payment.date BETWEEN :startDate AND :endDate', {
+        startDate: '2025-01-18',
+        endDate: '2025-01-20',
+      })
+      .getRawMany();
+
+    const studentIdList = studentIds.map((row) => row.studentId);
+
+    // Obtener el concepto 'C004'
+    const conceptCuota = await this.conceptRepository.findOne({
+      where: { code: 'C004' },
+    });
+
+    if (!conceptCuota) {
+      throw new Error('Concepto C004 no encontrado');
+    }
+
+    // Crear la fecha de vencimiento
+    const dateEnd = new Date();
+    dateEnd.setDate(dateEnd.getDate() + 30);
+
+    // Crear deudas en bloque
+    const debts = studentIdList.map((studentId) =>
+      this.debtRepository.create({
+        dateEnd,
+        concept: { id: conceptCuota.id },
+        student: { id: studentId },
+        total: conceptCuota.total,
+        status: false,
+        description: '',
+        code: `CUOTA${studentId}`,
+        obs: conceptCuota.description,
+      }),
+    );
+
+    // Guardar todas las deudas
+    await this.debtRepository.save(debts);
+
+    return {
+      message: 'Generate successfully',
+    };
   }
 }

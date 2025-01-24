@@ -59,4 +59,10 @@ export class TreasuryController {
   // migrateToNubeFact() {
   //   return this.treasuryService.migrateToNubeFact();
   // }
+
+  // @Get('update-debt')
+  // @ApiResponse({ status: 201, description: 'datos de boletas' })
+  // migrateToNubeFact() {
+  //   return this.treasuryService.updateDebtCuota();
+  // }
 }

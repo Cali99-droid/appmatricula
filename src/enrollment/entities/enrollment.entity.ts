@@ -89,7 +89,7 @@ export class Enrollment {
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',
-    select: false,
+    select: true,
   })
   createdAt: Date;
 
