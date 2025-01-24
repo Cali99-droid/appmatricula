@@ -621,7 +621,6 @@ export class PdfService {
       'noviembre',
       'diciembre',
     ];
-    console.log(idStudent);
     const student = await this.studentRepository.findOne({
       where: { id: idStudent },
       relations: {
@@ -642,6 +641,7 @@ export class PdfService {
       throw new NotFoundException(`Parent with id ${query.parentId} not found`);
     const enrollment = await this.enrollmentRepositoy.findOne({
       where: { student: { id: idStudent }, status: Status.RESERVADO },
+      select: ['id', 'createdAt'],
       relations: {
         activityClassroom: {
           grade: { level: true },
@@ -652,7 +652,7 @@ export class PdfService {
       throw new NotFoundException(
         `The student does not have a registration with reserved status`,
       );
-    const today = new Date();
+    const today = new Date(enrollment.createdAt);
     const day = today.getDate();
     const futureDate = new Date(today);
     futureDate.setDate(futureDate.getDate() + 25);
