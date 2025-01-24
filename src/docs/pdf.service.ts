@@ -639,6 +639,7 @@ export class PdfService {
 
     if (!parentData)
       throw new NotFoundException(`Parent with id ${query.parentId} not found`);
+
     const enrollment = await this.enrollmentRepositoy.findOne({
       where: { student: { id: idStudent }, status: Status.RESERVADO },
       select: ['id', 'createdAt'],
