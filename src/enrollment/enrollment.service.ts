@@ -38,7 +38,6 @@ import axios from 'axios';
 import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 import { FamilyService } from 'src/family/family.service';
 import { DataAdmision } from 'src/family/interfaces/data-admision';
-import { SearchEstudiantesDto } from 'src/student/dto/search-student.dto';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 @Injectable()
 export class EnrollmentService {
@@ -124,12 +123,32 @@ export class EnrollmentService {
       const capacity = classroom.classroom.capacity;
       const enrollmentsByActivityClassroom =
         await this.enrollmentRepository.find({
-          where: {
-            activityClassroom: {
-              id: ce.activityClassroomId,
+          where: [
+            {
+              activityClassroom: {
+                id: ce.activityClassroomId,
+              },
+              status: Status.MATRICULADO,
             },
-            status: Status.MATRICULADO,
-          },
+            {
+              activityClassroom: {
+                id: ce.activityClassroomId,
+              },
+              status: Status.PREMATRICULADO, // Cambia esto por el estado adicional que necesites
+            },
+            {
+              activityClassroom: {
+                id: ce.activityClassroomId,
+              },
+              status: Status.RESERVADO, // Cambia esto por el estado adicional que necesites
+            },
+            {
+              activityClassroom: {
+                id: ce.activityClassroomId,
+              },
+              status: Status.EN_PROCESO, // Cambia esto por el estado adicional que necesites
+            },
+          ],
         });
       if (enrollmentsByActivityClassroom.length >= capacity) {
         throw new BadRequestException(
@@ -832,10 +851,11 @@ export class EnrollmentService {
 
       for (const ac of classrooms) {
         const dest = await this.calcVacantsToClassroom(ac.id);
-        if (
-          dest.section === currentEnrrollment.activityClassroom.section ||
-          dest.hasVacants
-        ) {
+        // if (
+        //   dest.section === currentEnrrollment.activityClassroom.section ||
+        //   dest.hasVacants
+        // ) {
+        if (dest.hasVacants) {
           const classroom: AvailableClassroom = {
             id: ac.id,
             name: ac.grade.name + ' ' + ac.section,
