@@ -5,12 +5,14 @@ import { PdfService } from './pdf.service';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DownloadContractQueryDto } from './dto/downloadContractQuery.dto';
 import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
+import { Resource, Roles } from 'nest-keycloak-connect';
 // import { GetUser } from 'src/auth/decorators/get-user.decorator';
 // import { Auth } from 'src/auth/decorators/auth.decorator';
 // import { User } from 'src/user/entities/user.entity';
 //cambio
 @ApiTags('Docs')
 @Controller('docs')
+@Resource('appcolegioae')
 export class DocsController {
   constructor(private readonly pdfService: PdfService) {}
 
@@ -21,6 +23,9 @@ export class DocsController {
   @ApiResponse({
     status: 200,
     description: 'Pdf with carnets of de classroom',
+  })
+  @Roles({
+    roles: ['administrador-colegio', 'padre-colegio', 'secretaria'],
   })
   async downloadCarnets(
     @Res() res: Response,
@@ -39,6 +44,9 @@ export class DocsController {
   @ApiResponse({
     status: 200,
     description: 'Pdf with carnet of the student',
+  })
+  @Roles({
+    roles: ['administrador-colegio', 'padre-colegio', 'secretaria'],
   })
   async downloadCarnet(
     @Res() res: Response,
