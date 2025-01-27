@@ -115,46 +115,10 @@ export class EnrollmentService {
         throw new BadRequestException('Incorrect Classroom or not available');
       }
 
-      /**validar capacidad */
-
       const classroom = await this.activityClassroomRepository.findOneByOrFail({
         id: ce.activityClassroomId,
       });
-      const capacity = classroom.classroom.capacity;
-      const enrollmentsByActivityClassroom =
-        await this.enrollmentRepository.find({
-          where: [
-            {
-              activityClassroom: {
-                id: ce.activityClassroomId,
-              },
-              status: Status.MATRICULADO,
-            },
-            {
-              activityClassroom: {
-                id: ce.activityClassroomId,
-              },
-              status: Status.PREMATRICULADO, // Cambia esto por el estado adicional que necesites
-            },
-            {
-              activityClassroom: {
-                id: ce.activityClassroomId,
-              },
-              status: Status.RESERVADO, // Cambia esto por el estado adicional que necesites
-            },
-            {
-              activityClassroom: {
-                id: ce.activityClassroomId,
-              },
-              status: Status.EN_PROCESO, // Cambia esto por el estado adicional que necesites
-            },
-          ],
-        });
-      if (enrollmentsByActivityClassroom.length >= capacity) {
-        throw new BadRequestException(
-          'those enrolled exceed the capacity of the classroom ',
-        );
-      }
+
       const existEnrroll = await this.enrollmentRepository.findOne({
         where: {
           student: { id: ce.studentId },
@@ -203,6 +167,42 @@ export class EnrollmentService {
         codes.push(enrollment.code);
         idsStudent.push(ce.studentId);
       } else {
+        /**validar capacidad */
+        const capacity = classroom.classroom.capacity;
+        const enrollmentsByActivityClassroom =
+          await this.enrollmentRepository.find({
+            where: [
+              {
+                activityClassroom: {
+                  id: ce.activityClassroomId,
+                },
+                status: Status.MATRICULADO,
+              },
+              {
+                activityClassroom: {
+                  id: ce.activityClassroomId,
+                },
+                status: Status.PREMATRICULADO, // Cambia esto por el estado adicional que necesites
+              },
+              {
+                activityClassroom: {
+                  id: ce.activityClassroomId,
+                },
+                status: Status.RESERVADO, // Cambia esto por el estado adicional que necesites
+              },
+              {
+                activityClassroom: {
+                  id: ce.activityClassroomId,
+                },
+                status: Status.EN_PROCESO, // Cambia esto por el estado adicional que necesites
+              },
+            ],
+          });
+        if (enrollmentsByActivityClassroom.length >= capacity) {
+          throw new BadRequestException(
+            'those enrolled exceed the capacity of the classroom ',
+          );
+        }
         existEnrroll.status = Status.PREMATRICULADO;
         existEnrroll.isActive = true;
         existEnrroll.activityClassroom.id = ce.activityClassroomId;
