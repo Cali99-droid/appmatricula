@@ -68,7 +68,7 @@ export class EnrollmentService {
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -1545,12 +1545,19 @@ export class EnrollmentService {
       }
       /**CREAR LA DATA */
 
-      const created = await this.familyService.createFamilyFromAdmision(
-        data,
-        availableClassrooms[0],
-      );
+      // const created = await this.familyService.createFamilyFromAdmision(
+      //   data,
+      //   availableClassrooms[0],
+      // );
 
-      return created;
+      const datas = availableClassrooms.map((ac) => {
+        return {
+          id: ac.id,
+          section: ac.section,
+          grade: ac.grade.name,
+        };
+      });
+      return datas;
     } catch (error) {
       this.logger.error(
         `[ADMISION] Error consulta : ${createNewEnrollmentDto.docNumber}`,
