@@ -718,7 +718,7 @@ export class TreasuryService {
       },
     });
 
-    if (existingPayment) {
+    if (existingPayment && debt.concept.id !== 2) {
       const bill = await this.billRepository.findOne({
         where: {
           payment: { id: existingPayment.id },
