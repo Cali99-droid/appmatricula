@@ -12,7 +12,7 @@ import { Public, Resource } from 'nest-keycloak-connect';
 //cambio
 @ApiTags('Docs')
 @Controller('docs')
-@Resource('appcolegioae ')
+@Resource('appcolegioae')
 export class DocsController {
   constructor(private readonly pdfService: PdfService) {}
 

@@ -102,7 +102,7 @@ export class CampusService {
     // const permissions = new Set(
     //   us.roles.flatMap((role) => role.permissions.map((perm) => perm.name)),
     // );
-    // const roles = user.resource_access['appcolegioae '].roles;
+    // const roles = user.resource_access['appcolegioae'].roles;
 
     // // Determinar si el usuario es admin
     // const isAdmin = roles.has('admin');

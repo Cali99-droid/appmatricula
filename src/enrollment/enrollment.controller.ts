@@ -39,7 +39,7 @@ import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
-@Resource('appcolegioae ')
+@Resource('appcolegioae')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 

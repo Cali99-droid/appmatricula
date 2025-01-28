@@ -9,7 +9,7 @@ import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
 // import { Response } from 'express';
 
 @ApiTags('Treasury')
-@Resource('appcolegioae ')
+@Resource('appcolegioae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
