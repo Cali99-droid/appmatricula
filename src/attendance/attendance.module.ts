@@ -20,7 +20,6 @@ import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { HttpModule } from '@nestjs/axios';
 import { Family } from 'src/family/entities/family.entity';
 import { UserModule } from 'src/user/user.module';
-import { EmailsService } from 'src/emails/emails.service';
 import { EmailsModule } from 'src/emails/emails.module';
 
 @Module({

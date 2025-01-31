@@ -186,11 +186,8 @@ export class TreasuryService {
     let numero: number;
 
     if (this.env === 'prod') {
-      console.log('prod');
-
       numero = await this.getCorrelative(tipoComprobante, serie);
     } else {
-      console.log('dev');
       serie = 'BBB1';
       numero = await this.getCorrelative(tipoComprobante, 'BBB1');
     }
@@ -375,7 +372,7 @@ export class TreasuryService {
     endDate: string,
     userId: number,
   ) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),

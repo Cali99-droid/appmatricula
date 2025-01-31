@@ -15,10 +15,11 @@ import { Rates } from 'src/treasury/entities/rates.entity';
 import { Debt } from 'src/treasury/entities/debt.entity';
 import { FamilyModule } from 'src/family/family.module';
 import { ConfigModule } from '@nestjs/config';
+import { EnrollmentScheduler } from './schedule/enrollment.scheduler';
 
 @Module({
   controllers: [EnrollmentController],
-  providers: [EnrollmentService],
+  providers: [EnrollmentService, EnrollmentScheduler],
   imports: [
     TypeOrmModule.forFeature([
       Enrollment,

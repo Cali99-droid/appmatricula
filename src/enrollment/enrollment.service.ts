@@ -11,7 +11,7 @@ import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
 import { Enrollment } from './entities/enrollment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Not, Or, Repository } from 'typeorm';
+import { In, LessThanOrEqual, Not, Repository } from 'typeorm';
 import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/student/entities/student.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -39,6 +39,7 @@ import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 import { FamilyService } from 'src/family/family.service';
 import { DataAdmision } from 'src/family/interfaces/data-admision';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
+import { UpdateExpirationDto } from './dto/update-expiration.dto';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -61,14 +62,13 @@ export class EnrollmentService {
 
     /**servicios */
     private readonly studentService: StudentService,
-    private readonly familyService: FamilyService,
   ) {}
   /**env */
   private readonly urlAdmision = this.configService.getOrThrow('API_ADMISION');
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -1734,6 +1734,60 @@ export class EnrollmentService {
     );
 
     return reportData;
+  }
+
+  async updateExpiration(id: number, updateExpirationDto: UpdateExpirationDto) {
+    try {
+      const { newExpiration } = updateExpirationDto;
+      const enroll = await this.enrollmentRepository.findOneByOrFail({ id });
+      const expirationDate = new Date(newExpiration);
+      enroll.reservationExpiration = expirationDate;
+      return await this.enrollmentRepository.save(enroll);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+  /**CRON JOBS RESERVARDOS */
+  async updateReservedScript() {
+    try {
+      const expiredRegistrations = await this.enrollmentRepository.find();
+
+      expiredRegistrations.forEach((enr) => {
+        const newExpirationDate = new Date(enr.createdAt);
+        newExpirationDate.setDate(newExpirationDate.getDate() + 5);
+        enr.reservationExpiration = newExpirationDate;
+      });
+
+      await this.enrollmentRepository.save(expiredRegistrations);
+      console.log('Successfully updated');
+    } catch (error) {
+      console.error('Error updating registrations in process:', error);
+    }
+  }
+
+  async updateReservations() {
+    try {
+      this.logger.log(`Running cron jobs, deleted registrations in process...`);
+      const today = new Date();
+
+      const expiredRegistrations = await this.enrollmentRepository.find({
+        where: {
+          status: Status.EN_PROCESO,
+          reservationExpiration: LessThanOrEqual(today),
+        },
+      });
+      /**TODO comunicarse con admision para liberar estado de vacante y email*/
+      this.logger.log(
+        `Successfully deleted, affected: ${expiredRegistrations.length}`,
+      );
+      this.logger.log(`cron jobs completed succesfully`);
+      return {
+        deletedRows: expiredRegistrations.length,
+        success: true,
+      };
+    } catch (error) {
+      console.error('Error updating registrations in process:', error);
+    }
   }
 
   /**script para crear un codigo para todos las matriculas */

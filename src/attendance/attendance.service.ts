@@ -944,7 +944,7 @@ export class AttendanceService {
     }
 
     this.logger.log(
-      `Cron jobs for the individual schedule  completed succesfully`,
+      `Cron jobs for the individual schedule completed succesfully`,
     );
     return;
   }

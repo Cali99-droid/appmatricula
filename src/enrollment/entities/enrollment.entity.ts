@@ -85,6 +85,11 @@ export class Enrollment {
   @Column('boolean', { default: '1' })
   isActive?: boolean;
 
+  @Column('date', {
+    nullable: true,
+  })
+  reservationExpiration: Date;
+
   /**TIMESTAMPS */
   @CreateDateColumn({
     type: 'timestamp',

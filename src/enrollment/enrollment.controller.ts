@@ -36,10 +36,11 @@ import {
 } from 'nest-keycloak-connect';
 import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
+import { UpdateExpirationDto } from './dto/update-expiration.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
@@ -285,6 +286,31 @@ export class EnrollmentController {
   getReport(@Query() getReportDto: GetReportEnrrollDto) {
     console.log('llmandad');
     return this.enrollmentService.getReport(getReportDto);
+  }
+
+  @Put('update-expiration/:id')
+  @ApiOkResponse({
+    status: 200,
+    description: 'updated enroll',
+    //  type: [AvailableClassroom],
+  })
+  @ApiOkResponse({
+    status: 400,
+    description: 'error validation',
+    //  type: [AvailableClassroom],
+  })
+  updateExpiration(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateExpirationDto: UpdateExpirationDto,
+  ) {
+    return this.enrollmentService.updateExpiration(id, updateExpirationDto);
+  }
+
+  @Public()
+  @Get('script')
+  updateReservedScript() {
+    // return this.enrollmentService.updateReservations();
+    return this.enrollmentService.updateReservedScript();
   }
 
   @Get(':id')
