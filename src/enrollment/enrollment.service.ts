@@ -1813,6 +1813,7 @@ export class EnrollmentService {
       const enrollments = await this.enrollmentRepository
         .createQueryBuilder('enrollment')
         .leftJoinAndSelect('enrollment.student', 'student')
+        .leftJoinAndSelect('enrollment.student', 'student')
         .leftJoinAndSelect('student.person', 'person')
         .where('enrollment.status IN (:...statuses)', {
           statuses: [
@@ -1822,6 +1823,7 @@ export class EnrollmentService {
             Status.MATRICULADO,
           ],
         })
+        .andWhere('enrollment.student.school IS NULL')
         .getMany();
 
       // Validamos que haya inscripciones antes de continuar
