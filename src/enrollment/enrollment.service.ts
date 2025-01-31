@@ -1814,7 +1814,6 @@ export class EnrollmentService {
         .createQueryBuilder('enrollment')
         .leftJoinAndSelect('enrollment.student', 'student')
         .leftJoinAndSelect('enrollment.student', 'student')
-        .leftJoinAndSelect('student.person', 'person')
         .where('enrollment.status IN (:...statuses)', {
           statuses: [
             Status.EN_PROCESO,
