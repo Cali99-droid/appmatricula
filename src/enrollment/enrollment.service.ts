@@ -1823,7 +1823,6 @@ export class EnrollmentService {
             Status.MATRICULADO,
           ],
         })
-        .andWhere('enrollment.student.school IS NULL')
         .getMany();
 
       // Validamos que haya inscripciones antes de continuar
