@@ -309,8 +309,8 @@ export class EnrollmentController {
   @Get('script')
   updateReservedScript() {
     // return this.enrollmentService.updateReservations();
-    //return this.enrollmentService.updateReservedScript();
-    return this.enrollmentService.updateSchoolScript();
+    return this.enrollmentService.updateReservedScript();
+    // return this.enrollmentService.updateSchoolScript();
   }
 
   @Get(':id')
