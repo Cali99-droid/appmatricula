@@ -1713,7 +1713,14 @@ export class EnrollmentService {
 
     // Transformamos los datos de matrícula
     const reportData = enrollments.map(
-      ({ id, status, student, activityClassroom, createdAt }) => {
+      ({
+        id,
+        status,
+        student,
+        activityClassroom,
+        createdAt,
+        reservationExpiration,
+      }) => {
         const parent = student.family.parentOneId?.cellPhone
           ? student.family.parentOneId
           : student.family.parentTwoId;
@@ -1722,13 +1729,16 @@ export class EnrollmentService {
           id,
           status,
           student: `${student.person.lastname} ${student.person.mLastname} ${student.person.name}`,
+          docNumber: student.person.docNumber,
           grade: activityClassroom.grade.name,
           section: activityClassroom.section,
           parent,
           creationDate: createdAt,
-          expirationDate: new Date(
-            createdAt.getTime() + 5 * 24 * 60 * 60 * 1000,
-          ), // Suma 5 días
+          expirationDate: reservationExpiration,
+          siagie: 'falta',
+          studentCode: 'S100EXAMPLE',
+          modularCode: '1100EXAMPLE',
+          schoolName: 'EXAMPLE SCHOOL NAME',
         };
       },
     );

@@ -284,7 +284,6 @@ export class EnrollmentController {
     //  type: [AvailableClassroom],
   })
   getReport(@Query() getReportDto: GetReportEnrrollDto) {
-    console.log('llmandad');
     return this.enrollmentService.getReport(getReportDto);
   }
 
