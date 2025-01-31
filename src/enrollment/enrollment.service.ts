@@ -36,10 +36,10 @@ import { Rates } from 'src/treasury/entities/rates.entity';
 import { Debt } from 'src/treasury/entities/debt.entity';
 import axios from 'axios';
 import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
-import { FamilyService } from 'src/family/family.service';
 import { DataAdmision } from 'src/family/interfaces/data-admision';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 import { UpdateExpirationDto } from './dto/update-expiration.dto';
+import { FamilyService } from 'src/family/family.service';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -62,6 +62,7 @@ export class EnrollmentService {
 
     /**servicios */
     private readonly studentService: StudentService,
+    private readonly familyService: FamilyService,
   ) {}
   /**env */
   private readonly urlAdmision = this.configService.getOrThrow('API_ADMISION');
@@ -168,6 +169,7 @@ export class EnrollmentService {
           activityClassroom: { id: ce.activityClassroomId },
           code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
           status: Status.PREMATRICULADO,
+          // reservationExpiration: new Date(),
         });
         const enrroll = await this.enrollmentRepository.save(enrollment);
         const activityClassroom =
@@ -1545,10 +1547,10 @@ export class EnrollmentService {
       }
       /**CREAR LA DATA */
 
-      // const created = await this.familyService.createFamilyFromAdmision(
-      //   data,
-      //   availableClassrooms[0],
-      // );
+      const created = await this.familyService.createFamilyFromAdmision(
+        data,
+        availableClassrooms[0],
+      );
 
       const datas = availableClassrooms.map((ac) => {
         return {
@@ -1663,8 +1665,9 @@ export class EnrollmentService {
   async getReport(getReportDto: GetReportEnrrollDto) {
     const {
       campusId,
-      gradeId,
+      activityClassroomId,
       yearId,
+      levelId,
       status = Status.EN_PROCESO,
     } = getReportDto;
 
@@ -1674,8 +1677,13 @@ export class EnrollmentService {
       classroom: { campusDetail: { id: +campusId } },
     };
 
-    if (gradeId) {
-      classroomWhereClause.grade = { id: +gradeId };
+    if (activityClassroomId) {
+      classroomWhereClause.id = +activityClassroomId;
+    }
+    if (levelId) {
+      classroomWhereClause.grade = {
+        level: { id: levelId },
+      };
     }
 
     // Consulta a las aulas
@@ -1735,10 +1743,10 @@ export class EnrollmentService {
           parent,
           creationDate: createdAt,
           expirationDate: reservationExpiration,
-          siagie: 'falta',
+          siagie: 'EN PROCESO',
           studentCode: 'S100EXAMPLE',
-          modularCode: '1100EXAMPLE',
-          schoolName: 'EXAMPLE SCHOOL NAME',
+          modularCode: student.modularCode,
+          schoolName: student.school,
         };
       },
     );
@@ -1797,6 +1805,70 @@ export class EnrollmentService {
       };
     } catch (error) {
       console.error('Error updating registrations in process:', error);
+    }
+  }
+
+  async updateSchoolScript() {
+    try {
+      const enrollments = await this.enrollmentRepository
+        .createQueryBuilder('enrollment')
+        .leftJoinAndSelect('enrollment.student', 'student')
+        .leftJoinAndSelect('student.person', 'person')
+        .where('enrollment.status IN (:...statuses)', {
+          statuses: [
+            Status.EN_PROCESO,
+            Status.RESERVADO,
+            Status.PREMATRICULADO,
+            Status.MATRICULADO,
+          ],
+        })
+        .getMany();
+
+      // Validamos que haya inscripciones antes de continuar
+      if (enrollments.length === 0) {
+        this.logger.warn('No se encontraron inscripciones para actualizar.');
+        return;
+      }
+
+      // Creamos las promesas para hacer las solicitudes en paralelo
+      const updatePromises = enrollments.map(async (e) => {
+        if (!e.student || !e.student.person) {
+          this.logger.warn(
+            `Estudiante sin información de persona en inscripción ID: ${e.id}`,
+          );
+          return;
+        }
+
+        const body = { docNumber: e.student.person.docNumber };
+
+        try {
+          const response = await axios.post(
+            `${this.urlAdmision}/admin/search-new`,
+            body,
+          );
+          const data = response.data.data as DataAdmision;
+          const { child } = data;
+
+          if (child) {
+            e.student.modularCode = child.modularCode;
+            e.student.school = child.school;
+
+            return this.studentRepository.save(e.student);
+          }
+        } catch (error) {
+          this.logger.error(
+            `Error al consultar la API para el estudiante ID: ${e.student.id}`,
+            error,
+          );
+        }
+      });
+
+      // Esperamos a que todas las actualizaciones terminen
+      await Promise.all(updatePromises);
+
+      this.logger.log('Actualización de escuelas completada exitosamente.');
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
     }
   }
 

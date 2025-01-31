@@ -18,4 +18,6 @@ export interface ChildAdmision {
   validate: number;
   validateSchool: number;
   vacant: VacantAdmision;
+  school: string;
+  modularCode: string;
 }

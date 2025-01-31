@@ -51,6 +51,17 @@ export class Student {
     default: true,
   })
   hasDebt: boolean;
+
+  @Column('varchar', {
+    nullable: true,
+  })
+  school: string;
+
+  @Column('varchar', {
+    nullable: true,
+  })
+  modularCode: string;
+
   @OneToOne(() => Person, (person) => person.student, {
     eager: true,
   })

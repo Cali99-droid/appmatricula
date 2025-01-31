@@ -596,6 +596,8 @@ export class FamilyService {
           family: { id: familyId },
           code: newCodigo,
           hasDebt: false,
+          modularCode: child.modularCode,
+          school: child.school,
         });
         student = await this.studentRepository.save(studentC);
       }
@@ -607,12 +609,15 @@ export class FamilyService {
       });
       let registered: Enrollment;
       if (!existEnrroll) {
+        const newExpirationDate = new Date();
+        newExpirationDate.setDate(newExpirationDate.getDate() + 5);
         const resgisteredC = this.enrollRepository.create({
           activityClassroom: { id: ac.id },
           student: { id: student.id },
           status: Status.EN_PROCESO,
           code: `${ac.phase.year.name}${ac.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
           isActive: false,
+          reservationExpiration: newExpirationDate,
         });
         registered = await this.enrollRepository.save(resgisteredC);
       }

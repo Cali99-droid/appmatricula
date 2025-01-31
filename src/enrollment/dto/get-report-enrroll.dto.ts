@@ -22,12 +22,21 @@ export class GetReportEnrrollDto {
 
   @ApiProperty({
     example: 1,
-    description: 'id of the Grade',
+    description: 'id of the level',
     nullable: true,
   })
   @IsOptional()
-  @ExistId({ tableName: 'Grade' })
-  gradeId?: number;
+  @ExistId({ tableName: 'level' })
+  levelId?: string;
+
+  @ApiProperty({
+    example: 1,
+    description: 'id of the activity classroom',
+    nullable: true,
+  })
+  @IsOptional()
+  @ExistId({ tableName: 'activity_classroom' })
+  activityClassroomId?: number;
 
   @ApiProperty({
     example: 'pre-registered',
