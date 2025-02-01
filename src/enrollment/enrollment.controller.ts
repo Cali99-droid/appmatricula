@@ -40,7 +40,7 @@ import { UpdateExpirationDto } from './dto/update-expiration.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
-@Resource('client-test-appae')
+@Resource('appcolegioae')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
