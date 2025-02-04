@@ -52,6 +52,20 @@ export const AdminMenu = {
           link: '/admin/staff/activity-users',
           permissions: ['administrador-colegio', 'secretaria'],
         },
+        {
+          id: 6,
+          label: 'Matrícula en proceso',
+          icon: 'user',
+          link: '/admin/reports/report-status',
+          permissions: ['administrador-colegio', 'secretaria'],
+        },
+        {
+          id: 7,
+          label: 'Estudiantes por sección',
+          icon: 'user',
+          link: '/admin/school/search-student',
+          permissions: ['administrador-colegio', 'secretaria'],
+        },
       ],
     },
     {
