@@ -10,10 +10,11 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { User } from 'src/user/entities/user.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { SlackService } from 'src/enrollment/slack.service';
 
 @Module({
   controllers: [FamilyController],
-  providers: [FamilyService],
+  providers: [FamilyService, SlackService],
   imports: [
     TypeOrmModule.forFeature([
       Person,

@@ -40,6 +40,7 @@ import { DataAdmision } from 'src/family/interfaces/data-admision';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 import { UpdateExpirationDto } from './dto/update-expiration.dto';
 import { FamilyService } from 'src/family/family.service';
+import { SlackService } from './slack.service';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -63,6 +64,7 @@ export class EnrollmentService {
     /**servicios */
     private readonly studentService: StudentService,
     private readonly familyService: FamilyService,
+    private readonly slackService: SlackService,
   ) {}
   /**env */
   private readonly urlAdmision = this.configService.getOrThrow('API_ADMISION');
@@ -1775,50 +1777,51 @@ export class EnrollmentService {
   /**CRON JOBS RESERVARDOS */
   async updateReservedScript() {
     try {
-      const expiredRegistrations = await this.enrollmentRepository.find({
-        where: [
-          {
-            status: Status.EN_PROCESO,
-          },
-          {
-            status: Status.RESERVADO,
-          },
-          {
-            status: Status.PREMATRICULADO,
-          },
-          {
-            status: Status.MATRICULADO,
-          },
-        ],
-      });
+      await this.slackService.sendMessage('¡Hola desde producción !');
+      // const expiredRegistrations = await this.enrollmentRepository.find({
+      //   where: [
+      //     {
+      //       status: Status.EN_PROCESO,
+      //     },
+      //     {
+      //       status: Status.RESERVADO,
+      //     },
+      //     {
+      //       status: Status.PREMATRICULADO,
+      //     },
+      //     {
+      //       status: Status.MATRICULADO,
+      //     },
+      //   ],
+      // });
 
-      expiredRegistrations.forEach((enr) => {
-        let days: number;
-        let date: Date;
-        if (enr.status === Status.EN_PROCESO) {
-          date = enr.createdAt;
-          days = 5;
-        }
-        if (enr.status === Status.RESERVADO) {
-          days = 25;
-          date = enr.updatedAt ? enr.updatedAt : enr.createdAt;
-        }
-        if (enr.status === Status.PREMATRICULADO) {
-          days = 10;
-          date = enr.updatedAt ? enr.updatedAt : enr.createdAt;
-        }
-        if (enr.status === Status.MATRICULADO) {
-          days = 0;
-          date = new Date();
-        }
-        const newExpirationDate = new Date(date);
-        newExpirationDate.setDate(newExpirationDate.getDate() + days);
-        enr.reservationExpiration = newExpirationDate;
-        enr.dateOfChange = date;
-      });
+      // expiredRegistrations.forEach((enr) => {
+      //   let days: number;
+      //   let date: Date;
+      //   if (enr.status === Status.EN_PROCESO) {
+      //     date = enr.createdAt;
+      //     days = 5;
+      //   }
+      //   if (enr.status === Status.RESERVADO) {
+      //     days = 25;
+      //     date = enr.updatedAt ? enr.updatedAt : enr.createdAt;
+      //   }
+      //   if (enr.status === Status.PREMATRICULADO) {
+      //     days = 10;
+      //     date = enr.updatedAt ? enr.updatedAt : enr.createdAt;
+      //   }
+      //   if (enr.status === Status.MATRICULADO) {
+      //     days = 0;
+      //     date = new Date();
+      //   }
+      //   const newExpirationDate = new Date(date);
+      //   newExpirationDate.setDate(newExpirationDate.getDate() + days);
+      //   enr.reservationExpiration = newExpirationDate;
+      //   enr.dateOfChange = date;
+      // });
 
-      await this.enrollmentRepository.save(expiredRegistrations);
-      console.log('Successfully updated');
+      // await this.enrollmentRepository.save(expiredRegistrations);
+      // console.log('Successfully updated');
     } catch (error) {
       console.error('Error updating registrations in process:', error);
     }
@@ -1838,6 +1841,9 @@ export class EnrollmentService {
       /**TODO comunicarse con admision para liberar estado de vacante y email*/
       this.logger.log(
         `Successfully deleted, affected: ${expiredRegistrations.length}`,
+      );
+      await this.slackService.sendMessage(
+        `Today ${expiredRegistrations.length} registrations that are in process will be affected `,
       );
       this.logger.log(`cron jobs completed succesfully`);
       return {

@@ -25,6 +25,7 @@ import { User } from 'src/user/entities/user.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Status } from 'src/enrollment/enum/status.enum';
 import { TypePhase } from 'src/phase/enum/type-phase.enum';
+import { SlackService } from 'src/enrollment/slack.service';
 @Injectable()
 export class FamilyService {
   private readonly logger = new Logger('FamilyService');
@@ -43,6 +44,8 @@ export class FamilyService {
     private readonly enrollRepository: Repository<Enrollment>,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+
+    private readonly slackService: SlackService,
   ) {}
 
   async create(createfamilyDto: CreateFamilyDto) {
@@ -623,6 +626,9 @@ export class FamilyService {
         registered = await this.enrollRepository.save(resgisteredC);
       }
 
+      await this.slackService.sendMessage(
+        `Student ${child.name}  ${child.lastname} ${child.mLastname} was received`,
+      );
       return {
         nameFamily: child.lastname + ' ' + child.mLastname,
         student,
