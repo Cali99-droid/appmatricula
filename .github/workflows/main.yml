@@ -77,6 +77,7 @@ jobs:
             -e CLIENT_SECRET_KEYCLOAK=${{ secrets.CLIENT_SECRET_KEYCLOAK }} \
             -e NUBEFACT_API_URL=${{ secrets.NUBEFACT_API_URL }} \
             -e NUBEFACT_TOKEN=${{ secrets.NUBEFACT_TOKEN }} \
+            -e SLACK_WEBHOOK=${{ secrets.SLACK_WEBHOOK }} \
             -e TZ=America/Lima \
             --restart always \
             ghcr.io/cali99-droid/appmatricula-prod:latest

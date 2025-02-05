@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
 @Injectable()
 export class SlackService {
-  private webhookUrl =
-    'https://hooks.slack.com/services/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';
+  constructor(private readonly configService: ConfigService) {}
+
+  private webhookUrl = this.configService.getOrThrow('SLACK_WEBHOOK');
 
   async sendMessage(message: string) {
     try {
