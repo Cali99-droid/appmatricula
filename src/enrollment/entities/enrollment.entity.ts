@@ -88,6 +88,11 @@ export class Enrollment {
   @Column('date', {
     nullable: true,
   })
+  dateOfChange: Date;
+
+  @Column('date', {
+    nullable: true,
+  })
   reservationExpiration: Date;
 
   /**TIMESTAMPS */

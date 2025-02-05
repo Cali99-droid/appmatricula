@@ -280,7 +280,12 @@ export class TreasuryService {
       // Crear registro de boleta
       const newBill = await this.saveBill(response, newPay.id, serie, numero);
 
+      const newExpirationDate = new Date();
+      newExpirationDate.setDate(newExpirationDate.getDate() + 25);
       enrrollOnProccess.status = Status.RESERVADO;
+      enrrollOnProccess.isActive = true;
+      enrrollOnProccess.reservationExpiration = newExpirationDate;
+      enrrollOnProccess.dateOfChange = new Date();
       await this.enrollmentRepository.save(enrrollOnProccess);
 
       /**genear deudas */

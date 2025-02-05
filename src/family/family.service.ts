@@ -282,7 +282,7 @@ export class FamilyService {
         respAcademic: true,
       },
     });
-
+    console.log(family);
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
 
     if (family.parentOneId?.user) {
@@ -617,6 +617,7 @@ export class FamilyService {
           status: Status.EN_PROCESO,
           code: `${ac.phase.year.name}${ac.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
           isActive: false,
+          dateOfChange: new Date(),
           reservationExpiration: newExpirationDate,
         });
         registered = await this.enrollRepository.save(resgisteredC);

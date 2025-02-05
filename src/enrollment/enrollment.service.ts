@@ -164,12 +164,15 @@ export class EnrollmentService {
             'those enrolled exceed the capacity of the classroom ',
           );
         }
+        const newExpirationDate = new Date();
+        newExpirationDate.setDate(newExpirationDate.getDate() + 10);
         const enrollment = this.enrollmentRepository.create({
           student: { id: ce.studentId },
           activityClassroom: { id: ce.activityClassroomId },
           code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${ce.studentId}`,
           status: Status.PREMATRICULADO,
-          // reservationExpiration: new Date(),
+          dateOfChange: new Date(),
+          reservationExpiration: newExpirationDate,
         });
         const enrroll = await this.enrollmentRepository.save(enrollment);
         const activityClassroom =
@@ -205,6 +208,10 @@ export class EnrollmentService {
         codes.push(enrollment.code);
         idsStudent.push(ce.studentId);
       } else {
+        const newExpirationDate = new Date();
+        newExpirationDate.setDate(newExpirationDate.getDate() + 10);
+        existEnrroll.reservationExpiration = newExpirationDate;
+        existEnrroll.dateOfChange = new Date();
         existEnrroll.status = Status.PREMATRICULADO;
         existEnrroll.isActive = true;
         existEnrroll.activityClassroom.id = ce.activityClassroomId;
@@ -1726,8 +1733,8 @@ export class EnrollmentService {
         status,
         student,
         activityClassroom,
-        createdAt,
         reservationExpiration,
+        dateOfChange,
       }) => {
         const parent = student.family.parentOneId?.cellPhone
           ? student.family.parentOneId
@@ -1741,7 +1748,7 @@ export class EnrollmentService {
           grade: activityClassroom.grade.name,
           section: activityClassroom.section,
           parent,
-          creationDate: createdAt,
+          creationDate: dateOfChange,
           expirationDate: reservationExpiration,
           siagie: 'EN PROCESO',
           studentCode: 'S100EXAMPLE',
@@ -1768,12 +1775,46 @@ export class EnrollmentService {
   /**CRON JOBS RESERVARDOS */
   async updateReservedScript() {
     try {
-      const expiredRegistrations = await this.enrollmentRepository.find();
+      const expiredRegistrations = await this.enrollmentRepository.find({
+        where: [
+          {
+            status: Status.EN_PROCESO,
+          },
+          {
+            status: Status.RESERVADO,
+          },
+          {
+            status: Status.PREMATRICULADO,
+          },
+          {
+            status: Status.MATRICULADO,
+          },
+        ],
+      });
 
       expiredRegistrations.forEach((enr) => {
-        const newExpirationDate = new Date(enr.createdAt);
-        newExpirationDate.setDate(newExpirationDate.getDate() + 5);
+        let days: number;
+        let date: Date;
+        if (enr.status === Status.EN_PROCESO) {
+          date = enr.createdAt;
+          days = 5;
+        }
+        if (enr.status === Status.RESERVADO) {
+          days = 25;
+          date = enr.updatedAt ? enr.updatedAt : enr.createdAt;
+        }
+        if (enr.status === Status.PREMATRICULADO) {
+          days = 10;
+          date = enr.updatedAt ? enr.updatedAt : enr.createdAt;
+        }
+        if (enr.status === Status.MATRICULADO) {
+          days = 0;
+          date = new Date();
+        }
+        const newExpirationDate = new Date(date);
+        newExpirationDate.setDate(newExpirationDate.getDate() + days);
         enr.reservationExpiration = newExpirationDate;
+        enr.dateOfChange = date;
       });
 
       await this.enrollmentRepository.save(expiredRegistrations);
