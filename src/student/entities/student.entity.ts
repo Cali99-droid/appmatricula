@@ -55,6 +55,11 @@ export class Student {
   @Column('varchar', {
     nullable: true,
   })
+  siagie: string;
+
+  @Column('varchar', {
+    nullable: true,
+  })
   school: string;
 
   @Column('varchar', {
