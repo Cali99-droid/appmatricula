@@ -240,7 +240,6 @@ export class EnrollmentService {
 
   async createMany(createManyEnrollmentDto: UpdateManyEnrollmentDto) {
     const { persons, activityClassroomId } = createManyEnrollmentDto;
-    console.log(activityClassroomId);
     let existingStudentCount = 0;
     let noexistingStudentCount = 0;
     try {
