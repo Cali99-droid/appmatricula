@@ -866,6 +866,7 @@ export class EnrollmentService {
         //   dest.section === currentEnrrollment.activityClassroom.section ||
         //   dest.hasVacants
         // ) {
+
         if (dest.hasVacant) {
           const classroom: AvailableClassroom = {
             id: ac.id,
@@ -1753,7 +1754,7 @@ export class EnrollmentService {
           creationDate: dateOfChange,
           expirationDate: reservationExpiration,
           siagie: 'EN PROCESO',
-          studentCode: 'S100EXAMPLE',
+          studentCode: student.studentCode || '',
           modularCode: student.modularCode,
           schoolName: student.school,
         };
