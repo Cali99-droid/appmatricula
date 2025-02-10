@@ -1839,12 +1839,21 @@ export class EnrollmentService {
           reservationExpiration: LessThanOrEqual(today),
         },
       });
-      /**TODO comunicarse con admision para liberar estado de vacante y email*/
+      await this.enrollmentRepository.update(
+        {
+          status: Status.EN_PROCESO,
+          reservationExpiration: LessThanOrEqual(today),
+        },
+        { status: Status.EXPIRADO }, // Cambia esto por el nuevo estado deseado
+      );
+
+      /**DIJO QUE YA NO comunicarse con admision para liberar estado de vacante y email*/
+
       this.logger.log(
-        `Successfully deleted, affected: ${expiredRegistrations.length}`,
+        `Successfully updated, affected: ${expiredRegistrations.length}`,
       );
       await this.slackService.sendMessage(
-        `Today ${expiredRegistrations.length} registrations that are in process will be affected `,
+        `Today ${expiredRegistrations.length} registrations that are in process will be affected`,
       );
       this.logger.log(`cron jobs completed succesfully`);
       return {
