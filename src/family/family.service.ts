@@ -523,6 +523,7 @@ export class FamilyService {
           lastname: parentTwo.lastname.toUpperCase(),
           mLastname: parentTwo.mLastname.toUpperCase(),
           familyRole: parentTwo.role as FamilyRole,
+          cellPhone: parentTwo.phone,
           birthDate: new Date(parentTwo.birthdate),
           typeDoc: parentTwo.type_doc as TypeDoc,
           gender: parentTwo.role === 'P' ? Gender.M : Gender.F,
