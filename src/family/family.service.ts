@@ -25,6 +25,7 @@ import { User } from 'src/user/entities/user.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Status } from 'src/enrollment/enum/status.enum';
 import { TypePhase } from 'src/phase/enum/type-phase.enum';
+import { SlackService } from 'src/enrollment/slack.service';
 @Injectable()
 export class FamilyService {
   private readonly logger = new Logger('FamilyService');
@@ -43,6 +44,8 @@ export class FamilyService {
     private readonly enrollRepository: Repository<Enrollment>,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+
+    private readonly slackService: SlackService,
   ) {}
 
   async create(createfamilyDto: CreateFamilyDto) {
@@ -282,7 +285,7 @@ export class FamilyService {
         respAcademic: true,
       },
     });
-
+    console.log(family);
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
 
     if (family.parentOneId?.user) {
@@ -520,6 +523,7 @@ export class FamilyService {
           lastname: parentTwo.lastname.toUpperCase(),
           mLastname: parentTwo.mLastname.toUpperCase(),
           familyRole: parentTwo.role as FamilyRole,
+          cellPhone: parentTwo.phone,
           birthDate: new Date(parentTwo.birthdate),
           typeDoc: parentTwo.type_doc as TypeDoc,
           gender: parentTwo.role === 'P' ? Gender.M : Gender.F,
@@ -617,11 +621,15 @@ export class FamilyService {
           status: Status.EN_PROCESO,
           code: `${ac.phase.year.name}${ac.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
           isActive: false,
+          dateOfChange: new Date(),
           reservationExpiration: newExpirationDate,
         });
         registered = await this.enrollRepository.save(resgisteredC);
       }
 
+      await this.slackService.sendMessage(
+        `Student ${child.name}  ${child.lastname} ${child.mLastname} was received`,
+      );
       return {
         nameFamily: child.lastname + ' ' + child.mLastname,
         student,

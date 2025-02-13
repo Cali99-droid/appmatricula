@@ -5,5 +5,6 @@ export enum Status {
   FINALIZADO = 'finalized',
   RETIRADO = 'retired',
   PREMATRICULADO = 'pre-registered',
+  EXPIRADO = 'expired',
   MATRICULADO = 'registered',
 }
