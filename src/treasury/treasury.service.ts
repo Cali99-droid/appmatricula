@@ -377,7 +377,7 @@ export class TreasuryService {
     endDate: string,
     userId: number,
   ) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),
@@ -410,6 +410,10 @@ export class TreasuryService {
               {
                 // student: { id: debt.student.id },
                 status: Status.RESERVADO,
+              },
+              {
+                // student: { id: debt.student.id },
+                status: Status.EXPIRADO,
               },
             ],
           },

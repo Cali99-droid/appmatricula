@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
-import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
 import { Enrollment } from './entities/enrollment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThanOrEqual, Not, Repository } from 'typeorm';
@@ -40,7 +39,11 @@ import { DataAdmision } from 'src/family/interfaces/data-admision';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 import { UpdateExpirationDto } from './dto/update-expiration.dto';
 import { FamilyService } from 'src/family/family.service';
+<<<<<<< HEAD
 import { SlackService } from './slack.service';
+=======
+import { UpdateManyEnrollmentDto } from './dto/update-many-enrollment.dto';
+>>>>>>> be24c369aaca3cbef6701a70e3c907bf4524b14f
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -71,7 +74,7 @@ export class EnrollmentService {
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -247,99 +250,45 @@ export class EnrollmentService {
     }
   }
 
-  async createMany(createManyEnrollmentDto: CreateManyEnrollmentDto) {
+  async createMany(createManyEnrollmentDto: UpdateManyEnrollmentDto) {
     const { persons, activityClassroomId } = createManyEnrollmentDto;
-    // validar capacidad de aula
-
-    const classroom = await this.activityClassroomRepository.findOneBy({
-      id: activityClassroomId,
-    });
-
-    const capacity = classroom.classroom.capacity;
-
-    if (persons.length > capacity) {
-      throw new BadRequestException(
-        'those enrolled exceed the capacity of the classroom ',
-      );
-    }
+    let existingStudentCount = 0;
+    let noexistingStudentCount = 0;
     try {
-      //Validar Personas
-
-      const dataNoExist: any[] = [];
-      const dataEnrollment: any[] = [];
       for (const person of persons) {
-        const existPerson = await this.personRepository.findOne({
-          where: { studentCode: person.studentCode },
-        });
-
-        if (existPerson) {
-          let student;
-          student = await this.studentRepository.findOne({
-            where: { person: { id: existPerson.id } },
-          });
-
-          if (!student) {
-            student = await this.studentRepository.save({
-              person: existPerson,
-              studentCode: person.studentCode,
-            });
-          }
-
-          const existEnrollment = await this.enrollmentRepository.findOne({
-            where: {
-              student: { id: student.id },
-              activityClassroom: {
-                phase: { id: classroom.phase.id },
+        const existStudent = await this.enrollmentRepository.findOne({
+          where: {
+            activityClassroom: { id: activityClassroomId },
+            student: {
+              person: {
+                docNumber: person.docNumber,
               },
             },
+          },
+        });
+        if (!existStudent) {
+          noexistingStudentCount++;
+        }
+        if (existStudent) {
+          existStudent.student.studentCode = person.studentCode;
+          existStudent.student.siagie = person.siagie;
+          const student = await this.studentRepository.preload({
+            id: existStudent.student.id,
+            ...existStudent.student,
           });
-
-          if (!existEnrollment) {
-            const enrollment = this.enrollmentRepository.create({
-              student: { id: student.id },
-              activityClassroom: { id: activityClassroomId },
-              status: Status.EN_PROCESO,
-              code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
-            });
-            const saveEnrollment =
-              await this.enrollmentRepository.save(enrollment);
-            dataEnrollment.push(saveEnrollment);
-          }
-        } else {
-          dataNoExist.push(person);
+          await this.studentRepository.save(student);
+          existingStudentCount++;
         }
       }
-
-      // Crear y guardar personas que no existen
-      const personsCreated = await this.personRepository.save(
-        this.personRepository.create(dataNoExist),
-      );
-
-      // Crear y guardar estudiantes que no existen
-      const studentsCreated = await this.studentRepository.save(
-        personsCreated.map((person) => ({
-          person,
-          studentCode: person.studentCode,
-        })),
-      );
-      // Crear y guardar matriculas
-      const enrollments = await this.enrollmentRepository.save(
-        studentsCreated.map((student) => ({
-          status: Status.EN_PROCESO,
-          activityClassroom: { id: activityClassroomId },
-          student,
-          code: `${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`,
-        })),
-      );
-      await this.studentService.updateStudentCodes();
-      // await this.scripting();
-      dataEnrollment.push(enrollments);
-      return enrollments;
+      return {
+        message: `Estudiantes Actualizados: ${existingStudentCount}`,
+        error: `Estudiantes NO actualizados: ${noexistingStudentCount} `,
+        statusCode: 200,
+      };
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
   }
-
   async findAll() {
     const enrollments = await this.enrollmentRepository.find();
     return enrollments;
