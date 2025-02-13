@@ -39,11 +39,8 @@ import { DataAdmision } from 'src/family/interfaces/data-admision';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 import { UpdateExpirationDto } from './dto/update-expiration.dto';
 import { FamilyService } from 'src/family/family.service';
-<<<<<<< HEAD
 import { SlackService } from './slack.service';
-=======
 import { UpdateManyEnrollmentDto } from './dto/update-many-enrollment.dto';
->>>>>>> be24c369aaca3cbef6701a70e3c907bf4524b14f
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
