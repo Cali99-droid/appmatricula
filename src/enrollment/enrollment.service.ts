@@ -1835,13 +1835,13 @@ export class EnrollmentService {
 
       const expiredRegistrations = await this.enrollmentRepository.find({
         where: {
-          status: In([Status.EN_PROCESO, Status.PREMATRICULADO, Status.RESERVADO),
+          status: In([Status.EN_PROCESO, Status.PREMATRICULADO, Status.RESERVADO]),
           reservationExpiration: LessThanOrEqual(today),
         },
       });
       await this.enrollmentRepository.update(
   {
-    status: In([Status.EN_PROCESO, Status.PREMATRICULADO, Status.RESERVADO), // Agrega más estados según sea necesario
+    status: In([Status.EN_PROCESO, Status.PREMATRICULADO, Status.RESERVADO]), // Agrega más estados según sea necesario
     reservationExpiration: LessThanOrEqual(today),
   },
   { status: Status.EXPIRADO },
