@@ -1835,18 +1835,25 @@ export class EnrollmentService {
 
       const expiredRegistrations = await this.enrollmentRepository.find({
         where: {
-          status: In([Status.EN_PROCESO, Status.PREMATRICULADO, Status.RESERVADO]),
+          status: In([
+            Status.EN_PROCESO,
+            Status.PREMATRICULADO,
+            Status.RESERVADO,
+          ]),
           reservationExpiration: LessThanOrEqual(today),
         },
       });
       await this.enrollmentRepository.update(
-  {
-    status: In([Status.EN_PROCESO, Status.PREMATRICULADO, Status.RESERVADO]), // Agrega más estados según sea necesario
-    reservationExpiration: LessThanOrEqual(today),
-  },
-  { status: Status.EXPIRADO },
-);
-
+        {
+          status: In([
+            Status.EN_PROCESO,
+            Status.PREMATRICULADO,
+            Status.RESERVADO,
+          ]), // Agrega más estados según sea necesario
+          reservationExpiration: LessThanOrEqual(today),
+        },
+        { status: Status.EXPIRADO },
+      );
 
       /**DIJO QUE YA NO comunicarse con admision para liberar estado de vacante y email*/
 
