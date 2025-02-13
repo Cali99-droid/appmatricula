@@ -7,7 +7,7 @@ export class EnrollmentScheduler {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
   // Ejecutar a las 09:01 AM todos los días para cerrar el turno de la mañana
-  @Cron('0 1 * * 1-7')
+  @Cron('0 9 * * 1-7')
   async handleUpdateReservations() {
     await this.enrollmentService.updateReservations();
   }
