@@ -13,7 +13,7 @@ import {
 import { EnrollmentService } from './enrollment.service';
 
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
-import { CreateManyEnrollmentDto } from './dto/create-many-enrollment.dto';
+import { UpdateManyEnrollmentDto } from './dto/update-many-enrollment.dto';
 import {
   ApiOkResponse,
   ApiOperation,
@@ -88,12 +88,9 @@ export class EnrollmentController {
     status: 200,
     description: 'ActivityClassroom was created',
   })
-  @ApiResponse({
-    status: 400,
-    description: 'those enrolled exceed the capacity of the classroom ',
-  })
-  createMany(@Body() createManyEnrollmentDto: CreateManyEnrollmentDto) {
-    return this.enrollmentService.createMany(createManyEnrollmentDto);
+  createMany(@Body() updateManyEnrollmentDto: UpdateManyEnrollmentDto) {
+    console.log('first');
+    return this.enrollmentService.createMany(updateManyEnrollmentDto);
   }
 
   @Get()
