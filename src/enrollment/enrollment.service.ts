@@ -1721,6 +1721,46 @@ export class EnrollmentService {
       handleDBExceptions(error, this.logger);
     }
   }
+
+  /**CHANGE SECTION */
+  async changeSection(studentId: number, activityClassroomId: number) {
+    const vacant = await this.vacancyCalculation(activityClassroomId);
+    if (!vacant.hasVacant) {
+      throw new BadRequestException('Insufficient vacancies');
+    }
+    const enrroll = await this.enrollmentRepository.findOne({
+      where: {
+        status: In([Status.PREMATRICULADO, Status.MATRICULADO]),
+        student: { id: studentId },
+      },
+      order: {
+        id: 'DESC',
+      },
+    });
+
+    if (!enrroll) {
+      throw new NotFoundException('Enrollment not found');
+    }
+    try {
+      if (enrroll.status === Status.PREMATRICULADO) {
+        /**TODO agregar validaciones pertinentes  */
+        enrroll.activityClassroom = {
+          id: activityClassroomId,
+        } as ActivityClassroom;
+        return this.enrollmentRepository.save(enrroll);
+      }
+
+      if (enrroll.status === Status.MATRICULADO) {
+        /**TODO agregar validaciones pertinentes aprobacion de admin y psicologia  */
+        enrroll.activityClassroom = {
+          id: activityClassroomId,
+        } as ActivityClassroom;
+        return await this.enrollmentRepository.save(enrroll);
+      }
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
   /**CRON JOBS RESERVARDOS */
   async updateReservedScript() {
     try {

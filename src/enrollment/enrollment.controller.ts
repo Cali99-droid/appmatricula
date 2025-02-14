@@ -260,6 +260,18 @@ export class EnrollmentController {
     // return this.enrollmentService.getVacantsTest();
     return this.enrollmentService.getVacantsGeneral(gradeId, yearId, campusId);
   }
+  @Get('change-section/:studentId/classroom/:activityClassroomId')
+  @ApiOkResponse({
+    status: 200,
+    description: 'updating section',
+    //  type: [AvailableClassroom],
+  })
+  changeSection(
+    @Param('studentId', ParseIntPipe) studentId: number,
+    @Param('activityClassroomId', ParseIntPipe) activityClassroomId: number,
+  ) {
+    return this.enrollmentService.changeSection(studentId, activityClassroomId);
+  }
 
   @Get('get/status')
   @ApiResponse({
