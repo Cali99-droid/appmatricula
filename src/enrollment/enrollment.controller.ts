@@ -260,7 +260,7 @@ export class EnrollmentController {
     // return this.enrollmentService.getVacantsTest();
     return this.enrollmentService.getVacantsGeneral(gradeId, yearId, campusId);
   }
-  @Get('change-section/:studentId/classroom/:activityClassroomId')
+  @Put('change-section/:studentId/classroom/:activityClassroomId')
   @ApiOkResponse({
     status: 200,
     description: 'updating section',
