@@ -1711,9 +1711,17 @@ export class EnrollmentService {
   }
 
   async updateExpiration(id: number, updateExpirationDto: UpdateExpirationDto) {
+    const enroll = await this.enrollmentRepository.findOneByOrFail({ id });
+    const dest = await this.vacancyCalculation(enroll.activityClassroom.id);
+
+    if (!dest.hasVacant) {
+      throw new BadRequestException(
+        'There were vacancies for this registration',
+      );
+    }
     try {
       const { newExpiration } = updateExpirationDto;
-      const enroll = await this.enrollmentRepository.findOneByOrFail({ id });
+
       const expirationDate = new Date(newExpiration);
       enroll.reservationExpiration = expirationDate;
       return await this.enrollmentRepository.save(enroll);
