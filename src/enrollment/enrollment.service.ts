@@ -1703,6 +1703,8 @@ export class EnrollmentService {
           studentCode: student.studentCode || '',
           modularCode: student.modularCode,
           schoolName: student.school,
+          activityClassroomId: activityClassroom.id,
+          studentId: student.id,
         };
       },
     );
