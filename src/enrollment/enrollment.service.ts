@@ -1699,9 +1699,10 @@ export class EnrollmentService {
           parent,
           creationDate: dateOfChange,
           expirationDate: reservationExpiration,
-          siagie: 'EN PROCESO',
+          siagie: '',
           studentCode: student.studentCode || '',
-          modularCode: student.modularCode,
+          modularCode:
+            student.modularCode === 'no information' ? '' : student.modularCode,
           schoolName: student.school,
           activityClassroomId: activityClassroom.id,
           studentId: student.id,
