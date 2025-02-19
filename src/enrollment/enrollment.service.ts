@@ -1351,6 +1351,12 @@ export class EnrollmentService {
           id: In(idsAc),
         },
         ratified: true,
+        status: In([
+          Status.PREMATRICULADO,
+          Status.EN_PROCESO,
+          Status.MATRICULADO,
+          Status.RESERVADO,
+        ]),
       },
     });
 
