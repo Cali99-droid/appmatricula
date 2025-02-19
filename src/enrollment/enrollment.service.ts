@@ -71,7 +71,7 @@ export class EnrollmentService {
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -1699,10 +1699,13 @@ export class EnrollmentService {
           parent,
           creationDate: dateOfChange,
           expirationDate: reservationExpiration,
-          siagie: 'EN PROCESO',
+          siagie: '',
           studentCode: student.studentCode || '',
-          modularCode: student.modularCode,
+          modularCode:
+            student.modularCode === 'no information' ? '' : student.modularCode,
           schoolName: student.school,
+          activityClassroomId: activityClassroom.id,
+          studentId: student.id,
         };
       },
     );
@@ -1829,16 +1832,24 @@ export class EnrollmentService {
 
       const expiredRegistrations = await this.enrollmentRepository.find({
         where: {
-          status: Status.EN_PROCESO,
+          status: In([
+            Status.EN_PROCESO,
+            Status.PREMATRICULADO,
+            Status.RESERVADO,
+          ]),
           reservationExpiration: LessThanOrEqual(today),
         },
       });
       await this.enrollmentRepository.update(
         {
-          status: Status.EN_PROCESO,
+          status: In([
+            Status.EN_PROCESO,
+            Status.PREMATRICULADO,
+            Status.RESERVADO,
+          ]), // Agrega más estados según sea necesario
           reservationExpiration: LessThanOrEqual(today),
         },
-        { status: Status.EXPIRADO }, // Cambia esto por el nuevo estado deseado
+        { status: Status.EXPIRADO },
       );
 
       /**DIJO QUE YA NO comunicarse con admision para liberar estado de vacante y email*/
