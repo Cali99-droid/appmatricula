@@ -377,7 +377,7 @@ export class TreasuryService {
     endDate: string,
     userId: number,
   ) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),
@@ -457,7 +457,7 @@ export class TreasuryService {
         cod: `${boleta.serie}-${boleta.numero}`,
         isAccepted: boleta.accepted,
         url: boleta.url,
-        description: `${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
+        description: `${boleta.payment.concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
         user: this.getUser(boleta.payment.user),
         payment: {
           id: boleta.payment.id,
