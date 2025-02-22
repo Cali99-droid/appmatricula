@@ -10,6 +10,7 @@ import { Family } from 'src/family/entities/family.entity';
 import { HttpModule } from '@nestjs/axios';
 import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/student/entities/student.entity';
+import { EmailDetail } from './entities/emailDetail.entity';
 
 @Module({
   controllers: [EmailsController],
@@ -22,6 +23,7 @@ import { Student } from 'src/student/entities/student.entity';
       Family,
       Person,
       Student,
+      EmailDetail,
     ]),
     ConfigModule,
     HttpModule,

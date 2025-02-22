@@ -15,6 +15,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { Email } from 'src/emails/entities/email.entity';
+import { EmailDetail } from 'src/emails/entities/emailDetail.entity';
 @Entity()
 export class Student {
   @ApiProperty()
@@ -79,10 +80,13 @@ export class Student {
 
   @OneToMany(() => Attendance, (attendance) => attendance.student)
   attendance?: Attendance[];
-  @OneToMany(() => Email, (email) => email.student, {
-    // eager: true,
-  })
-  email: Email[];
+  
+  @OneToMany(() => EmailDetail, (emailDetail) => emailDetail.student)
+  emailsDetails?: EmailDetail[];
+  // @OneToMany(() => Email, (email) => email.student, {
+  //   // eager: true,
+  // })
+  // email: Email[];
   /**TIMESTAMPS */
   @CreateDateColumn({
     type: 'timestamp',

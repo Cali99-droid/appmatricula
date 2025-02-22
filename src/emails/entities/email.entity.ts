@@ -3,36 +3,40 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { TypeEmail } from '../enum/type-email';
 import * as moment from 'moment-timezone';
-import { Student } from 'src/student/entities/student.entity';
+import { EmailDetail } from './emailDetail.entity';
 @Entity()
 export class Email {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({
+    type: 'enum',
+    enum: TypeEmail,
+  })
+  type: TypeEmail;
+
   @Column('varchar', {
     nullable: true,
   })
   receivers: string;
+
   @Column('varchar', {
     nullable: true,
   })
   subject: string;
+
   @Column('longtext', {
     nullable: true,
   })
   body: string;
-  @Column('varchar', {
-    nullable: true,
-  })
-  quantity: string;
+
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',
@@ -46,19 +50,19 @@ export class Email {
     example: 'R',
     description: 'Tipo de Email, puede ser "R"(ratification), "O"(Other)',
   })
-  @Column({
-    type: 'enum',
-    enum: TypeEmail,
-  })
-  type: TypeEmail;
-  @ManyToOne(() => Student, (student) => student.email, {
+
+  // @ManyToOne(() => Student, (student) => student.email, {
+  //   eager: true,
+  // })
+  // @JoinColumn({ name: 'studentId' })
+  // student?: Student;
+
+  // @Column('bool', {
+  //   default: false,
+  // })
+  // opened: boolean;
+  @OneToMany(() => EmailDetail, (emailDetail) => emailDetail.email, {
     eager: true,
   })
-  @JoinColumn({ name: 'studentId' })
-  student?: Student;
-
-  @Column('bool', {
-    default: false,
-  })
-  opened: boolean;
+  emailDetails: EmailDetail[];
 }
