@@ -1725,7 +1725,7 @@ export class EnrollmentService {
 
     if (!dest.hasVacant) {
       throw new BadRequestException(
-        'There were vacancies for this registration',
+        'There are no vacancies for the default classroom',
       );
     }
     try {
