@@ -1723,7 +1723,7 @@ export class EnrollmentService {
     const enroll = await this.enrollmentRepository.findOneByOrFail({ id });
     const dest = await this.vacancyCalculation(enroll.activityClassroom.id);
 
-    if (!dest.hasVacant) {
+    if (dest.vacant - 1 == -2) {
       throw new BadRequestException(
         'There are no vacancies for the default classroom',
       );
