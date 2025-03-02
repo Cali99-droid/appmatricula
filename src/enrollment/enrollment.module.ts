@@ -17,6 +17,7 @@ import { FamilyModule } from 'src/family/family.module';
 import { ConfigModule } from '@nestjs/config';
 import { EnrollmentScheduler } from './schedule/enrollment.scheduler';
 import { SlackService } from './slack.service';
+import { TreasuryModule } from 'src/treasury/treasury.module';
 
 @Module({
   controllers: [EnrollmentController],
@@ -36,6 +37,7 @@ import { SlackService } from './slack.service';
     StudentModule,
     FamilyModule,
     ConfigModule,
+    TreasuryModule,
   ],
   exports: [SlackService],
 })

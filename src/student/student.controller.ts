@@ -27,6 +27,7 @@ import {
 import { UpdateBehaviorDto } from 'src/enrollment/dto/update-behavior.dto';
 import { UpdateAllowNextRegistrationDto } from 'src/enrollment/dto/update-allowNextRegistration.dto';
 import { SearchEstudiantesDto } from './dto/search-student.dto';
+import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 @ApiTags('Student')
 @Controller('student')
@@ -43,8 +44,11 @@ export class StudentController {
     return this.studentService.findAll();
   }
   @Get('/search')
-  findStudents(@Query() searchDto: SearchEstudiantesDto) {
-    return this.studentService.findStudents(searchDto);
+  findStudents(
+    @Query() searchDto: SearchEstudiantesDto,
+    @AuthenticatedUser() user: any,
+  ) {
+    return this.studentService.findStudents(searchDto, user);
   }
   @Get('autocomplete')
   findAllAutocomplete(@Query('value') value: string) {

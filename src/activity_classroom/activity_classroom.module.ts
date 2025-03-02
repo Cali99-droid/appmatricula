@@ -15,6 +15,6 @@ import { Ascent } from 'src/enrollment/entities/ascent.entity';
     TypeOrmModule.forFeature([ActivityClassroom, User, Permission, Ascent]),
     ConfigModule,
   ],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, ActivityClassroomService],
 })
 export class ActivityClassroomModule {}

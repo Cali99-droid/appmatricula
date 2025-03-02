@@ -31,5 +31,6 @@ import { ConfigModule } from '@nestjs/config';
     ]),
     ConfigModule,
   ],
+  exports: [TreasuryService],
 })
 export class TreasuryModule {}

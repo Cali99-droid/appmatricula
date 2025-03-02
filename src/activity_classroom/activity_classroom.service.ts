@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateActivityClassroomDto } from './dto/create-activity_classroom.dto';

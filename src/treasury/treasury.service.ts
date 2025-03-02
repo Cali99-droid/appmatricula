@@ -8,7 +8,7 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
-import { Between, Repository } from 'typeorm';
+import { Between, LessThan, Repository } from 'typeorm';
 import { Family } from 'src/family/entities/family.entity';
 import axios from 'axios';
 import { Payment } from './entities/payment.entity';
@@ -369,6 +369,21 @@ export class TreasuryService {
       resp: family.respEnrollment || 'No hay reponsable matrícula ',
     };
     return data;
+  }
+
+  async searchDebtsByDate(studentId: number, date: Date = new Date()) {
+    const debts = await this.debtRepository.find({
+      where: {
+        dateEnd: LessThan(date),
+        student: { id: studentId },
+        status: false,
+      },
+      relations: {
+        concept: true,
+      },
+    });
+
+    return debts;
   }
 
   async findPaid(

@@ -6,6 +6,7 @@ import { Person } from 'src/person/entities/person.entity';
 import { Student } from './entities/student.entity';
 import { ConfigModule } from '@nestjs/config';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { ActivityClassroomModule } from 'src/activity_classroom/activity_classroom.module';
 
 @Module({
   controllers: [StudentController],
@@ -13,6 +14,7 @@ import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
   imports: [
     TypeOrmModule.forFeature([Person, Student, Enrollment]),
     ConfigModule,
+    ActivityClassroomModule,
   ],
   exports: [StudentService],
 })

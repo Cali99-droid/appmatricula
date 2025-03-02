@@ -41,6 +41,7 @@ import { UpdateExpirationDto } from './dto/update-expiration.dto';
 import { FamilyService } from 'src/family/family.service';
 import { SlackService } from './slack.service';
 import { UpdateManyEnrollmentDto } from './dto/update-many-enrollment.dto';
+import { TreasuryService } from 'src/treasury/treasury.service';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -63,6 +64,7 @@ export class EnrollmentService {
 
     /**servicios */
     private readonly studentService: StudentService,
+    private readonly treasuryService: TreasuryService,
     private readonly familyService: FamilyService,
     private readonly slackService: SlackService,
   ) {}
@@ -685,6 +687,40 @@ export class EnrollmentService {
       throw new NotFoundException('Dont exists this data');
     }
     if (currentEnrrollment.status === Status.RESERVADO) {
+      const ac = currentEnrrollment.activityClassroom;
+      const acs = await this.activityClassroomRepository.find({
+        where: {
+          grade: { id: ac.grade.id },
+          phase: { id: ac.phase.id },
+          classroom: {
+            campusDetail: {
+              id: ac.classroom.campusDetail.id,
+            },
+          },
+        },
+      });
+
+      for (const act of acs) {
+        const dest = await this.vacancyCalculation(act.id);
+
+        if (dest.hasVacant || ac.id === dest.id) {
+          const classroom: AvailableClassroom = {
+            id: dest.id,
+            name: dest.grade + ' ' + dest.section,
+            vacants: dest.vacant,
+            suggested: ac.id === dest.id,
+            campus: act.classroom.campusDetail.name,
+            level: act.grade.level.name,
+          };
+          availables.push(classroom);
+        }
+      }
+      return availables;
+    }
+    if (
+      currentEnrrollment.status === Status.PREMATRICULADO ||
+      currentEnrrollment.status === Status.MATRICULADO
+    ) {
       const ac = currentEnrrollment.activityClassroom;
       const acs = await this.activityClassroomRepository.find({
         where: {
@@ -1735,9 +1771,18 @@ export class EnrollmentService {
 
   /**CHANGE SECTION */
   async changeSection(studentId: number, activityClassroomId: number) {
+    /**Validar deudas */
+    const data = await this.treasuryService.searchDebtsByDate(studentId);
+
+    if (data.length > 0) {
+      throw new BadRequestException('The student has overdue debts');
+    }
+
     const vacant = await this.vacancyCalculation(activityClassroomId);
     if (!vacant.hasVacant) {
-      throw new BadRequestException('Insufficient vacancies');
+      throw new BadRequestException(
+        'Insufficient vacancies or the student is enrolled here',
+      );
     }
     const enrroll = await this.enrollmentRepository.findOne({
       where: {
