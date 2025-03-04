@@ -130,6 +130,9 @@ export class StudentService {
       .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
       .leftJoinAndSelect('activityClassroom.grade', 'grade');
     if (searchTerm) {
+      console.log('entro');
+    }
+    if (searchTerm) {
       const searchTerms = searchTerm
         .split(' ')
         .map((term) => term.trim())
@@ -151,7 +154,7 @@ export class StudentService {
 
     let data = results.map((estudiante) => ({
       ...estudiante,
-      grade: `${estudiante.enrollment[0].activityClassroom.grade.name} ${estudiante.enrollment[0].activityClassroom.section}`,
+      grade: `${estudiante.enrollment[0]?.activityClassroom.grade.name} ${estudiante.enrollment[0]?.activityClassroom.section}`,
       tieneMatriculaActiva: estudiante.enrollment.length > 0,
     }));
     data = data.filter((d) => d.tieneMatriculaActiva);
