@@ -126,8 +126,9 @@ export class StudentService {
           statusFin: 'finalized',
           ids: idsAc,
         },
-      );
-
+      )
+      .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
+      .leftJoinAndSelect('activityClassroom.grade', 'grade');
     if (searchTerm) {
       const searchTerms = searchTerm
         .split(' ')
@@ -150,6 +151,7 @@ export class StudentService {
 
     let data = results.map((estudiante) => ({
       ...estudiante,
+      grade: `${estudiante.enrollment[0].activityClassroom.grade.name} ${estudiante.enrollment[0].activityClassroom.section}`,
       tieneMatriculaActiva: estudiante.enrollment.length > 0,
     }));
     data = data.filter((d) => d.tieneMatriculaActiva);
