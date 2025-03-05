@@ -1042,9 +1042,9 @@ export class EnrollmentService {
         hasVacants: vacants > 0,
         type: 'P',
         detailOrigin: {
-          id: origin.id,
-          grade: origin.grade.name,
-          section: origin.section,
+          id: origin?.id,
+          grade: origin?.grade.name,
+          section: origin?.section,
           enrrolls: enrollPriority.length,
         },
       };
