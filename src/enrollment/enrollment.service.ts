@@ -253,6 +253,7 @@ export class EnrollmentService {
     const { persons, activityClassroomId } = createManyEnrollmentDto;
     let existingStudentCount = 0;
     let noexistingStudentCount = 0;
+    console.log(persons);
     try {
       for (const person of persons) {
         const existStudent = await this.enrollmentRepository.findOne({
@@ -1735,7 +1736,7 @@ export class EnrollmentService {
           parent,
           creationDate: dateOfChange,
           expirationDate: reservationExpiration,
-          siagie: '',
+          siagie: student.siagie,
           studentCode: student.studentCode || '',
           modularCode:
             student.modularCode === 'no information' ? '' : student.modularCode,
