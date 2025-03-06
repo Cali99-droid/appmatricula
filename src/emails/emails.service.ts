@@ -25,6 +25,7 @@ import * as aws from '@aws-sdk/client-ses';
 import * as nodemailer from 'nodemailer';
 import { MailParams } from './interfaces/mail-params.interface';
 import { EmailDetail } from './entities/emailDetail.entity';
+import { getBodyEmail, getText } from './helpers/bodyEmail';
 @Injectable()
 export class EmailsService {
   private readonly logger = new Logger('EmailsService');
@@ -142,64 +143,7 @@ export class EmailsService {
       throw new BadRequestException(`No hay emails para ser enviados`);
     }
     try {
-      // const dataEmail = this.emailRepository.create({
-      //   receivers: receivers,
-      //   subject: createEmailDto.subject,
-      //   body: createEmailDto.body,
-      //   quantity: '0',
-      //   type: createEmailDto.type,
-      // });
-
-      // const createdEmail = await this.emailRepository.save(dataEmail);
-      // const emailsParents = filteredEnrollment.map((enrollment) => {
-      //   const family = enrollment.student.family;
-      //   if (family.parentOneId.user) {
-      //     await this.sendEmail(
-      //       0,
-      //       createEmailDto.type,
-      //       enrollment.activityClassroom.phase.year.name,
-      //       enrollment.code,
-      //       enrollment.student.person.name,
-      //       family.parentOneId.name,
-      //       family.parentOneId.user.email,
-      //       createEmailDto.subject,
-      //       createEmailDto.body,
-      //     );
-      //     const data = this.emailDetailRepository.create({
-      //       studentId: enrollment.student.id,
-      //       parent: { id: family.parentOneId.id },
-      //       Email: { id: createdEmail.id },
-      //       status: true,
-      //     });
-
-      //     await this.emailRepository.save(data);
-      //   }
-      //   if (family.parentTwoId.user) {
-      //     await this.sendEmail(
-      //       0,
-      //       createEmailDto.type,
-      //       enrollment.activityClassroom.phase.year.name,
-      //       enrollment.code,
-      //       enrollment.student.person.name,
-      //       family.parentTwoId.name,
-      //       family.parentTwoId.user.email,
-      //       createEmailDto.subject,
-      //       createEmailDto.body,
-      //     );
-      //     const data = this.emailDetailRepository.create({
-      //       studentId: enrollment.student.id,
-      //       parent: { id: family.parentTwoId.id },
-      //       Email: { id: createdEmail.id },
-      //       status: true,
-      //     });
-
-      //     await this.emailRepository.save(data);
-      //   }
-      //   return {
-      //     id: family.id,
-      //   };
-      // });
-
+      let contEmail = 0;
       const dataEmail = this.emailRepository.create({
         receivers,
         subject: createEmailDto.subject,
@@ -217,11 +161,14 @@ export class EmailsService {
             parentId: number,
             parentName: string,
             parentEmail: string,
+            studentName: string,
           ) => {
             await this.sendEmailAmazon(
               parentEmail,
               createEmailDto.subject,
               createEmailDto.body,
+              studentName,
+              parentName,
             );
 
             const data = this.emailDetailRepository.create({
@@ -232,6 +179,7 @@ export class EmailsService {
             });
 
             await this.emailDetailRepository.save(data);
+            contEmail = contEmail + 1;
           };
 
           if (family.parentOneId?.user) {
@@ -239,6 +187,7 @@ export class EmailsService {
               family.parentOneId.id,
               family.parentOneId.name,
               family.parentOneId.user.email,
+              enrollment.student.person.name,
             );
           }
 
@@ -247,29 +196,19 @@ export class EmailsService {
               family.parentTwoId.id,
               family.parentTwoId.name,
               family.parentTwoId.user.email,
+              enrollment.student.person.name,
             );
           }
-
-          return { id: family.id };
         }),
       );
+      return {
+        message: `Se enviaron ${contEmail} emails exitosamente.`,
+      };
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
   }
-  async sendEmailAmazon(email: string, subject: string, body: string) {
-    try {
-      const params: MailParams = {
-        to: email,
-        subject: subject,
-        html: body,
-        text: body,
-      };
-      // this.sendEmailWithSES(params);
-    } catch (error) {
-      this.logger.error(error);
-    }
-  }
+
   async sendEmail(
     id: number,
     type: TypeEmail,
@@ -363,42 +302,6 @@ export class EmailsService {
     });
     const createdEmail = await this.emailRepository.save(emailData);
     try {
-      //#region anterior
-      // const data = this.emailRepository.create({
-      //   receivers: stundent.family.nameFamily,
-      //   subject: createEmail.subject,
-      //   body: createEmail.body,
-      //   type: TypeEmail.Other,
-      // });
-      // const fechaActual = new Date();
-      // const year = fechaActual.getFullYear();
-      // const email = await this.emailRepository.save(data);
-      // this.sendEmail(
-      //   email.id,
-      //   data.type,
-      //   year.toString(),
-      //   'NO_CODE',
-      //   stundent.person.name,
-      //   parentOne.name,
-      //   parentOne.user.email,
-      //   createEmail.subject,
-      //   createEmail.body,
-      // );
-      // if (parentTwo.user) {
-      //   this.sendEmail(
-      //     email.id,
-      //     data.type,
-      //     year.toString(),
-      //     'NO_CODE',
-      //     stundent.person.name,
-      //     parentTwo.name,
-      //     parentTwo.user.email,
-      //     createEmail.subject,
-      //     createEmail.body,
-      //   );
-      // }
-      // return email;
-      //#endregion
       let contEmail = 0;
       for (const student of students) {
         const family = student.family;
@@ -410,12 +313,13 @@ export class EmailsService {
           continue;
         }
 
-        // Enviar email a parentOne si tiene usuario
         if (family.parentOneId?.user) {
           await this.sendEmailAmazon(
             family.parentOneId.user.email,
             createEmail.subject,
             createEmail.body,
+            student.person.name,
+            family.parentOneId.name,
           );
 
           const emailDetailOne = this.emailDetailRepository.create({
@@ -434,6 +338,8 @@ export class EmailsService {
             family.parentOneId.user.email,
             createEmail.subject,
             createEmail.body,
+            student.person.name,
+            family.parentTwoId.name,
           );
 
           const emailDetailTwo = this.emailDetailRepository.create({
@@ -451,6 +357,28 @@ export class EmailsService {
       };
     } catch (error) {
       handleDBExceptions(error, this.logger);
+    }
+  }
+  async sendEmailAmazon(
+    email: string,
+    subject: string,
+    body: string,
+    student: string,
+    parent: string,
+  ) {
+    try {
+      const mailOptions = {
+        from:
+          '"Colegio Albert Einstein"' +
+          this.configService.getOrThrow<string>('AWS_SES_FROM'),
+        to: email,
+        subject,
+        body: getText(body, student, parent),
+        html: getBodyEmail(body, student, parent),
+      };
+      await this.transporter.sendMail(mailOptions as any);
+    } catch (error) {
+      this.logger.error(error);
     }
   }
   async findAll() {
