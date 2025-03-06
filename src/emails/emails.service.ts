@@ -24,6 +24,8 @@ import { Student } from 'src/student/entities/student.entity';
 import * as aws from '@aws-sdk/client-ses';
 import * as nodemailer from 'nodemailer';
 import { MailParams } from './interfaces/mail-params.interface';
+import { EmailDetail } from './entities/emailDetail.entity';
+import { getBodyEmail, getText } from './helpers/bodyEmail';
 @Injectable()
 export class EmailsService {
   private readonly logger = new Logger('EmailsService');
@@ -46,6 +48,8 @@ export class EmailsService {
     private readonly personRepository: Repository<Person>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(EmailDetail)
+    private readonly emailDetailRepository: Repository<EmailDetail>,
     private readonly httpService: HttpService,
   ) {
     /**nodemailer SES */
@@ -135,55 +139,76 @@ export class EmailsService {
       const family = enrollment.student.family;
       return family.parentOneId.user !== null;
     });
-    const emailsParents = filteredEnrollment.map((enrollment) => {
-      const family = enrollment.student.family;
-      if (family.parentOneId.user) {
-        this.sendEmail(
-          0,
-          createEmailDto.type,
-          enrollment.activityClassroom.phase.year.name,
-          enrollment.code,
-          enrollment.student.person.name,
-          family.parentOneId.name,
-          family.parentOneId.user.email,
-          createEmailDto.subject,
-          createEmailDto.body,
-        );
-      }
-      if (family.parentTwoId.user) {
-        this.sendEmail(
-          0,
-          createEmailDto.type,
-          enrollment.activityClassroom.phase.year.name,
-          enrollment.code,
-          enrollment.student.person.name,
-          family.parentTwoId.name,
-          family.parentTwoId.user.email,
-          createEmailDto.subject,
-          createEmailDto.body,
-        );
-      }
-      return {
-        id: family.id,
-      };
-    });
-    if (emailsParents.length < 1) {
+    if (filteredEnrollment.length < 1) {
       throw new BadRequestException(`No hay emails para ser enviados`);
     }
     try {
-      const data = this.emailRepository.create({
-        receivers: receivers,
+      let contEmail = 0;
+      const dataEmail = this.emailRepository.create({
+        receivers,
         subject: createEmailDto.subject,
         body: createEmailDto.body,
-        quantity: emailsParents.length.toString(),
         type: createEmailDto.type,
       });
 
-      return await this.emailRepository.save(data);
+      const createdEmail = await this.emailRepository.save(dataEmail);
+
+      await Promise.all(
+        filteredEnrollment.map(async (enrollment) => {
+          const family = enrollment.student.family;
+
+          const sendAndSaveEmail = async (
+            parentId: number,
+            parentName: string,
+            parentEmail: string,
+            studentName: string,
+          ) => {
+            await this.sendEmailAmazon(
+              parentEmail,
+              createEmailDto.subject,
+              createEmailDto.body,
+              studentName,
+              parentName,
+            );
+
+            const data = this.emailDetailRepository.create({
+              student: { id: enrollment.student.id },
+              parent: { id: parentId },
+              email: { id: createdEmail.id },
+              status: true,
+            });
+
+            await this.emailDetailRepository.save(data);
+            contEmail = contEmail + 1;
+          };
+
+          if (family.parentOneId?.user) {
+            await sendAndSaveEmail(
+              family.parentOneId.id,
+              family.parentOneId.name,
+              family.parentOneId.user.email,
+              enrollment.student.person.name,
+            );
+          }
+
+          if (family.parentTwoId?.user) {
+            await sendAndSaveEmail(
+              family.parentTwoId.id,
+              family.parentTwoId.name,
+              family.parentTwoId.user.email,
+              enrollment.student.person.name,
+            );
+          }
+        }),
+      );
+      return {
+        message: `Se enviaron ${contEmail} emails exitosamente.`,
+      };
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
   }
+
   async sendEmail(
     id: number,
     type: TypeEmail,
@@ -215,80 +240,145 @@ export class EmailsService {
     }
   }
   async createByStudent(createEmail: CreateEmailByStudentDto) {
-    const stundent = await this.studentRepository.findOne({
-      where: {
-        person: { docNumber: createEmail.docNumber },
-      },
+    //#region anterior
+    // const stundent = await this.studentRepository.findOne({
+    //   where: {
+    //     person: { docNumber: createEmail.docNumber },
+    //   },
+    //   relations: {
+    //     family: { parentOneId: true, parentTwoId: true },
+    //   },
+    // });
+    // if (!stundent) {
+    //   throw new BadRequestException(`No existe el estudiante`);
+    // }
+    // if (!stundent.family) {
+    //   throw new BadRequestException(`El estudiante no tiene familia`);
+    // }
+    // const parentOne = await this.personRepository.findOne({
+    //   where: {
+    //     id: stundent.family.parentOneId.id,
+    //   },
+    //   relations: {
+    //     user: true,
+    //   },
+    // });
+    // const parentTwo = await this.personRepository.findOne({
+    //   where: {
+    //     id: stundent.family.parentTwoId.id,
+    //   },
+    //   relations: {
+    //     user: true,
+    //   },
+    // });
+    // if (!parentOne.user) {
+    //   throw new BadRequestException(
+    //     `El pariente con documento: ${parentOne.docNumber} no cuenta con usuario`,
+    //   );
+    // }
+    //#endregion
+    const students = await this.studentRepository.find({
+      where: { id: In(createEmail.studentIds) },
       relations: {
-        family: { parentOneId: true, parentTwoId: true },
+        family: { parentOneId: { user: true }, parentTwoId: { user: true } },
+        person: true,
       },
     });
-    if (!stundent) {
-      throw new BadRequestException(`No existe el estudiante`);
-    }
-    if (!stundent.family) {
-      throw new BadRequestException(`El estudiante no tiene familia`);
-    }
-    const parentOne = await this.personRepository.findOne({
-      where: {
-        id: stundent.family.parentOneId.id,
-      },
-      relations: {
-        user: true,
-      },
-    });
-    const parentTwo = await this.personRepository.findOne({
-      where: {
-        id: stundent.family.parentTwoId.id,
-      },
-      relations: {
-        user: true,
-      },
-    });
-    if (!parentOne.user) {
+    if (!students.length) {
       throw new BadRequestException(
-        `El pariente con documento: ${parentOne.docNumber} no cuenta con usuario`,
+        `No se encontraron estudiantes con los IDs proporcionados.`,
       );
     }
+    const studentNames = students.map((student) => student.person.name);
+    const receivers =
+      studentNames.length > 3
+        ? `${studentNames.slice(0, 3).join(', ')} y ${studentNames.length - 3} alumnos más`
+        : studentNames.join(', ');
+    const emailData = this.emailRepository.create({
+      receivers,
+      subject: createEmail.subject,
+      body: createEmail.body,
+      type: TypeEmail.Other,
+    });
+    const createdEmail = await this.emailRepository.save(emailData);
     try {
-      const data = await this.emailRepository.create({
-        receivers: stundent.family.nameFamily,
-        subject: createEmail.subject,
-        body: createEmail.body,
-        quantity: '1',
-        type: TypeEmail.Other,
-        student: { id: stundent.id },
-      });
-      const fechaActual = new Date();
-      const year = fechaActual.getFullYear();
-      const email = await this.emailRepository.save(data);
-      this.sendEmail(
-        email.id,
-        data.type,
-        year.toString(),
-        'NO_CODE',
-        stundent.person.name,
-        parentOne.name,
-        parentOne.user.email,
-        createEmail.subject,
-        createEmail.body,
-      );
-      if (parentTwo.user) {
-        this.sendEmail(
-          email.id,
-          data.type,
-          year.toString(),
-          'NO_CODE',
-          stundent.person.name,
-          parentTwo.name,
-          parentTwo.user.email,
-          createEmail.subject,
-          createEmail.body,
-        );
+      let contEmail = 0;
+      for (const student of students) {
+        const family = student.family;
+
+        if (!family) {
+          console.warn(
+            `El estudiante ${student.person.name} no tiene familia asociada.`,
+          );
+          continue;
+        }
+
+        if (family.parentOneId?.user) {
+          await this.sendEmailAmazon(
+            family.parentOneId.user.email,
+            createEmail.subject,
+            createEmail.body,
+            student.person.name,
+            family.parentOneId.name,
+          );
+
+          const emailDetailOne = this.emailDetailRepository.create({
+            student: { id: student.id },
+            parent: { id: family.parentOneId.id },
+            email: { id: createdEmail.id },
+            status: true,
+          });
+          await this.emailDetailRepository.save(emailDetailOne);
+          contEmail = contEmail + 1;
+        }
+
+        // Enviar email a parentTwo si tiene usuario
+        if (family.parentTwoId?.user) {
+          await this.sendEmailAmazon(
+            family.parentOneId.user.email,
+            createEmail.subject,
+            createEmail.body,
+            student.person.name,
+            family.parentTwoId.name,
+          );
+
+          const emailDetailTwo = this.emailDetailRepository.create({
+            student: { id: student.id },
+            parent: { id: family.parentTwoId.id },
+            email: { id: createdEmail.id },
+            status: true,
+          });
+          await this.emailDetailRepository.save(emailDetailTwo);
+          contEmail = contEmail + 1;
+        }
       }
-      return email;
+      return {
+        message: `Se enviaron ${contEmail} emails exitosamente.`,
+      };
     } catch (error) {
       handleDBExceptions(error, this.logger);
+    }
+  }
+  async sendEmailAmazon(
+    email: string,
+    subject: string,
+    body: string,
+    student: string,
+    parent: string,
+  ) {
+    try {
+      const mailOptions = {
+        from:
+          '"Colegio Albert Einstein"' +
+          this.configService.getOrThrow<string>('AWS_SES_FROM'),
+        to: email,
+        subject,
+        body: getText(body, student, parent),
+        html: getBodyEmail(body, student, parent),
+      };
+      await this.transporter.sendMail(mailOptions as any);
+    } catch (error) {
+      this.logger.error(error);
     }
   }
   async findAll() {
@@ -299,9 +389,7 @@ export class EmailsService {
         receivers: true,
         subject: true,
         body: true,
-        quantity: true,
         createdAt: true,
-        opened: true,
       },
       order: {
         createdAt: 'DESC',
@@ -314,12 +402,10 @@ export class EmailsService {
     const email = await this.emailRepository.findOne({
       where: { id: id },
       relations: {
-        student: {
-          family: {
-            parentOneId: { user: true },
-            parentTwoId: { user: true },
+        emailDetails: {
+          parent: {
+            user: true,
           },
-          person: true,
         },
       },
     });
@@ -332,7 +418,7 @@ export class EmailsService {
   async updateOpened(id: number) {
     const email = await this.emailRepository.preload({
       id: id,
-      opened: true,
+      // opened: true,
     });
     if (!email) throw new NotFoundException(`Email with id: ${id} not found`);
     try {
