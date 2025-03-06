@@ -808,6 +808,8 @@ export class EnrollmentService {
 
       for (const ac of classrooms) {
         const dest = await this.vacancyCalculation(ac.id);
+        console.log(dest);
+        console.log('entro');
         // if (
         //   dest.section === currentEnrrollment.activityClassroom.section ||
         //   dest.hasVacants
@@ -960,7 +962,7 @@ export class EnrollmentService {
           oneDest = co.originId.id;
           origin = co.originId;
         }
-        console.log(destings);
+        // console.log(destings);
         // else {
         //   hasTwoDest = co.originId.id;
         // }
