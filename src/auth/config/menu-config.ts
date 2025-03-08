@@ -1,4 +1,4 @@
-export const LetfMenuUtils = {
+export const AdminMenu = {
   mainMenu: [
     {
       id: 1,
