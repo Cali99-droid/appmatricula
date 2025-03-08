@@ -269,8 +269,13 @@ export class EnrollmentController {
   changeSection(
     @Param('studentId', ParseIntPipe) studentId: number,
     @Param('activityClassroomId', ParseIntPipe) activityClassroomId: number,
+    @AuthenticatedUser() user: any,
   ) {
-    return this.enrollmentService.changeSection(studentId, activityClassroomId);
+    return this.enrollmentService.changeSection(
+      studentId,
+      activityClassroomId,
+      user,
+    );
   }
 
   @Get('get/status')

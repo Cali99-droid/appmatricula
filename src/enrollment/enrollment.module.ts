@@ -18,6 +18,7 @@ import { ConfigModule } from '@nestjs/config';
 import { EnrollmentScheduler } from './schedule/enrollment.scheduler';
 import { SlackService } from './slack.service';
 import { TreasuryModule } from 'src/treasury/treasury.module';
+import { SectionHistory } from './entities/section-history';
 
 @Module({
   controllers: [EnrollmentController],
@@ -33,6 +34,7 @@ import { TreasuryModule } from 'src/treasury/treasury.module';
       Permission,
       Rates,
       Debt,
+      SectionHistory,
     ]),
     StudentModule,
     FamilyModule,
