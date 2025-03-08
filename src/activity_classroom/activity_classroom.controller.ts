@@ -24,9 +24,6 @@ import {
 } from '@nestjs/swagger';
 import { SearchClassroomsDto } from 'src/common/dto/search-classrooms.dto';
 import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
-import { User } from 'src/user/entities/user.entity';
-import { Auth } from 'src/auth/decorators/auth.decorator';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 @ApiTags('Activity Classroom')

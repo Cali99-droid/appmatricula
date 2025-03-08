@@ -17,6 +17,7 @@ import { UpdateBehaviorDto } from 'src/enrollment/dto/update-behavior.dto';
 import { Behavior } from 'src/enrollment/enum/behavior.enum';
 import { UpdateAllowNextRegistrationDto } from 'src/enrollment/dto/update-allowNextRegistration.dto';
 import { SearchEstudiantesDto } from './dto/search-student.dto';
+import { ActivityClassroomService } from 'src/activity_classroom/activity_classroom.service';
 
 @Injectable()
 export class StudentService {
@@ -30,6 +31,8 @@ export class StudentService {
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
+
+    private activityClassroomService: ActivityClassroomService,
   ) {}
   create(createStudentDto: CreateStudentDto) {
     return 'This action adds a new student';
@@ -92,9 +95,22 @@ export class StudentService {
     return students;
   }
 
-  async findStudents(searchDto: SearchEstudiantesDto) {
-    const { searchTerm, page = 1, limit = 10 } = searchDto;
+  async findStudents(searchDto: SearchEstudiantesDto, user: any) {
+    const {
+      searchTerm,
+      page = 1,
+      limit = 10,
+      yearId,
+      campusId,
+      levelId,
+    } = searchDto;
 
+    const ac = await this.activityClassroomService.searchParams(
+      { levelId, yearId, campusId },
+      user,
+    );
+    let idsAc = [0];
+    idsAc = ac.map((a) => a.id).length === 0 ? idsAc : ac.map((a) => a.id);
     const query = this.studentRepository
       .createQueryBuilder('student')
       .leftJoinAndSelect('student.person', 'person')
@@ -102,15 +118,20 @@ export class StudentService {
       .leftJoinAndSelect(
         'student.enrollment',
         'enrollment',
-        'enrollment.status = :statusRe OR enrollment.status = :statusPre OR enrollment.status = :statusRes OR enrollment.status = :statusFin',
+        '(enrollment.status = :statusRe OR enrollment.status = :statusPre OR enrollment.status = :statusRes OR enrollment.status = :statusFin) AND enrollment.activityClassroomId IN (:...ids)',
         {
           statusRe: 'registered',
           statusPre: 'pre-registered',
           statusRes: 'reserved',
           statusFin: 'finalized',
+          ids: idsAc,
         },
-      );
-
+      )
+      .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
+      .leftJoinAndSelect('activityClassroom.grade', 'grade');
+    if (searchTerm) {
+      console.log('entro');
+    }
     if (searchTerm) {
       const searchTerms = searchTerm
         .split(' ')
@@ -133,6 +154,7 @@ export class StudentService {
 
     let data = results.map((estudiante) => ({
       ...estudiante,
+      grade: `${estudiante.enrollment[0]?.activityClassroom.grade.name} ${estudiante.enrollment[0]?.activityClassroom.section}`,
       tieneMatriculaActiva: estudiante.enrollment.length > 0,
     }));
     data = data.filter((d) => d.tieneMatriculaActiva);
