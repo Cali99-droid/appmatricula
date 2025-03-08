@@ -1,4 +1,4 @@
-export const AdminMenu = {
+export const LetfMenuUtils = {
   mainMenu: [
     {
       id: 1,
@@ -81,6 +81,14 @@ export const AdminMenu = {
               subMenu: [],
             },
           ],
+        },
+        {
+          id: 5,
+          label: 'Cambio seccion',
+          icon: 'family',
+          link: '/admin/school/changeStudent',
+          permissions: ['administrador-colegio', 'secretaria'],
+          subMenu: [],
         },
       ],
     },
