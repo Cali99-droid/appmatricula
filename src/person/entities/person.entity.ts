@@ -15,6 +15,7 @@ import { Gender } from 'src/common/enum/gender.enum';
 import { FamilyRole } from 'src/common/enum/family-role.enum';
 import { Family } from 'src/family/entities/family.entity';
 import { TypeDoc } from '../enum/typeDoc.enum';
+import { EmailDetail } from 'src/emails/entities/emailDetail.entity';
 //test
 
 @Entity()
@@ -145,4 +146,7 @@ export class Person {
 
   @OneToMany(() => Family, (f) => f.respAcademic)
   respAcademics?: Student;
+
+  @OneToMany(() => EmailDetail, (f) => f.parent)
+  emailsDetails?: EmailDetail;
 }
