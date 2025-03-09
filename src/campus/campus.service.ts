@@ -83,39 +83,12 @@ export class CampusService {
     return campus;
   }
   async findAllByYear(idYear: number, user: any) {
-    // Obtener el usuario con las relaciones necesarias
-    // const us = await this.userRepository.findOne({
-    //   where: {
-    //     email: user.email,
-    //   },
-    //   relations: {
-    //     assignments: {
-    //       campusDetail: true,
-    //     },
-    //     roles: {
-    //       permissions: true,
-    //     },
-    //   },
-    // });
+    const roles = user.resource_access['client-test-appae'].roles;
 
-    // Recopilar permisos del usuario
-    // const permissions = new Set(
-    //   us.roles.flatMap((role) => role.permissions.map((perm) => perm.name)),
-    // );
-    // const roles = user.resource_access['client-test-appae'].roles;
-
-    // // Determinar si el usuario es admin
-    // const isAdmin = roles.has('admin');
-
-    // Condición where para la consulta de campus
-    const whereCondition: any = { year: { id: idYear } };
-
-    // if (!isAdmin) {
-    //   // const campusDetailIds = us.assignments.map(
-    //   //   (item) => item.campusDetail.id,
-    //   // );
-    //   // whereCondition.campusDetail = { id: In(campusDetailIds) };
-    // }
+    const whereCondition: any = {
+      campusDetail: { code: In(roles) },
+      year: { id: idYear },
+    };
 
     // Obtener campus según la condición
     const campus = await this.campusRepository.find({
