@@ -15,9 +15,6 @@ import { CreateCampusDto } from './dto/create-campus.dto';
 import { Campus } from './entities/campus.entity';
 
 import { UpdateCampusDto } from './dto/update-campus.dto';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
-import { User } from 'src/user/entities/user.entity';
-import { Auth } from 'src/auth/decorators/auth.decorator';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 @ApiTags('Campus')
 @Controller('campus')

@@ -74,14 +74,6 @@ export const AdminMenu = {
             },
           ],
         },
-        {
-          id: 5,
-          label: 'Cambio seccion',
-          icon: 'family',
-          link: '/admin/school/changeStudent',
-          permissions: ['administrador-colegio', 'secretaria'],
-          subMenu: [],
-        },
       ],
     },
     {
