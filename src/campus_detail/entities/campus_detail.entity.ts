@@ -76,6 +76,15 @@ export class CampusDetail {
   })
   @Column('varchar')
   webPage: string;
+
+  @ApiProperty({
+    description: 'WebPage of campus',
+  })
+  @Column('varchar', {
+    unique: true,
+    nullable: true,
+  })
+  code: string;
   @ApiProperty({
     description: 'Array of Campus by Level and Grade ',
   })

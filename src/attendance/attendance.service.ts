@@ -205,9 +205,11 @@ export class AttendanceService {
           const [startHour, startMinute, startSecond] = indSchedule.startTime
             .split(':')
             .map(Number);
-          const [endHour, endMinute, endSecond] = indSchedule.endTime
-            .split(':')
-            .map(Number);
+          const [
+            // endHour,
+            endMinute,
+            endSecond,
+          ] = indSchedule.endTime.split(':').map(Number);
           initAttendanceTime.setHours(
             startHour - 1,
             startMinute - 20,
