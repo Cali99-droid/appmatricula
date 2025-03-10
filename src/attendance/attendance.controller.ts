@@ -21,13 +21,14 @@ import {
 // import { Shift } from './enum/shift.enum';
 
 import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
-import { Auth } from 'src/auth/decorators/auth.decorator';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { Shift } from './enum/shift.enum';
+import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
 
 @ApiTags('Attendance')
 @Controller('attendance')
+@Resource('appcolegioae')
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
@@ -41,10 +42,12 @@ export class AttendanceController {
     status: 400,
     description: 'some data is wrong, check message',
   })
-  @Auth('attendance-recorder', 'admin')
+  @Roles({
+    roles: ['registro-asistencia'],
+  })
   create(
     @Body() createAttendanceDto: CreateAttendanceDto,
-    @GetUser() user: User,
+    @AuthenticatedUser() user: any,
   ) {
     return this.attendanceService.create(createAttendanceDto, user);
   }
@@ -73,8 +76,15 @@ export class AttendanceController {
     status: 500,
     description: 'internal server error',
   })
-  @Auth('attendance-recorder', 'admin')
-  findLastFiveRecords(@GetUser() user: User) {
+  @Roles({
+    roles: [
+      'reporte',
+      'reporte-asistencia-sede',
+      'reporte-asistencia-estudiante',
+      'registro-asistencia',
+    ],
+  })
+  findLastFiveRecords(@AuthenticatedUser() user: any) {
     return this.attendanceService.findLastFiveRecords(user);
   }
   // @Get()
@@ -106,7 +116,13 @@ export class AttendanceController {
     description: 'EndDate of the attendace',
     type: String,
   })
-  @Auth('attendance-recorder', 'admin', 'report', 'report-student')
+  @Roles({
+    roles: [
+      'reporte',
+      'reporte-asistencia-sede',
+      'reporte-asistencia-estudiante',
+    ],
+  })
   findByClassroom(@Query() searchByClassroomDto: SearchByClassroomDto) {
     return this.attendanceService.findByClassroom(searchByClassroomDto);
   }

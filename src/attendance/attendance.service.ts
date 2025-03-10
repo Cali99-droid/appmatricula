@@ -33,6 +33,7 @@ import { EmailsService } from 'src/emails/emails.service';
 import { MailParams } from 'src/emails/interfaces/mail-params.interface';
 
 import { getBodyEmail, getText } from './helpers/bodyEmail';
+import { SlackService } from 'src/enrollment/slack.service';
 // import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
@@ -64,26 +65,14 @@ export class AttendanceService {
     private readonly emailsService: EmailsService,
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
-
+    private readonly slackService: SlackService,
     // @Inject(forwardRef(() => AttendanceGateway))
     // private readonly attendanceGateway: AttendanceGateway,
   ) {}
-  async create(createAttendanceDto: CreateAttendanceDto, user: User) {
+  async create(createAttendanceDto: CreateAttendanceDto, user: any) {
     // Obtener el usuario con las relaciones necesarias
 
-    // const us = await this.userRepository.findOne({
-    //   where: {
-    //     email: user.email,
-    //   },
-    //   relations: {
-    //     assignments: {
-    //       campusDetail: true,
-    //     },
-    //     roles: {
-    //       permissions: true,
-    //     },
-    //   },
-    // });
+    const roles = user.resource_access['appcolegioae'].roles;
 
     /**capturar fecha y hora actual */
     const currentTime = new Date();
@@ -107,18 +96,10 @@ export class AttendanceService {
       const { person, photo } = student;
       /**verificar pertenencia a sede */
 
-      const campusDetailIds = user.assignments.map(
-        (item) => item.campusDetail.id,
-      );
-      if (campusDetailIds.length === 0) {
-        throw new BadRequestException(
-          `Inicie sesión con un usuario autorizado para esta sede`,
-        );
-      }
+      const campusCode = classroom.campusDetail.code;
 
-      const campusEnroll = classroom.campusDetail.id;
+      const isInCampus = roles.includes(campusCode);
 
-      const isInCampus = campusDetailIds.includes(campusEnroll);
       if (!isInCampus) {
         throw new BadRequestException(
           `Inicie sesión con un usuario autorizado para esta sede o use un carnet válido`,
@@ -468,47 +449,22 @@ export class AttendanceService {
     }
   }
 
-  async findLastFiveRecords(user: User) {
-    // Obtener usuario con asignaciones y roles
-
-    // const userWithRelations = await this.userRepository.findOne({
-    //   where: { email: user.email },
-    //   relations: ['roles.permissions'],
-    // });
-
-    // if (!userWithRelations) {
-    //   throw new Error('Usuario no encontrado');
-    // }
+  async findLastFiveRecords(user: any) {
+    const roles = user.resource_access['appcolegioae'].roles;
 
     try {
-      // Obtener permisos y determinar si es admin
-      const isAdmin = user.roles.some((role) =>
-        role.permissions.some((perm) => perm.name === 'admin'),
-      );
-      // const campusDetailIds = userWithRelations.assignments.map(
-      //   (assignment) => assignment.campusDetail.id,
-      // );
-
       // Construir opciones de consulta para asistencias
       const attendanceOptions: any = {
         order: { arrivalTime: 'DESC' },
         take: 3,
       };
-
-      if (!isAdmin) {
-        const campusDetailIds = user.assignments.map((c) => c.campusDetail.id);
-
-        attendanceOptions.where = {
-          activityClassroom: {
-            classroom: {
-              campusDetail: {
-                id: In(campusDetailIds),
-              },
-            },
+      attendanceOptions.where = {
+        activityClassroom: {
+          classroom: {
+            campusDetail: { code: In(roles) },
           },
-        };
-      }
-
+        },
+      };
       // Realizar consulta para obtener las últimas cinco asistencias
       const attendances =
         await this.attendanceRepository.find(attendanceOptions);
@@ -812,6 +768,9 @@ export class AttendanceService {
     this.logger.log(
       `Cron jobs for ${shift} general shift completed succesfully`,
     );
+    await this.slackService.sendMessage(
+      `[ASISTENCIA] Number of students absent for today (${currentDate}) in the shift ${shift}: ${absentStudents.length}`,
+    );
     return;
   }
 
@@ -944,7 +903,9 @@ export class AttendanceService {
         activityClassroom: { id: student.activityClassroom.id },
       });
     }
-
+    await this.slackService.sendMessage(
+      `[ASISTENCIA] Number of students absent for today (${currentDate}) in the individual schedule: ${absentStudents.length}`,
+    );
     this.logger.log(
       `Cron jobs for the individual schedule completed succesfully`,
     );
