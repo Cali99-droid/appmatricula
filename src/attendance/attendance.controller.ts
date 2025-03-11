@@ -21,8 +21,6 @@ import {
 // import { Shift } from './enum/shift.enum';
 
 import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
-import { User } from 'src/user/entities/user.entity';
 import { Shift } from './enum/shift.enum';
 import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
 
