@@ -12,12 +12,14 @@ import { Correlative } from './entities/correlative.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { User } from 'src/user/entities/user.entity';
 import { ConfigModule } from '@nestjs/config';
+import { CreditNote } from './entities/creditNote.entity';
 
 @Module({
   controllers: [TreasuryController],
   providers: [TreasuryService],
   imports: [
     TypeOrmModule.forFeature([
+      CreditNote,
       Bill,
       Concept,
       Debt,

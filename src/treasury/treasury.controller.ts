@@ -6,6 +6,7 @@ import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
 import { CreatePaidDto } from './dto/create-paid.dto';
 import { FindPaidDto } from './dto/find-paid.dto';
 import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
+import { CreateCreditNoteDto } from './dto/create-credit-note.dto';
 // import { Response } from 'express';
 
 @ApiTags('Treasury')
@@ -52,6 +53,14 @@ export class TreasuryController {
   @ApiResponse({ status: 201, description: 'Statistics' })
   getStatistics() {
     return this.treasuryService.getStatistics();
+  }
+  @Post('credit-note')
+  @ApiResponse({ status: 201, description: 'Statistics' })
+  createCreditNote(
+    @Body() createCreditNoteDto: CreateCreditNoteDto,
+    @AuthenticatedUser() user: any,
+  ) {
+    return this.treasuryService.createCreditNote(createCreditNoteDto, user);
   }
 
   // @Get('migrate')

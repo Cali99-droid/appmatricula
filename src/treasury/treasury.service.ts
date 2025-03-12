@@ -24,6 +24,8 @@ import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
 import { Concept } from './entities/concept.entity';
 import { Person } from 'src/person/entities/person.entity';
 import { ConfigService } from '@nestjs/config';
+import { CreateCreditNoteDto } from './dto/create-credit-note.dto';
+import { CreditNote } from './entities/creditNote.entity';
 
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
@@ -55,6 +57,8 @@ export class TreasuryService {
     private readonly conceptRepository: Repository<Concept>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(CreditNote)
+    private readonly creditNoteRepository: Repository<CreditNote>,
   ) {}
 
   async createPaid(createPaidDto: CreatePaidDto, debtId: number, user: any) {
@@ -136,10 +140,10 @@ export class TreasuryService {
       // Revertir correlativo en caso de error
       await this.undoCorrelative(tipoComprobante, serie);
       this.logger.error(
-        `[PAID] Error al emitir boleta: ${error.message} ${serie} ${numero}`,
+        `[PAID] Error al emitir comprobante: ${error.message} ${serie} ${numero}`,
       );
       throw new HttpException(
-        `[PAID] Error al emitir la boleta: ${error.response?.data?.errors || error.message} ${serie} ${numero} `,
+        `[PAID] Error al emitir comprobante: ${error.response?.data?.errors || error.message} ${serie} ${numero} `,
         error.response?.status || 500,
       );
     }
@@ -722,10 +726,10 @@ export class TreasuryService {
       return response;
     } catch (error) {
       this.logger.error(
-        `[SEND] Error al emitir boleta. Serie: ${boletaData.serie}, Número: ${boletaData.numero}, Detalles: ${JSON.stringify(error.response?.data || error.message)}`,
+        `[SEND] Error al emitir voucher. Serie: ${boletaData.serie}, Número: ${boletaData.numero}, Detalles: ${JSON.stringify(error.response?.data || error.message)}`,
       );
       throw new HttpException(
-        `[SEND] Error al emitir la boleta: ${error.response?.data?.errors || error.message}`,
+        `[SEND] Error al emitir  voucher: ${error.response?.data?.errors || error.message}`,
         error.response?.status || 500,
       );
     }
@@ -827,6 +831,141 @@ export class TreasuryService {
       );
     } catch (error) {
       this.logger.error;
+    }
+  }
+
+  async createCreditNote(createCreditNoteDto: CreateCreditNoteDto, user: any) {
+    const voucher = await this.billRepository.findOne({
+      where: {
+        id: createCreditNoteDto.voucherId,
+      },
+      relations: {
+        payment: {
+          student: {
+            family: {
+              respAcademic: true,
+            },
+          },
+        },
+      },
+    });
+    if (!voucher) {
+      throw new BadRequestException('Dont Exists voucher');
+    }
+    const existCreditNote = await this.creditNoteRepository.findOne({
+      where: {
+        bill: { id: voucher.id },
+      },
+    });
+    if (existCreditNote) {
+      throw new BadRequestException(' Exists Credit Note');
+    }
+    const family = voucher.payment.student.family;
+    const client = family.respAcademic;
+
+    let numero: number;
+
+    let serie = 'BC01';
+    const tipoComprobante = 'NOTA DE CREDITO';
+    if (this.env === 'prod') {
+      numero = await this.getCorrelative(tipoComprobante, voucher.serie);
+    } else {
+      serie = 'BBB1';
+      numero = await this.getCorrelative('BOLETA', serie);
+    }
+
+    const dataCreditNote = {
+      operacion: 'generar_comprobante',
+      tipo_de_comprobante: 3,
+      serie: serie,
+      numero: numero,
+      sunat_transaction: 1,
+      cliente_tipo_de_documento: 1,
+      cliente_numero_de_documento: client.docNumber,
+      cliente_denominacion: `${client.name} ${client.lastname} ${client.mLastname}`,
+      cliente_direccion: family.address,
+      cliente_email: '',
+      cliente_email_1: '',
+      cliente_email_2: '',
+      fecha_de_emision: new Date(),
+      fecha_de_vencimiento: '',
+      moneda: '1',
+      tipo_de_cambio: '',
+      porcentaje_de_igv: '18.00',
+      descuento_global: '',
+      total_descuento: '',
+      total_anticipo: '',
+      total_gravada: '',
+      total_inafecta: '',
+      total_exonerada: '',
+      total_igv: '',
+      total_gratuita: '',
+      total_otros_cargos: '',
+      total: '',
+      percepcion_tipo: '',
+      percepcion_base_imponible: '',
+      total_percepcion: '',
+      total_incluido_percepcion: '',
+      detraccion: '',
+      observaciones: '',
+      documento_que_se_modifica_tipo: 2,
+      documento_que_se_modifica_serie: voucher.serie,
+      documento_que_se_modifica_numero: voucher.numero,
+      tipo_de_nota_de_credito: createCreditNoteDto.creditNoteType,
+      tipo_de_nota_de_debito: '',
+      enviar_automaticamente_a_la_sunat: 'true',
+      enviar_automaticamente_al_cliente: 'false',
+      codigo_unico: '',
+      condiciones_de_pago: '',
+      medio_de_pago: '',
+      placa_vehiculo: '',
+      orden_compra_servicio: '',
+      tabla_personalizada_codigo: '',
+      formato_de_pdf: '',
+      items: [
+        {
+          unidad_de_medida: 'NIU',
+          codigo: voucher.id,
+          descripcion: 'Nota Crédito',
+          cantidad: 1,
+          valor_unitario: '350',
+          precio_unitario: '350',
+          descuento: '',
+          subtotal: '350',
+          tipo_de_igv: 9,
+          igv: 0.0,
+          total: '350',
+          anticipo_regularizacion: 'false',
+          anticipo_documento_serie: '',
+          anticipo_documento_numero: '',
+        },
+      ],
+    };
+    try {
+      const response = await this.sendToNubefact(dataCreditNote);
+      const us = await this.userRepository.findOneBy({
+        sub: user.sub,
+      });
+      const creditNote = this.creditNoteRepository.create({
+        creditNoteType: createCreditNoteDto.creditNoteType,
+        serie,
+        numero,
+        date: new Date(),
+        url: response.data.enlace_del_pdf,
+        accepted: response.data.aceptada_por_sunat,
+        bill: { id: voucher.id },
+        user: { id: us.id },
+      });
+      return await this.creditNoteRepository.save(creditNote);
+    } catch (error) {
+      await this.undoCorrelative(tipoComprobante, serie);
+      this.logger.error(
+        `[PAID] Error al emitir comprobante: ${error.message} ${serie} ${numero}`,
+      );
+      throw new HttpException(
+        `[PAID] Error al emitir comprobante: ${error.response?.data?.errors || error.message} ${serie} ${numero} `,
+        error.response?.status || 500,
+      );
     }
   }
   /**SCRIPTS */
