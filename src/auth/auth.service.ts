@@ -198,7 +198,7 @@ export class AuthService {
       }
     }
 
-    if (userBD.sub === null) {
+    if (userBD.sub === null || userBD.sub === '') {
       userBD.sub = user.sub;
       /**actualizar permisos grupo */
       await this.keycloakService.updateGroupKy(user.sub);
