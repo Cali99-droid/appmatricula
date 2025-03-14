@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateActivityClassroomDto } from './dto/create-activity_classroom.dto';
@@ -144,28 +144,26 @@ export class ActivityClassroomService {
   async searchParams(searchClassroomsDto: SearchClassroomsDto, user: any) {
     try {
       const { yearId, phaseId, campusId, levelId } = searchClassroomsDto;
+      const roles = user.resource_access['appcolegioae'].roles;
       // Obtener el usuario con las relaciones necesarias
-      // const us = await this.userRepository.findOne({
-      //   where: {
-      //     email: user.email,
-      //   },
-      //   relations: {
-      //     assignmentsClassroom: {
-      //       activityClassroom: true,
-      //     },
-      //     roles: {
-      //       permissions: true,
-      //     },
-      //   },
-      // });
+      const us = await this.userRepository.findOne({
+        where: {
+          email: user.email,
+        },
+        relations: {
+          assignmentsClassroom: {
+            activityClassroom: true,
+          },
+        },
+      });
       // Recopilar permisos del usuario
       // const permissions = new Set(
       //   us.roles.flatMap((role) => role.permissions.map((perm) => perm.name)),
       // );
       // const per = us.roles.flatMap((role) =>
       //   role.permissions.map((perm) => perm.name),
-      // );
-
+      // ); kk
+      //
       const whereCondition: any = {
         phase: {
           id: !isNaN(+phaseId) ? +phaseId : undefined,
@@ -178,6 +176,21 @@ export class ActivityClassroomService {
           level: !isNaN(+levelId) ? { id: +levelId } : {},
         },
       };
+      if (
+        !roles.includes(
+          'administrador-colegio',
+          'secretaria',
+          'administrador-sede',
+        )
+      ) {
+        const acIds = us.assignmentsClassroom.map(
+          (item) => item.activityClassroom.id,
+        );
+        whereCondition.assignmentClassroom = {
+          activityClassroom: { id: In(acIds) },
+        };
+      }
+
       // const autPerm = [
       //   'admin',
       //   'card-generator',
