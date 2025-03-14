@@ -16,15 +16,21 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/user/user.service';
 import { AdminMenu } from './config/menu-config';
+import { Person } from 'src/person/entities/person.entity';
+import { KeycloakService } from 'src/keycloak/keycloak.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Person)
+    private readonly personRepository: Repository<Person>,
     private usersService: UserService,
     private readonly jwtService: JwtService,
     private configService: ConfigService,
+
+    private readonly keycloakService: KeycloakService,
   ) {}
   async create(registerUserDto: RegisterUserDto) {
     try {
@@ -63,7 +69,7 @@ export class AuthService {
       throw new UnauthorizedException('Credentials are not valid(password)');
     const tokens = await this.getJwtTokens({ email: user.email, sub: user.id });
     await this.updateRefreshToken(user.id, tokens.refreshToken);
-    const { id, password, roles, person, ...result } = user;
+    const { password, roles, person, ...result } = user;
     const permissions = [];
 
     roles.forEach((role) => {
@@ -137,6 +143,75 @@ export class AuthService {
     const tokens = await this.getJwtTokens({ email: user.email, sub: user.id });
     await this.updateRefreshToken(user.id, tokens.refreshToken);
     return tokens;
+  }
+
+  async getMenu(user: any) {
+    const userBD = await this.userRepository.findOneBy({
+      // sub: user.sub,
+      email: user.email,
+    });
+
+    if (!userBD) {
+      const existPerson = await this.personRepository.findOneBy({
+        docNumber: user.dni,
+      });
+      if (!existPerson) {
+        const person = this.personRepository.create({
+          name: user.given_name,
+          lastname: user.family_name,
+          mLastname: user.family_name.split(' ')[1] || user.family_name,
+          docNumber: user.dni,
+        });
+        const newPerson = await this.personRepository.save(person);
+        const us = this.userRepository.create({
+          email: user.email,
+          password: user.dni,
+          sub: user.sub,
+          person: { id: newPerson.id },
+        });
+        await this.userRepository.save(us);
+        let roles = [];
+        if (user.resource_access['client-test-appae']) {
+          roles = user.resource_access['client-test-appae'].roles;
+        }
+
+        const menu = this.generateMenu(roles);
+        return menu;
+      } else {
+        const us = this.userRepository.create({
+          email: user.email,
+          password: user.dni,
+          sub: user.sub,
+          person: { id: existPerson.id },
+        });
+        await this.userRepository.save(us);
+        let roles = [];
+        if (user.resource_access['client-test-appae']) {
+          roles = user.resource_access['client-test-appae'].roles;
+        }
+
+        const menu = this.generateMenu(roles);
+        return menu;
+        // throw new BadRequestException(
+        //   'The document number is in use, contact the administrator',
+        // );
+      }
+    }
+
+    if (userBD.sub === null) {
+      userBD.sub = user.sub;
+      /**actualizar permisos grupo */
+      await this.keycloakService.updateGroupKy(user.sub);
+      await this.userRepository.save(userBD);
+    }
+
+    let roles = [];
+    if (user.resource_access['client-test-appae']) {
+      roles = user.resource_access['client-test-appae'].roles;
+    }
+
+    const menu = this.generateMenu(roles);
+    return menu;
   }
 
   private generateMenu(userPermissions: string[]): any {

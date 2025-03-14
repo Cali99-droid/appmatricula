@@ -24,6 +24,10 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { UpdateBehaviorDto } from 'src/enrollment/dto/update-behavior.dto';
+import { UpdateAllowNextRegistrationDto } from 'src/enrollment/dto/update-allowNextRegistration.dto';
+import { SearchEstudiantesDto } from './dto/search-student.dto';
+import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 @ApiTags('Student')
 @Controller('student')
@@ -38,6 +42,53 @@ export class StudentController {
   @Get()
   findAll() {
     return this.studentService.findAll();
+  }
+  @ApiParam({
+    name: 'searchTerm',
+    required: false,
+    description: 'termino a buscar',
+    type: String,
+  })
+  @ApiParam({
+    name: 'yearId',
+    required: false,
+    description: 'id del año a filtrar',
+    type: String,
+  })
+  @ApiParam({
+    name: 'campusId',
+    required: false,
+    description: 'id de la sede a filtrar',
+    type: String,
+  })
+  @ApiParam({
+    name: 'levelId',
+    required: false,
+    description: 'id del nivel a filtrar',
+    type: String,
+  })
+  @ApiParam({
+    name: 'page',
+    required: false,
+    description: 'parámetro de paginación',
+    type: String,
+  })
+  @ApiParam({
+    name: 'limit',
+    required: false,
+    description: 'parámetro de paginación',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'search matches',
+  })
+  @Get('/search')
+  findStudents(
+    @Query() searchDto: SearchEstudiantesDto,
+    @AuthenticatedUser() user: any,
+  ) {
+    return this.studentService.findStudents(searchDto, user);
   }
   @Get('autocomplete')
   findAllAutocomplete(@Query('value') value: string) {
@@ -108,5 +159,125 @@ export class StudentController {
       file.buffer,
       +id,
     );
+  }
+  @Get('activity-classroom-debtors/:activityClassroomId/:hasDebt')
+  @ApiOperation({
+    summary: 'get debtors by ActivityClassroom',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'some data sending is bad ',
+  })
+  findByActivityClassroom(
+    @Param('activityClassroomId') activityClassroomId: number,
+    @Param('hasDebt') hasDebt: boolean,
+  ) {
+    return this.studentService.findByActivityClassroomDebTors(
+      +activityClassroomId,
+      hasDebt,
+    );
+  }
+
+  @Get('activity-classroom-behavior/:activityClassroomId')
+  @ApiOperation({
+    summary: 'get behavior by ActivityClassroom',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'some data sending is bad ',
+  })
+  findByActivityClassroomBehavior(
+    @Param('activityClassroomId') activityClassroomId: number,
+  ) {
+    return this.studentService.findByActivityClassroomBehavior(
+      +activityClassroomId,
+    );
+  }
+
+  @Get('behavior/:id')
+  @ApiOperation({
+    summary: 'get one behavior ',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'some data sending is bad ',
+  })
+  getOneBehavior(@Param('id') id: number) {
+    return this.studentService.findOneBehavior(+id);
+  }
+
+  @Patch('behavior/:id')
+  updateBehavior(
+    @Param('id') id: string,
+    @Body() updateBehaviorDto: UpdateBehaviorDto,
+  ) {
+    return this.studentService.updateBehavior(+id, updateBehaviorDto);
+  }
+
+  @Get('behaviorDetails/:id')
+  @ApiOperation({
+    summary: 'get one behaviorDetails ',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'some data sending is bad ',
+  })
+  getOneCommitmentDocumentURL(@Param('id') id: number) {
+    return this.studentService.findOneCommitmentDocumentURL(+id);
+  }
+
+  @Patch('behaviorDetails/:id')
+  updateCommitmentDocumentURL(
+    @Param('id') id: string,
+    @Body() updateAllowNextRegistrationDto: UpdateAllowNextRegistrationDto,
+  ) {
+    return this.studentService.updateAllowNextRegistration(
+      +id,
+      updateAllowNextRegistrationDto,
+    );
+  }
+
+  @Put('pdf/:id')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload pdf pdf to AWS S3' })
+  @ApiResponse({
+    status: 201,
+    description: 'The file has been successfully uploaded.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'File to upload',
+    // type: 'multipart/form-data',
+    required: true,
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'student not found ',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'id de subir foto',
+    type: String,
+  })
+  async uploadPDF(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('id') id: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Make sure that the file is an image');
+    }
+
+    return await this.studentService.uploadPDF(file.buffer, +id);
   }
 }

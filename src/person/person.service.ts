@@ -21,8 +21,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { Family } from 'src/family/entities/family.entity';
+
 import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
+import { SearchByDateDto } from '../common/dto/search-by-date.dto';
 
 @Injectable()
 export class PersonService {
@@ -41,13 +43,14 @@ export class PersonService {
     private readonly relationShipRepository: Repository<Relationship>,
     @InjectRepository(Family)
     private readonly familypRepository: Repository<Family>,
+
     @InjectRepository(EnrollmentSchedule)
     private readonly enrollmentScheduleRepository: Repository<EnrollmentSchedule>,
     @InjectRepository(Attendance)
     private readonly attendanceRepository: Repository<Attendance>,
   ) {}
   create(createPersonDto: CreatePersonDto) {
-    return 'This action adds a new person';
+    return createPersonDto;
   }
   async createParentCRM(data: CreatePersonCrmDto) {
     try {
@@ -83,6 +86,7 @@ export class PersonService {
         idPerson = validatPerson.id;
       } else {
         const person = this.personRepository.create({
+          typeDoc: data.typeDoc,
           docNumber: data.docNumber,
           name: data.name,
           lastname: data.lastName,
@@ -117,7 +121,9 @@ export class PersonService {
         ],
         relations: {
           student: {
-            enrollment: { activityClassroom: { grade: { level: true } } },
+            enrollment: {
+              activityClassroom: { grade: { level: true }, phase: true },
+            },
           },
         },
       });
@@ -145,9 +151,12 @@ export class PersonService {
         crmGHLId: userCreated.crmGHLId,
         name: data.name,
         lastName: `${data.lastName} ${data.mLastname}`,
-        grade: getParent.student[0].enrollment[0].activityClassroom.grade.name,
+        year: getParent.student[0].enrollment[0].activityClassroom.phase.year
+          .name,
         level:
           getParent.student[0].enrollment[0].activityClassroom.grade.level.name,
+        grade: getParent.student[0].enrollment[0].activityClassroom.grade.name,
+        section: getParent.student[0].enrollment[0].activityClassroom.section,
       };
     } catch (error) {
       handleDBExceptions(error, this.logger);
@@ -223,34 +232,92 @@ export class PersonService {
   }
   //MODULO DE PADRES
   async findStudentsByParents(user: User) {
-    const students = await this.familypRepository.findOne({
+    /**TODO validar exsistencia de persona */
+
+    const students = await this.familypRepository.find({
       where: [
         {
-          parentOneId: { id: user.person.id },
+          parentOneId: {
+            user: {
+              email: user.email,
+            },
+          },
           // student: { enrollment: { isActive: true } },
         },
         {
-          parentTwoId: { id: user.person.id },
+          parentTwoId: {
+            user: {
+              email: user.email,
+            },
+          },
           // student: { enrollment: { isActive: true } },
         },
       ],
       relations: {
-        student: true,
+        student: {
+          enrollment: {
+            activityClassroom: {
+              classroom: true,
+              grade: true,
+            },
+          },
+        },
       },
     });
-    return students;
+    const resp = students.map((item) => {
+      const { student, ...rest } = item;
+      const childrens = student
+        .map((item) => {
+          const person = item.person;
+          // Verifica si `enrollment` tiene elementos
+          if (item.enrollment.length === 0) {
+            return undefined; // O manejar de otra manera según tu lógica
+          }
+          const { student, activityClassroom, ...enrroll } =
+            item.enrollment.reduce((previous, current) => {
+              return current.activityClassroom.grade.position >
+                previous.activityClassroom.grade.position
+                ? current
+                : previous;
+            });
+          const enrrollStatus = enrroll.status;
+          if (activityClassroom.grade.position !== 14 || enrroll.isActive) {
+            return {
+              person,
+              ...enrroll,
+              enrrollStatus,
+              studentId: student.id,
+              photo: student.photo,
+            };
+          }
+          return undefined;
+        })
+        .filter((child) => child !== undefined);
+      return { student: childrens, ...rest };
+    });
+    //
+    return resp;
   }
-  async findAttendanceByStudent(id: number) {
-    const date = new Date();
-    const year = date.getFullYear();
+  async findAttendanceByStudent(id: number, searchByDateDto: SearchByDateDto) {
     if (isNaN(id)) {
       throw new NotFoundException(`Id is not valid`);
     }
+    const startDate = searchByDateDto.startDate;
+    const endDate = searchByDateDto.endDate;
     const attendance = await this.attendanceRepository
       .createQueryBuilder('attendance')
       .where('studentId = :id', { id })
-      .andWhere('YEAR(arrivalDate) = :year', { year })
+      .andWhere('attendance.arrivalDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
       .getMany();
+    attendance.forEach((entry) => {
+      const date = new Date(entry.arrivalTime);
+      date.setHours(date.getHours() - 5);
+      const newTime = date.toISOString();
+      (entry as any).time = newTime.split('T')[1].split('.')[0];
+    });
     return attendance;
   }
   async findProfileUser(user: User) {
@@ -300,7 +367,7 @@ export class PersonService {
 
   async uploadPhoto(fileName: string, file: Buffer, id: number) {
     const webpImage = await sharp(file).webp().toBuffer();
-
+    console.log(id);
     await this.s3Client.send(
       new PutObjectCommand({
         Bucket: 'caebucket',

@@ -29,6 +29,10 @@ import { firstValueFrom } from 'rxjs';
 import { Person } from 'src/person/entities/person.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { normalizeDate } from 'src/common/helpers/normalizeData';
+import { EmailsService } from 'src/emails/emails.service';
+import { MailParams } from 'src/emails/interfaces/mail-params.interface';
+
+import { getBodyEmail, getText } from './helpers/bodyEmail';
 // import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
@@ -55,7 +59,9 @@ export class AttendanceService {
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
     @InjectRepository(Family)
     private readonly familyRepository: Repository<Family>,
+    /**email service */
 
+    private readonly emailsService: EmailsService,
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
 
@@ -64,19 +70,20 @@ export class AttendanceService {
   ) {}
   async create(createAttendanceDto: CreateAttendanceDto, user: User) {
     // Obtener el usuario con las relaciones necesarias
-    const us = await this.userRepository.findOne({
-      where: {
-        email: user.email,
-      },
-      relations: {
-        assignments: {
-          campusDetail: true,
-        },
-        roles: {
-          permissions: true,
-        },
-      },
-    });
+
+    // const us = await this.userRepository.findOne({
+    //   where: {
+    //     email: user.email,
+    //   },
+    //   relations: {
+    //     assignments: {
+    //       campusDetail: true,
+    //     },
+    //     roles: {
+    //       permissions: true,
+    //     },
+    //   },
+    // });
 
     /**capturar fecha y hora actual */
     const currentTime = new Date();
@@ -90,12 +97,17 @@ export class AttendanceService {
 
     try {
       /**Verificar validez de matricula */
-      const enrollment = await this.enrrollmentRepository.findOneByOrFail({
-        code: createAttendanceDto.code,
+      const enrollment = await this.enrrollmentRepository.findOneOrFail({
+        where: { code: createAttendanceDto.code },
       });
+
+      const { student, activityClassroom } = enrollment;
+      const { phase, grade, section, schoolShift, classroom } =
+        activityClassroom;
+      const { person, photo } = student;
       /**verificar pertenencia a sede */
 
-      const campusDetailIds = us.assignments.map(
+      const campusDetailIds = user.assignments.map(
         (item) => item.campusDetail.id,
       );
       if (campusDetailIds.length === 0) {
@@ -104,8 +116,7 @@ export class AttendanceService {
         );
       }
 
-      const campusEnroll =
-        enrollment.activityClassroom.classroom.campusDetail.id;
+      const campusEnroll = classroom.campusDetail.id;
 
       const isInCampus = campusDetailIds.includes(campusEnroll);
       if (!isInCampus) {
@@ -114,7 +125,7 @@ export class AttendanceService {
         );
       }
       /**verificar dia feriado */
-      const yearId = enrollment.activityClassroom.phase.year.id;
+      const yearId = phase.year.id;
       const queryBuilderHoliday =
         this.holidayRepository.createQueryBuilder('holiday');
       const isHoliday = await queryBuilderHoliday
@@ -147,7 +158,7 @@ export class AttendanceService {
         );
       }
       /** verificar que la fecha se encuentre en un bimestre*/
-      const bimesters = enrollment.activityClassroom.phase.bimester;
+      const bimesters = phase.bimester;
 
       let currentBimester;
 
@@ -171,16 +182,20 @@ export class AttendanceService {
       const att = await queryBuilder
         .where(`arrivalDate=:dateNow and studentId =:studentId`, {
           dateNow: this.convertISODateToYYYYMMDD(currentDate),
-          studentId: enrollment.student.id,
+          studentId: student.id,
         })
         .getOne();
+      const urlS3 = this.configService.getOrThrow('FULL_URL_S3');
+      const defaultAvatar = this.configService.getOrThrow(
+        'AVATAR_NAME_DEFAULT',
+      );
       //**Si ya tiene asistencia */
       if (att) {
         const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
 
         const indSchedule = await this.scheduleRepository.findOneBy({
           day: currentDay,
-          activityClassroom: { id: enrollment.activityClassroom.id },
+          activityClassroom: { id: activityClassroom.id },
         });
         /**si tiene horario adicional */
         if (indSchedule) {
@@ -190,9 +205,11 @@ export class AttendanceService {
           const [startHour, startMinute, startSecond] = indSchedule.startTime
             .split(':')
             .map(Number);
-          const [endHour, endMinute, endSecond] = indSchedule.endTime
-            .split(':')
-            .map(Number);
+          const [
+            // endHour,
+            endMinute,
+            endSecond,
+          ] = indSchedule.endTime.split(':').map(Number);
           initAttendanceTime.setHours(
             startHour - 1,
             startMinute - 20,
@@ -232,7 +249,7 @@ export class AttendanceService {
             `arrivalDate=:dateNow and studentId =:studentId and shift=:shift`,
             {
               dateNow: this.convertISODateToYYYYMMDD(currentDate),
-              studentId: enrollment.student.id,
+              studentId: student.id,
               shift: Shift.Extra,
             },
           )
@@ -247,14 +264,24 @@ export class AttendanceService {
         const attendance = this.attendanceRepository.create({
           shift: Shift.Extra,
           condition: condition,
-          activityClassroom: { id: enrollment.activityClassroom.id },
+          activityClassroom: { id: activityClassroom.id },
           arrivalTime: currentTime,
-          student: { id: enrollment.student.id },
+          student: { id: student.id },
           arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
           typeSchedule: TypeSchedule.Individual,
         });
+        const classroomInfo = `${grade.name} ${section} ${grade.level.name}`;
+        const dataStudent = {
+          name: person.name,
+          lastname: person.lastname,
+          mLastname: person.mLastname,
+          photo: photo ? `${urlS3}${photo}` : `${urlS3}${defaultAvatar}`,
+          arrivalTime: currentTime,
+          classroom: classroomInfo,
+          condition,
+        };
         const family = await this.familyRepository.findOne({
-          where: { student: { id: enrollment.student.id } },
+          where: { student: { id: student.id } },
           relations: {
             student: true,
             parentOneId: { user: true },
@@ -264,35 +291,35 @@ export class AttendanceService {
         if (family) {
           const { parentOneId, parentTwoId, student } = family;
           if (parentOneId && parentOneId.user) {
-            this.sendEmail(
+            this.sendEmailWithSES(
               parentOneId,
               student[0],
               currentTime,
               attendance.arrivalDate,
-              attendance.shift,
+              shift,
               condition,
             );
           }
           if (parentTwoId && parentTwoId.user) {
-            this.sendEmail(
+            this.sendEmailWithSES(
               parentTwoId,
               student[0],
               currentTime,
               attendance.arrivalDate,
-              attendance.shift,
+              shift,
               condition,
             );
           }
         }
-        const newAttendance = await this.attendanceRepository.save(attendance);
+        await this.attendanceRepository.save(attendance);
         // const lastFiveRecords = await this.findLastFiveRecords(user);
         // this.attendanceGateway.emitLastFiveAttendances(lastFiveRecords);
 
-        return newAttendance;
+        return dataStudent;
       } else {
         //*** crear asistencia */
 
-        const turn = enrollment.activityClassroom.schoolShift;
+        const turn = schoolShift;
 
         const cutoffTime = new Date();
         const initAttendanceTime = new Date();
@@ -335,11 +362,22 @@ export class AttendanceService {
         shift: shift,
         condition: condition,
         arrivalTime: currentTime,
-        student: { id: enrollment.student.id },
+        student: { id: student.id },
         arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
         typeSchedule: TypeSchedule.General,
-        activityClassroom: { id: enrollment.activityClassroom.id },
+        activityClassroom: { id: activityClassroom.id },
       });
+      const classroomInfo = `${grade.name} ${section} ${grade.level.name}`;
+
+      const dataStudent = {
+        name: person.name,
+        lastname: person.lastname,
+        mLastname: person.mLastname,
+        photo: photo ? `${urlS3}${photo}` : `${urlS3}${defaultAvatar}`,
+        arrivalTime: currentTime,
+        classroom: classroomInfo,
+        condition,
+      };
       const family = await this.familyRepository.findOne({
         where: { student: { id: enrollment.student.id } },
         relations: {
@@ -348,10 +386,12 @@ export class AttendanceService {
           parentTwoId: { user: true },
         },
       });
+
       if (family) {
         const { parentOneId, parentTwoId, student } = family;
+
         if (parentOneId && parentOneId.user) {
-          this.sendEmail(
+          this.sendEmailWithSES(
             parentOneId,
             student[0],
             currentTime,
@@ -361,7 +401,7 @@ export class AttendanceService {
           );
         }
         if (parentTwoId && parentTwoId.user) {
-          this.sendEmail(
+          this.sendEmailWithSES(
             parentTwoId,
             student[0],
             currentTime,
@@ -371,13 +411,29 @@ export class AttendanceService {
           );
         }
       }
-      const at = await this.attendanceRepository.save(attendance);
-      return at.id;
+
+      await this.attendanceRepository.save(attendance);
+      return dataStudent;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
-
+  async sendEmailWithSES(
+    parent: Person,
+    student: Student,
+    currentTime: Date,
+    arrivalDate: Date,
+    shift: Shift,
+    condition: ConditionAttendance,
+  ) {
+    const params: MailParams = {
+      to: parent.user.email,
+      subject: 'Notificación de Asistencia',
+      html: getBodyEmail(student, currentTime, arrivalDate, shift, condition),
+      text: getText(student, currentTime, arrivalDate, shift, condition),
+    };
+    this.emailsService.sendEmailWithSES(params);
+  }
   async sendEmail(
     parent: Person,
     student: Student,
@@ -388,12 +444,12 @@ export class AttendanceService {
   ) {
     const url = this.configService.get('GHL_ATTENDANCE_URL');
     try {
-      currentTime.setHours(currentTime.getHours() - 5);
-      const hours = currentTime.getUTCHours().toString().padStart(2, '0');
-      const minutes = currentTime.getUTCMinutes().toString().padStart(2, '0');
-      const seconds = currentTime.getUTCSeconds().toString().padStart(2, '0');
-      const formattedTime = `${hours}:${minutes}:${seconds}`;
-
+      // currentTime.setHours(currentTime.getHours() - 5);
+      // const hours = currentTime.getUTCHours().toString().padStart(2, '0');
+      // const minutes = currentTime.getUTCMinutes().toString().padStart(2, '0');
+      // const seconds = currentTime.getUTCSeconds().toString().padStart(2, '0');
+      // const formattedTime = `${hours}:${minutes}:${seconds}`;
+      const timeZone = 'America/Lima';
       await firstValueFrom(
         this.httpService.post(url, {
           full_name_son: `${student.person.name}`,
@@ -401,7 +457,7 @@ export class AttendanceService {
           last_name: `${parent.lastname} ${parent.mLastname}`,
           email: parent.user.email,
           cmrGHLId: parent.user.crmGHLId,
-          arrivalTime: formattedTime,
+          arrivalTime: moment.utc(currentTime).tz(timeZone).format('HH:mm:ss'),
           arribalDate: arrivalDate,
           shift: shift === 'M' ? 'Mañana' : 'Tarde',
           condition: condition === 'P' ? 'Temprano' : 'Tarde',
@@ -412,47 +468,43 @@ export class AttendanceService {
     }
   }
 
-  async findAll() {
-    const attendance = await this.studentRepository.find({
-      relations: {
-        attendance: true,
-      },
-    });
-    return attendance;
-  }
   async findLastFiveRecords(user: User) {
     // Obtener usuario con asignaciones y roles
-    const userWithRelations = await this.userRepository.findOne({
-      where: { email: user.email },
-      relations: ['assignments.campusDetail', 'roles.permissions'],
-    });
 
-    if (!userWithRelations) {
-      throw new Error('Usuario no encontrado');
-    }
+    // const userWithRelations = await this.userRepository.findOne({
+    //   where: { email: user.email },
+    //   relations: ['roles.permissions'],
+    // });
+
+    // if (!userWithRelations) {
+    //   throw new Error('Usuario no encontrado');
+    // }
 
     try {
       // Obtener permisos y determinar si es admin
-      const permissions = new Set(
-        userWithRelations.roles.flatMap((role) =>
-          role.permissions.map((perm) => perm.name),
-        ),
+      const isAdmin = user.roles.some((role) =>
+        role.permissions.some((perm) => perm.name === 'admin'),
       );
-      const isAdmin = permissions.has('admin');
-      const campusDetailIds = userWithRelations.assignments.map(
-        (assignment) => assignment.campusDetail.id,
-      );
+      // const campusDetailIds = userWithRelations.assignments.map(
+      //   (assignment) => assignment.campusDetail.id,
+      // );
 
       // Construir opciones de consulta para asistencias
       const attendanceOptions: any = {
         order: { arrivalTime: 'DESC' },
-        take: 5,
+        take: 3,
       };
 
       if (!isAdmin) {
+        const campusDetailIds = user.assignments.map((c) => c.campusDetail.id);
+
         attendanceOptions.where = {
           activityClassroom: {
-            classroom: { campusDetail: { id: In(campusDetailIds) } },
+            classroom: {
+              campusDetail: {
+                id: In(campusDetailIds),
+              },
+            },
           },
         };
       }
@@ -463,13 +515,13 @@ export class AttendanceService {
 
       // Convertir horas de llegada a zona horaria específica
       const timeZone = 'America/Lima';
-      const utcAttendance = attendances.map((attendance) => ({
-        ...attendance,
-        arrivalTime: moment
-          .utc(attendance.arrivalTime)
-          .tz(timeZone)
-          .format('YYYY-MM-DD HH:mm:ss'),
-      }));
+      // const utcAttendance = attendances.map((attendance) => ({
+      //   ...attendance,
+      //   arrivalTime: moment
+      //     .utc(attendance.arrivalTime)
+      //     .tz(timeZone)
+      //     .format('YYYY-MM-DD HH:mm:ss'),
+      // }));
 
       // Obtener configuración de URLs y avatar predeterminado
       const urlS3 = this.configService.getOrThrow('FULL_URL_S3');
@@ -478,10 +530,15 @@ export class AttendanceService {
       );
 
       // Formatear datos finales de asistencias
-      const formatAttendances = utcAttendance.map((attendance) => {
-        const { student, activityClassroom, ...restAttendance } = attendance;
+      const formatAttendances = attendances.map((attendance) => {
+        const { student, activityClassroom, arrivalTime, condition } =
+          attendance;
 
-        const personData = student.person;
+        const personData = {
+          name: student.person.name,
+          lastname: student.person.lastname,
+          mLastname: student.person.mLastname,
+        };
         // const latestEnrollment = student.enrollment.reduce(
         //   (latest, current) => (current.id > latest.id ? current : latest),
         //   student.enrollment[0],
@@ -489,7 +546,11 @@ export class AttendanceService {
         const classroomInfo = `${activityClassroom.grade.name} ${activityClassroom.section} ${activityClassroom.grade.level.name}`;
 
         return {
-          ...restAttendance,
+          condition,
+          arrivaltime: moment
+            .utc(arrivalTime)
+            .tz(timeZone)
+            .format('YYYY-MM-DD HH:mm:ss'),
           student: {
             ...personData,
             photo: student.photo
@@ -504,10 +565,6 @@ export class AttendanceService {
     } catch (error) {
       this.logger.error(error);
     }
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} attendance`;
   }
 
   async update(id: number, updateAttendanceDto: UpdateAttendanceDto) {
@@ -564,6 +621,12 @@ export class AttendanceService {
 
         const formatStudents = students.map((item) => {
           const { person, attendance } = item;
+          attendance.forEach((entry) => {
+            const date = new Date(entry.arrivalTime);
+            date.setHours(date.getHours() - 5);
+            const newTime = date.toISOString();
+            (entry as any).time = newTime.split('T')[1].split('.')[0];
+          });
           return { student: person, attendance };
         });
 
@@ -574,11 +637,6 @@ export class AttendanceService {
     } catch (error) {
       console.log(error);
     }
-  } /**fs */
-
-  private parseDate(dateString) {
-    const [day, month, year] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day); // los meses en JS van de 0 a 11
   }
 
   private convertISODateToYYYYMMDD(isoDateString) {
@@ -616,7 +674,7 @@ export class AttendanceService {
     this.logger.log(`Running cron jobs for the shift:${shift}`);
     const currentDate = new Date();
     const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
-
+    const currentDateBimester = normalizeDate(new Date());
     //**Validar Fase  */
     const qbphase = this.phaseRepository.createQueryBuilder('phase');
     const phase = await qbphase
@@ -637,18 +695,20 @@ export class AttendanceService {
     }
     //** verificar que la fecha se encuentre en un bimestre*/
     const bimesters = phase.bimester;
+
     let currentBimester;
     for (const bimestre of bimesters) {
       if (
-        currentDate >= new Date(bimestre.startDate) &&
-        currentDate <= new Date(bimestre.endDate)
+        currentDateBimester >= normalizeDate(new Date(bimestre.startDate)) &&
+        currentDateBimester <= normalizeDate(new Date(bimestre.endDate))
       ) {
         currentBimester = bimestre;
       }
     }
+
     if (!currentBimester) {
       this.logger.warn(
-        `There is no active bimester for this date: ${currentDate}, the cron jobs were not completed`,
+        `There is no active bimester for this date: ${currentDateBimester}, the cron jobs were not completed`,
       );
       return;
     }
@@ -758,6 +818,7 @@ export class AttendanceService {
   async markAbsentStudentsCronIndividual(): Promise<void> {
     this.logger.log(`Running cron jobs for the Individual schedule`);
     const currentDate = new Date();
+    const currentDateBimester = normalizeDate(new Date());
     const currentDay: Day = this.getDayEnumValue(currentDate.getDay());
     //**Validar Fase  */
     const qbphase = this.phaseRepository.createQueryBuilder('phase');
@@ -782,15 +843,15 @@ export class AttendanceService {
     let currentBimester;
     for (const bimestre of bimesters) {
       if (
-        currentDate >= new Date(bimestre.startDate) &&
-        currentDate <= new Date(bimestre.endDate)
+        currentDateBimester >= normalizeDate(new Date(bimestre.startDate)) &&
+        currentDateBimester <= normalizeDate(new Date(bimestre.endDate))
       ) {
         currentBimester = bimestre;
       }
     }
     if (!currentBimester) {
       this.logger.warn(
-        `There is no active bimester for this date: ${currentDate}, the cron jobs were not completed`,
+        `There is no active bimester for this date: ${currentDateBimester}, the cron jobs were not completed`,
       );
       return;
     }
@@ -885,7 +946,7 @@ export class AttendanceService {
     }
 
     this.logger.log(
-      `Cron jobs for the individual schedule  completed succesfully`,
+      `Cron jobs for the individual schedule completed succesfully`,
     );
     return;
   }

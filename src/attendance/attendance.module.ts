@@ -19,6 +19,8 @@ import { Person } from 'src/person/entities/person.entity';
 import { Relationship } from 'src/relationship/entities/relationship.entity';
 import { HttpModule } from '@nestjs/axios';
 import { Family } from 'src/family/entities/family.entity';
+import { UserModule } from 'src/user/user.module';
+import { EmailsModule } from 'src/emails/emails.module';
 
 @Module({
   controllers: [AttendanceController],
@@ -40,10 +42,10 @@ import { Family } from 'src/family/entities/family.entity';
       Relationship,
       Family,
     ]),
-
+    UserModule,
     ConfigModule,
     HttpModule,
-
+    EmailsModule,
     ScheduleModule.forRoot(),
   ],
 })

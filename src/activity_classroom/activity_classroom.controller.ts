@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   Res,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ActivityClassroomService } from './activity_classroom.service';
@@ -23,9 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { SearchClassroomsDto } from 'src/common/dto/search-classrooms.dto';
 import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
-import { User } from 'src/user/entities/user.entity';
-import { Auth } from 'src/auth/decorators/auth.decorator';
+import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 @ApiTags('Activity Classroom')
 @Controller('activity-classroom')
@@ -152,15 +151,50 @@ export class ActivityClassroomController {
     description: 'Array of classrooms from phase, year, campus or level',
     type: [ActivityClassroom],
   })
-  @Auth()
-  searchClassrooms(
+  searchParams(
     @Query() searchClassroomsDto: SearchClassroomsDto,
-    @GetUser() user: User,
+    @AuthenticatedUser() user: any,
   ) {
-    return this.activityClassroomService.searchClassrooms(
+    // return this.activityClassroomService.exampleGetac();
+    return this.activityClassroomService.searchParams(
       searchClassroomsDto,
       user,
     );
+  }
+
+  @Get('search/classrooms')
+  @ApiQuery({
+    name: 'yearId',
+    required: true,
+    description: 'Id of the year',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'phaseId',
+    required: false,
+    description: 'Id of the phase',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'campusId',
+    required: false,
+    description: 'Id of the campus',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'levelId',
+    required: false,
+    description: 'Id of the level',
+    type: Number,
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: 'Array of classrooms from phase, year, campus or level',
+    type: [ActivityClassroom],
+  })
+  searchClassrooms(@Query() searchClassroomsDto: SearchClassroomsDto) {
+    // return this.activityClassroomService.exampleGetac();
+    return this.activityClassroomService.searchClassrooms(searchClassroomsDto);
   }
 
   @Get('students/:id')
@@ -175,9 +209,26 @@ export class ActivityClassroomController {
     description: 'Detail students of Activity Classroom',
     type: ActivityClassroom,
   })
-  findStudents(@Param('id') id: string) {
+  findStudents(@Param('id', ParseIntPipe) id: number) {
     return this.activityClassroomService.findStudents(+id);
   }
+
+  @Get('ascent/:id')
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Id of the activity classroom to find list of ascents',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'list of ascents',
+    type: ActivityClassroom,
+  })
+  findAscent(@Param('id', ParseIntPipe) id: number) {
+    return this.activityClassroomService.findAscent(id);
+  }
+
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',

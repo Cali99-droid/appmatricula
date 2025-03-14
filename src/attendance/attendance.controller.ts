@@ -24,6 +24,7 @@ import { SearchByClassroomDto } from './dto/search-by-classroom.dto';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
+import { Shift } from './enum/shift.enum';
 
 @ApiTags('Attendance')
 @Controller('attendance')
@@ -76,10 +77,10 @@ export class AttendanceController {
   findLastFiveRecords(@GetUser() user: User) {
     return this.attendanceService.findLastFiveRecords(user);
   }
-  @Get()
-  findAll() {
-    return this.attendanceService.findAll();
-  }
+  // @Get()
+  // findAll() {
+  //   return this.attendanceService.findAll();
+  // }
   @Get('/by-classroom')
   @ApiQuery({
     name: 'activityClassroomId',
@@ -109,21 +110,20 @@ export class AttendanceController {
   findByClassroom(@Query() searchByClassroomDto: SearchByClassroomDto) {
     return this.attendanceService.findByClassroom(searchByClassroomDto);
   }
-  // @Get('cron')
-  // testCron() {
-  //   //return this.attendanceService.markAbsentStudentsCronGeneral(Shift.Morning);
-  //   // return this.attendanceService.markAbsentStudentsCronIndividual();
-  // }
+  @Get('cron')
+  testCron() {
+    return this.attendanceService.markAbsentStudentsCronGeneral(Shift.Morning);
+  }
 
   // @Get('upt')
   // testUpdate() {
   //   return this.attendanceService.updateAttendances();
   // }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.attendanceService.findOne(+id);
-  }
+  // @Get(':id')
+  // findOne(@Param('id') id: string) {
+  //   return this.attendanceService.findOne(+id);
+  // }
 
   @Patch(':id')
   update(

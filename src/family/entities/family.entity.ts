@@ -9,6 +9,8 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { TypeSure } from '../enum/type-sure.enum';
+import { PaymentPref } from '../enum/payment-pref.enum';
 
 @Entity()
 export class Family {
@@ -34,8 +36,76 @@ export class Family {
   @JoinColumn({ name: 'parentTwoId' })
   parentTwoId?: Person;
 
+  @ApiProperty()
+  @Column('varchar', {
+    nullable: true,
+  })
+  district: string;
+
+  @ApiProperty()
+  @Column('varchar', {
+    nullable: true,
+  })
+  address: string;
+
+  @ApiProperty()
+  @Column('varchar', {
+    nullable: true,
+  })
+  reference: string;
+
+  @ApiProperty()
+  @Column({
+    type: 'enum',
+    enum: TypeSure,
+    nullable: true,
+  })
+  type_sure: string;
+
+  @ApiProperty()
+  @Column('varchar', {
+    nullable: true,
+  })
+  sure: string;
+
+  @ApiProperty()
+  @Column('varchar', {
+    nullable: true,
+  })
+  addressSure: string;
+
   @OneToMany(() => Student, (student) => student.family, {
     // eager: true,
   })
   student?: Student[];
+
+  /**RESP */
+  @ManyToOne(() => Person, (person) => person.respEnrollments, {
+    // eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'respEnrollment' })
+  respEnrollment?: Person;
+
+  @ManyToOne(() => Person, (person) => person.respEconomics, {
+    // eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'respEconomic' })
+  respEconomic?: Person;
+
+  @ManyToOne(() => Person, (person) => person.respAcademics, {
+    // eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'respAcademic' })
+  respAcademic?: Person;
+
+  @ApiProperty()
+  @Column({
+    type: 'enum',
+    enum: PaymentPref,
+    nullable: true,
+  })
+  paymentPref?: PaymentPref;
 }

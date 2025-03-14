@@ -11,15 +11,20 @@ import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { UserModule } from 'src/user/user.module';
 import { PermissionsModule } from 'src/permissions/permissions.module';
 import { Permission } from 'src/permissions/entities/permission.entity';
+import { Person } from 'src/person/entities/person.entity';
+import { PersonModule } from 'src/person/person.module';
+import { KeycloakModule } from 'src/keycloak/keycloak.module';
 
 @Module({
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
   imports: [
     UserModule,
+    KeycloakModule,
+    PersonModule,
     PermissionsModule,
     ConfigModule,
-    TypeOrmModule.forFeature([User, Permission]),
+    TypeOrmModule.forFeature([User, Permission, Person]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

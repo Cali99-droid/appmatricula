@@ -24,6 +24,10 @@ export class User {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
+  @Column('text', {
+    nullable: true,
+  })
+  sub: string;
 
   @Column('varchar', {
     unique: true,
@@ -48,9 +52,7 @@ export class User {
   @ApiProperty({
     description: 'Id of Person',
   })
-  @OneToOne(() => Person, (person) => person.user, {
-    eager: true,
-  })
+  @OneToOne(() => Person, (person) => person.user)
   @JoinColumn({ name: 'personId' })
   person: Person;
 
@@ -60,7 +62,9 @@ export class User {
   // })
   // permission: Permission[];
 
-  @OneToMany(() => Assignment, (assignment) => assignment.user)
+  @OneToMany(() => Assignment, (assignment) => assignment.user, {
+    eager: true,
+  })
   assignments: Assignment[];
 
   @OneToMany(
@@ -68,7 +72,9 @@ export class User {
     (assignmentClass) => assignmentClass.user,
   )
   assignmentsClassroom?: AssignmentClassroom[];
-  @ManyToMany(() => Role, (role) => role.users)
+  @ManyToMany(() => Role, (role) => role.users, {
+    eager: true,
+  })
   @JoinTable()
   roles: Role[];
 

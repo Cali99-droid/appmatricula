@@ -1,11 +1,13 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Enrollment } from '../../enrollment/entities/enrollment.entity';
 import { Person } from '../../person/entities/person.entity';
@@ -13,6 +15,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { Email } from 'src/emails/entities/email.entity';
+import { EmailDetail } from 'src/emails/entities/emailDetail.entity';
 @Entity()
 export class Student {
   @ApiProperty()
@@ -39,11 +42,32 @@ export class Student {
   })
   @Column('bool', {
     default: true,
+    select: false,
   })
   status: boolean;
   @ApiProperty({
     description: 'Id of Person',
   })
+  @Column('bool', {
+    default: true,
+  })
+  hasDebt: boolean;
+
+  @Column('varchar', {
+    nullable: true,
+  })
+  siagie: string;
+
+  @Column('varchar', {
+    nullable: true,
+  })
+  school: string;
+
+  @Column('varchar', {
+    nullable: true,
+  })
+  modularCode: string;
+
   @OneToOne(() => Person, (person) => person.student, {
     eager: true,
   })
@@ -61,8 +85,26 @@ export class Student {
 
   @OneToMany(() => Attendance, (attendance) => attendance.student)
   attendance?: Attendance[];
-  @OneToMany(() => Email, (email) => email.student, {
-    // eager: true,
+  
+  @OneToMany(() => EmailDetail, (emailDetail) => emailDetail.student)
+  emailsDetails?: EmailDetail[];
+  // @OneToMany(() => Email, (email) => email.student, {
+  //   // eager: true,
+  // })
+  // email: Email[];
+  /**TIMESTAMPS */
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    select: false,
   })
-  email: Email[];
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+    select: false,
+  })
+  updatedAt: Date;
 }
