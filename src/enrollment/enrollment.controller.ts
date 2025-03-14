@@ -18,6 +18,7 @@ import { ResponseEnrrollDto } from './dto/rs-enrolled-classroom.dto';
 import { SearchEnrolledDto } from './dto/searchEnrollmet-dto';
 import { SetRatifiedDto } from './dto/set-ratified.dto';
 import { FindVacantsDto } from './dto/find-vacants.dto';
+import { Put } from '@nestjs/common/decorators/http/request-mapping.decorator';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')

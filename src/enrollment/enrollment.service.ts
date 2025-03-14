@@ -434,7 +434,8 @@ export class EnrollmentService {
         /**menos los que ya estan matriculados, el calculo varia dependiendo del cronograma */
         const capacity = ac.classroom.capacity;
         const ratifieds = enrrollmentRatified.length - rtAndEnr.length;
-
+        console.log(enrrollmentRatified.length);
+        console.log(rtAndEnr.length); /** */
         /**temporal, la fórmula varia en funcion al cronograma */
         const vacant = capacity - ratifieds - currentEnrrollment.length;
         /**formula para cuando no tengan que ver los ratificados */
