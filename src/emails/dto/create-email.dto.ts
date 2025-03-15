@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsString } from 'class-validator';
+import {  IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 import { TypeEmail } from '../enum/type-email';
 
 export class CreateEmailDto {
@@ -27,4 +27,16 @@ export class CreateEmailDto {
     message: 'type value must be some values: [R,O] ',
   })
   type: TypeEmail;
+
+  @ApiProperty({
+    example: ['101', '305', '285'],
+    description: 'Array of Student IDs',
+    nullable: true,
+    type: [Number],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  // @IsString({ each: true, message: 'Each studentId must be a string.' })
+  studentIds?: number[];
 }
