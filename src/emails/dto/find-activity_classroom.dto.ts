@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber, IsOptional, IsUppercase } from 'class-validator';
+import { IsEnum, IsOptional, IsUppercase } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ExistId } from 'src/common/validation/exist-id';
 import { Section } from 'src/activity_classroom/enum/section.enum';
@@ -12,7 +12,7 @@ export class FindActivityClassroomDto {
   @IsOptional()
   // @IsNumber()
   // @ExistId({ tableName: 'phase' })
-  phaseId: number;
+  phaseId?: number;
   @ApiProperty({
     example: 1,
     description: 'id of the campus',
