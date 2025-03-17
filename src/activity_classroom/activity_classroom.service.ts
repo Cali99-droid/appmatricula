@@ -176,13 +176,14 @@ export class ActivityClassroomService {
           level: !isNaN(+levelId) ? { id: +levelId } : {},
         },
       };
-      if (
-        !roles.includes(
-          'administrador-colegio',
-          'secretaria',
-          'administrador-sede',
-        )
-      ) {
+      const autPerm = [
+        'administrador-colegio',
+        'secretaria',
+        'administrador-sede',
+      ];
+
+      const isAdmin = roles.some((e) => autPerm.includes(e));
+      if (!isAdmin) {
         const acIds = us.assignmentsClassroom.map(
           (item) => item.activityClassroom.id,
         );
