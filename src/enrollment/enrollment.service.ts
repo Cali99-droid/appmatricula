@@ -1714,7 +1714,11 @@ export class EnrollmentService {
         },
       },
     });
-
+    /**data img */
+    const urlS3 = this.configService.getOrThrow('AWS_URL_BUCKET');
+    const folderName = this.configService.getOrThrow('FOLDER_IMG_NAME');
+    const defaultAvatar = this.configService.getOrThrow('AVATAR_NAME_DEFAULT');
+    const urlPhoto = `${urlS3}${folderName}`;
     // Transformamos los datos de matrícula
     const reportData = enrollments.map(
       ({
@@ -1746,7 +1750,9 @@ export class EnrollmentService {
           schoolName: student.school,
           activityClassroomId: activityClassroom.id,
           studentId: student.id,
-          photo: student.photo,
+          photo: student.photo
+            ? `${urlPhoto}/${student.photo}`
+            : `${urlPhoto}/${defaultAvatar}`,
         };
       },
     );
