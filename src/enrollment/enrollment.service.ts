@@ -580,7 +580,7 @@ export class EnrollmentService {
           grade,
           level,
           capacity,
-          previousEnrolls,
+          // previousEnrolls,
           currentEnrroll,
           section,
           detailOrigin,
@@ -1543,7 +1543,7 @@ export class EnrollmentService {
       }
       /**CREAR LA DATA */
 
-      const created = await this.familyService.createFamilyFromAdmision(
+      await this.familyService.createFamilyFromAdmision(
         data,
         availableClassrooms[0],
       );
@@ -1746,6 +1746,7 @@ export class EnrollmentService {
           schoolName: student.school,
           activityClassroomId: activityClassroom.id,
           studentId: student.id,
+          photo: student.photo,
         };
       },
     );
