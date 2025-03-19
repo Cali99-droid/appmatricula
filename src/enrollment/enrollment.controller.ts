@@ -37,6 +37,7 @@ import {
 import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 import { UpdateExpirationDto } from './dto/update-expiration.dto';
+import { TransferStudentDto } from './dto/tranfer-student.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -274,6 +275,24 @@ export class EnrollmentController {
     return this.enrollmentService.changeSection(
       studentId,
       activityClassroomId,
+      user,
+    );
+  }
+
+  @Put('transfer-student/:studentId')
+  @ApiOkResponse({
+    status: 200,
+    description: 'updating section',
+    //  type: [AvailableClassroom],
+  })
+  transferStudent(
+    @Param('studentId', ParseIntPipe) studentId: number,
+    @Body() transferStudentDto: TransferStudentDto,
+    @AuthenticatedUser() user: any,
+  ) {
+    return this.enrollmentService.transferStudent(
+      studentId,
+      transferStudentDto.destinationSchool,
       user,
     );
   }

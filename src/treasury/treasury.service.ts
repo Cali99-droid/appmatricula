@@ -968,6 +968,41 @@ export class TreasuryService {
       );
     }
   }
+
+  /**getPaid by id and studentId */
+  async getBill(studentId: number, conceptId: number) {
+    const pay = await this.billRepository.findOne({
+      where: {
+        payment: {
+          student: {
+            id: studentId,
+          },
+          concept: {
+            id: conceptId,
+          },
+        },
+      },
+      order: {
+        id: 'DESC',
+      },
+
+      relations: {
+        payment: true,
+      },
+    });
+
+    return pay;
+  }
+
+  async getCreditNoteByBill(billId: number) {
+    const cn = await this.creditNoteRepository.findOne({
+      where: {
+        bill: { id: billId },
+      },
+    });
+
+    return cn;
+  }
   /**SCRIPTS */
   async migrateToNubeFact() {
     const boletas = await this.billRepository.find({
