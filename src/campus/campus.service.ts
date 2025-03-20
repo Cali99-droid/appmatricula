@@ -12,8 +12,6 @@ import { UpdateCampusDto } from './dto/update-campus.dto';
 import { Campus } from './entities/campus.entity';
 import { Year } from 'src/years/entities/year.entity';
 import { CampusToLevel } from './entities/campusToLevel.entity';
-import { User } from 'src/user/entities/user.entity';
-import { Assignment } from 'src/user/entities/assignments.entity';
 
 @Injectable()
 export class CampusService {
@@ -24,10 +22,6 @@ export class CampusService {
     @InjectRepository(CampusToLevel)
     private readonly campusToLevelRepository: Repository<CampusToLevel>,
     private readonly dataSource: DataSource,
-    @InjectRepository(Assignment)
-    private readonly assignmentRepository: Repository<Assignment>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
   ) {}
   async validateCampusExists(idCampus: number, idyear: number) {
     const existCampus = await this.campusRepository.findOne({
