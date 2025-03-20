@@ -202,6 +202,7 @@ export class TreasuryService {
       // return;
       const student = enrrollOnProccess.student.person;
       const grade = enrrollOnProccess.activityClassroom.grade;
+      const section = enrrollOnProccess.activityClassroom.section;
       const level = grade.level;
       const campus = enrrollOnProccess.activityClassroom.classroom.campusDetail;
       const sendEmail = this.env === 'prod' ? !!resp.user?.email : false;
@@ -229,7 +230,7 @@ export class TreasuryService {
           {
             unidad_de_medida: 'NIU',
             codigo: concept.code,
-            descripcion: `${concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
+            descripcion: `${concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} ${section} - ${level.name} - ${campus.name}`,
             cantidad: 1,
             valor_unitario: concept.total,
             precio_unitario: concept.total,
@@ -666,6 +667,7 @@ export class TreasuryService {
   ) {
     const student = debt.student.person;
     const grade = debt.student.enrollment[0].activityClassroom.grade;
+    const section = debt.student.enrollment[0].activityClassroom.section;
     const level = grade.level;
     const campus =
       debt.student.enrollment[0].activityClassroom.classroom.campusDetail;
@@ -694,7 +696,7 @@ export class TreasuryService {
         {
           unidad_de_medida: 'NIU',
           codigo: debt.concept.code,
-          descripcion: `${debt.concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
+          descripcion: `${debt.concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} ${section} - ${level.name} - ${campus.name}`,
           cantidad: 1,
           valor_unitario: debt.total,
           precio_unitario: debt.total,
