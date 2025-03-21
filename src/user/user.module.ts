@@ -11,6 +11,7 @@ import { Assignment } from './entities/assignments.entity';
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 import { AssignmentClassroom } from './entities/assignments-classroom.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { KeycloakModule } from 'src/keycloak/keycloak.module';
 
 @Module({
   controllers: [UserController],
@@ -26,6 +27,7 @@ import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
       AssignmentClassroom,
       Enrollment,
     ]),
+    KeycloakModule,
   ],
   exports: [UserService, UserModule],
 })

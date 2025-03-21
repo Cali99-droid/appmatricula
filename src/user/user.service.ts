@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository, Not, IsNull, Brackets } from 'typeorm';
+import { Repository, Not, IsNull, Brackets, In } from 'typeorm';
 import { Role } from 'src/role/entities/role.entity';
 import { AddRoleDto } from './dto/add-role.dto';
 import * as bcrypt from 'bcrypt';
@@ -14,6 +14,7 @@ import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
 import { AssignmentClassroom } from './entities/assignments-classroom.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { CreateUserOfTestDto } from './dto/create-users-of-test.dto';
+import { KeycloakService } from 'src/keycloak/keycloak.service';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger('UserService');
@@ -30,6 +31,8 @@ export class UserService {
     private readonly assignmentClassroomRepository: Repository<AssignmentClassroom>,
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
+
+    private readonly keycloakService: KeycloakService,
   ) {}
   async create(createUserDto: CreateUserDto) {
     try {
@@ -92,24 +95,26 @@ export class UserService {
     //     },
     //   },
     // });
-    const users = await this.userRepository
-      .createQueryBuilder('user')
-      .innerJoinAndSelect('user.roles', 'role') // Realizamos una unión interna con la tabla de roles
-      .leftJoinAndSelect('user.assignments', 'assignment') // Unión izquierda con assignments
-      .leftJoinAndSelect('assignment.campusDetail', 'campusDetail') // Unión izquierda con campusDetail
-      .getMany();
+
+    const usKy = await this.keycloakService.getUsersByRole('auxiliar');
+
+    const subs = usKy.map((us) => us.id);
+
+    const users = await this.userRepository.find({
+      where: {
+        sub: In(subs),
+      },
+    });
     return users.map((user) => {
-      if (user.roles.length > 0) {
-        return {
-          id: user.id,
-          email: user.email,
-          isActive: user.isActive,
-          roles: user.roles,
-          assignments: user.assignments.map((ass) => {
-            return { id: ass.campusDetail.id, name: ass.campusDetail.name };
-          }),
-        };
-      }
+      return {
+        id: user.id,
+        email: user.email,
+        isActive: user.isActive,
+        roles: user.roles,
+        assignments: user.assignments.map((ass) => {
+          return { id: ass.campusDetail.id, name: ass.campusDetail.name };
+        }),
+      };
     });
   }
   async findAssig(email: string) {

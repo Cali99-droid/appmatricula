@@ -110,4 +110,27 @@ export class KeycloakService {
       process.exit(1);
     }
   }
+
+  async getUsersByRole(roleName: string) {
+    const token = await this.getAdminToken();
+    // const realm = process.env.KEYCLOAK_REALM;
+    if (!token) return;
+
+    try {
+      const response = await axios.get(
+        `https://login.colegioae.edu.pe/admin/realms/${process.env.REALM_KEYCLOAK}/clients/f3f8f4cc-dc10-4483-87e2-9012ef85ef2d/roles/${roleName}/users`,
+
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      return response.data; // Lista de usuarios asociados al rol
+    } catch (error) {
+      console.error('Error obteniendo usuarios por rol:', error);
+    }
+  }
 }
