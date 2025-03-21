@@ -75,137 +75,158 @@ export class EmailsService {
     let gradeName = '';
     let section = '';
     let receivers = '';
-    const dataActivityClassroom = await this.activityClassroomRepository.find({
-      where: [
-        {
-          phase: { id: findActivity.phaseId },
-          classroom: {
-            campusDetail: {
-              id: !isNaN(findActivity.campusId)
-                ? findActivity.campusId
-                : undefined,
-            },
-          },
-          grade: {
-            id: !isNaN(findActivity.gradeId) ? findActivity.gradeId : undefined,
-            level: {
-              id: !isNaN(findActivity.levelId)
-                ? findActivity.levelId
-                : undefined,
-            },
-          },
-          section: findActivity.section ? findActivity.section : undefined,
-        },
-      ],
-    });
-    if (dataActivityClassroom.length > 0) {
-      const firstActivityClassroom = dataActivityClassroom[0];
-      phaseName =
-        `${firstActivityClassroom.phase.type} ${firstActivityClassroom.phase.year.name}` ||
-        '';
-      if (!isNaN(findActivity.campusId)) {
-        campusName =
-          `, Sede: ${firstActivityClassroom.classroom.campusDetail.name}` || '';
+    if (isNaN(findActivity.phaseId)) {
+      if (createEmailDto.studentIds === undefined) {
+        throw new BadRequestException(`No hay emails para ser enviados`);
       }
-      if (!isNaN(findActivity.levelId)) {
-        levelName = `, ${firstActivityClassroom.grade.level.name}` || '';
-      }
-      if (!isNaN(findActivity.gradeId)) {
-        gradeName = `, ${firstActivityClassroom.grade.name}` || '';
-      }
-      if (findActivity.section) {
-        section = `, ${firstActivityClassroom.section}` || '';
-      }
-    }
-    receivers = `Fase: ${phaseName} ${campusName} ${levelName} ${gradeName} ${section}`;
-    const activityClassroomIds = dataActivityClassroom.map(
-      (activityClassroom) => activityClassroom.id,
-    );
-    const dataEnrollment = await this.enrollmentRepository.find({
-      where: {
-        activityClassroom: { id: In(activityClassroomIds) },
-        student: {
-          family: Not(IsNull()),
-        },
-      },
-      relations: {
-        activityClassroom: false,
-        student: {
-          family: { parentOneId: { user: true }, parentTwoId: { user: true } },
-        },
-      },
-    });
-    const filteredEnrollment = dataEnrollment.filter((enrollment) => {
-      const family = enrollment.student.family;
-      return family.parentOneId.user !== null;
-    });
-    if (filteredEnrollment.length < 1) {
-      throw new BadRequestException(`No hay emails para ser enviados`);
-    }
-    try {
-      let contEmail = 0;
-      const dataEmail = this.emailRepository.create({
-        receivers,
+
+      const createEmailByStudentDto: CreateEmailByStudentDto = {
+        studentIds: createEmailDto.studentIds,
         subject: createEmailDto.subject,
         body: createEmailDto.body,
-        type: createEmailDto.type,
-      });
-
-      const createdEmail = await this.emailRepository.save(dataEmail);
-
-      await Promise.all(
-        filteredEnrollment.map(async (enrollment) => {
-          const family = enrollment.student.family;
-
-          const sendAndSaveEmail = async (
-            parentId: number,
-            parentName: string,
-            parentEmail: string,
-            studentName: string,
-          ) => {
-            await this.sendEmailAmazon(
-              parentEmail,
-              createEmailDto.subject,
-              createEmailDto.body,
-              studentName,
-              parentName,
-            );
-
-            const data = this.emailDetailRepository.create({
-              student: { id: enrollment.student.id },
-              parent: { id: parentId },
-              email: { id: createdEmail.id },
-              status: true,
-            });
-
-            await this.emailDetailRepository.save(data);
-            contEmail = contEmail + 1;
-          };
-
-          if (family.parentOneId?.user) {
-            await sendAndSaveEmail(
-              family.parentOneId.id,
-              family.parentOneId.name,
-              family.parentOneId.user.email,
-              enrollment.student.person.name,
-            );
-          }
-
-          if (family.parentTwoId?.user) {
-            await sendAndSaveEmail(
-              family.parentTwoId.id,
-              family.parentTwoId.name,
-              family.parentTwoId.user.email,
-              enrollment.student.person.name,
-            );
-          }
-        }),
-      );
-      return {
-        message: `Se enviaron ${contEmail} emails exitosamente.`,
       };
-    } catch (error) {
-      handleDBExceptions(error, this.logger);
+      return await this.createByStudent(createEmailByStudentDto);
+    } else {
+      const dataActivityClassroom = await this.activityClassroomRepository.find(
+        {
+          where: [
+            {
+              phase: { id: findActivity.phaseId },
+              classroom: {
+                campusDetail: {
+                  id: !isNaN(findActivity.campusId)
+                    ? findActivity.campusId
+                    : undefined,
+                },
+              },
+              grade: {
+                id: !isNaN(findActivity.gradeId)
+                  ? findActivity.gradeId
+                  : undefined,
+                level: {
+                  id: !isNaN(findActivity.levelId)
+                    ? findActivity.levelId
+                    : undefined,
+                },
+              },
+              section: findActivity.section ? findActivity.section : undefined,
+            },
+          ],
+        },
+      );
+      if (dataActivityClassroom.length > 0) {
+        const firstActivityClassroom = dataActivityClassroom[0];
+        phaseName =
+          `${firstActivityClassroom.phase.type} ${firstActivityClassroom.phase.year.name}` ||
+          '';
+        if (!isNaN(findActivity.campusId)) {
+          campusName =
+            `, Sede: ${firstActivityClassroom.classroom.campusDetail.name}` ||
+            '';
+        }
+        if (!isNaN(findActivity.levelId)) {
+          levelName = `, ${firstActivityClassroom.grade.level.name}` || '';
+        }
+        if (!isNaN(findActivity.gradeId)) {
+          gradeName = `, ${firstActivityClassroom.grade.name}` || '';
+        }
+        if (findActivity.section) {
+          section = `, ${firstActivityClassroom.section}` || '';
+        }
+      }
+      receivers = `Fase: ${phaseName} ${campusName} ${levelName} ${gradeName} ${section}`;
+      const activityClassroomIds = dataActivityClassroom.map(
+        (activityClassroom) => activityClassroom.id,
+      );
+      const dataEnrollment = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: { id: In(activityClassroomIds) },
+          student: {
+            family: Not(IsNull()),
+          },
+        },
+        relations: {
+          activityClassroom: false,
+          student: {
+            family: {
+              parentOneId: { user: true },
+              parentTwoId: { user: true },
+            },
+          },
+        },
+      });
+      const filteredEnrollment = dataEnrollment.filter((enrollment) => {
+        const family = enrollment.student.family;
+        return family.parentOneId.user !== null;
+      });
+      if (filteredEnrollment.length < 1) {
+        throw new BadRequestException(`No hay emails para ser enviados`);
+      }
+      try {
+        let contEmail = 0;
+        const dataEmail = this.emailRepository.create({
+          receivers,
+          subject: createEmailDto.subject,
+          body: createEmailDto.body,
+          type: createEmailDto.type,
+        });
+
+        const createdEmail = await this.emailRepository.save(dataEmail);
+
+        await Promise.all(
+          filteredEnrollment.map(async (enrollment) => {
+            const family = enrollment.student.family;
+
+            const sendAndSaveEmail = async (
+              parentId: number,
+              parentName: string,
+              parentEmail: string,
+              studentName: string,
+            ) => {
+              await this.sendEmailAmazon(
+                parentEmail,
+                createEmailDto.subject,
+                createEmailDto.body,
+                studentName,
+                parentName,
+              );
+
+              const data = this.emailDetailRepository.create({
+                student: { id: enrollment.student.id },
+                parent: { id: parentId },
+                email: { id: createdEmail.id },
+                status: true,
+              });
+
+              await this.emailDetailRepository.save(data);
+              contEmail = contEmail + 1;
+            };
+
+            if (family.parentOneId?.user) {
+              await sendAndSaveEmail(
+                family.parentOneId.id,
+                family.parentOneId.name,
+                family.parentOneId.user.email,
+                enrollment.student.person.name,
+              );
+            }
+
+            if (family.parentTwoId?.user) {
+              await sendAndSaveEmail(
+                family.parentTwoId.id,
+                family.parentTwoId.name,
+                family.parentTwoId.user.email,
+                enrollment.student.person.name,
+              );
+            }
+          }),
+        );
+        return {
+          message: `Se enviaron ${contEmail} emails exitosamente.`,
+        };
+      } catch (error) {
+        handleDBExceptions(error, this.logger);
+      }
     }
   }
 
@@ -240,43 +261,6 @@ export class EmailsService {
     }
   }
   async createByStudent(createEmail: CreateEmailByStudentDto) {
-    //#region anterior
-    // const stundent = await this.studentRepository.findOne({
-    //   where: {
-    //     person: { docNumber: createEmail.docNumber },
-    //   },
-    //   relations: {
-    //     family: { parentOneId: true, parentTwoId: true },
-    //   },
-    // });
-    // if (!stundent) {
-    //   throw new BadRequestException(`No existe el estudiante`);
-    // }
-    // if (!stundent.family) {
-    //   throw new BadRequestException(`El estudiante no tiene familia`);
-    // }
-    // const parentOne = await this.personRepository.findOne({
-    //   where: {
-    //     id: stundent.family.parentOneId.id,
-    //   },
-    //   relations: {
-    //     user: true,
-    //   },
-    // });
-    // const parentTwo = await this.personRepository.findOne({
-    //   where: {
-    //     id: stundent.family.parentTwoId.id,
-    //   },
-    //   relations: {
-    //     user: true,
-    //   },
-    // });
-    // if (!parentOne.user) {
-    //   throw new BadRequestException(
-    //     `El pariente con documento: ${parentOne.docNumber} no cuenta con usuario`,
-    //   );
-    // }
-    //#endregion
     const students = await this.studentRepository.find({
       where: { id: In(createEmail.studentIds) },
       relations: {

@@ -18,6 +18,8 @@ import { Behavior } from 'src/enrollment/enum/behavior.enum';
 import { UpdateAllowNextRegistrationDto } from 'src/enrollment/dto/update-allowNextRegistration.dto';
 import { SearchEstudiantesDto } from './dto/search-student.dto';
 import { ActivityClassroomService } from 'src/activity_classroom/activity_classroom.service';
+import { StudentHistory } from './entities/student_history';
+import { ActionType } from './enum/actionType.enum';
 
 @Injectable()
 export class StudentService {
@@ -31,6 +33,9 @@ export class StudentService {
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
+
+    @InjectRepository(StudentHistory)
+    private readonly studentHistoryRepository: Repository<StudentHistory>,
 
     private activityClassroomService: ActivityClassroomService,
   ) {}
@@ -606,5 +611,16 @@ export class StudentService {
       console.error(error);
       throw new NotFoundException(error.message);
     }
+  }
+
+  /**history */
+  async createHistory(acType: ActionType, obs: string, userId: number) {
+    const created = this.studentHistoryRepository.create({
+      user: { id: userId },
+      actionType: acType,
+      obs: obs,
+    });
+
+    return await this.studentHistoryRepository.save(created);
   }
 }

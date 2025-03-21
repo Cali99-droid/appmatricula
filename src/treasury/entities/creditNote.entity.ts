@@ -5,14 +5,17 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Payment } from './payment.entity';
-import { TypeOfVoucher } from '../enum/TypeOfVoucher.enum';
+import { CreditNoteType } from '../enum/CreditNoteType.enum';
+import { Bill } from './bill.entity';
+import { User } from 'src/user/entities/user.entity';
 
 @Entity()
-export class Bill {
+export class CreditNote {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
@@ -46,10 +49,9 @@ export class Bill {
 
   @Column({
     type: 'enum',
-    enum: TypeOfVoucher,
-    default: TypeOfVoucher.BOLETA,
+    enum: CreditNoteType,
   })
-  typeOfVoucher: TypeOfVoucher;
+  creditNoteType: CreditNoteType;
 
   /**TIMESTAMPS */
   @CreateDateColumn({
@@ -69,9 +71,16 @@ export class Bill {
 
   /**Relaciones */
   @ApiProperty({
-    description: 'Id of Student',
+    description: 'voucher id',
   })
-  @ManyToOne(() => Payment, { nullable: true })
-  @JoinColumn({ name: 'paymentId' })
-  payment?: Payment;
+  @OneToOne(() => Bill, { nullable: true })
+  @JoinColumn({ name: 'billId' })
+  bill: Bill;
+
+  @ApiProperty({
+    description: 'voucher id',
+  })
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'userId' })
+  user: User;
 }

@@ -43,6 +43,8 @@ import { SlackService } from './slack.service';
 import { UpdateManyEnrollmentDto } from './dto/update-many-enrollment.dto';
 import { TreasuryService } from 'src/treasury/treasury.service';
 import { SectionHistory } from './entities/section-history';
+import { ActionType } from 'src/student/enum/actionType.enum';
+import { User } from 'src/user/entities/user.entity';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -64,6 +66,8 @@ export class EnrollmentService {
     private readonly ratesRepository: Repository<Rates>,
     @InjectRepository(Debt)
     private readonly debtRepository: Repository<Debt>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
 
     /**servicios */
     private readonly studentService: StudentService,
@@ -1550,7 +1554,8 @@ export class EnrollmentService {
         );
       }
       /**CREAR LA DATA */
-      await this.familyService.createFamilyFromAdmision(
+
+      const created = await this.familyService.createFamilyFromAdmision(
         data,
         availableClassrooms[0],
       );
@@ -1721,7 +1726,11 @@ export class EnrollmentService {
         },
       },
     });
-
+    /**data img */
+    const urlS3 = this.configService.getOrThrow('AWS_URL_BUCKET');
+    const folderName = this.configService.getOrThrow('FOLDER_IMG_NAME');
+    const defaultAvatar = this.configService.getOrThrow('AVATAR_NAME_DEFAULT');
+    const urlPhoto = `${urlS3}${folderName}`;
     // Transformamos los datos de matrícula
     const reportData = enrollments.map(
       ({
@@ -1753,6 +1762,9 @@ export class EnrollmentService {
           schoolName: student.school,
           activityClassroomId: activityClassroom.id,
           studentId: student.id,
+          photo: student.photo
+            ? `${urlPhoto}/${student.photo}`
+            : `${urlPhoto}/${defaultAvatar}`,
         };
       },
     );
@@ -1851,6 +1863,61 @@ export class EnrollmentService {
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
+  }
+  /**CHANGE CAMPUS */
+  async transferStudent(
+    studentId: number,
+    destinationSchool: string,
+    user: any,
+  ) {
+    /**Validar deudas */
+    const data = await this.treasuryService.searchDebtsByDate(studentId);
+    if (data.length > 0) {
+      throw new BadRequestException('The student has overdue debts');
+    }
+
+    /**verificar nota credito */
+
+    const bill = await this.treasuryService.getBill(studentId, 4);
+    if (!bill) {
+      throw new BadRequestException(
+        'the student has no payments - cuota de matricula',
+      );
+    }
+
+    const creditNote = await this.treasuryService.getCreditNoteByBill(bill.id);
+
+    if (!creditNote) {
+      throw new BadRequestException('The credit note has not been issued');
+    }
+
+    const enroll = await this.enrollmentRepository.findOne({
+      where: {
+        student: { id: studentId },
+        isActive: true,
+      },
+    });
+
+    if (!enroll) {
+      throw new BadRequestException(
+        'The student does not have active enrollment',
+      );
+    }
+
+    enroll.status = Status.TRASLADADO;
+    await this.enrollmentRepository.save(enroll);
+    const us = await this.userRepository.findOne({
+      where: {
+        email: user.email,
+      },
+    });
+    const hs = await this.studentService.createHistory(
+      ActionType.TRASLADADO,
+      destinationSchool,
+      us.id,
+    );
+
+    return hs;
   }
   /**CRON JOBS RESERVARDOS */
   async updateReservedScript() {
