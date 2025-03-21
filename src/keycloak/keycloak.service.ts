@@ -118,7 +118,7 @@ export class KeycloakService {
 
     try {
       const response = await axios.get(
-        `https://login.colegioae.edu.pe/admin/realms/${process.env.REALM_KEYCLOAK}/clients/f3f8f4cc-dc10-4483-87e2-9012ef85ef2d/roles/${roleName}/users`,
+        `https://login.colegioae.edu.pe/admin/realms/${process.env.REALM_KEYCLOAK}/clients/36bee95c-f2a6-4d8b-9137-b56ab46545b4/roles/${roleName}/users`,
 
         {
           headers: {
