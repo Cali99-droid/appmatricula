@@ -26,6 +26,7 @@ import { Person } from 'src/person/entities/person.entity';
 import { ConfigService } from '@nestjs/config';
 import { CreateCreditNoteDto } from './dto/create-credit-note.dto';
 import { CreditNote } from './entities/creditNote.entity';
+import { PaymentPref } from 'src/family/enum/payment-pref.enum';
 
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
@@ -1116,6 +1117,96 @@ export class TreasuryService {
     console.log('migrate succesfully');
   }
 
+  async generateTxt(bank: PaymentPref) {
+    const debts = await this.debtRepository.find({
+      where: {
+        concept: {
+          id: 2,
+        },
+        status: false,
+        student: {
+          family: {
+            paymentPref: bank,
+          },
+        },
+      },
+      relations: {
+        student: {
+          person: true,
+          family: {
+            respEconomic: true,
+          },
+        },
+      },
+      order: {
+        student: {
+          id: 'DESC',
+        },
+      },
+    });
+    if (debts.length === 0) {
+      throw new BadRequestException('Not data');
+    }
+
+    const header =
+      'CC37508739262CASOCIACION EDUCATIVA LUZ Y CIENCIA      20250324000000057000000002022500R';
+
+    // console.log(this.formatDate(debts[0].createdAt.toString()));
+    const details = debts.map((d) => {
+      return {
+        type: 'DD',
+        id: d.student.family.respEconomic.docNumber,
+        studentId: '00000' + d.student.person.docNumber,
+        name:
+          d.student.person.lastname +
+          ' ' +
+          d.student.person.mLastname +
+          ' ' +
+          d.student.person.name,
+        code: d.description,
+        date: this.formatDate(d.dateEnd.toString()),
+        dueDate: this.formatDate(d.createdAt.toISOString()),
+        amount: d.total + '00',
+        concept: d.code,
+      };
+    });
+    // const format = [
+    //   {
+    //     type: 'DD',
+    //     id: '37508739262',
+    //     studentId: '0000061191529',
+    //     name: 'ABARCA ESPINOZA ZAIR HERNAN',
+    //     code: '151524',
+    //     date: '20250324',
+    //     dueDate: '20240930',
+    //     amount: '000000000036500',
+    //     concept: 'PENSIONSETIEMBRE',
+    //   },
+    //   {
+    //     type: 'DD',
+    //     id: '37508739262',
+    //     studentId: '0000061191529',
+    //     name: 'ABARCA ESPINOZA ZAIR HERNAN',
+    //     code: '151525',
+    //     date: '20250324',
+    //     dueDate: '20241031',
+    //     amount: '000000000036500',
+    //     concept: 'PENSIONOCTUBRE',
+    //   },
+    //   // Agrega más registros dinámicamente
+    // ];
+
+    let content = header + '\n';
+
+    details.forEach((detail) => {
+      content += `${detail.type}${detail.id}${detail.studentId}${detail.name.padEnd(40)}${detail.code.padEnd(30)}${detail.date}${detail.dueDate}${detail.amount}${'0'.repeat(40)}${detail.amount}${detail.concept.padEnd(30)}${detail.studentId}\n`;
+    });
+
+    return content;
+
+    // return debts;
+  }
+
   async updateDebtCuota() {
     // Obtener los IDs de los estudiantes
     const studentIds = await this.paymentRepository
@@ -1164,4 +1255,10 @@ export class TreasuryService {
       message: 'Generate successfully',
     };
   }
+
+  formatDate = (dateString?: string): string => {
+    if (!dateString) return ''; // Evita errores
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0].replace(/-/g, '');
+  };
 }

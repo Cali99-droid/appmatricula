@@ -1,13 +1,19 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Res } from '@nestjs/common';
 import { TreasuryService } from './treasury.service';
 
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
+import {
+  AuthenticatedUser,
+  Public,
+  Resource,
+  Roles,
+} from 'nest-keycloak-connect';
 import { CreatePaidDto } from './dto/create-paid.dto';
 import { FindPaidDto } from './dto/find-paid.dto';
 import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
 import { CreateCreditNoteDto } from './dto/create-credit-note.dto';
-// import { Response } from 'express';
+import { Response } from 'express';
+import { PaymentPref } from 'src/family/enum/payment-pref.enum';
 
 @ApiTags('Treasury')
 @Resource('appcolegioae')
@@ -61,6 +67,17 @@ export class TreasuryController {
     @AuthenticatedUser() user: any,
   ) {
     return this.treasuryService.createCreditNote(createCreditNoteDto, user);
+  }
+
+  @Get('generate-txt/:bank')
+  @ApiResponse({ status: 201, description: 'Arch txt' })
+  @Public()
+  async downloadTxt(@Res() res: Response, @Param('bank') bank: PaymentPref) {
+    const content = await this.treasuryService.generateTxt(bank);
+
+    res.setHeader('Content-Disposition', 'attachment; filename=data.txt');
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(content);
   }
 
   // @Get('migrate')

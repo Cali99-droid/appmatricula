@@ -73,7 +73,7 @@ export class Debt {
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',
-    select: false,
+    select: true,
   })
   createdAt: Date;
 
