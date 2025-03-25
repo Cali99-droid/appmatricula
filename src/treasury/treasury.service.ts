@@ -1157,58 +1157,38 @@ export class TreasuryService {
       throw new BadRequestException('Not data');
     }
 
-    const header = this.sanitizeText(
-      'CC37508739262CASOCIACION EDUCATIVA LUZ Y CIENCIA      20250324000000057000000002022500R',
-    );
+    let total = 0;
     // console.log(this.formatDate(debts[0].createdAt.toString()));
     const details = debts.map((d) => {
+      total += d.total;
       return {
         type: 'DD',
-        id: d.student.family.respEconomic.docNumber,
-        studentId: '00000' + d.student.person.docNumber,
+        account: '37508739262',
+        studentId: '0000000' + d.student.person.docNumber,
         name:
           this.sanitizeText(d.student.person.lastname) +
           ' ' +
           this.sanitizeText(d.student.person.mLastname) +
           ' ' +
           this.sanitizeText(d.student.person.name),
-        code: d.description,
-        date: this.formatDate(d.dateEnd.toString()),
-        dueDate: this.formatDate(d.createdAt.toISOString()),
+        code: d.code,
+        date: this.formatDate(d.createdAt.toISOString()),
+        dueDate: this.formatDate(d.dateEnd.toString()),
         amount: d.total + '00',
         concept: d.code,
       };
     });
-    // const format = [
-    //   {
-    //     type: 'DD',
-    //     id: '37508739262',
-    //     studentId: '0000061191529',
-    //     name: 'ABARCA ESPINOZA ZAIR HERNAN',
-    //     code: '151524',
-    //     date: '20250324',
-    //     dueDate: '20240930',
-    //     amount: '000000000036500',
-    //     concept: 'PENSIONSETIEMBRE',
-    //   },
-    //   {
-    //     type: 'DD',
-    //     id: '37508739262',
-    //     studentId: '0000061191529',
-    //     name: 'ABARCA ESPINOZA ZAIR HERNAN',
-    //     code: '151525',
-    //     date: '20250324',
-    //     dueDate: '20241031',
-    //     amount: '000000000036500',
-    //     concept: 'PENSIONOCTUBRE',
-    //   },
-    //   // Agrega más registros dinámicamente
-    // ];
+
+    const header = this.sanitizeText(
+      `CC37508739262CASOCIACION EDUCATIVA LUZ Y CIENCIA ${this.formatDate(new Date().toString())}0000${debts.length}000000${total}R`,
+    ).padEnd(250, ' ');
 
     let content = header + '\n';
 
     details.forEach((detail) => {
-      content += `${detail.type}${detail.id}${detail.studentId}${detail.name.padEnd(40)}${detail.code.padEnd(30)}${detail.date}${detail.dueDate}${detail.amount}${'0'.repeat(40)}${detail.amount}${detail.concept.padEnd(30)}${detail.studentId}\n`;
+      const line = `${detail.type}${detail.account}${detail.studentId}${detail.name.padEnd(40)}${detail.code.padEnd(30)}${detail.date}${detail.dueDate}${'0'.repeat(10)}${detail.amount}${'0'.repeat(2)}${'0'.repeat(15)}${'0'.repeat(7)}${detail.amount}${'0'.repeat(2)}${' '}${detail.concept.padEnd(30).padStart(20, ' ')}${detail.studentId}`;
+
+      content += line.padEnd(250, ' ') + '\n'; // Asegura que la línea tenga 250 caracteres
     });
 
     const year = new Date().getFullYear(); // Obtiene el año actual
