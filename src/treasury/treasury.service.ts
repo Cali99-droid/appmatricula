@@ -27,6 +27,8 @@ import { ConfigService } from '@nestjs/config';
 import { CreateCreditNoteDto } from './dto/create-credit-note.dto';
 import { CreditNote } from './entities/creditNote.entity';
 import { PaymentPref } from 'src/family/enum/payment-pref.enum';
+import { join } from 'path';
+import { writeFileSync } from 'fs';
 
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
@@ -650,7 +652,10 @@ export class TreasuryService {
 
     const family = await this.familyRepository.findOne({
       where: { student: { id: debt.student.id } },
-      relations: { respEconomic: true, respEnrollment: { user: true } },
+      relations: {
+        respEconomic: { user: true },
+        respEnrollment: { user: true },
+      },
     });
 
     if (!family?.respEnrollment) {
@@ -659,7 +664,11 @@ export class TreasuryService {
 
     const serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
 
-    return { debt, serie, family, client: family.respEnrollment, enrroll };
+    if (debt.concept.code === 'C002') {
+      return { debt, serie, family, client: family.respEconomic, enrroll };
+    } else {
+      return { debt, serie, family, client: family.respEnrollment, enrroll };
+    }
   }
   /**Generar Datos para Nubefact */
   private generateBoletaData(
@@ -1148,9 +1157,9 @@ export class TreasuryService {
       throw new BadRequestException('Not data');
     }
 
-    const header =
-      'CC37508739262CASOCIACION EDUCATIVA LUZ Y CIENCIA      20250324000000057000000002022500R';
-
+    const header = this.sanitizeText(
+      'CC37508739262CASOCIACION EDUCATIVA LUZ Y CIENCIA      20250324000000057000000002022500R',
+    );
     // console.log(this.formatDate(debts[0].createdAt.toString()));
     const details = debts.map((d) => {
       return {
@@ -1158,11 +1167,11 @@ export class TreasuryService {
         id: d.student.family.respEconomic.docNumber,
         studentId: '00000' + d.student.person.docNumber,
         name:
-          d.student.person.lastname +
+          this.sanitizeText(d.student.person.lastname) +
           ' ' +
-          d.student.person.mLastname +
+          this.sanitizeText(d.student.person.mLastname) +
           ' ' +
-          d.student.person.name,
+          this.sanitizeText(d.student.person.name),
         code: d.description,
         date: this.formatDate(d.dateEnd.toString()),
         dueDate: this.formatDate(d.createdAt.toISOString()),
@@ -1202,7 +1211,11 @@ export class TreasuryService {
       content += `${detail.type}${detail.id}${detail.studentId}${detail.name.padEnd(40)}${detail.code.padEnd(30)}${detail.date}${detail.dueDate}${detail.amount}${'0'.repeat(40)}${detail.amount}${detail.concept.padEnd(30)}${detail.studentId}\n`;
     });
 
-    return content;
+    const year = new Date().getFullYear(); // Obtiene el año actual
+    const fileName = `CREP${year}.txt`; // Genera el nombre del archivo dinámico
+    const filePath = join(__dirname, fileName); // Ruta del archivo
+    writeFileSync(filePath, content, { encoding: 'utf-8' });
+    return filePath;
 
     // return debts;
   }
@@ -1261,4 +1274,15 @@ export class TreasuryService {
     const date = new Date(dateString);
     return date.toISOString().split('T')[0].replace(/-/g, '');
   };
+
+  // Función para limpiar caracteres especiales
+  private sanitizeText(text: string): string {
+    return text
+      .normalize('NFD') // Descompone caracteres acentuados
+      .replace(/[\u0300-\u036f]/g, '') // Elimina los acentos
+      .replace(/[Ññ]/g, 'N') // Reemplaza la "Ñ"
+      .replace(/['"´`¨]/g, '') // Elimina apóstrofes, comillas y diéresis
+      .replace(/[^A-Z0-9 ]/g, '') // Solo permite letras, números y espacios
+      .toUpperCase(); // Convierte todo a mayúsculas
+  }
 }

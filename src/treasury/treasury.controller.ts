@@ -14,6 +14,7 @@ import { CreatePaidReserved } from './dto/create-paid-reserved.dto';
 import { CreateCreditNoteDto } from './dto/create-credit-note.dto';
 import { Response } from 'express';
 import { PaymentPref } from 'src/family/enum/payment-pref.enum';
+import { createReadStream } from 'fs';
 
 @ApiTags('Treasury')
 @Resource('appcolegioae')
@@ -73,11 +74,16 @@ export class TreasuryController {
   @ApiResponse({ status: 201, description: 'Arch txt' })
   @Public()
   async downloadTxt(@Res() res: Response, @Param('bank') bank: PaymentPref) {
-    const content = await this.treasuryService.generateTxt(bank);
+    const filePath = await this.treasuryService.generateTxt(bank);
 
-    res.setHeader('Content-Disposition', 'attachment; filename=data.txt');
-    res.setHeader('Content-Type', 'text/plain');
-    res.send(content);
+    const year = new Date().getFullYear();
+    const fileName = `CREP${year}.txt`;
+
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+    res.setHeader('Content-Type', 'text/plain; charset=UTF-8');
+
+    const fileStream = createReadStream(filePath);
+    fileStream.pipe(res);
   }
 
   // @Get('migrate')
