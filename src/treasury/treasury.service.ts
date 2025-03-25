@@ -1159,12 +1159,13 @@ export class TreasuryService {
 
     let total = 0;
     // console.log(this.formatDate(debts[0].createdAt.toString()));
+    //**diciembre cambiar a fin de fase regualr vencimiento deuda */
     const details = debts.map((d) => {
       total += d.total;
       return {
         type: 'DD',
         account: '37508739262',
-        studentId: '0000000' + d.student.person.docNumber,
+        studentId: '000000' + d.student.person.docNumber,
         name:
           this.sanitizeText(d.student.person.lastname) +
           ' ' +
@@ -1176,18 +1177,27 @@ export class TreasuryService {
         dueDate: this.formatDate(d.dateEnd.toString()),
         amount: d.total + '00',
         concept: d.code,
+        description: d.description,
       };
     });
-
+    /**agregar espacios en blanco nombre 54 */
+    /**antes de la RR agregar dos 0 */
+    const name = 'ASOCIACION EDUCATIVA LUZ Y CIENCIA';
+    const cantRegisters = debts.length;
     const header = this.sanitizeText(
-      `CC37508739262CASOCIACION EDUCATIVA LUZ Y CIENCIA ${this.formatDate(new Date().toString())}0000${debts.length}000000${total}R`,
+      `CC37508739262C${name.padEnd(40)}${this.formatDate(new Date().toString())}${cantRegisters.toString().padStart(9, '0')}${total.toString().padStart(13, '0')}00R`,
     ).padEnd(250, ' ');
 
     let content = header + '\n';
-
+    const description = 'PENSION';
+    /**dinamico nomtos */
     details.forEach((detail) => {
-      const line = `${detail.type}${detail.account}${detail.studentId}${detail.name.padEnd(40)}${detail.code.padEnd(30)}${detail.date}${detail.dueDate}${'0'.repeat(10)}${detail.amount}${'0'.repeat(2)}${'0'.repeat(15)}${'0'.repeat(7)}${detail.amount}${'0'.repeat(2)}${' '}${detail.concept.padEnd(30).padStart(20, ' ')}${detail.studentId}`;
+      const name =
+        detail.name.length > 40
+          ? detail.name.slice(0, 40)
+          : detail.name.padEnd(40, ' ');
 
+      const line = `${detail.type}${detail.account}${detail.studentId}${name}${detail.code.padEnd(30)}${detail.date}${detail.dueDate}${detail.amount.padStart(15, '0')}${'0'.repeat(15)}${detail.amount.padStart(9, '0')}${' '}${(description + detail.description).padStart(20, ' ')}00${detail.studentId}`;
       content += line.padEnd(250, ' ') + '\n'; // Asegura que la línea tenga 250 caracteres
     });
 
