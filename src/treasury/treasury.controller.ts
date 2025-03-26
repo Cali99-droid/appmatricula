@@ -77,7 +77,7 @@ export class TreasuryController {
     const filePath = await this.treasuryService.generateTxt(bank);
 
     const year = new Date().getFullYear();
-    const fileName = `CREP${year}.txt`;
+    const fileName = `CREP-${bank.toLocaleUpperCase()}${year}.txt`;
 
     res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     res.setHeader('Content-Type', 'text/plain; charset=UTF-8');

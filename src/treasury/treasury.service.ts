@@ -29,6 +29,7 @@ import { CreditNote } from './entities/creditNote.entity';
 import { PaymentPref } from 'src/family/enum/payment-pref.enum';
 import { join } from 'path';
 import { writeFileSync } from 'fs';
+import { repeat } from 'rxjs';
 
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
@@ -1153,8 +1154,13 @@ export class TreasuryService {
         },
       },
     });
+
     if (debts.length === 0) {
       throw new BadRequestException('Not data');
+    }
+
+    if (bank.toLocaleUpperCase() === PaymentPref.bbva) {
+      return this.generateTxtBBVA(debts);
     }
 
     let total = 0;
@@ -1208,6 +1214,75 @@ export class TreasuryService {
     return filePath;
 
     // return debts;
+  }
+
+  async generateTxtBBVA(debts: Debt[]) {
+    /**HEADER */
+    const type = '01';
+    const ruc = '20531084587';
+    const collection = '000';
+    const money = 'PEN';
+    const generateDate = this.formatDate(new Date().toString());
+    const version = '000';
+    const header = this.sanitizeText(
+      `${type}${ruc}${collection}${money}${generateDate}${version}`,
+    ).padEnd(360, ' ');
+
+    let content = header + '\n';
+
+    /**BODY */
+    let total = 0;
+    const details = debts.map((d) => {
+      total += d.total;
+      return {
+        type: '02',
+        name:
+          this.sanitizeText(d.student.person.lastname) +
+          ' ' +
+          this.sanitizeText(d.student.person.mLastname) +
+          ' ' +
+          this.sanitizeText(d.student.person.name),
+        studentId: d.student.person.docNumber,
+        description: d.description.slice(0, 3),
+        code: d.code,
+        period: new Date(d.dateEnd).getMonth() + 1,
+        dueDate: this.formatDate(d.dateEnd.toString()),
+        amount: d.total + '00',
+      };
+    });
+    const description = 'PENSION';
+    /**dinamico nomtos */
+    details.forEach((detail) => {
+      const name =
+        detail.name.length > 30
+          ? detail.name.slice(0, 30)
+          : detail.name.padEnd(30, ' ');
+
+      const period = detail.period <= 9 ? '0' + detail.period : detail.period;
+
+      const line = `${detail.type}${name}${((detail.studentId + description + detail.description).padEnd(19) + ' ' + detail.code).padEnd(48, ' ')}${detail.dueDate}${'20301231'}${period}${detail.amount.padStart(15, '0')}${detail.amount.padStart(15, '0')}`;
+      content += line.padEnd(160, '0') + '\n'; // Asegura que la línea tenga 250 caracteres
+    });
+
+    /**FOOTER */
+
+    const typeTotal = '03';
+    const cantRegisters = debts.length;
+    const sumTotal = total + '00';
+    const cero = '0';
+    // const generateDate = this.formatDate(new Date().toString());
+    // const version = '000';
+    const footer = this.sanitizeText(
+      `${typeTotal}${cantRegisters.toString().padStart(9, '0')}${sumTotal.padStart(18, '0')}${sumTotal.padStart(18, '0')}${cero.padEnd(18, '0')}`,
+    ).padEnd(360, ' ');
+
+    content += footer + '\n';
+
+    const year = new Date().getFullYear(); // Obtiene el año actual
+    const fileName = `CREP-BBVA${year}.txt`; // Genera el nombre del archivo dinámico
+    const filePath = join(__dirname, fileName); // Ruta del archivo
+    writeFileSync(filePath, content, { encoding: 'utf-8' });
+    return filePath;
   }
 
   async updateDebtCuota() {
