@@ -375,7 +375,7 @@ export class TreasuryService {
     });
     const data = {
       debts: debts,
-      resp: family.respEnrollment || 'No hay reponsable matrícula ',
+      resp: family.respEconomic || 'No hay reponsable matrícula ',
     };
     return data;
   }
@@ -699,6 +699,7 @@ export class TreasuryService {
       cliente_direccion: family.address,
       cliente_email: client.user?.email || '',
       fecha_de_emision: new Date(),
+      fecha_de_vencimiento: debt.dateEnd,
       moneda: 1,
       porcentaje_de_igv: 0,
       total_gravada: '',
