@@ -34,6 +34,7 @@ import { MailParams } from 'src/emails/interfaces/mail-params.interface';
 
 import { getBodyEmail, getText } from './helpers/bodyEmail';
 import { SlackService } from 'src/enrollment/slack.service';
+import { Status } from 'src/enrollment/enum/status.enum';
 // import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
@@ -742,6 +743,7 @@ export class AttendanceService {
       .where('activityClassroomId IN (:...idsActivityClassroomsShift)', {
         idsActivityClassroomsShift,
       })
+      .andWhere('enrroll.status = :status', { status: Status.MATRICULADO }) // Agregar condición de estado
       .getMany();
 
     // const shiftStudents = shiftEnrrollments.map((item) => item.student);
@@ -878,6 +880,7 @@ export class AttendanceService {
     const enrollsSchedule = await this.enrrollmentRepository.find({
       where: {
         activityClassroom: { id: In(classroomsIds) },
+        status: Status.MATRICULADO,
       },
       relations: {
         activityClassroom: true,
