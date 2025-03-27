@@ -1226,7 +1226,7 @@ export class TreasuryService {
     const generateDate = this.formatDate(new Date().toString());
     const version = '000';
     const header = this.sanitizeText(
-      `${type}${ruc}${collection}${money}${generateDate}${version}`,
+      `${type}${ruc}${collection}${money}${generateDate}${version}${' '.padEnd(7, ' ') + 'T'}`,
     ).padEnd(360, ' ');
 
     let content = header + '\n';
