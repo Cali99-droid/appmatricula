@@ -1230,7 +1230,7 @@ export class TreasuryService {
     ).padEnd(360, ' ');
 
     let content = header + '\n';
-
+    const cero = '0';
     /**BODY */
     let total = 0;
     const details = debts.map((d) => {
@@ -1243,7 +1243,7 @@ export class TreasuryService {
           this.sanitizeText(d.student.person.mLastname) +
           ' ' +
           this.sanitizeText(d.student.person.name),
-        studentId: d.student.person.docNumber,
+        studentId: '000' + d.student.person.docNumber,
         description: d.description.slice(0, 3),
         code: d.code,
         period: new Date(d.dateEnd).getMonth() + 1,
@@ -1261,8 +1261,8 @@ export class TreasuryService {
 
       const period = detail.period <= 9 ? '0' + detail.period : detail.period;
 
-      const line = `${detail.type}${name}${((detail.studentId + description + detail.description).padEnd(19) + ' ' + detail.code).padEnd(48, ' ')}${detail.dueDate}${'20301231'}${period}${detail.amount.padStart(15, '0')}${detail.amount.padStart(15, '0')}`;
-      content += line.padEnd(160, '0') + '\n'; // Asegura que la línea tenga 250 caracteres
+      const line = `${detail.type}${name}${(detail.studentId + (description + ' ' + detail.description).padEnd(11) + ' ' + detail.code).padEnd(48, ' ')}${detail.dueDate}${'20301231'}${period}${detail.amount.padStart(15, '0')}${detail.amount.padStart(15, '0')}${cero.padEnd(32, '0')}`;
+      content += line.padEnd(360, '') + '\n'; // Asegura que la línea tenga 250 caracteres
     });
 
     /**FOOTER */
@@ -1270,7 +1270,7 @@ export class TreasuryService {
     const typeTotal = '03';
     const cantRegisters = debts.length;
     const sumTotal = total + '00';
-    const cero = '0';
+
     // const generateDate = this.formatDate(new Date().toString());
     // const version = '000';
     const footer = this.sanitizeText(
