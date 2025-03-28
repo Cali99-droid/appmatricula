@@ -17,7 +17,7 @@ import { PaymentPref } from 'src/family/enum/payment-pref.enum';
 import { createReadStream } from 'fs';
 
 @ApiTags('Treasury')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
