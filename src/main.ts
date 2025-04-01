@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { useContainer } from 'class-validator';
+import * as multer from 'multer';
+import * as express from 'express';
 //testrt port solve space
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
@@ -19,12 +21,10 @@ async function bootstrap() {
       // },
     }),
   );
-  // app.enableCors({
-  //   origin: '*', // Cambia '*' por el dominio específico si es necesario
-  //   methods: ['GET', 'POST'],
-  //   allowedHeaders: ['Content-Type', 'Authorization'],
-  //   credentials: true,
-  // });
+
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const config = new DocumentBuilder()
     .setTitle('Matrículas RESTFul API')

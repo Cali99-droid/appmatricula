@@ -13,6 +13,7 @@ import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { User } from 'src/user/entities/user.entity';
 import { ConfigModule } from '@nestjs/config';
 import { CreditNote } from './entities/creditNote.entity';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   controllers: [TreasuryController],
@@ -32,6 +33,9 @@ import { CreditNote } from './entities/creditNote.entity';
       User,
     ]),
     ConfigModule,
+    MulterModule.register({
+      dest: './uploads', // Carpeta temporal donde se guardan los archivos
+    }),
   ],
   exports: [TreasuryService],
 })

@@ -8,7 +8,7 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
-import { Between, LessThan, Repository } from 'typeorm';
+import { Between, In, LessThan, Repository } from 'typeorm';
 import { Family } from 'src/family/entities/family.entity';
 import axios from 'axios';
 import { Payment } from './entities/payment.entity';
@@ -29,7 +29,10 @@ import { CreditNote } from './entities/creditNote.entity';
 import { PaymentPref } from 'src/family/enum/payment-pref.enum';
 import { join } from 'path';
 import { writeFileSync } from 'fs';
-import { repeat } from 'rxjs';
+import * as fs from 'fs';
+import * as readline from 'readline';
+import { PaymentMethod } from './enum/PaymentMethod.enum';
+import { RespProcess } from './interfaces/RespProcess.interface';
 
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
@@ -509,20 +512,21 @@ export class TreasuryService {
   }
 
   async getCorrelative(type: string, serie: string): Promise<number> {
-    // Inicia una transacción
     return await this.correlativeRepository.manager.transaction(
       async (manager) => {
-        // Busca el correlativo para el tipo de comprobante y serie
-        let correlative = await manager.findOne(Correlative, {
-          where: { type, serie },
-        });
+        // 🔒 Bloquear la fila mientras se obtiene y actualiza
+        let correlative = await manager
+          .createQueryBuilder(Correlative, 'c')
+          .setLock('pessimistic_write') // 🔒 Evita lecturas concurrentes
+          .where('c.type = :type AND c.serie = :serie', { type, serie })
+          .getOne();
 
         if (!correlative) {
-          // Si no existe, crea un nuevo registro con el número inicial
+          // Si no existe, crearlo con el número inicial
           correlative = manager.create(Correlative, { type, serie, numero: 1 });
           await manager.save(Correlative, correlative);
         } else {
-          // Incrementa el número correlativo existente
+          // Si ya existe, incrementar y guardar
           correlative.numero += 1;
           correlative.updatedAt = new Date();
           await manager.save(Correlative, correlative);
@@ -664,7 +668,7 @@ export class TreasuryService {
     }
 
     const serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
-
+    console.log(serie);
     if (debt.concept.code === 'C002') {
       return { debt, serie, family, client: family.respEconomic, enrroll };
     } else {
@@ -1284,6 +1288,122 @@ export class TreasuryService {
     const filePath = join(__dirname, fileName); // Ruta del archivo
     writeFileSync(filePath, content, { encoding: 'utf-8' });
     return filePath;
+  }
+
+  async processTxt(bank: PaymentPref, file: Express.Multer.File, user: any) {
+    let codes: string[] = [];
+    let paymentMethod: PaymentMethod;
+    if (!file) {
+      throw new BadRequestException('No se recibió ningún archivo');
+    }
+    if (bank.toLocaleUpperCase() === PaymentPref.bcp) {
+      codes = await this.processBCP(file);
+      paymentMethod = PaymentMethod.bcp;
+    } else {
+      codes = await this.processBBVA(file);
+      paymentMethod = PaymentMethod.bbva;
+    }
+
+    const debts = await this.debtRepository.find({
+      where: {
+        code: In(codes),
+      },
+    });
+
+    if (debts.length === 0) {
+      return {
+        status: false,
+        message: 'No se encontró información',
+        alreadyPaid: debts.map((d) => d.code),
+        numberOfRecords: debts.length,
+        failedPayments: [],
+        successfulPayments: [],
+      } as RespProcess;
+    }
+    const debtsPaid = debts.filter((d) => d.status === true);
+    if (debtsPaid.length > 0) {
+      return {
+        status: false,
+        message: 'Algunos pagos ya fueron registrados previamente.',
+        alreadyPaid: debtsPaid.map((d) => d.code),
+        numberOfRecords: debtsPaid.length,
+        failedPayments: [],
+        successfulPayments: [],
+      } as RespProcess;
+    }
+
+    /**Procesar boletas */
+    const debtIds = debts.map((d) => d.id);
+    const results = await Promise.allSettled(
+      debtIds.map(async (debtId) => {
+        return this.createPaid({ paymentMethod }, debtId, user);
+      }),
+    );
+
+    const successfulPayments = results
+      .filter((res) => res.status === 'fulfilled')
+      .map((res) => (res as PromiseFulfilledResult<any>).value);
+
+    const failedPayments = results
+      .filter((res) => res.status === 'rejected')
+      .map((res) => (res as PromiseRejectedResult).reason);
+
+    if (failedPayments.length > 0) {
+      return {
+        status: false,
+        message: 'Algunos pagos no pudieron procesarse.',
+        alreadyPaid: [],
+        numberOfRecords: failedPayments.length,
+        failedPayments,
+        successfulPayments,
+      } as RespProcess;
+    }
+
+    return {
+      status: true,
+      message: 'Todos los pagos fueron procesados correctamente.',
+      alreadyPaid: [],
+      numberOfRecords: successfulPayments.length,
+      failedPayments,
+      successfulPayments,
+    } as RespProcess;
+  }
+
+  private async processBCP(file: Express.Multer.File) {
+    const filePath = file.path; // Ruta temporal del archivo
+    const stream = fs.createReadStream(filePath);
+    const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+
+    const codigos: string[] = [];
+
+    for await (const linea of rl) {
+      if (linea.startsWith('DD')) {
+        // Asumiendo que las líneas relevantes empiezan con 'DD'
+        const codigo = linea.substring(27, 50).trim(); // Extraer el código
+        codigos.push(codigo);
+      }
+    }
+    fs.unlinkSync(filePath); // Elimina el archivo después de procesarlo
+
+    return codigos;
+  }
+  private async processBBVA(file: Express.Multer.File) {
+    const filePath = file.path; // Ruta temporal del archivo
+    const stream = fs.createReadStream(filePath);
+    const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+
+    const codigos: string[] = [];
+
+    for await (const linea of rl) {
+      if (linea.startsWith('02')) {
+        // Asumiendo que las líneas relevantes empiezan con 'DD'
+        const codigo = linea.substring(55, 80).trim(); // Extraer el código
+        codigos.push(codigo);
+      }
+    }
+    fs.unlinkSync(filePath); // Elimina el archivo después de procesarlo
+
+    return codigos;
   }
 
   async updateDebtCuota() {
