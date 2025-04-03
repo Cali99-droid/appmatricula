@@ -29,7 +29,7 @@ import { getBodyEmail, getText } from './helpers/bodyEmail';
 @Injectable()
 export class EmailsService {
   private readonly logger = new Logger('EmailsService');
-
+  private readonly env = this.configService.get('NODE_ENV');
   private ses: aws.SES;
   private transporter: nodemailer.Transporter;
   constructor(
@@ -355,7 +355,7 @@ export class EmailsService {
         from:
           '"Colegio Albert Einstein"' +
           this.configService.getOrThrow<string>('AWS_SES_FROM'),
-        to: email,
+        to: this.env === 'prod' ? email : 'adnesperillar@gmail.com',
         subject,
         body: getText(body, student, parent),
         html: getBodyEmail(body, student, parent),

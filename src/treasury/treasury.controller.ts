@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Param, Query, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  Res,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import { TreasuryService } from './treasury.service';
 
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -15,9 +25,13 @@ import { CreateCreditNoteDto } from './dto/create-credit-note.dto';
 import { Response } from 'express';
 import { PaymentPref } from 'src/family/enum/payment-pref.enum';
 import { createReadStream } from 'fs';
+import { FileInterceptor } from '@nestjs/platform-express';
 
+import { Express } from 'express';
+import { RespProcess } from './interfaces/RespProcess.interface';
+import { numberOfRecords } from './dto/resp-process.dto';
 @ApiTags('Treasury')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
@@ -84,6 +98,24 @@ export class TreasuryController {
 
     const fileStream = createReadStream(filePath);
     fileStream.pipe(res);
+  }
+  @Post('process-txt/:bank')
+  @ApiResponse({
+    status: 201,
+    description: 'information of operation',
+    type: numberOfRecords,
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async processTxt(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('bank') bank: PaymentPref,
+    @AuthenticatedUser() user: any,
+  ) {
+    return (await this.treasuryService.processTxt(
+      bank,
+      file,
+      user,
+    )) as RespProcess;
   }
 
   // @Get('migrate')
