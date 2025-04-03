@@ -31,7 +31,7 @@ import { Express } from 'express';
 import { RespProcess } from './interfaces/RespProcess.interface';
 import { numberOfRecords } from './dto/resp-process.dto';
 @ApiTags('Treasury')
-@Resource('client-test-appae')
+@Resource('appcolegioae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
