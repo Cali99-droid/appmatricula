@@ -10,6 +10,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Concept } from './concept.entity';
+import { PaymentMethod } from '../enum/PaymentMethod.enum';
 
 @Entity()
 export class Payment {
@@ -37,6 +38,13 @@ export class Payment {
   })
   @Column('boolean')
   status: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: PaymentMethod,
+    default: PaymentMethod.efectivo,
+  })
+  paymentMethod: PaymentMethod;
 
   @ApiProperty({
     example: 'dhsdfhsfdhw',
