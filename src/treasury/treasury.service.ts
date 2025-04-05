@@ -1510,10 +1510,14 @@ export class TreasuryService {
   }
 
   private formatDateRaw(yyyymmdd: string): string {
-    const year = yyyymmdd.substring(0, 4);
-    const month = yyyymmdd.substring(4, 6);
-    const day = yyyymmdd.substring(6, 8);
-    return `${year}-${month}-${day}`;
+    const year = parseInt(yyyymmdd.substring(0, 4), 10);
+    const month = parseInt(yyyymmdd.substring(4, 6), 10) - 1; // Mes en base 0
+    const day = parseInt(yyyymmdd.substring(6, 8), 10);
+
+    const date = new Date(year, month, day);
+    date.setDate(date.getDate() + 1); // Sumamos un día
+
+    return date.toISOString().split('T')[0]; // Retorna en formato YYYY-MM-DD
   }
 
   private formatDataBill(boletas: Bill[]) {
