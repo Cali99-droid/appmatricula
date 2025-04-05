@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { Concept } from './concept.entity';
 import { PaymentMethod } from '../enum/PaymentMethod.enum';
+import { Debt } from './debt.entity';
 
 @Entity()
 export class Payment {
@@ -38,6 +39,13 @@ export class Payment {
   })
   @Column('boolean')
   status: boolean;
+
+  @ApiProperty({
+    description: 'Id of concept',
+  })
+  @ManyToOne(() => Debt, { nullable: true })
+  @JoinColumn({ name: 'debtId' })
+  debt?: Debt;
 
   @Column({
     type: 'enum',

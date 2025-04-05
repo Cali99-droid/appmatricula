@@ -762,6 +762,9 @@ export class TreasuryService {
         concept: { id: debt.concept.id },
         student: { id: debt.student.id },
       },
+      relations: {
+        debt: true,
+      },
     });
 
     if (existingPayment && debt.concept.id !== 2) {
@@ -777,6 +780,10 @@ export class TreasuryService {
       return await this.paymentRepository.save(existingPayment);
     }
 
+    if (debt.concept.id === 2 && existingPayment.debt.id === debt.id) {
+      throw new BadRequestException('Pago ya registrado para esta deuda.');
+    }
+
     const pay = this.paymentRepository.create({
       concept: { id: debt.concept.id },
       date: datePay,
@@ -785,6 +792,7 @@ export class TreasuryService {
       student: { id: debt.student.id },
       user: user.sub,
       paymentMethod: createPaidDto.paymentMethod,
+      debt: { id: debt.id },
       receipt,
     });
     return await this.paymentRepository.save(pay);
@@ -1440,7 +1448,6 @@ export class TreasuryService {
       if (linea.startsWith('DD')) {
         // Asumiendo que las líneas relevantes empiezan con 'DD'
         const codigo = linea.substring(27, 57).trim(); // Extraer el código
-        console.log(codigo);
         const rawDate = linea.substring(57, 65); // Substring de la posición 58 a 66 (index 57 a 65)
         const formattedDate = this.formatDateRaw(rawDate);
         results.push({ code: codigo, date: formattedDate });
