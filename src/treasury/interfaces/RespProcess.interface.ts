@@ -6,4 +6,5 @@ export interface RespProcess {
   failedPayments: any[];
   successfulPayments: any[];
   total: number;
+  totalDebtPending: number;
 }

@@ -1313,7 +1313,7 @@ export class TreasuryService {
         code: In(results.map((res) => res.code)),
       },
     });
-
+    console.log(results.map((res) => res.code));
     if (debts.length === 0) {
       return {
         status: false,
@@ -1326,7 +1326,11 @@ export class TreasuryService {
     }
     const debtsPaid = debts.filter((d) => d.status === true);
     const debtsPending = debts.filter((d) => d.status === false);
-    const totalDebt = debts.reduce((sum, deb) => sum + deb.total, 0);
+    const totalDebt = debtsPaid.reduce((sum, deb) => sum + deb.total, 0);
+    const totalDebtPending = debtsPending.reduce(
+      (sum, deb) => sum + deb.total,
+      0,
+    );
     if (debtsPaid.length > 0) {
       return {
         status: false,
@@ -1337,6 +1341,7 @@ export class TreasuryService {
         failedPayments: [],
         successfulPayments: [],
         total: totalDebt,
+        totalDebtPending,
       } as RespProcess;
     }
 
@@ -1408,6 +1413,7 @@ export class TreasuryService {
         failedPayments,
         successfulPayments: result,
         total,
+        totalDebtPending,
       } as RespProcess;
     }
 
@@ -1420,6 +1426,7 @@ export class TreasuryService {
       debtsPending: debtsPending.map((d) => d.code),
       successfulPayments: result,
       total,
+      totalDebtPending,
     } as RespProcess;
   }
 
@@ -1432,8 +1439,8 @@ export class TreasuryService {
     for await (const linea of rl) {
       if (linea.startsWith('DD')) {
         // Asumiendo que las líneas relevantes empiezan con 'DD'
-        const codigo = linea.substring(27, 50).trim(); // Extraer el código
-
+        const codigo = linea.substring(27, 57).trim(); // Extraer el código
+        console.log(codigo);
         const rawDate = linea.substring(57, 65); // Substring de la posición 58 a 66 (index 57 a 65)
         const formattedDate = this.formatDateRaw(rawDate);
         results.push({ code: codigo, date: formattedDate });
