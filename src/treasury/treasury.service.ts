@@ -68,7 +68,12 @@ export class TreasuryService {
     private readonly creditNoteRepository: Repository<CreditNote>,
   ) {}
 
-  async createPaid(createPaidDto: CreatePaidDto, debtId: number, user: any) {
+  async createPaid(
+    createPaidDto: CreatePaidDto,
+    debtId: number,
+    user: any,
+    datePay = new Date(),
+  ) {
     // Validar deuda y obtener datos iniciales
     const { debt, serie, family, client, enrroll } = await this.validateDebt(
       createPaidDto,
@@ -107,7 +112,13 @@ export class TreasuryService {
 
     try {
       // Crear pago en la base de datos
-      const newPay = await this.savePayment(debt, user, `${serie}-${numero}`);
+      const newPay = await this.savePayment(
+        debt,
+        user,
+        `${serie}-${numero}`,
+        createPaidDto,
+        datePay,
+      );
 
       // Enviar datos a Nubefact
       const response = await this.sendToNubefact(boletaData);
@@ -465,40 +476,7 @@ export class TreasuryService {
     });
 
     // Formatear los datos para el frontend
-    const result = boletas.map((boleta) => {
-      // const enrroll = debt.student.enrollment[0];
-
-      const student = boleta.payment.student.person;
-      const level =
-        boleta.payment.student.enrollment[0].activityClassroom.grade.level;
-      const grade =
-        boleta.payment.student.enrollment[0].activityClassroom.grade;
-      const campus =
-        boleta.payment.student.enrollment[0].activityClassroom.classroom
-          .campusDetail;
-      return {
-        id: boleta.id,
-        date: boleta.date,
-        serie: boleta.serie,
-        numero: boleta.numero,
-        cod: `${boleta.serie}-${boleta.numero}`,
-        isAccepted: boleta.accepted,
-        url: boleta.url,
-        description: `${boleta.payment.concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
-        user: this.getUser(boleta.payment.user),
-        payment: {
-          id: boleta.payment.id,
-          date: boleta.payment.date,
-          total: boleta.payment.total,
-          status: boleta.payment.status,
-          concept: {
-            description: boleta.payment.concept.description,
-            code: boleta.payment.concept.code,
-          },
-        },
-      };
-    });
-
+    const result = this.formatDataBill(boletas);
     // Calcular el total de los pagos
     const total = boletas.reduce(
       (sum, boleta) => sum + boleta.payment.total,
@@ -691,6 +669,8 @@ export class TreasuryService {
     const campus =
       debt.student.enrollment[0].activityClassroom.classroom.campusDetail;
     const sendEmail = this.env === 'prod' ? !!client.user?.email : false;
+    const pen =
+      debt.concept.code === 'C002' ? debt.description.toUpperCase() : '';
     return {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2,
@@ -716,7 +696,7 @@ export class TreasuryService {
         {
           unidad_de_medida: 'NIU',
           codigo: debt.concept.code,
-          descripcion: `${debt.concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} ${section} - ${level.name} - ${campus.name}`,
+          descripcion: `${debt.concept.description.toUpperCase() + pen} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} ${section} - ${level.name} - ${campus.name}`,
           cantidad: 1,
           valor_unitario: debt.total,
           precio_unitario: debt.total,
@@ -753,7 +733,13 @@ export class TreasuryService {
     }
   }
   /** Crear Pago */
-  private async savePayment(debt: any, user: any, receipt: string) {
+  private async savePayment(
+    debt: any,
+    user: any,
+    receipt: string,
+    createPaidDto: CreatePaidDto,
+    datePay: Date,
+  ) {
     const existingPayment = await this.paymentRepository.findOne({
       where: {
         concept: { id: debt.concept.id },
@@ -776,11 +762,12 @@ export class TreasuryService {
 
     const pay = this.paymentRepository.create({
       concept: { id: debt.concept.id },
-      date: new Date(),
+      date: datePay,
       status: true,
       total: debt.total,
       student: { id: debt.student.id },
       user: user.sub,
+      paymentMethod: createPaidDto.paymentMethod,
       receipt,
     });
     return await this.paymentRepository.save(pay);
@@ -1291,22 +1278,22 @@ export class TreasuryService {
   }
 
   async processTxt(bank: PaymentPref, file: Express.Multer.File, user: any) {
-    let codes: string[] = [];
+    let results: { code: string; date: string }[] = [];
     let paymentMethod: PaymentMethod;
     if (!file) {
       throw new BadRequestException('No se recibió ningún archivo');
     }
     if (bank.toLocaleUpperCase() === PaymentPref.bcp) {
-      codes = await this.processBCP(file);
+      results = await this.processBCP(file);
       paymentMethod = PaymentMethod.bcp;
     } else {
-      codes = await this.processBBVA(file);
+      results = await this.processBBVA(file);
       paymentMethod = PaymentMethod.bbva;
     }
 
     const debts = await this.debtRepository.find({
       where: {
-        code: In(codes),
+        code: In(results.map((res) => res.code)),
       },
     });
 
@@ -1321,6 +1308,7 @@ export class TreasuryService {
       } as RespProcess;
     }
     const debtsPaid = debts.filter((d) => d.status === true);
+    const totalDebt = debts.reduce((sum, deb) => sum + deb.total, 0);
     if (debtsPaid.length > 0) {
       return {
         status: false,
@@ -1329,25 +1317,68 @@ export class TreasuryService {
         numberOfRecords: debtsPaid.length,
         failedPayments: [],
         successfulPayments: [],
+        total: totalDebt,
       } as RespProcess;
     }
 
-    /**Procesar boletas */
-    const debtIds = debts.map((d) => d.id);
-    const results = await Promise.allSettled(
-      debtIds.map(async (debtId) => {
-        return this.createPaid({ paymentMethod }, debtId, user);
+    // /**Procesar boletas */
+    let obDebts: { id: number; datePay: string }[] = [];
+    obDebts = debts.map((d) => {
+      const date = results.filter((res) => res.code === d.code);
+      return {
+        id: d.id,
+        datePay: date[0].date,
+      };
+    });
+
+    // const debtIds = debts.map((d) => d.id);
+    const resultsOfPay = await Promise.allSettled(
+      obDebts.map(async (oD) => {
+        return this.createPaid(
+          { paymentMethod },
+          oD.id,
+          user,
+          new Date(oD.datePay),
+        );
       }),
     );
 
-    const successfulPayments = results
+    const successfulPayments = resultsOfPay
       .filter((res) => res.status === 'fulfilled')
       .map((res) => (res as PromiseFulfilledResult<any>).value);
 
-    const failedPayments = results
+    const failedPayments = resultsOfPay
       .filter((res) => res.status === 'rejected')
       .map((res) => (res as PromiseRejectedResult).reason);
 
+    const boletas = await this.billRepository.find({
+      where: {
+        id: In(successfulPayments.map((s) => s.id)),
+      },
+      relations: {
+        payment: {
+          concept: true,
+          student: {
+            person: true,
+            enrollment: {
+              activityClassroom: {
+                grade: {
+                  level: true,
+                },
+                classroom: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    // Formatear los datos para el frontend
+    const result = this.formatDataBill(boletas);
+    // Calcular el total de los pagos
+    const total = boletas.reduce(
+      (sum, boleta) => sum + boleta.payment.total,
+      0,
+    );
     if (failedPayments.length > 0) {
       return {
         status: false,
@@ -1355,7 +1386,8 @@ export class TreasuryService {
         alreadyPaid: [],
         numberOfRecords: failedPayments.length,
         failedPayments,
-        successfulPayments,
+        successfulPayments: result,
+        total,
       } as RespProcess;
     }
 
@@ -1365,45 +1397,50 @@ export class TreasuryService {
       alreadyPaid: [],
       numberOfRecords: successfulPayments.length,
       failedPayments,
-      successfulPayments,
+      successfulPayments: result,
+      total,
     } as RespProcess;
   }
 
   private async processBCP(file: Express.Multer.File) {
+    const results: { code: string; date: string }[] = [];
     const filePath = file.path; // Ruta temporal del archivo
     const stream = fs.createReadStream(filePath);
     const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
-
-    const codigos: string[] = [];
 
     for await (const linea of rl) {
       if (linea.startsWith('DD')) {
         // Asumiendo que las líneas relevantes empiezan con 'DD'
         const codigo = linea.substring(27, 50).trim(); // Extraer el código
-        codigos.push(codigo);
+
+        const rawDate = linea.substring(57, 65); // Substring de la posición 58 a 66 (index 57 a 65)
+        const formattedDate = this.formatDateRaw(rawDate);
+        results.push({ code: codigo, date: formattedDate });
       }
     }
     fs.unlinkSync(filePath); // Elimina el archivo después de procesarlo
 
-    return codigos;
+    return results;
   }
   private async processBBVA(file: Express.Multer.File) {
+    const results: { code: string; date: string }[] = [];
     const filePath = file.path; // Ruta temporal del archivo
     const stream = fs.createReadStream(filePath);
     const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
-
-    const codigos: string[] = [];
 
     for await (const linea of rl) {
       if (linea.startsWith('02')) {
         // Asumiendo que las líneas relevantes empiezan con 'DD'
         const codigo = linea.substring(55, 80).trim(); // Extraer el código
-        codigos.push(codigo);
+        const rawDate = linea.substring(135, 143); // Substring de la posición 58 a 66 (index 57 a 65)
+
+        const formattedDate = this.formatDateRaw(rawDate);
+        results.push({ code: codigo, date: formattedDate });
       }
     }
     fs.unlinkSync(filePath); // Elimina el archivo después de procesarlo
 
-    return codigos;
+    return results;
   }
 
   async updateDebtCuota() {
@@ -1470,5 +1507,56 @@ export class TreasuryService {
       .replace(/['"´`¨]/g, '') // Elimina apóstrofes, comillas y diéresis
       .replace(/[^A-Z0-9 ]/g, '') // Solo permite letras, números y espacios
       .toUpperCase(); // Convierte todo a mayúsculas
+  }
+
+  private formatDateRaw(yyyymmdd: string): string {
+    const year = parseInt(yyyymmdd.substring(0, 4), 10);
+    const month = parseInt(yyyymmdd.substring(4, 6), 10) - 1; // Mes en base 0
+    const day = parseInt(yyyymmdd.substring(6, 8), 10);
+
+    const date = new Date(year, month, day);
+    date.setDate(date.getDate() + 1); // Sumamos un día
+
+    return date.toISOString().split('T')[0]; // Retorna en formato YYYY-MM-DD
+  }
+
+  private formatDataBill(boletas: Bill[]) {
+    const result = boletas.map((boleta) => {
+      // const enrroll = debt.student.enrollment[0];
+      const student = boleta.payment.student.person;
+      const level =
+        boleta.payment.student.enrollment[0].activityClassroom.grade.level;
+      const grade =
+        boleta.payment.student.enrollment[0].activityClassroom.grade;
+      const campus =
+        boleta.payment.student.enrollment[0].activityClassroom.classroom
+          .campusDetail;
+
+      return {
+        id: boleta.id,
+        date: boleta.date,
+        serie: boleta.serie,
+        numero: boleta.numero,
+        cod: `${boleta.serie}-${boleta.numero}`,
+        isAccepted: boleta.accepted,
+        url: boleta.url,
+        description: `${boleta.payment.concept.description.toUpperCase()} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
+        user: this.getUser(boleta.payment.user),
+        payment: {
+          id: boleta.payment.id,
+          date: boleta.payment.date,
+          total: boleta.payment.total,
+          status: boleta.payment.status,
+          concept: {
+            description: boleta.payment.concept.description,
+            code: boleta.payment.concept.code,
+          },
+          paymentMethod: boleta.payment.paymentMethod,
+          dateSendNubefact: boleta.payment.createdAt,
+        },
+      };
+    });
+
+    return result;
   }
 }

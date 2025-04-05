@@ -5,4 +5,5 @@ export interface RespProcess {
   numberOfRecords: number;
   failedPayments: any[];
   successfulPayments: any[];
+  total: number;
 }
