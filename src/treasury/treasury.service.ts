@@ -489,29 +489,46 @@ export class TreasuryService {
     };
   }
 
+  async withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
+    let lastError;
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await fn();
+      } catch (err) {
+        if (err?.code === 'ER_LOCK_DEADLOCK') {
+          lastError = err;
+          // Espera aleatoria para evitar colisiones
+          await new Promise((res) =>
+            setTimeout(res, 100 + Math.random() * 200),
+          );
+        } else {
+          throw err;
+        }
+      }
+    }
+    throw lastError;
+  }
+
   async getCorrelative(type: string, serie: string): Promise<number> {
-    return await this.correlativeRepository.manager.transaction(
-      async (manager) => {
-        // 🔒 Bloquear la fila mientras se obtiene y actualiza
+    return await this.withRetry(() =>
+      this.correlativeRepository.manager.transaction(async (manager) => {
         let correlative = await manager
           .createQueryBuilder(Correlative, 'c')
-          .setLock('pessimistic_write') // 🔒 Evita lecturas concurrentes
+          .setLock('pessimistic_write')
           .where('c.type = :type AND c.serie = :serie', { type, serie })
           .getOne();
 
         if (!correlative) {
-          // Si no existe, crearlo con el número inicial
           correlative = manager.create(Correlative, { type, serie, numero: 1 });
           await manager.save(Correlative, correlative);
         } else {
-          // Si ya existe, incrementar y guardar
           correlative.numero += 1;
           correlative.updatedAt = new Date();
           await manager.save(Correlative, correlative);
         }
 
         return correlative.numero;
-      },
+      }),
     );
   }
 
