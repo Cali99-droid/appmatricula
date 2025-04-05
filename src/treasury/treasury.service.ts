@@ -1325,12 +1325,14 @@ export class TreasuryService {
       } as RespProcess;
     }
     const debtsPaid = debts.filter((d) => d.status === true);
+    const debtsPending = debts.filter((d) => d.status === false);
     const totalDebt = debts.reduce((sum, deb) => sum + deb.total, 0);
     if (debtsPaid.length > 0) {
       return {
         status: false,
         message: 'Algunos pagos ya fueron registrados previamente.',
         alreadyPaid: debtsPaid.map((d) => d.code),
+        debtsPending: debtsPending.map((d) => d.code),
         numberOfRecords: debtsPaid.length,
         failedPayments: [],
         successfulPayments: [],
@@ -1401,6 +1403,7 @@ export class TreasuryService {
         status: false,
         message: 'Algunos pagos no pudieron procesarse.',
         alreadyPaid: [],
+        debtsPending: debtsPending.map((d) => d.code),
         numberOfRecords: failedPayments.length,
         failedPayments,
         successfulPayments: result,
@@ -1414,6 +1417,7 @@ export class TreasuryService {
       alreadyPaid: [],
       numberOfRecords: successfulPayments.length,
       failedPayments,
+      debtsPending: debtsPending.map((d) => d.code),
       successfulPayments: result,
       total,
     } as RespProcess;
