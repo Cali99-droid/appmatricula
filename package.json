@@ -52,6 +52,7 @@
     "nest-keycloak-connect": "^1.10.1",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.16",
+    "p-limit": "^6.2.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",

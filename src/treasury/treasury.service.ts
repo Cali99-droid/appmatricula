@@ -111,51 +111,55 @@ export class TreasuryService {
     }
 
     try {
-      // Crear pago en la base de datos
-      const newPay = await this.savePayment(
-        debt,
-        user,
-        `${serie}-${numero}`,
-        createPaidDto,
-        datePay,
-      );
-
       // Enviar datos a Nubefact
-      const response = await this.sendToNubefact(boletaData);
+      const bill = await this.validatePayment(debt, `${serie}-${numero}`);
+      if (bill === null) {
+        const response = await this.sendToNubefact(boletaData);
 
-      // Crear registro de boleta
-      const newBill = await this.saveBill(response, newPay.id, serie, numero);
+        // Crear pago en la base de datos
+        const newPay = await this.savePayment(
+          debt,
+          user,
+          `${serie}-${numero}`,
+          createPaidDto,
+          datePay,
+        );
 
-      // Generar nuevas deudas mensuales
-      if (debt.concept.code === 'C001') {
-        // Actualizar deuda y matrícula
-        await this.finalizeDebtAndEnrollment(debt, enrroll);
-        const rate = await this.ratesRepository.findOne({
-          where: {
-            level: { id: enrroll.activityClassroom.grade.level.id },
-            campusDetail: {
-              id: enrroll.activityClassroom.classroom.campusDetail.id,
+        // Crear registro de boleta
+        const newBill = await this.saveBill(response, newPay.id, serie, numero);
+
+        // Generar nuevas deudas mensuales
+        if (debt.concept.code === 'C001') {
+          // Actualizar deuda y matrícula
+          await this.finalizeDebtAndEnrollment(debt, enrroll);
+          const rate = await this.ratesRepository.findOne({
+            where: {
+              level: { id: enrroll.activityClassroom.grade.level.id },
+              campusDetail: {
+                id: enrroll.activityClassroom.classroom.campusDetail.id,
+              },
+              concept: { id: 2 }, // Concepto de mensualidades
             },
-            concept: { id: 2 }, // Concepto de mensualidades
-          },
-          relations: {
-            concept: true,
-          },
-        });
+            relations: {
+              concept: true,
+            },
+          });
 
-        if (!rate) {
-          throw new NotFoundException(
-            'No se encontró la tarifa para el nivel y sede',
-          );
+          if (!rate) {
+            throw new NotFoundException(
+              'No se encontró la tarifa para el nivel y sede',
+            );
+          }
+
+          await this.generateMonthlyDebts(debt.student.id, rate, enrroll.code);
         }
-
-        await this.generateMonthlyDebts(debt.student.id, rate, enrroll.code);
+        debt.status = true;
+        await this.debtRepository.save(debt);
+        return newBill;
+      } else {
+        return bill;
       }
-      debt.status = true;
-      await this.debtRepository.save(debt);
-      return newBill;
     } catch (error) {
-      // Revertir correlativo en caso de error
       await this.undoCorrelative(tipoComprobante, serie);
       this.logger.error(
         `[PAID] Error al emitir comprobante: ${error.message} ${serie} ${numero}`,
@@ -523,6 +527,8 @@ export class TreasuryService {
           await manager.save(Correlative, correlative);
         } else {
           correlative.numero += 1;
+          console.log('agregando el numero', correlative.numero);
+
           correlative.updatedAt = new Date();
           await manager.save(Correlative, correlative);
         }
@@ -536,8 +542,10 @@ export class TreasuryService {
     const correlative = await this.correlativeRepository.findOne({
       where: { type, serie },
     });
+
     if (correlative) {
       correlative.numero = correlative.numero - 1;
+      console.log('Descontando el numero', correlative.numero);
       await this.correlativeRepository.save(correlative);
     }
   }
@@ -663,7 +671,6 @@ export class TreasuryService {
     }
 
     const serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
-    console.log(serie);
     if (debt.concept.code === 'C002') {
       return { debt, serie, family, client: family.respEconomic, enrroll };
     } else {
@@ -691,7 +698,7 @@ export class TreasuryService {
     return {
       operacion: 'generar_comprobante',
       tipo_de_comprobante: 2,
-      serie: serie,
+      serie,
       numero,
       sunat_transaction: 1,
       cliente_tipo_de_documento: 1,
@@ -713,7 +720,7 @@ export class TreasuryService {
         {
           unidad_de_medida: 'NIU',
           codigo: debt.concept.code,
-          descripcion: `${debt.concept.description.toUpperCase() + pen} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} ${section} - ${level.name} - ${campus.name}`,
+          descripcion: `${debt.concept.description.toUpperCase() + ' ' + pen} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} ${section} - ${level.name} - ${campus.name}`,
           cantidad: 1,
           valor_unitario: debt.total,
           precio_unitario: debt.total,
@@ -741,22 +748,17 @@ export class TreasuryService {
       return response;
     } catch (error) {
       this.logger.error(
-        `[SEND] Error al emitir voucher. Serie: ${boletaData.serie}, Número: ${boletaData.numero}, Detalles: ${JSON.stringify(error.response?.data || error.message)}`,
+        `[Nubefact] Error al emitir voucher. Serie: ${boletaData.serie}, Número: ${boletaData.numero}, Detalles: ${JSON.stringify(error.response?.data || error.message)}`,
       );
       throw new HttpException(
-        `[SEND] Error al emitir  voucher: ${error.response?.data?.errors || error.message}`,
+        `[Nubefact] Error al emitir voucher. Serie: ${boletaData.serie}, Número: ${boletaData.numero}, Detalles: ${JSON.stringify(error.response?.data || error.message)}`,
         error.response?.status || 500,
       );
     }
   }
   /** Crear Pago */
-  private async savePayment(
-    debt: any,
-    user: any,
-    receipt: string,
-    createPaidDto: CreatePaidDto,
-    datePay: Date,
-  ) {
+
+  private async validatePayment(debt: any, receipt: string) {
     const existingPayment = await this.paymentRepository.findOne({
       where: {
         concept: { id: debt.concept.id },
@@ -767,22 +769,88 @@ export class TreasuryService {
       },
     });
 
-    if (existingPayment && debt.concept.id !== 2) {
-      const bill = await this.billRepository.findOne({
-        where: {
-          payment: { id: existingPayment.id },
-        },
-      });
-      if (bill) {
-        throw new BadRequestException('Pago ya registrado para esta deuda.');
+    if (existingPayment) {
+      if (debt.concept.id === 2 && existingPayment.debt?.id === debt.id) {
+        const bill = await this.billRepository.findOne({
+          where: {
+            payment: { id: existingPayment.id },
+          },
+        });
+        if (bill) {
+          console.log(
+            `Pago ya registrado para esta deuda PEN.${bill.serie} ${bill.numero}  ${debt.code}`,
+          );
+          existingPayment.receipt = receipt;
+          await this.paymentRepository.save(existingPayment);
+          return bill;
+        } else {
+          return null;
+        }
+      } else {
+        const bill = await this.billRepository.findOne({
+          where: {
+            payment: { id: existingPayment.id },
+          },
+        });
+        if (bill) {
+          console.log(
+            `Pago ya registrado para esta deuda.${bill.serie} ${bill.numero}  ${debt.code}`,
+          );
+        }
+        existingPayment.receipt = receipt;
+        await this.paymentRepository.save(existingPayment);
+        return bill;
       }
-      existingPayment.receipt = receipt;
-      return await this.paymentRepository.save(existingPayment);
+    } else {
+      return null;
     }
+  }
+  private async savePayment(
+    debt: any,
+    user: any,
+    receipt: string,
+    createPaidDto: CreatePaidDto,
+    datePay: Date,
+  ) {
+    // const existingPayment = await this.paymentRepository.findOne({
+    //   where: {
+    //     concept: { id: debt.concept.id },
+    //     student: { id: debt.student.id },
+    //   },
+    //   relations: {
+    //     debt: true,
+    //   },
+    // });
 
-    if (debt.concept.id === 2 && existingPayment.debt.id === debt.id) {
-      throw new BadRequestException('Pago ya registrado para esta deuda.');
-    }
+    // if (existingPayment) {
+    //   if (debt.concept.id === 2 && existingPayment.debt?.id === debt.id) {
+    //     const bill = await this.billRepository.findOne({
+    //       where: {
+    //         payment: { id: existingPayment.id },
+    //       },
+    //     });
+    //     if (bill) {
+    //       console.log(
+    //         `Pago ya registrado para esta deuda.${bill.serie} ${bill.numero}  ${debt.code}`,
+    //       );
+    //     }
+    //     existingPayment.receipt = receipt;
+    //     return await this.paymentRepository.save(existingPayment);
+    //   } else {
+    //     const bill = await this.billRepository.findOne({
+    //       where: {
+    //         payment: { id: existingPayment.id },
+    //       },
+    //     });
+    //     if (bill) {
+    //       throw new BadRequestException(
+    //         `Pago ya registrado para esta deuda. ${bill}`,
+    //       );
+    //     }
+    //     existingPayment.receipt = receipt;
+    //     return await this.paymentRepository.save(existingPayment);
+    //   }
+    // }
 
     const pay = this.paymentRepository.create({
       concept: { id: debt.concept.id },
@@ -1305,6 +1373,7 @@ export class TreasuryService {
   async processTxt(bank: PaymentPref, file: Express.Multer.File, user: any) {
     let results: { code: string; date: string }[] = [];
     let paymentMethod: PaymentMethod;
+    let debtsPending: Debt[] = [];
     if (!file) {
       throw new BadRequestException('No se recibió ningún archivo');
     }
@@ -1320,8 +1389,23 @@ export class TreasuryService {
       where: {
         code: In(results.map((res) => res.code)),
       },
+      relations: {
+        student: true,
+      },
     });
-    console.log(results.map((res) => res.code));
+
+    //**agrupar */
+    const groupedBySerie = debts.reduce(
+      (acc, debt) => {
+        const key = debt.student.id;
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(debt);
+        return acc;
+      },
+      {} as Record<string, typeof debts>,
+    );
     if (debts.length === 0) {
       return {
         status: false,
@@ -1333,7 +1417,7 @@ export class TreasuryService {
       } as RespProcess;
     }
     const debtsPaid = debts.filter((d) => d.status === true);
-    const debtsPending = debts.filter((d) => d.status === false);
+    debtsPending = debts.filter((d) => d.status === false);
     const totalDebt = debtsPaid.reduce((sum, deb) => sum + deb.total, 0);
     const totalDebtPending = debtsPending.reduce(
       (sum, deb) => sum + deb.total,
@@ -1345,8 +1429,9 @@ export class TreasuryService {
         message: 'Algunos pagos ya fueron registrados previamente.',
         alreadyPaid: debtsPaid.map((d) => d.code),
         debtsPending: debtsPending.map((d) => d.code),
-        numberOfRecords: debtsPaid.length,
+        numberOfRecords: debts.length,
         failedPayments: [],
+        failLength: 0,
         successfulPayments: [],
         total: totalDebt,
         totalDebtPending,
@@ -1354,26 +1439,38 @@ export class TreasuryService {
     }
 
     // /**Procesar boletas */
-    let obDebts: { id: number; datePay: string }[] = [];
-    obDebts = debts.map((d) => {
-      const date = results.filter((res) => res.code === d.code);
-      return {
-        id: d.id,
-        datePay: date[0].date,
-      };
-    });
+    const resultsOfPay: PromiseSettledResult<any>[] = [];
 
-    // const debtIds = debts.map((d) => d.id);
-    const resultsOfPay = await Promise.allSettled(
-      obDebts.map(async (oD) => {
-        return this.createPaid(
-          { paymentMethod },
-          oD.id,
-          user,
-          new Date(oD.datePay),
-        );
-      }),
-    );
+    for (const [studentId, studentDebts] of Object.entries(groupedBySerie)) {
+      // Obtener fechas para cada deuda de este estudiante
+      const obDebts = studentDebts.map((d) => {
+        const date = results.find((res) => res.code === d.code);
+        return {
+          id: d.id,
+          datePay: date?.date ?? new Date().toISOString(), // fallback por si no encuentra
+        };
+      });
+
+      const settledResults = await Promise.allSettled(
+        obDebts.map((oD) => {
+          return this.createPaid(
+            { paymentMethod },
+            oD.id,
+            user,
+            new Date(oD.datePay),
+          );
+        }),
+      );
+
+      resultsOfPay.push(...settledResults);
+    }
+
+    debtsPending = await this.debtRepository.find({
+      where: {
+        code: In(results.map((res) => res.code)),
+        status: false,
+      },
+    });
 
     const successfulPayments = resultsOfPay
       .filter((res) => res.status === 'fulfilled')
@@ -1419,9 +1516,13 @@ export class TreasuryService {
         debtsPending: debtsPending.map((d) => d.code),
         numberOfRecords: failedPayments.length,
         failedPayments,
+        failLength: failedPayments.length,
         successfulPayments: result,
         total,
-        totalDebtPending,
+        totalDebtPending: debtsPending.reduce(
+          (sum, boleta) => sum + boleta.total,
+          0,
+        ),
       } as RespProcess;
     }
 
@@ -1431,10 +1532,11 @@ export class TreasuryService {
       alreadyPaid: [],
       numberOfRecords: successfulPayments.length,
       failedPayments,
-      debtsPending: debtsPending.map((d) => d.code),
+      failLength: failedPayments.length,
+      debtsPending: [],
       successfulPayments: result,
       total,
-      totalDebtPending,
+      totalDebtPending: 0,
     } as RespProcess;
   }
 
