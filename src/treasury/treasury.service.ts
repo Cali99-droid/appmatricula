@@ -759,50 +759,60 @@ export class TreasuryService {
   /** Crear Pago */
 
   private async validatePayment(debt: any, receipt: string) {
-    const existingPayment = await this.paymentRepository.findOne({
-      where: {
-        concept: { id: debt.concept.id },
-        student: { id: debt.student.id },
-      },
-      relations: {
-        debt: true,
-      },
-    });
-
-    if (existingPayment) {
-      if (debt.concept.id === 2 && existingPayment.debt?.id === debt.id) {
+    if (debt.concept.id === 2) {
+      const existingPayment = await this.paymentRepository.findOne({
+        where: {
+          concept: { id: debt.concept.id },
+          student: { id: debt.student.id },
+          debt: { id: debt.id },
+        },
+        relations: {
+          debt: true,
+        },
+      });
+      if (existingPayment) {
         const bill = await this.billRepository.findOne({
           where: {
             payment: { id: existingPayment.id },
           },
         });
-        if (bill) {
-          console.log(
-            `Pago ya registrado para esta deuda PEN.${bill.serie} ${bill.numero}  ${debt.code}`,
-          );
-          existingPayment.receipt = receipt;
-          await this.paymentRepository.save(existingPayment);
-          return bill;
-        } else {
-          return null;
-        }
-      } else {
-        const bill = await this.billRepository.findOne({
-          where: {
-            payment: { id: existingPayment.id },
-          },
-        });
-        if (bill) {
-          console.log(
-            `Pago ya registrado para esta deuda.${bill.serie} ${bill.numero}  ${debt.code}`,
-          );
-        }
+        console.log(
+          `Pago ya registrado para esta deuda PENSION ${bill.serie} ${bill.numero}  ${debt.code}`,
+        );
         existingPayment.receipt = receipt;
         await this.paymentRepository.save(existingPayment);
         return bill;
+      } else {
+        console.log('crear nuevo');
+        return null;
       }
-    } else {
-      return null;
+    }
+    if (debt.concept.id != 2) {
+      const existingPayment = await this.paymentRepository.findOne({
+        where: {
+          concept: { id: debt.concept.id },
+          student: { id: debt.student.id },
+        },
+        relations: {
+          debt: true,
+        },
+      });
+
+      if (existingPayment) {
+        const bill = await this.billRepository.findOne({
+          where: {
+            payment: { id: existingPayment.id },
+          },
+        });
+        console.log(
+          `Pago ya registrado para esta deuda OTRO ${bill.serie} ${bill.numero}  ${debt.code}`,
+        );
+        existingPayment.receipt = receipt;
+        await this.paymentRepository.save(existingPayment);
+        return bill;
+      } else {
+        return null;
+      }
     }
   }
   private async savePayment(
