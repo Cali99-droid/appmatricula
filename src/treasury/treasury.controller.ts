@@ -32,7 +32,7 @@ import { RespProcess } from './interfaces/RespProcess.interface';
 import { numberOfRecords } from './dto/resp-process.dto';
 import { CreateDiscountDto } from './dto/create-discount.dto';
 @ApiTags('Treasury')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
