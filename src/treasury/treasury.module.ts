@@ -14,6 +14,7 @@ import { User } from 'src/user/entities/user.entity';
 import { ConfigModule } from '@nestjs/config';
 import { CreditNote } from './entities/creditNote.entity';
 import { MulterModule } from '@nestjs/platform-express';
+import { Discounts } from './entities/discounts.entity';
 
 @Module({
   controllers: [TreasuryController],
@@ -31,6 +32,7 @@ import { MulterModule } from '@nestjs/platform-express';
       Enrollment,
       Rates,
       User,
+      Discounts,
     ]),
     ConfigModule,
     MulterModule.register({

@@ -6,10 +6,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Concept } from './concept.entity';
+import { Discounts } from './discounts.entity';
 
 @Entity()
 export class Debt {
@@ -68,6 +71,12 @@ export class Debt {
   @ManyToOne(() => Concept, { nullable: true })
   @JoinColumn({ name: 'conceptId' })
   concept?: Concept;
+
+  @OneToOne(() => Discounts, (dis) => dis.debt, {
+    // cascade: true,
+    // eager: true,
+  })
+  discount?: Discounts;
 
   /**TIMESTAMPS */
   @CreateDateColumn({
