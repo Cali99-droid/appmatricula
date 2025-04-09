@@ -1757,6 +1757,25 @@ export class TreasuryService {
     return newDiscount;
   }
 
+  async updateDiscount(createDiscountDto: CreateDiscountDto, id: number) {
+    const discount = await this.discountsRepository.findOne({
+      where: { id: id },
+    });
+
+    if (!discount) {
+      throw new NotFoundException('No existe el descuento');
+    }
+
+    const { percentage, reason } = createDiscountDto;
+
+    discount.percentage = percentage;
+    discount.reason = reason;
+
+    const discountUpdated = await this.discountsRepository.save(discount);
+
+    return discountUpdated;
+  }
+
   async generatePdf() {
     const width = 7;
     const height = 25;

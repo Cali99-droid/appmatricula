@@ -8,6 +8,7 @@ import {
   Res,
   UseInterceptors,
   UploadedFile,
+  Put,
 } from '@nestjs/common';
 import { TreasuryService } from './treasury.service';
 
@@ -57,7 +58,7 @@ export class TreasuryController {
 
   /**DESCUENTOS */
   @Post('discount/:debtId')
-  @ApiResponse({ status: 201, description: 'pagado' })
+  @ApiResponse({ status: 201, description: 'descuento aplicado' })
   @Roles({
     roles: ['administrador-colegio', 'secretaria'],
   })
@@ -67,6 +68,19 @@ export class TreasuryController {
     // @AuthenticatedUser() user: any,
   ) {
     return this.treasuryService.createDiscount(createDiscountDto, debtId);
+  }
+
+  @Put('discount/:id')
+  @ApiResponse({ status: 201, description: 'descuento aplicado' })
+  @Roles({
+    roles: ['administrador-colegio', 'secretaria'],
+  })
+  updateDiscount(
+    @Body() createDiscountDto: CreateDiscountDto,
+    @Param('debtId') id: number,
+    // @AuthenticatedUser() user: any,
+  ) {
+    return this.treasuryService.updateDiscount(createDiscountDto, id);
   }
 
   @Get('debts/:studentId')
