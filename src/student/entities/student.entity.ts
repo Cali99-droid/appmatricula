@@ -14,8 +14,8 @@ import { Person } from '../../person/entities/person.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { Family } from 'src/family/entities/family.entity';
-import { Email } from 'src/emails/entities/email.entity';
 import { EmailDetail } from 'src/emails/entities/emailDetail.entity';
+import { Transfer } from 'src/transfer/entities/transfer.entity';
 @Entity()
 export class Student {
   @ApiProperty()
@@ -85,9 +85,12 @@ export class Student {
 
   @OneToMany(() => Attendance, (attendance) => attendance.student)
   attendance?: Attendance[];
-  
+
   @OneToMany(() => EmailDetail, (emailDetail) => emailDetail.student)
   emailsDetails?: EmailDetail[];
+
+  @OneToMany(() => Transfer, (transfers) => transfers.student)
+  transfers?: Transfer[];
   // @OneToMany(() => Email, (email) => email.student, {
   //   // eager: true,
   // })
