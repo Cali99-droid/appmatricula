@@ -1288,30 +1288,33 @@ export class TreasuryService {
     let total = 0;
     // console.log(this.formatDate(debts[0].createdAt.toString()));
     //**diciembre cambiar a fin de fase regualr vencimiento deuda */
-    const details = debts.map((d) => {
-      total += d.total;
-      let amount: number = d.total;
-      if (d.discount !== null) {
-        amount = d.total - (d.total * d.discount.percentage) / 100;
-      }
-      return {
-        type: 'DD',
-        account: '37508739262',
-        studentId: '000000' + d.student.person.docNumber,
-        name:
-          this.sanitizeText(d.student.person.lastname) +
-          ' ' +
-          this.sanitizeText(d.student.person.mLastname) +
-          ' ' +
-          this.sanitizeText(d.student.person.name),
-        code: d.code,
-        date: this.formatDate(d.createdAt.toISOString()),
-        dueDate: this.formatDate(d.dateEnd.toString()),
-        amount: amount + '00',
-        concept: d.code,
-        description: d.description,
-      };
-    });
+    const details = debts
+      .map((d) => {
+        total += d.total;
+        let amount: number = d.total;
+        if (d.discount !== null) {
+          amount = d.total - (d.total * d.discount.percentage) / 100;
+        }
+        if (amount === 0) return null;
+        return {
+          type: 'DD',
+          account: '37508739262',
+          studentId: '000000' + d.student.person.docNumber,
+          name:
+            this.sanitizeText(d.student.person.lastname) +
+            ' ' +
+            this.sanitizeText(d.student.person.mLastname) +
+            ' ' +
+            this.sanitizeText(d.student.person.name),
+          code: d.code,
+          date: this.formatDate(d.createdAt.toISOString()),
+          dueDate: this.formatDate(d.dateEnd.toString()),
+          amount: amount + '00',
+          concept: d.code,
+          description: d.description,
+        };
+      })
+      .filter((item) => item !== null);
     /**agregar espacios en blanco nombre 54 */
     /**antes de la RR agregar dos 0 */
     const name = 'ASOCIACION EDUCATIVA LUZ Y CIENCIA';
@@ -1358,28 +1361,31 @@ export class TreasuryService {
     const cero = '0';
     /**BODY */
     let total = 0;
-    const details = debts.map((d) => {
-      let amount: number = d.total;
-      if (d.discount !== null) {
-        amount = d.total - (d.total * d.discount.percentage) / 100;
-      }
-      total += d.total;
-      return {
-        type: '02',
-        name:
-          this.sanitizeText(d.student.person.lastname) +
-          ' ' +
-          this.sanitizeText(d.student.person.mLastname) +
-          ' ' +
-          this.sanitizeText(d.student.person.name),
-        studentId: '000' + d.student.person.docNumber,
-        description: d.description.slice(0, 3),
-        code: d.code,
-        period: new Date(d.dateEnd).getMonth() + 1,
-        dueDate: this.formatDate(d.dateEnd.toString()),
-        amount: amount + '00',
-      };
-    });
+    const details = debts
+      .map((d) => {
+        let amount: number = d.total;
+        if (d.discount !== null) {
+          amount = d.total - (d.total * d.discount.percentage) / 100;
+        }
+        total += d.total;
+        if (amount === 0) return null;
+        return {
+          type: '02',
+          name:
+            this.sanitizeText(d.student.person.lastname) +
+            ' ' +
+            this.sanitizeText(d.student.person.mLastname) +
+            ' ' +
+            this.sanitizeText(d.student.person.name),
+          studentId: '000' + d.student.person.docNumber,
+          description: d.description.slice(0, 3),
+          code: d.code,
+          period: new Date(d.dateEnd).getMonth() + 1,
+          dueDate: this.formatDate(d.dateEnd.toString()),
+          amount: amount + '00',
+        };
+      })
+      .filter((item) => item !== null);
     const description = 'PENSION';
     /**dinamico nomtos */
     details.forEach((detail) => {
