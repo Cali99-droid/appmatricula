@@ -1268,6 +1268,7 @@ export class TreasuryService {
             respEconomic: true,
           },
         },
+        discount: true,
       },
       order: {
         student: {
@@ -1289,6 +1290,10 @@ export class TreasuryService {
     //**diciembre cambiar a fin de fase regualr vencimiento deuda */
     const details = debts.map((d) => {
       total += d.total;
+      let amount: number = d.total;
+      if (d.discount !== null) {
+        amount = d.total - (d.total * d.discount.percentage) / 100;
+      }
       return {
         type: 'DD',
         account: '37508739262',
@@ -1302,7 +1307,7 @@ export class TreasuryService {
         code: d.code,
         date: this.formatDate(d.createdAt.toISOString()),
         dueDate: this.formatDate(d.dateEnd.toString()),
-        amount: d.total + '00',
+        amount: amount + '00',
         concept: d.code,
         description: d.description,
       };
@@ -1354,6 +1359,10 @@ export class TreasuryService {
     /**BODY */
     let total = 0;
     const details = debts.map((d) => {
+      let amount: number = d.total;
+      if (d.discount !== null) {
+        amount = d.total - (d.total * d.discount.percentage) / 100;
+      }
       total += d.total;
       return {
         type: '02',
@@ -1368,7 +1377,7 @@ export class TreasuryService {
         code: d.code,
         period: new Date(d.dateEnd).getMonth() + 1,
         dueDate: this.formatDate(d.dateEnd.toString()),
-        amount: d.total + '00',
+        amount: amount + '00',
       };
     });
     const description = 'PENSION';
