@@ -9,6 +9,8 @@ import {
   UseInterceptors,
   UploadedFile,
   Put,
+  ParseIntPipe,
+  Patch,
 } from '@nestjs/common';
 import { TreasuryService } from './treasury.service';
 
@@ -70,15 +72,10 @@ export class TreasuryController {
     return this.treasuryService.createDiscount(createDiscountDto, debtId);
   }
 
-  @Put('discount/:id')
-  @ApiResponse({ status: 201, description: 'descuento aplicado' })
-  @Roles({
-    roles: ['administrador-colegio', 'secretaria'],
-  })
+  @Patch(':debtId/discount')
   updateDiscount(
     @Body() createDiscountDto: CreateDiscountDto,
-    @Param('debtId') id: number,
-    // @AuthenticatedUser() user: any,
+    @Param('debtId', ParseIntPipe) id: number,
   ) {
     return this.treasuryService.updateDiscount(createDiscountDto, id);
   }
