@@ -43,6 +43,7 @@ import { DebtorsHelperModule } from './debtors_helper/debtors_helper.module';
 
 import { KeycloakModule } from './keycloak/keycloak.module';
 import { TreasuryModule } from './treasury/treasury.module';
+import { TransfersModule } from './transfer/transfer.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { TreasuryModule } from './treasury/treasury.module';
     RoleModule,
     EnrollmentScheduleModule,
     EmailsModule,
+    TransfersModule,
 
     DebtorsHelperModule,
 
