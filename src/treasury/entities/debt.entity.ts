@@ -6,7 +6,6 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -40,6 +39,14 @@ export class Debt {
   })
   @Column('boolean')
   status: boolean;
+
+  @ApiProperty({
+    example: 'false',
+    description: 'is canceled of debt?',
+    default: false,
+  })
+  @Column('boolean')
+  isCanceled: boolean;
 
   @Column('varchar', {
     nullable: true,

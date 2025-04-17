@@ -8,7 +8,7 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
-import { Between, In, LessThan, Repository } from 'typeorm';
+import { Between, In, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { Family } from 'src/family/entities/family.entity';
 import axios from 'axios';
 import { Payment } from './entities/payment.entity';
@@ -696,7 +696,24 @@ export class TreasuryService {
       debt.total = debt.total - (debt.total * debt.discount.percentage) / 100;
       serie = `BB${campus.id}${level.id}`;
     }
+    if (debt.concept.code === 'C005') {
+      // Si es traslado se procede a cancelar las deudas del mes
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
+      const debts = await this.debtRepository.find({
+        where: {
+          isCanceled: true,
+          dateEnd: MoreThanOrEqual(today),
+        },
+      });
+
+      for (const debt of debts) {
+        debt.isCanceled = true;
+      }
+
+      await this.debtRepository.save(debts);
+    }
     if (debt.concept.code === 'C002') {
       return { debt, serie, family, client: family.respEconomic, enrroll };
     } else {
