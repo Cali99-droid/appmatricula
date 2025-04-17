@@ -7,7 +7,7 @@ import {
 import { CreateTransferDto } from './dto/create-transfer.dto';
 import { UpdateTransferDto } from './dto/update-transfer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThanOrEqual, Repository } from 'typeorm';
 import { Transfer } from './entities/transfer.entity';
 import { handleDBExceptions } from '../common/helpers/handleDBException';
 import { Student } from 'src/student/entities/student.entity';
@@ -42,7 +42,14 @@ export class TransferService {
         `Student with id: ${createTransferDto.studentId} not found`,
       );
     }
-    if (student.hasDebt) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const debtStudent = await this.debtRepository.findBy({
+      student: { id: createTransferDto.studentId },
+      status: false,
+      dateEnd: LessThanOrEqual(today),
+    });
+    if (debtStudent.length > 0) {
       throw new BadRequestException(`El estudiante tiene deuda`);
     }
     const concept = await this.conceptRepository.findOneBy({
@@ -76,11 +83,12 @@ export class TransferService {
       const newEntryDebt = this.debtRepository.create({
         dateEnd: new Date(),
         total: 20,
-        status: true,
+        status: false,
         student: { id: createTransferDto.studentId },
         concept: { id: concept.id },
         description: student.code,
         code: `TRAS${student.code}`,
+        obs: 'Traslado',
       });
       await this.debtRepository.save(newEntryDebt);
       return transfer;
