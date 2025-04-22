@@ -55,12 +55,12 @@ export class AuthService {
     const user = await this.userRepository.findOne({
       where: { email },
       select: { id: true, email: true, password: true },
-      relations: {
-        roles: {
-          permissions: true,
-        },
-        // assignments: true,
-      },
+      // relations: {
+      //   roles: {
+      //     permissions: true,
+      //   },
+      //   // assignments: true,
+      // },
     });
     if (!user)
       throw new UnauthorizedException('Credentials are not valid(email)');
@@ -69,24 +69,24 @@ export class AuthService {
       throw new UnauthorizedException('Credentials are not valid(password)');
     const tokens = await this.getJwtTokens({ email: user.email, sub: user.id });
     await this.updateRefreshToken(user.id, tokens.refreshToken);
-    const { password, roles, person, ...result } = user;
-    const permissions = [];
+    // const { password, roles, person, ...result } = user;
+    // const permissions = [];
 
-    roles.forEach((role) => {
-      role.permissions.map((item) => {
-        permissions.push(item.name);
-      });
-    });
+    // roles.forEach((role) => {
+    //   role.permissions.map((item) => {
+    //     permissions.push(item.name);
+    //   });
+    // });
 
-    const menu = this.generateMenu(permissions);
-    return {
-      ...result,
-      isWorker: roles.length > 0,
-      permissions,
-      token: this.getJwtToken({ email: user.email, sub: user.id }),
-      tokens,
-      menu,
-    };
+    // const menu = this.generateMenu(permissions);
+    // return {
+    //   ...result,
+    //   isWorker: roles.length > 0,
+    //   permissions,
+    //   token: this.getJwtToken({ email: user.email, sub: user.id }),
+    //   tokens,
+    //   menu,
+    // };
   }
 
   async checkAuthStatus(user: User) {

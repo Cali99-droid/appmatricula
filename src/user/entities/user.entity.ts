@@ -7,15 +7,12 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
-  JoinTable,
-  ManyToMany,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-import { Role } from 'src/role/entities/role.entity';
 import { Assignment } from './assignments.entity';
 import { AssignmentClassroom } from './assignments-classroom.entity';
 
@@ -72,11 +69,11 @@ export class User {
     (assignmentClass) => assignmentClass.user,
   )
   assignmentsClassroom?: AssignmentClassroom[];
-  @ManyToMany(() => Role, (role) => role.users, {
-    eager: true,
-  })
-  @JoinTable()
-  roles: Role[];
+  // @ManyToMany(() => Role, (role) => role.users, {
+  //   eager: true,
+  // })
+  // @JoinTable()
+  // roles: Role[];
 
   @Column('varchar', {
     nullable: true,

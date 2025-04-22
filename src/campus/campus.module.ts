@@ -11,20 +11,13 @@ import { LevelService } from 'src/level/level.service';
 import { LevelModule } from 'src/level/level.module';
 import { CampusToLevel } from './entities/campusToLevel.entity';
 import { User } from 'src/user/entities/user.entity';
-import { Permission } from 'src/permissions/entities/permission.entity';
 import { Assignment } from 'src/user/entities/assignments.entity';
 
 @Module({
   controllers: [CampusController],
   providers: [CampusService, CampusDetailService, YearsService, LevelService],
   imports: [
-    TypeOrmModule.forFeature([
-      Campus,
-      CampusToLevel,
-      User,
-      Permission,
-      Assignment,
-    ]),
+    TypeOrmModule.forFeature([Campus, CampusToLevel, User, Assignment]),
     CampusDetailModule,
     YearsModule,
     LevelModule,

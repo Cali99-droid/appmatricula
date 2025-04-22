@@ -34,8 +34,6 @@ import { AppMiddleware } from './app.middleware';
 import { AuthService } from './auth/auth.service';
 import { FamilyModule } from './family/family.module';
 import { RelationshipModule } from './relationship/relationship.module';
-import { PermissionsModule } from './permissions/permissions.module';
-import { RoleModule } from './role/role.module';
 import { EnrollmentScheduleModule } from './enrollment_schedule/enrollment_schedule.module';
 import { EmailsModule } from './emails/emails.module';
 
@@ -83,8 +81,7 @@ import { TransfersModule } from './transfer/transfer.module';
     DocsModule,
     FamilyModule,
     RelationshipModule,
-    PermissionsModule,
-    RoleModule,
+
     EnrollmentScheduleModule,
     EmailsModule,
     TransfersModule,
