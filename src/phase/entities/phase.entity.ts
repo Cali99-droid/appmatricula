@@ -11,6 +11,7 @@ import { Year } from '../../years/entities/year.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
 import { Bimester } from 'src/bimester/entities/bimester.entity';
+import { AreaAssignments } from 'src/area_assignments/entities/area_assignments.entity';
 
 @Entity()
 export class Phase {
@@ -68,4 +69,7 @@ export class Phase {
     eager: true,
   })
   bimester: Bimester[];
+
+  @OneToMany(() => AreaAssignments, (area) => area.phase)
+  areaAssignments?: AreaAssignments[];
 }

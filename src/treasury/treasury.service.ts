@@ -8,7 +8,7 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
-import { Between, In, LessThan, Repository } from 'typeorm';
+import { Between, In, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { Family } from 'src/family/entities/family.entity';
 import axios from 'axios';
 import { Payment } from './entities/payment.entity';
@@ -33,7 +33,10 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import { PaymentMethod } from './enum/PaymentMethod.enum';
 import { RespProcess } from './interfaces/RespProcess.interface';
-
+import { CreateDiscountDto } from './dto/create-discount.dto';
+import { Discounts } from './entities/discounts.entity';
+import jsPDF from 'jspdf';
+import * as qrcode from 'qrcode';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 
@@ -66,6 +69,8 @@ export class TreasuryService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(CreditNote)
     private readonly creditNoteRepository: Repository<CreditNote>,
+    @InjectRepository(Discounts)
+    private readonly discountsRepository: Repository<Discounts>,
   ) {}
 
   async createPaid(
@@ -113,8 +118,15 @@ export class TreasuryService {
     try {
       // Enviar datos a Nubefact
       const bill = await this.validatePayment(debt, `${serie}-${numero}`);
+      let url: string;
       if (bill === null) {
-        const response = await this.sendToNubefact(boletaData);
+        if (debt.total > 0) {
+          const response = await this.sendToNubefact(boletaData);
+          url = response.data.enlace_del_pdf;
+        } else {
+          url =
+            'https://apissl-matricula.dev-solware.com/api/v1/treasury/generar/boleta';
+        }
 
         // Crear pago en la base de datos
         const newPay = await this.savePayment(
@@ -126,7 +138,7 @@ export class TreasuryService {
         );
 
         // Crear registro de boleta
-        const newBill = await this.saveBill(response, newPay.id, serie, numero);
+        const newBill = await this.saveBill(url, newPay.id, serie, numero);
 
         // Generar nuevas deudas mensuales
         if (debt.concept.code === 'C001') {
@@ -305,7 +317,12 @@ export class TreasuryService {
       const response = await this.sendToNubefact(boletaData);
       // console.log(response);
       // Crear registro de boleta
-      const newBill = await this.saveBill(response, newPay.id, serie, numero);
+      const newBill = await this.saveBill(
+        response.data.enlace_del_pdf,
+        newPay.id,
+        serie,
+        numero,
+      );
 
       const newExpirationDate = new Date();
       newExpirationDate.setDate(newExpirationDate.getDate() + 25);
@@ -389,6 +406,7 @@ export class TreasuryService {
       },
       relations: {
         concept: true,
+        discount: true,
       },
     });
     const data = {
@@ -419,7 +437,7 @@ export class TreasuryService {
     endDate: string,
     userId: number,
   ) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),
@@ -608,6 +626,7 @@ export class TreasuryService {
   /**PRIVATE FUNCTIONS */
   /** Validar Deuda */
   private async validateDebt(createPaidDto: CreatePaidDto, debtId: number) {
+    let serie: string;
     const debt = await this.debtRepository.findOne({
       where: {
         id: debtId,
@@ -636,6 +655,7 @@ export class TreasuryService {
             },
           },
         },
+        discount: true,
       },
     });
 
@@ -670,7 +690,30 @@ export class TreasuryService {
       throw new NotFoundException('No existe responsable de matrícula');
     }
 
-    const serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
+    serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
+
+    if (debt.discount !== null) {
+      debt.total = debt.total - (debt.total * debt.discount.percentage) / 100;
+      serie = `BB${campus.id}${level.id}`;
+    }
+    if (debt.concept.code === 'C005') {
+      // Si es traslado se procede a cancelar las deudas del mes
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const debts = await this.debtRepository.find({
+        where: {
+          isCanceled: true,
+          dateEnd: MoreThanOrEqual(today),
+        },
+      });
+
+      for (const debt of debts) {
+        debt.isCanceled = true;
+      }
+
+      await this.debtRepository.save(debts);
+    }
     if (debt.concept.code === 'C002') {
       return { debt, serie, family, client: family.respEconomic, enrroll };
     } else {
@@ -877,18 +920,18 @@ export class TreasuryService {
   }
   /**Crear boleta */
   private async saveBill(
-    response: any,
+    url: string,
     paymentId: number,
     serie: string,
     numero: number,
   ) {
     const bill = this.billRepository.create({
       date: new Date(),
-      url: response.data.enlace_del_pdf,
+      url: url,
       payment: { id: paymentId },
       serie,
       numero,
-      accepted: response.data.aceptada_por_sunat,
+      accepted: false,
     });
     return await this.billRepository.save(bill);
   }
@@ -1242,6 +1285,7 @@ export class TreasuryService {
             respEconomic: true,
           },
         },
+        discount: true,
       },
       order: {
         student: {
@@ -1261,26 +1305,33 @@ export class TreasuryService {
     let total = 0;
     // console.log(this.formatDate(debts[0].createdAt.toString()));
     //**diciembre cambiar a fin de fase regualr vencimiento deuda */
-    const details = debts.map((d) => {
-      total += d.total;
-      return {
-        type: 'DD',
-        account: '37508739262',
-        studentId: '000000' + d.student.person.docNumber,
-        name:
-          this.sanitizeText(d.student.person.lastname) +
-          ' ' +
-          this.sanitizeText(d.student.person.mLastname) +
-          ' ' +
-          this.sanitizeText(d.student.person.name),
-        code: d.code,
-        date: this.formatDate(d.createdAt.toISOString()),
-        dueDate: this.formatDate(d.dateEnd.toString()),
-        amount: d.total + '00',
-        concept: d.code,
-        description: d.description,
-      };
-    });
+    const details = debts
+      .map((d) => {
+        total += d.total;
+        let amount: number = d.total;
+        if (d.discount !== null) {
+          amount = d.total - (d.total * d.discount.percentage) / 100;
+        }
+        if (amount === 0) return null;
+        return {
+          type: 'DD',
+          account: '37508739262',
+          studentId: '000000' + d.student.person.docNumber,
+          name:
+            this.sanitizeText(d.student.person.lastname) +
+            ' ' +
+            this.sanitizeText(d.student.person.mLastname) +
+            ' ' +
+            this.sanitizeText(d.student.person.name),
+          code: d.code,
+          date: this.formatDate(d.createdAt.toISOString()),
+          dueDate: this.formatDate(d.dateEnd.toString()),
+          amount: amount + '00',
+          concept: d.code,
+          description: d.description,
+        };
+      })
+      .filter((item) => item !== null);
     /**agregar espacios en blanco nombre 54 */
     /**antes de la RR agregar dos 0 */
     const name = 'ASOCIACION EDUCATIVA LUZ Y CIENCIA';
@@ -1327,24 +1378,31 @@ export class TreasuryService {
     const cero = '0';
     /**BODY */
     let total = 0;
-    const details = debts.map((d) => {
-      total += d.total;
-      return {
-        type: '02',
-        name:
-          this.sanitizeText(d.student.person.lastname) +
-          ' ' +
-          this.sanitizeText(d.student.person.mLastname) +
-          ' ' +
-          this.sanitizeText(d.student.person.name),
-        studentId: '000' + d.student.person.docNumber,
-        description: d.description.slice(0, 3),
-        code: d.code,
-        period: new Date(d.dateEnd).getMonth() + 1,
-        dueDate: this.formatDate(d.dateEnd.toString()),
-        amount: d.total + '00',
-      };
-    });
+    const details = debts
+      .map((d) => {
+        let amount: number = d.total;
+        if (d.discount !== null) {
+          amount = d.total - (d.total * d.discount.percentage) / 100;
+        }
+        total += d.total;
+        if (amount === 0) return null;
+        return {
+          type: '02',
+          name:
+            this.sanitizeText(d.student.person.lastname) +
+            ' ' +
+            this.sanitizeText(d.student.person.mLastname) +
+            ' ' +
+            this.sanitizeText(d.student.person.name),
+          studentId: '000' + d.student.person.docNumber,
+          description: d.description.slice(0, 3),
+          code: d.code,
+          period: new Date(d.dateEnd).getMonth() + 1,
+          dueDate: this.formatDate(d.dateEnd.toString()),
+          amount: amount + '00',
+        };
+      })
+      .filter((item) => item !== null);
     const description = 'PENSION';
     /**dinamico nomtos */
     details.forEach((detail) => {
@@ -1705,5 +1763,259 @@ export class TreasuryService {
     });
 
     return result;
+  }
+
+  /**DISCUONT */
+
+  async createDiscount(createDiscountDto: CreateDiscountDto, debtId: number) {
+    const debt = await this.debtRepository.findOne({
+      where: { id: debtId },
+    });
+
+    if (!debt) {
+      throw new NotFoundException('No existe la deuda');
+    }
+
+    const { percentage, reason } = createDiscountDto;
+
+    const discountToCreate = this.discountsRepository.create({
+      debt: debt,
+      percentage,
+      reason,
+    });
+
+    const newDiscount = await this.discountsRepository.save(discountToCreate);
+
+    return newDiscount;
+  }
+
+  async updateDiscount(createDiscountDto: CreateDiscountDto, id: number) {
+    const discount = await this.discountsRepository.findOne({
+      where: { id: id },
+    });
+
+    if (!discount) {
+      throw new NotFoundException('No existe el descuento');
+    }
+
+    const { percentage, reason } = createDiscountDto;
+
+    discount.percentage = percentage;
+    discount.reason = reason;
+
+    const discountUpdated = await this.discountsRepository.save(discount);
+
+    return discountUpdated;
+  }
+
+  async generatePdf() {
+    const width = 7;
+    const height = 25;
+    const tradeName = 'COLEGIO ALBERT EISTEIN';
+    const socialReason = 'COLEGIO ALBERT EISTEIN';
+    const department = 'Ancash';
+    const district = 'Independencia';
+    const province = 'Huaraz';
+    const ruc = '12392932921';
+
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'cm',
+      format: [width, height],
+    });
+
+    const nameCompany = tradeName.toUpperCase();
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(nameCompany, (width - doc.getTextWidth(nameCompany)) / 2, 0.5);
+
+    doc.setFontSize(8);
+    const splitName = doc.splitTextToSize(socialReason.toUpperCase(), 6);
+    doc.text(splitName, 3.5, 0.9, {
+      align: 'center',
+    });
+
+    let y = 2;
+    doc.setFont('helvetica', 'normal');
+    const splitAddress = doc.splitTextToSize('Direccion prueba', 6);
+    doc.text(splitAddress, 3.5, y, { align: 'center' });
+
+    y += 1;
+    doc.text(
+      `${department.toUpperCase()} - ${province.toUpperCase()} - ${district.toUpperCase()}`,
+      (width -
+        doc.getTextWidth(
+          `${department[0].toUpperCase()} - ${province.toUpperCase()} - ${district.toUpperCase()}`,
+        )) /
+        2,
+      y,
+    );
+
+    y += 0.4;
+    doc.text(`RUC ${ruc}`, (width - doc.getTextWidth(`RUC ${ruc}`)) / 2, y);
+
+    y += 0.6;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(
+      `BOLETA ELECTRÓNICA ${'BB11'}-1`,
+      (width -
+        doc.getTextWidth(
+          `BOLETA ELECTRÓNICA  BB11'
+            }-1`,
+        )) /
+        2,
+      y,
+    );
+
+    y += 0.5;
+    doc.text('CLIENTE', 0.3, y);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    y += 0.4;
+    doc.text(`DNI:`, 0.3, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text('51443343', doc.getTextWidth(`DNI`) + 0.4, y);
+
+    y += 0.4;
+    doc.setFont('helvetica', 'bold');
+    doc.text('NOMBRE:', 0.3, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text('CArlos p', doc.getTextWidth('NOMBRE:') + 0.4, y);
+
+    y += 0.4;
+    doc.setFont('helvetica', 'bold');
+    doc.text('DIR.:', 0.3, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Mi direccion', doc.getTextWidth('DIR.:') + 0.4, y);
+
+    y += 0.4;
+    doc.setFont('helvetica', 'bold');
+    doc.text('FECHA DE EMISIÓN:', 0.3, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+      this.formatDate(new Date().toString()).replace(/-/g, '/'),
+      doc.getTextWidth('FECHA DE EMISION:') + 0.4,
+      y,
+    );
+
+    y += 0.4;
+    doc.setLineWidth(0.01);
+    doc.line(0.3, y, width - 0.3, y);
+
+    y += 0.4;
+    doc.setFont('helvetica', 'bold');
+    doc.text('PENSION', 0.3, y);
+
+    y += 0.4;
+    doc.setFont('helvetica', 'normal');
+    doc.text('item de prueba', 0.3, y);
+    y += 0.4;
+    doc.text(`descripcion`, 0.3, y);
+
+    y += 0.4;
+    doc.text(`mas descripcion`, 0.3, y);
+
+    y += 0.4;
+    doc.text(`Nombre del estudiante`.trim().toUpperCase(), 0.3, y);
+
+    y += 0.4;
+    doc.setLineWidth(0.01);
+    doc.line(0.3, y, width - 0.3, y);
+
+    y += 0.4;
+    doc.setFont('helvetica', 'bold');
+    doc.text('CUOTA N°', 0.3, y);
+    doc.text('F.VEN:', 2.5, y);
+    doc.text('MONTO', 4.5, y);
+
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+
+    y += 0.4;
+
+    doc.text(`cuota`, 0.8, y);
+    doc.text(`${this.formatDate(new Date().toString())}`, 2.5, y);
+    doc.text(`s/. 0.00`, 4.5, y);
+    y += 0.8;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INAFECTA', 2.5, y);
+    doc.text(`s/. 0.00`, 4.5, y);
+
+    y += 0.4;
+    doc.text('GRABADA', 2.5, y);
+    doc.text(`s/. 0.00`, 4.5, y);
+
+    y += 0.4;
+    doc.text('IGV', 2.5, y);
+    doc.text(`s/. 0.00`, 4.5, y);
+
+    y += 0.4;
+    doc.text('TOTAL', 2.5, y);
+    doc.text(`s/. 0.00`, 4.5, y);
+
+    doc.setLineWidth(0.01);
+    doc.line(0.3, y, width - 0.3, y);
+
+    y += 0.4;
+    const splitText = doc.splitTextToSize(
+      'REPRESENTACIÓN IMPRESA DE LA BOLETA ELECTRÓNICA',
+      7,
+      {
+        wordWrap: true,
+      },
+    );
+
+    doc.text(splitText, 3.5, y, {
+      align: 'center',
+    });
+
+    y += 0.8;
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+      doc.splitTextToSize(
+        `Si tiene algún problema con esta boleta, envíe un correo electrónico a orellanop`,
+        5,
+        {
+          wordWrap: true,
+        },
+      ),
+      3.5,
+      y,
+      {
+        align: 'center',
+      },
+    );
+
+    y += 1;
+    const qr = await qrcode.toDataURL(
+      `/validar/boleta-escaneada/type=B&payment=&installment=$`,
+      {
+        margin: 2,
+        errorCorrectionLevel: 'H',
+        color: {
+          dark: '#000000',
+        },
+      },
+    );
+    doc.addImage(qr, 'JPG', 1.5, y, width - 3, width - 3);
+
+    y += 4.3;
+    doc.text(
+      doc.splitTextToSize('Emitido desde www.colegioae.edu.pe', 7, {
+        wordWrap: true,
+      }),
+      3.5,
+      y,
+      {
+        align: 'center',
+      },
+    );
+    doc.save('output.pdf');
+    const pdfArray = doc.output('arraybuffer');
+    return Buffer.from(pdfArray);
   }
 }

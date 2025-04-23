@@ -6,7 +6,7 @@ on:
   #   branches: ['main']
 jobs:
   create-docker-image:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     environment: prod
     steps:
       - name: Checkout the code
@@ -24,7 +24,7 @@ jobs:
           docker push ghcr.io/cali99-droid/appmatricula-prod:${GITHUB_SHA}
   deploy:
     needs: create-docker-image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     environment: prod
     steps:
       - name: Setup SSH Keys

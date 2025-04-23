@@ -8,6 +8,9 @@ import {
   Res,
   UseInterceptors,
   UploadedFile,
+  Put,
+  ParseIntPipe,
+  Patch,
 } from '@nestjs/common';
 import { TreasuryService } from './treasury.service';
 
@@ -30,8 +33,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
 import { RespProcess } from './interfaces/RespProcess.interface';
 import { numberOfRecords } from './dto/resp-process.dto';
+import { CreateDiscountDto } from './dto/create-discount.dto';
 @ApiTags('Treasury')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
@@ -52,6 +56,28 @@ export class TreasuryController {
     @AuthenticatedUser() user: any,
   ) {
     return this.treasuryService.createPaidReserved(createPaidReservedDto, user);
+  }
+
+  /**DESCUENTOS */
+  @Post('discount/:debtId')
+  @ApiResponse({ status: 201, description: 'descuento aplicado' })
+  @Roles({
+    roles: ['administrador-colegio', 'secretaria'],
+  })
+  createDiscount(
+    @Body() createDiscountDto: CreateDiscountDto,
+    @Param('debtId') debtId: number,
+    // @AuthenticatedUser() user: any,
+  ) {
+    return this.treasuryService.createDiscount(createDiscountDto, debtId);
+  }
+
+  @Patch(':debtId/discount')
+  updateDiscount(
+    @Body() createDiscountDto: CreateDiscountDto,
+    @Param('debtId', ParseIntPipe) id: number,
+  ) {
+    return this.treasuryService.updateDiscount(createDiscountDto, id);
   }
 
   @Get('debts/:studentId')
@@ -116,6 +142,24 @@ export class TreasuryController {
       file,
       user,
     )) as RespProcess;
+  }
+
+  @Get('generar/boleta')
+  @ApiResponse({
+    status: 201,
+    description: 'information of operation',
+    type: numberOfRecords,
+  })
+  @Public()
+  async generatePdf(@Res() res: Response) {
+    const pdfBuffer = await this.treasuryService.generatePdf();
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'inline; filename=boleta.pdf',
+    });
+
+    res.send(pdfBuffer);
   }
 
   // @Get('migrate')

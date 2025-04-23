@@ -134,9 +134,7 @@ export class StudentService {
       )
       .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
       .leftJoinAndSelect('activityClassroom.grade', 'grade');
-    if (searchTerm) {
-      console.log('entro');
-    }
+
     if (searchTerm) {
       const searchTerms = searchTerm
         .split(' ')

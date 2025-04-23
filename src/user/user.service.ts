@@ -1,13 +1,16 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository, Not, IsNull, Brackets, In } from 'typeorm';
-import { Role } from 'src/role/entities/role.entity';
-import { AddRoleDto } from './dto/add-role.dto';
+
 import * as bcrypt from 'bcrypt';
-import { handleDBExceptions } from 'src/common/helpers/handleDBException';
+
 import { Assignment } from './entities/assignments.entity';
 
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
@@ -15,14 +18,15 @@ import { AssignmentClassroom } from './entities/assignments-classroom.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { CreateUserOfTestDto } from './dto/create-users-of-test.dto';
 import { KeycloakService } from 'src/keycloak/keycloak.service';
+import { SearchUserDto } from './dto/search-user.dto';
+import { FilterUserByRoleDto } from './dto/filter-role.dto';
+import { AssignRoleDto } from './dto/assign-role.dto';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger('UserService');
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>,
     @InjectRepository(Assignment)
     private readonly assignmentRepository: Repository<Assignment>,
     @InjectRepository(CampusDetail)
@@ -34,59 +38,59 @@ export class UserService {
 
     private readonly keycloakService: KeycloakService,
   ) {}
-  async create(createUserDto: CreateUserDto) {
-    try {
-      const {
-        password,
-        email,
-        campusDetailsIds,
-        rolesIds,
-        activityClassroomIds,
-      } = createUserDto;
-      const user = this.userRepository.create({
-        email,
-        password: bcrypt.hashSync(password, 10),
-      });
-      await this.userRepository.save(user);
-      const userToUpdate = await this.userRepository.findOne({
-        where: {
-          email: email,
-        },
-        relations: {
-          roles: true,
-          assignments: true,
-        },
-      });
+  // async create(createUserDto: CreateUserDto) {
+  //   try {
+  //     const {
+  //       password,
+  //       email,
+  //       campusDetailsIds,
+  //       rolesIds,
+  //       activityClassroomIds,
+  //     } = createUserDto;
+  //     const user = this.userRepository.create({
+  //       email,
+  //       password: bcrypt.hashSync(password, 10),
+  //     });
+  //     await this.userRepository.save(user);
+  //     const userToUpdate = await this.userRepository.findOne({
+  //       where: {
+  //         email: email,
+  //       },
+  //       relations: {
+  //         roles: true,
+  //         assignments: true,
+  //       },
+  //     });
 
-      for (const roleId of rolesIds) {
-        const role = await this.roleRepository.findOneBy({ id: roleId });
-        userToUpdate.roles.push(role);
-      }
+  //     for (const roleId of rolesIds) {
+  //       const role = await this.roleRepository.findOneBy({ id: roleId });
+  //       userToUpdate.roles.push(role);
+  //     }
 
-      const userCreated = await this.userRepository.save(userToUpdate);
-      if (campusDetailsIds) {
-        for (const campusId of campusDetailsIds) {
-          await this.assignmentRepository.save({
-            user: userCreated,
-            campusDetail: { id: campusId },
-          });
-        }
-      }
-      if (activityClassroomIds) {
-        for (const acId of activityClassroomIds) {
-          await this.assignmentClassroomRepository.save({
-            user: userCreated,
-            activityClassroom: { id: acId },
-          });
-        }
-      }
-      return userCreated;
-    } catch (error) {
-      handleDBExceptions(error, this.logger);
-    }
-  }
+  //     const userCreated = await this.userRepository.save(userToUpdate);
+  //     if (campusDetailsIds) {
+  //       for (const campusId of campusDetailsIds) {
+  //         await this.assignmentRepository.save({
+  //           user: userCreated,
+  //           campusDetail: { id: campusId },
+  //         });
+  //       }
+  //     }
+  //     if (activityClassroomIds) {
+  //       for (const acId of activityClassroomIds) {
+  //         await this.assignmentClassroomRepository.save({
+  //           user: userCreated,
+  //           activityClassroom: { id: acId },
+  //         });
+  //       }
+  //     }
+  //     return userCreated;
+  //   } catch (error) {
+  //     handleDBExceptions(error, this.logger);
+  //   }
+  // }
 
-  async findAll() {
+  async findAll(filterDto: FilterUserByRoleDto) {
     // const users = await this.userRepository.find({
     //   relations: {
     //     roles: true,
@@ -95,11 +99,11 @@ export class UserService {
     //     },
     //   },
     // });
+    const { role } = filterDto;
+    const usKy = await this.keycloakService.getUsersByRole(role);
 
-    const usKy = await this.keycloakService.getUsersByRole('auxiliar');
-
-    const subs = usKy.map((us) => us.id);
-
+    const subs = usKy.map((us: { id: any }) => us.id);
+    console.log(subs.length);
     const users = await this.userRepository.find({
       where: {
         sub: In(subs),
@@ -110,7 +114,7 @@ export class UserService {
         id: user.id,
         email: user.email,
         isActive: user.isActive,
-        roles: user.roles,
+        // roles: user.roles,
         assignments: user.assignments.map((ass) => {
           return { id: ass.campusDetail.id, name: ass.campusDetail.name };
         }),
@@ -140,7 +144,7 @@ export class UserService {
       const user = await this.userRepository.findOneOrFail({
         where: { id },
         relations: {
-          roles: true,
+          // roles: true,
           assignments: {
             campusDetail: true,
           },
@@ -149,15 +153,14 @@ export class UserService {
           },
         },
       });
-      const { email, roles, assignments, isActive, assignmentsClassroom } =
-        user;
+      const { email, assignments, isActive, assignmentsClassroom } = user;
 
       return {
         id: user.id,
         email,
-        roles: roles.map((rol) => {
-          return rol.id;
-        }),
+        // roles: roles.map((rol) => {
+        //   return rol.id;
+        // }),
         assignments: assignments.map((ass) => {
           return ass.campusDetail.id;
         }),
@@ -175,79 +178,112 @@ export class UserService {
     }
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    const userToUpdate = await this.userRepository.findOne({
-      where: {
-        id,
-      },
-      relations: {
-        roles: true,
-      },
-    });
-    const {
-      campusDetailsIds,
-      rolesIds,
-      email,
-      password,
-      isActive,
-      activityClassroomIds,
-    } = updateUserDto;
-    userToUpdate.roles = [];
-    userToUpdate.isActive = isActive;
-    if (email) {
-      userToUpdate.email = email;
-    }
-
-    if (password) {
-      userToUpdate.password = bcrypt.hashSync(password, 10);
-    }
-    if (rolesIds) {
-      for (const roleId of rolesIds) {
-        const role = await this.roleRepository.findOneBy({ id: roleId });
-        if (role) {
-          userToUpdate.roles.push(role);
-        } else {
-          throw new Error(`Role with ID ${roleId} not found`);
-        }
-      }
-    }
-
-    const userUpdated = await this.userRepository.save(userToUpdate);
-
-    const assignmentToUpdate = await this.assignmentRepository.findBy({
-      user: { id: userUpdated.id },
-    });
-    await this.assignmentRepository.remove(assignmentToUpdate);
-    if (campusDetailsIds) {
-      for (const campusId of campusDetailsIds) {
-        // const campus = await this.campusDetailRepository.findOneBy({
-        //   id: campusId,
-        // });
-        // console.log(campus)
-
-        await this.assignmentRepository.save({
-          user: userUpdated,
-          campusDetail: { id: campusId },
-        });
-      }
-    }
-    const assignmentClassToUpdate =
-      await this.assignmentClassroomRepository.findBy({
-        user: { id: userUpdated.id },
+  async searchUser(searchDto: SearchUserDto, user: any) {
+    const { searchTerm, page = 1, limit = 10 } = searchDto;
+    const query = this.userRepository.createQueryBuilder('user');
+    if (searchTerm) {
+      query.where('LOWER(user.email) LIKE LOWER(:email)', {
+        email: `%${searchTerm}%`,
       });
-
-    await this.assignmentClassroomRepository.remove(assignmentClassToUpdate);
-    if (activityClassroomIds) {
-      for (const acId of activityClassroomIds) {
-        await this.assignmentClassroomRepository.save({
-          user: userUpdated,
-          activityClassroom: { id: acId },
-        });
-      }
     }
+    query.orderBy('user.email', 'ASC');
+    query.skip((page - 1) * limit).take(limit);
+    const [results, total] = await query.getManyAndCount();
 
-    return userUpdated;
+    return {
+      results,
+      total,
+      page,
+      limit,
+    };
   }
+
+  async update(sub: string, assignRoleDto: AssignRoleDto) {
+    const { roleName } = assignRoleDto;
+
+    const resp = await this.keycloakService.assignClientRoleToUser(
+      sub,
+      roleName,
+    );
+
+    if (resp.success) {
+      return { success: true };
+    } else {
+      throw new InternalServerErrorException('Hubo un error');
+    }
+  }
+  //   const userToUpdate = await this.userRepository.findOne({
+  //     where: {
+  //       id,
+  //     },
+  //     relations: {
+  //       roles: true,
+  //     },
+  //   });
+  //   const {
+  //     campusDetailsIds,
+  //     rolesIds,
+  //     email,
+  //     password,
+  //     isActive,
+  //     activityClassroomIds,
+  //   } = updateUserDto;
+  //   userToUpdate.roles = [];
+  //   userToUpdate.isActive = isActive;
+  //   if (email) {
+  //     userToUpdate.email = email;
+  //   }
+
+  //   if (password) {
+  //     userToUpdate.password = bcrypt.hashSync(password, 10);
+  //   }
+  //   if (rolesIds) {
+  //     for (const roleId of rolesIds) {
+  //       const role = await this.roleRepository.findOneBy({ id: roleId });
+  //       if (role) {
+  //         userToUpdate.roles.push(role);
+  //       } else {
+  //         throw new Error(`Role with ID ${roleId} not found`);
+  //       }
+  //     }
+  //   }
+
+  //   const userUpdated = await this.userRepository.save(userToUpdate);
+
+  //   const assignmentToUpdate = await this.assignmentRepository.findBy({
+  //     user: { id: userUpdated.id },
+  //   });
+  //   await this.assignmentRepository.remove(assignmentToUpdate);
+  //   if (campusDetailsIds) {
+  //     for (const campusId of campusDetailsIds) {
+  //       // const campus = await this.campusDetailRepository.findOneBy({
+  //       //   id: campusId,
+  //       // });
+  //       // console.log(campus)
+
+  //       await this.assignmentRepository.save({
+  //         user: userUpdated,
+  //         campusDetail: { id: campusId },
+  //       });
+  //     }
+  //   }
+  //   const assignmentClassToUpdate =
+  //     await this.assignmentClassroomRepository.findBy({
+  //       user: { id: userUpdated.id },
+  //     });
+
+  //   await this.assignmentClassroomRepository.remove(assignmentClassToUpdate);
+  //   if (activityClassroomIds) {
+  //     for (const acId of activityClassroomIds) {
+  //       await this.assignmentClassroomRepository.save({
+  //         user: userUpdated,
+  //         activityClassroom: { id: acId },
+  //       });
+  //     }
+  //   }
+
+  //   return userUpdated;
+  // }
 
   remove(id: number) {
     return `This action removes a #${id} user`;
@@ -265,34 +301,34 @@ export class UserService {
     return this.userRepository.save(toUpdate);
   }
 
-  async addRoleToUser(addRoleDto: AddRoleDto): Promise<void> {
-    try {
-      const user = await this.userRepository.findOne({
-        where: {
-          id: addRoleDto.userId,
-        },
-        relations: {
-          roles: true,
-        },
-      });
-      // Clear existing roles
-      user.roles = [];
+  // async addRoleToUser(addRoleDto: AddRoleDto): Promise<void> {
+  //   try {
+  //     const user = await this.userRepository.findOne({
+  //       where: {
+  //         id: addRoleDto.userId,
+  //       },
+  //       relations: {
+  //         roles: true,
+  //       },
+  //     });
+  //     // Clear existing roles
+  //     user.roles = [];
 
-      // Add new roles
-      for (const roleId of addRoleDto.rolesId) {
-        const role = await this.roleRepository.findOneBy({ id: roleId });
-        if (role) {
-          user.roles.push(role);
-        } else {
-          throw new Error(`Role with ID ${roleId} not found`);
-        }
-      }
+  //     // Add new roles
+  //     for (const roleId of addRoleDto.rolesId) {
+  //       const role = await this.roleRepository.findOneBy({ id: roleId });
+  //       if (role) {
+  //         user.roles.push(role);
+  //       } else {
+  //         throw new Error(`Role with ID ${roleId} not found`);
+  //       }
+  //     }
 
-      await this.userRepository.save(user);
-    } catch (error) {
-      this.logger.error(error);
-    }
-  }
+  //     await this.userRepository.save(user);
+  //   } catch (error) {
+  //     this.logger.error(error);
+  //   }
+  // }
 
   async reportUsers() {
     const [parents, workers, parentsWithoutFamily] = await Promise.all([

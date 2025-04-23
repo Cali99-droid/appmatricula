@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 
@@ -7,6 +7,9 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class KeycloakService {
+  private baseUrl = process.env.URL_KEYCLOAK;
+  private realm = process.env.REALM_KEYCLOAK;
+  private clientId = 'f3f8f4cc-dc10-4483-87e2-9012ef85ef2d';
   private readonly logger = new Logger('KeycloakService');
   constructor(
     @InjectRepository(User)
@@ -111,14 +114,14 @@ export class KeycloakService {
     }
   }
 
-  async getUsersByRole(roleName: string) {
+  async getUsersByRole(roleName: string = 'padre-colegio') {
     const token = await this.getAdminToken();
     // const realm = process.env.KEYCLOAK_REALM;
     if (!token) return;
 
     try {
       const response = await axios.get(
-        `https://login.colegioae.edu.pe/admin/realms/${process.env.REALM_KEYCLOAK}/clients/36bee95c-f2a6-4d8b-9137-b56ab46545b4/roles/${roleName}/users`,
+        `https://login.colegioae.edu.pe/admin/realms/${process.env.REALM_KEYCLOAK}/clients/${this.clientId}/roles/${roleName}/users`,
 
         {
           headers: {
@@ -131,6 +134,48 @@ export class KeycloakService {
       return response.data; // Lista de usuarios asociados al rol
     } catch (error) {
       console.error('Error obteniendo usuarios por rol:', error);
+      throw new NotFoundException(
+        'No existe Rol: error obteniendo usuarios por rol',
+      );
     }
+  }
+
+  async assignClientRoleToUser(
+    userId: string,
+    // clientId: string,
+    roleName: string,
+  ) {
+    const token = await this.getAdminToken();
+
+    // Obtener el ID interno del cliente
+    const clientsUrl = `${this.baseUrl}/admin/realms/${this.realm}/clients`;
+    const { data: clients } = await axios.get(clientsUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const client = clients.find((c) => c.id === this.clientId);
+    console.log(client);
+
+    if (!client) throw new Error('Client not found');
+
+    // Obtener roles del cliente
+    const rolesUrl = `${this.baseUrl}/admin/realms/${this.realm}/clients/${client.id}/roles`;
+    const { data: roles } = await axios.get(rolesUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const role = roles.find((r) => r.name === roleName);
+    if (!role) throw new Error('Role not found');
+
+    // Asignar el rol al usuario
+    const assignUrl = `${this.baseUrl}/admin/realms/${this.realm}/users/${userId}/role-mappings/clients/${client.id}`;
+    await axios.post(assignUrl, [role], {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return { success: true };
   }
 }

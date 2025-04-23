@@ -8,7 +8,6 @@ import { ConfigModule } from '@nestjs/config';
 import { Student } from 'src/student/entities/student.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { User } from 'src/user/entities/user.entity';
-import { Permission } from 'src/permissions/entities/permission.entity';
 import { HttpModule } from '@nestjs/axios';
 import { Family } from 'src/family/entities/family.entity';
 import { Person } from 'src/person/entities/person.entity';
@@ -24,7 +23,6 @@ import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
       ActivityClassroom,
       Enrollment,
       User,
-      Permission,
       Family,
       Person,
       Student,

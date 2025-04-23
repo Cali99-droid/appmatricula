@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Level } from '../../level/entities/level.entity';
 import { ActivityClassroom } from '../../activity_classroom/entities/activity_classroom.entity';
+import { AreaAssignments } from 'src/area_assignments/entities/area_assignments.entity';
 @Entity()
 export class Grade {
   @ApiProperty()
@@ -44,4 +45,7 @@ export class Grade {
     },
   )
   activityClassroom?: ActivityClassroom[];
+
+  @OneToMany(() => AreaAssignments, (area) => area.grade)
+  areaAssignments?: AreaAssignments[];
 }

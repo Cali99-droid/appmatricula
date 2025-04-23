@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Permission } from 'src/permissions/entities/permission.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
 
@@ -17,8 +16,6 @@ export class PermissionsGuard implements CanActivate {
     private reflector: Reflector,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Permission)
-    private readonly permissionRepository: Repository<Permission>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -38,23 +35,21 @@ export class PermissionsGuard implements CanActivate {
     if (!userR) throw new NotFoundException('User not found');
     const user = await this.userRepository.findOne({
       where: { email: userR.email },
-      relations: {
-        roles: {
-          permissions: true,
-        },
-      },
+      // relations: {
+      //   roles: {
+      //     permissions: true,
+      //   },
+      // },
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
-    const userPermissions = user.roles.flatMap((role) =>
-      role.permissions.map((permission) => permission.name),
-    );
+    // const userPermissions = user.roles.flatMap((role) =>
+    //   role.permissions.map((permission) => permission.name),
+    // );
 
-    return permissions.some((permission) =>
-      userPermissions.includes(permission),
-    );
+    return true;
   }
 }

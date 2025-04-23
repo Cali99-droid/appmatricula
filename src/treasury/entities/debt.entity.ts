@@ -6,10 +6,12 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Concept } from './concept.entity';
+import { Discounts } from './discounts.entity';
 
 @Entity()
 export class Debt {
@@ -37,6 +39,14 @@ export class Debt {
   })
   @Column('boolean')
   status: boolean;
+
+  @ApiProperty({
+    example: 'false',
+    description: 'is canceled of debt?',
+    default: false,
+  })
+  @Column('boolean')
+  isCanceled: boolean;
 
   @Column('varchar', {
     nullable: true,
@@ -68,6 +78,12 @@ export class Debt {
   @ManyToOne(() => Concept, { nullable: true })
   @JoinColumn({ name: 'conceptId' })
   concept?: Concept;
+
+  @OneToOne(() => Discounts, (dis) => dis.debt, {
+    // cascade: true,
+    // eager: true,
+  })
+  discount?: Discounts;
 
   /**TIMESTAMPS */
   @CreateDateColumn({

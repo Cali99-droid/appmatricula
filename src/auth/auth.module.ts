@@ -9,8 +9,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { UserModule } from 'src/user/user.module';
-import { PermissionsModule } from 'src/permissions/permissions.module';
-import { Permission } from 'src/permissions/entities/permission.entity';
+
 import { Person } from 'src/person/entities/person.entity';
 import { PersonModule } from 'src/person/person.module';
 import { KeycloakModule } from 'src/keycloak/keycloak.module';
@@ -22,9 +21,9 @@ import { KeycloakModule } from 'src/keycloak/keycloak.module';
     UserModule,
     KeycloakModule,
     PersonModule,
-    PermissionsModule,
+
     ConfigModule,
-    TypeOrmModule.forFeature([User, Permission, Person]),
+    TypeOrmModule.forFeature([User, Person]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
