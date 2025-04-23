@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
@@ -9,8 +8,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+
 import {
   ApiOperation,
   ApiParam,
@@ -18,7 +16,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { CreateUserOfTestDto } from './dto/create-users-of-test.dto';
 import { SearchUserDto } from './dto/search-user.dto';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 import { FilterUserByRoleDto } from './dto/filter-role.dto';
