@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class CreateCompetencyDto {
   @ApiProperty({
@@ -10,6 +16,14 @@ export class CreateCompetencyDto {
   @IsString()
   @MinLength(2)
   name: string;
+
+  @ApiProperty({
+    example: 1,
+    description: 'id of the course',
+    nullable: false,
+  })
+  @IsNumber()
+  courseId: number;
 
   @ApiProperty({
     example: 'true',
