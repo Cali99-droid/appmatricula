@@ -2,8 +2,8 @@ name: publish
 on:
   push:
     branches: ['dev']
-  pull_request:
-    branches: ['dev']
+  # pull_request:
+  #   branches: ['dev']
 jobs:
   create-docker-image:
     runs-on: ubuntu-22.04
@@ -72,6 +72,7 @@ jobs:
             -e URL_KEYCLOAK=${{ secrets.URL_KEYCLOAK }} \
             -e REALM_KEYCLOAK=${{ secrets.REALM_KEYCLOAK }} \
             -e CLIENT_ID_KEYCLOAK=${{ secrets.CLIENT_ID_KEYCLOAK }} \
+            -e CLIENT_ID=${{ secrets.CLIENT_ID }} \
             -e USERNAME_KEYCLOAK=${{ secrets.USERNAME_KEYCLOAK }} \
             -e PASSWORD_KEYCLOAK=${{ secrets.PASSWORD_KEYCLOAK }} \
             -e CLIENT_SECRET_KEYCLOAK=${{ secrets.CLIENT_SECRET_KEYCLOAK }} \

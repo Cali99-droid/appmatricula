@@ -46,6 +46,7 @@ import { ConfigModule } from '@nestjs/config';
   ],
   imports: [
     ConfigModule.forRoot(),
+
     TypeOrmModule.forFeature([User]),
     KeycloakConnectModule.register({
       authServerUrl: process.env.URL_KEYCLOAK,

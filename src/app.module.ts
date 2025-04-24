@@ -42,8 +42,9 @@ import { DebtorsHelperModule } from './debtors_helper/debtors_helper.module';
 import { KeycloakModule } from './keycloak/keycloak.module';
 import { TreasuryModule } from './treasury/treasury.module';
 import { TransfersModule } from './transfer/transfer.module';
-import { AreaModule } from './area/area.module';
-import { AreaAssignmentsModule } from './area_assignments/area.module';
+import { AreaModule } from './academic_structure/area/area.module';
+import { CompetencyModule } from './academic_structure/competency/competency.module';
+import { CourseModule } from './academic_structure/course/course.module';
 
 @Module({
   imports: [
@@ -84,7 +85,8 @@ import { AreaAssignmentsModule } from './area_assignments/area.module';
     FamilyModule,
     RelationshipModule,
     AreaModule,
-    AreaAssignmentsModule,
+    CompetencyModule,
+    CourseModule,
 
     EnrollmentScheduleModule,
     EmailsModule,

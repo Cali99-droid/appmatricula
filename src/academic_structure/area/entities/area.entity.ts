@@ -1,9 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AreaAssignments } from 'src/area_assignments/entities/area_assignments.entity';
+import { Competency } from 'src/academic_structure/competency/entities/competency.entity';
+import { Course } from 'src/academic_structure/course/entities/course.entity';
+import { Level } from 'src/level/entities/level.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -24,6 +28,12 @@ export class Area {
     unique: true,
   })
   name: string;
+
+  @ManyToOne(() => Level, (level) => level.area, {
+    eager: true,
+  })
+  @JoinColumn({ name: 'levelId' })
+  level?: Level;
 
   @ApiProperty({
     example: 'true',
@@ -47,6 +57,13 @@ export class Area {
   })
   updatedAt: Date;
 
-  @OneToMany(() => AreaAssignments, (area) => area.area)
-  areaAssignments?: AreaAssignments[];
+  @OneToMany(() => Course, (course) => course.area, {
+    // eager: true,
+  })
+  course?: Course[];
+
+  @OneToMany(() => Competency, (competency) => competency.area, {
+    // eager: true,
+  })
+  competency?: Competency[];
 }
