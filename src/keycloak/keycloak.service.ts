@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 
@@ -7,20 +8,21 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class KeycloakService {
-  private baseUrl = process.env.URL_KEYCLOAK;
-  private realm = process.env.REALM_KEYCLOAK;
-  private clientId = 'f3f8f4cc-dc10-4483-87e2-9012ef85ef2d';
+  private baseUrl = this.configService.get<string>('URL_KEYCLOAK');
+  private realm = this.configService.get<string>('REALM_KEYCLOAK');
+  private clientId = this.configService.get<string>('CLIENT_ID');
   private readonly logger = new Logger('KeycloakService');
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private configService: ConfigService,
   ) {}
 
   async updateGroupKy(userId: string) {
     const token = await this.getAdminToken();
     const groupId = '8170365c-4417-44d9-929b-5115c82e4d81';
     await axios.put(
-      `${process.env.URL_KEYCLOAK}/admin/realms/${process.env.REALM_KEYCLOAK}/users/${userId}/groups/${groupId}`,
+      `${this.baseUrl}/admin/realms/${this.realm}/users/${userId}/groups/${groupId}`,
       {},
       {
         headers: {
@@ -80,6 +82,7 @@ export class KeycloakService {
           },
         },
       );
+      console.log(response);
       console.log(`Usuario ${user.username} migrado correctamente.`);
     } catch (error) {
       console.error(
@@ -121,7 +124,7 @@ export class KeycloakService {
 
     try {
       const response = await axios.get(
-        `https://login.colegioae.edu.pe/admin/realms/${process.env.REALM_KEYCLOAK}/clients/${this.clientId}/roles/${roleName}/users`,
+        `${this.baseUrl}/admin/realms/${this.realm}/clients/${this.clientId}/roles/${roleName}/users`,
 
         {
           headers: {
