@@ -15,6 +15,7 @@ import { CreateTeacherCompetencyDto } from './dto/create-teacher-assignment.dto'
 import { TeacherAssignment } from './entities/teacher_assignment.entity';
 import { UpdateTeacherCompetencyDto } from './dto/update-teacher-assignment.dto';
 import { GetTeacherAssignmentDto } from './dto/get-teacher-assignment.dto';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class CompetencyService {
@@ -24,6 +25,8 @@ export class CompetencyService {
     private readonly competencyRepository: Repository<Competency>,
     @InjectRepository(TeacherAssignment)
     private readonly teacherAssignmentRepository: Repository<TeacherAssignment>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async create(createCompetencyDto: CreateCompetencyDto) {
@@ -135,21 +138,46 @@ export class CompetencyService {
     }
   }
 
-  async getAssignToTeacher(queryTeacherCompetencyDto: GetTeacherAssignmentDto) {
+  async getAssignToTeacher(
+    queryTeacherCompetencyDto: GetTeacherAssignmentDto,
+    user: any,
+  ) {
     const { activityClassroomId, userId } = queryTeacherCompetencyDto;
     const whereCondition: any = {};
+    const roles = user.resource_access['client-test-appae'].roles as any[];
 
-    if (userId) {
+    const autPerm = [
+      'administrador-colegio',
+      // 'secretaria',
+      // 'administrador-sede',
+      // 'generador-carnet',
+    ];
+
+    const isAdmin = roles.some((e) => autPerm.includes(e));
+    if (isAdmin) {
+      if (userId) {
+        whereCondition.user = {
+          id: +userId,
+        };
+      }
+
+      if (activityClassroomId) {
+        whereCondition.activityClassroom = {
+          id: +activityClassroomId,
+        };
+      }
+    } else {
+      const us = await this.userRepository.findOne({
+        where: {
+          email: user.email,
+        },
+      });
+
       whereCondition.user = {
-        id: +userId,
+        id: us.id,
       };
     }
 
-    if (activityClassroomId) {
-      whereCondition.activityClassroom = {
-        id: +activityClassroomId,
-      };
-    }
     try {
       const assignments = await this.teacherAssignmentRepository.find({
         where: whereCondition,
@@ -157,7 +185,7 @@ export class CompetencyService {
           user: { person: true },
         },
         order: {
-          competency: 'DESC',
+          competency: { id: 'DESC' },
         },
       });
       const formatAssignments = assignments.map((assignment) => {
@@ -169,6 +197,7 @@ export class CompetencyService {
 
         return {
           id: assignment.id,
+          activityClassroomId: assignment.activityClassroom.id,
           classroom: `${level?.name} - ${grade?.name} ${assignment.activityClassroom?.section}`,
           area: area || 'Sin área',
           course: course?.name || 'Sin curso',

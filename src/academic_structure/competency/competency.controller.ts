@@ -18,6 +18,7 @@ import { CreateTeacherCompetencyDto } from './dto/create-teacher-assignment.dto'
 import { UpdateTeacherCompetencyDto } from './dto/update-teacher-assignment.dto';
 import { GetTeacherAssignmentDto } from './dto/get-teacher-assignment.dto';
 import { RespGetTeacherAssignmentDto } from './dto/resp-get-teacher-assignment.dto';
+import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 @ApiTags('Competency')
 @Controller('competency')
@@ -45,28 +46,8 @@ export class CompetencyController {
     type: [Competency],
   })
   findAll(@Query('courseId') courseId: string) {
+    console.log('savasv');
     return this.competencyService.findAll(+courseId);
-  }
-
-  @Get(':id')
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description:
-      'El término de búsqueda utilizado para encontrar grados específicos, puedes enviar el solo el id',
-    type: String,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Detail competency',
-    type: Competency,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'competency  not found ',
-  })
-  findOne(@Param('id') id: string) {
-    return this.competencyService.findOne(+id);
   }
 
   @Patch(':id')
@@ -116,8 +97,12 @@ export class CompetencyController {
   })
   getAssignToTeacher(
     @Query() queryTeacherCompetencyDto: GetTeacherAssignmentDto,
+    @AuthenticatedUser() user: any,
   ) {
-    return this.competencyService.getAssignToTeacher(queryTeacherCompetencyDto);
+    return this.competencyService.getAssignToTeacher(
+      queryTeacherCompetencyDto,
+      user,
+    );
   }
 
   @ApiResponse({
@@ -153,5 +138,27 @@ export class CompetencyController {
   @Delete('teacher-assignments/:id')
   deleteAssignToTeacher(@Param('id') id: string) {
     return this.competencyService.deleteAssignToTeacher(+id);
+  }
+
+  @Get(':id')
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description:
+      'El término de búsqueda utilizado para encontrar grados específicos, puedes enviar el solo el id',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Detail competency',
+    type: Competency,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'competency  not found ',
+  })
+  findOne(@Param('id') id: string) {
+    console.log('dsbhsdnb');
+    return this.competencyService.findOne(+id);
   }
 }
