@@ -1,50 +1,38 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Phase } from '../../phase/entities/phase.entity';
+import { Area } from 'src/academic_structure/area/entities/area.entity';
+import { Competency } from 'src/academic_structure/competency/entities/competency.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Grade } from 'src/grade/entities/grade.entity';
-import { Area } from 'src/area/entities/area.entity';
 
 @Entity()
-export class AreaAssignments {
+export class Course {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Area, (area) => area.areaAssignments, {
-    eager: true,
-  })
-  @JoinColumn({ name: 'areaId' })
-  area?: Area;
-
   @ApiProperty({
-    example: '1',
+    example: '2023',
     description: 'Name of area',
     uniqueItems: true,
   })
   @Column('varchar', {
     unique: true,
   })
-  orden: number;
+  name: string;
 
-  @ManyToOne(() => Phase, (year) => year.areaAssignments, {
+  @ManyToOne(() => Area, (area) => area.course, {
     eager: true,
   })
-  @JoinColumn({ name: 'phaseId' })
-  phase?: Phase;
-
-  @ManyToOne(() => Grade, (grade) => grade.areaAssignments, {
-    eager: true,
-  })
-  @JoinColumn({ name: 'gradeId' })
-  grade?: Grade;
+  @JoinColumn({ name: 'areaId' })
+  area?: Area;
 
   @ApiProperty({
     example: 'true',
@@ -67,4 +55,9 @@ export class AreaAssignments {
     onUpdate: 'CURRENT_TIMESTAMP(6)',
   })
   updatedAt: Date;
+
+  @OneToMany(() => Competency, (competency) => competency.course, {
+    // eager: true,
+  })
+  competency?: Competency[];
 }
