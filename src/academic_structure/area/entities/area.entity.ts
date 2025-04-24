@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Competency } from 'src/academic_structure/competency/entities/competency.entity';
 import { Course } from 'src/academic_structure/course/entities/course.entity';
 import { Level } from 'src/level/entities/level.entity';
 import {
@@ -60,4 +61,9 @@ export class Area {
     // eager: true,
   })
   course?: Course[];
+
+  @OneToMany(() => Competency, (competency) => competency.area, {
+    // eager: true,
+  })
+  competency?: Competency[];
 }

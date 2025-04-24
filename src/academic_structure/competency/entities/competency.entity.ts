@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Area } from 'src/academic_structure/area/entities/area.entity';
 import { Course } from 'src/academic_structure/course/entities/course.entity';
 import {
   Column,
@@ -28,9 +29,17 @@ export class Competency {
 
   @ManyToOne(() => Course, (course) => course.competency, {
     eager: true,
+    nullable: true,
   })
   @JoinColumn({ name: 'courseId' })
   course?: Course;
+
+  @ManyToOne(() => Area, (area) => area.competency, {
+    eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'areaId' })
+  area?: Area;
 
   @ApiProperty({
     example: 'true',
