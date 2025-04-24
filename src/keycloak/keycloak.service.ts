@@ -80,6 +80,7 @@ export class KeycloakService {
           },
         },
       );
+      console.log(response);
       console.log(`Usuario ${user.username} migrado correctamente.`);
     } catch (error) {
       console.error(
@@ -168,13 +169,18 @@ export class KeycloakService {
     if (!role) throw new Error('Role not found');
 
     // Asignar el rol al usuario
-    const assignUrl = `${this.baseUrl}/admin/realms/${this.realm}/users/${userId}/role-mappings/clients/${client.id}`;
-    await axios.post(assignUrl, [role], {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+      const assignUrl = `${this.baseUrl}/admin/realms/${this.realm}/users/${userId}/role-mappings/clients/${client.id}`;
+      await axios.post(assignUrl, [role], {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      throw new NotFoundException('User Not found');
+    }
 
     return { success: true };
   }
