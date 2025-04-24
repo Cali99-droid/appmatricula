@@ -1,4 +1,3 @@
-
 import { Repository } from 'typeorm';
 import {
   BadRequestException,
@@ -12,12 +11,10 @@ import { CreateCompetencyDto } from './dto/create-competency.dto';
 import { UpdateCompetencyDto } from './dto/update-competency.dto';
 import { Competency } from './entities/competency.entity';
 
-
 import { CreateTeacherCompetencyDto } from './dto/create-teacher-assignment.dto';
 import { TeacherAssignment } from './entities/teacher_assignment.entity';
 import { UpdateTeacherCompetencyDto } from './dto/update-teacher-assignment.dto';
 import { GetTeacherAssignmentDto } from './dto/get-teacher-assignment.dto';
-
 
 @Injectable()
 export class CompetencyService {
@@ -25,7 +22,7 @@ export class CompetencyService {
   constructor(
     @InjectRepository(Competency)
     private readonly competencyRepository: Repository<Competency>,
-      @InjectRepository(TeacherAssignment)
+    @InjectRepository(TeacherAssignment)
     private readonly teacherAssignmentRepository: Repository<TeacherAssignment>,
   ) {}
 
@@ -91,7 +88,6 @@ export class CompetencyService {
       handleDBExceptions(error, this.logger);
     }
   }
-
 
   // ** COMPETENCIAS POR DOCENTE */
   async assignToTeacher(
@@ -198,4 +194,3 @@ export class CompetencyService {
     }
   }
 }
-

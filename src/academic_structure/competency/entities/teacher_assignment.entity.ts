@@ -10,7 +10,6 @@ import {
 import { Competency } from './competency.entity';
 import { User } from 'src/user/entities/user.entity';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
-import { Phase } from 'src/phase/entities/phase.entity';
 
 @Entity()
 export class TeacherAssignment {

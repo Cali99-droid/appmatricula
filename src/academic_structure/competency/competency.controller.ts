@@ -1,4 +1,3 @@
-
 import {
   Controller,
   Get,
@@ -101,7 +100,6 @@ export class CompetencyController {
     return this.competencyService.remove(+id);
   }
 
-
   // ** COMPETENCIAS POR DOCENTE */
   // @Roles({
   //   roles: ['registro-asistencia'],
@@ -157,4 +155,3 @@ export class CompetencyController {
     return this.competencyService.deleteAssignToTeacher(+id);
   }
 }
-
