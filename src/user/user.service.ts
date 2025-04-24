@@ -108,6 +108,9 @@ export class UserService {
       where: {
         sub: In(subs),
       },
+      relations: {
+        person: true,
+      },
     });
     return users.map((user) => {
       return {
@@ -118,6 +121,7 @@ export class UserService {
         assignments: user.assignments.map((ass) => {
           return { id: ass.campusDetail.id, name: ass.campusDetail.name };
         }),
+        person: user.person,
       };
     });
   }
@@ -180,7 +184,9 @@ export class UserService {
 
   async searchUser(searchDto: SearchUserDto, user: any) {
     const { searchTerm, page = 1, limit = 10 } = searchDto;
-    const query = this.userRepository.createQueryBuilder('user');
+    const query = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.person', 'person');
     if (searchTerm) {
       query.where('LOWER(user.email) LIKE LOWER(:email)', {
         email: `%${searchTerm}%`,
