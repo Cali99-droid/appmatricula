@@ -3,6 +3,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Grade } from '../../grade/entities/grade.entity';
 import { CampusToLevel } from '../../campus/entities/campusToLevel.entity';
 import { SchoolShift } from 'src/school_shifts/entities/school_shift.entity';
+import { Area } from 'src/academic_structure/area/entities/area.entity';
 @Entity()
 export class Level {
   @ApiProperty()
@@ -49,4 +50,9 @@ export class Level {
     // eager: true,
   })
   schoolShift?: SchoolShift[];
+
+  @OneToMany(() => Area, (area) => area.level, {
+    // eager: true,
+  })
+  area?: Area[];
 }

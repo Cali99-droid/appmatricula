@@ -18,6 +18,7 @@ export class AreaService {
     try {
       const newEntry = this.areaRepository.create({
         name: createAreaDto.name,
+        level: { id: createAreaDto.levelId },
         status: true,
       });
       const area = await this.areaRepository.save(newEntry);
@@ -46,9 +47,10 @@ export class AreaService {
   }
 
   async update(id: number, updateAreaDto: UpdateAreaDto) {
-    const { ...rest } = updateAreaDto;
+    const { levelId, ...rest } = updateAreaDto;
     const area = await this.areaRepository.preload({
       id: id,
+      level: { id: levelId },
       ...rest,
     });
     if (!area) throw new NotFoundException(`Area with id: ${id} not found`);

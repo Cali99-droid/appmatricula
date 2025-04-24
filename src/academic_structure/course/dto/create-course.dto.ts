@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
 
-export class CreateAreaDto {
+export class CreateCourseDto {
   @ApiProperty({
-    description: 'Name of the area',
+    description: 'Name of the course',
     nullable: false,
     minLength: 4,
   })
