@@ -174,7 +174,8 @@ export class AuthService {
         if (user.resource_access['client-test-appae']) {
           roles = user.resource_access['client-test-appae'].roles;
         }
-
+        console.log('roelsas');
+        console.log(roles);
         const menu = this.generateMenu(roles);
         return menu;
       } else {
@@ -189,7 +190,7 @@ export class AuthService {
         if (user.resource_access['client-test-appae']) {
           roles = user.resource_access['client-test-appae'].roles;
         }
-
+        console.log(roles);
         const menu = this.generateMenu(roles);
         return menu;
         // throw new BadRequestException(
@@ -209,7 +210,7 @@ export class AuthService {
     if (user.resource_access['client-test-appae']) {
       roles = user.resource_access['client-test-appae'].roles;
     }
-
+    console.log(roles);
     const menu = this.generateMenu(roles);
     return menu;
   }
