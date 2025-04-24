@@ -4,8 +4,7 @@ import { CompetencyService } from './competency.service';
 import { CompetencyController } from './competency.controller';
 import { Competency } from './entities/competency.entity';
 import { TeacherAssignment } from './entities/teacher_assignment.entity';
-import { CompetencyController } from './competency.controller';
-import { CompetencyService } from './competency.service';
+
 
 @Module({
   controllers: [CompetencyController],
