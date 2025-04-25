@@ -1307,12 +1307,13 @@ export class TreasuryService {
     //**diciembre cambiar a fin de fase regualr vencimiento deuda */
     const details = debts
       .map((d) => {
-        total += d.total;
         let amount: number = d.total;
         if (d.discount !== null) {
           amount = d.total - (d.total * d.discount.percentage) / 100;
         }
+        total += amount;
         if (amount === 0) return null;
+
         return {
           type: 'DD',
           account: '37508739262',
@@ -1384,7 +1385,7 @@ export class TreasuryService {
         if (d.discount !== null) {
           amount = d.total - (d.total * d.discount.percentage) / 100;
         }
-        total += d.total;
+        total += amount;
         if (amount === 0) return null;
         return {
           type: '02',
