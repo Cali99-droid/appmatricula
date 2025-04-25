@@ -1336,7 +1336,7 @@ export class TreasuryService {
     /**agregar espacios en blanco nombre 54 */
     /**antes de la RR agregar dos 0 */
     const name = 'ASOCIACION EDUCATIVA LUZ Y CIENCIA';
-    const cantRegisters = debts.length;
+    const cantRegisters = details.length;
     const header = this.sanitizeText(
       `CC37508739262C${name.padEnd(40)}${this.formatDate(new Date().toString())}${cantRegisters.toString().padStart(9, '0')}${total.toString().padStart(13, '0')}00R`,
     ).padEnd(250, ' ');
@@ -1421,7 +1421,7 @@ export class TreasuryService {
     /**FOOTER */
 
     const typeTotal = '03';
-    const cantRegisters = debts.length;
+    const cantRegisters = details.length;
     const sumTotal = total + '00';
 
     // const generateDate = this.formatDate(new Date().toString());
