@@ -46,8 +46,8 @@ export class CompetencyController {
     type: [Competency],
   })
   findAll(
-    @Query('courseId') courseId: string,
-    @Query('areaId') areaId: string,
+    @Query('courseId') courseId?: string,
+    @Query('areaId') areaId?: string,
   ) {
     return this.competencyService.findAll(+courseId, +areaId);
   }

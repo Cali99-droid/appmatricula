@@ -39,11 +39,11 @@ export class RatingsController {
   @Get()
   @ApiOkResponse({
     status: 200,
-    description: 'Array of ratingss',
+    description: 'Array of ratings',
     type: [Ratings],
   })
-  findAll(@Query('areaId') areaId: string) {
-    return this.ratingsService.findAll(+areaId);
+  findAll(@Query('activityClassRoomId') activityClassRoomId: string) {
+    return this.ratingsService.findAll(+activityClassRoomId);
   }
 
   @Get(':id')
