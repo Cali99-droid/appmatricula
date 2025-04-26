@@ -45,9 +45,11 @@ export class CompetencyController {
     description: 'Array of competencys',
     type: [Competency],
   })
-  findAll(@Query('courseId') courseId: string) {
-    console.log('savasv');
-    return this.competencyService.findAll(+courseId);
+  findAll(
+    @Query('courseId') courseId?: string,
+    @Query('areaId') areaId?: string,
+  ) {
+    return this.competencyService.findAll(+courseId, +areaId);
   }
 
   @Patch(':id')

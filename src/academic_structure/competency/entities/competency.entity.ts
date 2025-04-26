@@ -1,12 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Area } from 'src/academic_structure/area/entities/area.entity';
 import { Course } from 'src/academic_structure/course/entities/course.entity';
+import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -62,4 +64,7 @@ export class Competency {
     onUpdate: 'CURRENT_TIMESTAMP(6)',
   })
   updatedAt: Date;
+
+  @OneToMany(() => Ratings, (ratings) => ratings.competency)
+  ratings?: Ratings[];
 }
