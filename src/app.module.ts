@@ -45,6 +45,7 @@ import { TransfersModule } from './transfer/transfer.module';
 import { AreaModule } from './academic_structure/area/area.module';
 import { CompetencyModule } from './academic_structure/competency/competency.module';
 import { CourseModule } from './academic_structure/course/course.module';
+import { RatingsModule } from './academic_structure/ratings/ratings.module';
 
 @Module({
   imports: [
@@ -87,6 +88,7 @@ import { CourseModule } from './academic_structure/course/course.module';
     AreaModule,
     CompetencyModule,
     CourseModule,
+    RatingsModule,
 
     EnrollmentScheduleModule,
     EmailsModule,

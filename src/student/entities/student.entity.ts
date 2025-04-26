@@ -16,6 +16,7 @@ import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { EmailDetail } from 'src/emails/entities/emailDetail.entity';
 import { Transfer } from 'src/transfer/entities/transfer.entity';
+import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
 @Entity()
 export class Student {
   @ApiProperty()
@@ -91,6 +92,9 @@ export class Student {
 
   @OneToMany(() => Transfer, (transfers) => transfers.student)
   transfers?: Transfer[];
+
+  @OneToMany(() => Ratings, (ratings) => ratings.student)
+  ratings?: Ratings[];
   // @OneToMany(() => Email, (email) => email.student, {
   //   // eager: true,
   // })

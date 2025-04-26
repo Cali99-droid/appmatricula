@@ -34,6 +34,7 @@ export class CompetencyService {
       const newEntry = this.competencyRepository.create({
         name: createCompetencyDto.name,
         course: { id: createCompetencyDto.courseId },
+        area: { id: createCompetencyDto.areaId },
         status: true,
       });
       const competency = await this.competencyRepository.save(newEntry);
@@ -44,9 +45,12 @@ export class CompetencyService {
     }
   }
 
-  async findAll(courseId?: number) {
+  async findAll(courseId?: number, areaId?: number) {
     const competencys = await this.competencyRepository.find({
-      where: { course: { id: isNaN(courseId) ? undefined : courseId } },
+      where: {
+        course: { id: isNaN(courseId) ? undefined : courseId },
+        area: { id: isNaN(areaId) ? undefined : areaId },
+      },
       relations: { course: true },
       order: {
         name: 'ASC',
@@ -65,10 +69,11 @@ export class CompetencyService {
   }
 
   async update(id: number, updateCompetencyDto: UpdateCompetencyDto) {
-    const { courseId, ...rest } = updateCompetencyDto;
+    const { courseId, areaId, ...rest } = updateCompetencyDto;
     const competency = await this.competencyRepository.preload({
       id: id,
       course: { id: courseId },
+      area: { id: areaId },
       ...rest,
     });
     if (!competency)
