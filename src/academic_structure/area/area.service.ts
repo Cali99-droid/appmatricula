@@ -29,12 +29,33 @@ export class AreaService {
     }
   }
 
-  async findAll() {
-    const areas = await this.areaRepository.find({
-      order: {
-        name: 'ASC',
-      },
-    });
+  async findAll(levelId: number) {
+    let areas;
+    if (levelId) {
+      areas = await this.areaRepository.find({
+        where: {
+          level: { id: levelId },
+        },
+        order: {
+          name: 'ASC',
+        },
+        relations: {
+          competency: true,
+          course: true,
+        },
+      });
+    } else {
+      areas = await this.areaRepository.find({
+        order: {
+          name: 'ASC',
+        },
+        relations: {
+          competency: true,
+          course: true,
+        },
+      });
+    }
+
     return areas;
   }
 

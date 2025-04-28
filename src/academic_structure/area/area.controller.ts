@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AreaService } from './area.service';
@@ -34,8 +35,8 @@ export class AreaController {
     description: 'Array of areas',
     type: [Area],
   })
-  findAll() {
-    return this.areaService.findAll();
+  findAll(@Query('levelId') levelId: string) {
+    return this.areaService.findAll(+levelId);
   }
 
   @Get(':id')
