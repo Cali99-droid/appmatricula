@@ -198,6 +198,7 @@ export class CompetencyService {
         const grade = assignment.activityClassroom?.grade;
         const level = grade?.level;
         const course = assignment.competency?.course;
+        const competency = assignment.competency;
         const area = assignment.competency?.area?.name || course?.area?.name;
 
         return {
@@ -206,6 +207,7 @@ export class CompetencyService {
           classroom: `${level?.name} - ${grade?.name} ${assignment.activityClassroom?.section}`,
           area: area || 'Sin área',
           course: course?.name || 'Sin curso',
+          competency: competency?.name || 'Sin curso',
           teacher:
             `${person?.lastname ?? ''} ${person?.mLastname ?? ''} ${person?.name ?? ''}`.trim(),
         };
