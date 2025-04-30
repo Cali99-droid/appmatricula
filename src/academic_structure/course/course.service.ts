@@ -15,13 +15,10 @@ export class CourseService {
   ) {}
 
   async create(createCourseDto: CreateCourseDto) {
-    if (createCourseDto.order < 1)
-      throw new NotFoundException(`Order must be greater than 0`);
     try {
       const newEntry = this.courseRepository.create({
         name: createCourseDto.name,
         area: { id: createCourseDto.areaId },
-        order: createCourseDto.order,
         status: true,
       });
       const course = await this.courseRepository.save(newEntry);

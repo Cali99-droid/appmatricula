@@ -26,14 +26,6 @@ export class CreateCourseDto {
   areaId: number;
 
   @ApiProperty({
-    example: 1,
-    description: 'Order from area',
-    nullable: false,
-  })
-  @IsNumber()
-  order: number;
-
-  @ApiProperty({
     example: 'true',
     description: 'status of year, must be true or false',
     nullable: false,
