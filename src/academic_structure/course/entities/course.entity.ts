@@ -35,16 +35,6 @@ export class Course {
   area?: Area;
 
   @ApiProperty({
-    example: 1,
-    description: 'Order of area',
-    uniqueItems: true,
-  })
-  @Column('integer', {
-    unique: true,
-  })
-  order: number;
-
-  @ApiProperty({
     example: 'true',
     description: 'status of the area',
   })
