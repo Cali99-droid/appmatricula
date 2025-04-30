@@ -15,10 +15,22 @@ export class AreaService {
   ) {}
 
   async create(createAreaDto: CreateAreaDto) {
+    if (createAreaDto.order < 1)
+      throw new NotFoundException(`Order must be greater than 0`);
+    const areaExists = await this.areaRepository.findOneBy({
+      name: createAreaDto.name,
+      level: { id: createAreaDto.levelId },
+    });
+    if (areaExists) {
+      throw new NotFoundException(
+        `Area with name ${createAreaDto.name} already exists`,
+      );
+    }
     try {
       const newEntry = this.areaRepository.create({
         name: createAreaDto.name,
         level: { id: createAreaDto.levelId },
+        order: createAreaDto.order,
         status: true,
       });
       const area = await this.areaRepository.save(newEntry);
@@ -37,7 +49,7 @@ export class AreaService {
           level: { id: levelId },
         },
         order: {
-          name: 'ASC',
+          order: 'ASC',
         },
         relations: {
           competency: true,
@@ -47,7 +59,7 @@ export class AreaService {
     } else {
       areas = await this.areaRepository.find({
         order: {
-          name: 'ASC',
+          order: 'ASC',
         },
         relations: {
           competency: true,

@@ -30,11 +30,14 @@ export class CompetencyService {
   ) {}
 
   async create(createCompetencyDto: CreateCompetencyDto) {
+    if (createCompetencyDto.order < 1)
+      throw new NotFoundException(`Order must be greater than 0`);
     try {
       const newEntry = this.competencyRepository.create({
         name: createCompetencyDto.name,
         course: { id: createCompetencyDto.courseId },
         area: { id: createCompetencyDto.areaId },
+        order: createCompetencyDto.order,
         status: true,
       });
       const competency = await this.competencyRepository.save(newEntry);
@@ -53,7 +56,7 @@ export class CompetencyService {
       },
       relations: { course: true },
       order: {
-        name: 'ASC',
+        order: 'ASC',
       },
     });
     return competencys;

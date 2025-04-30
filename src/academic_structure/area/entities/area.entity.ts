@@ -25,7 +25,7 @@ export class Area {
     uniqueItems: true,
   })
   @Column('varchar', {
-    unique: true,
+    unique: false,
   })
   name: string;
 
@@ -34,6 +34,16 @@ export class Area {
   })
   @JoinColumn({ name: 'levelId' })
   level?: Level;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Order of area',
+    uniqueItems: true,
+  })
+  @Column('integer', {
+    unique: true,
+  })
+  order: number;
 
   @ApiProperty({
     example: 'true',
