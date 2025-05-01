@@ -72,6 +72,7 @@ export class CourseService {
   }
 
   async update(id: number, updateCourseDto: UpdateCourseDto) {
+    const { areaId, competencyId, ...rest } = updateCourseDto;
     const course = await this.courseDetailRepository.find({
       where: { course: { id: id } },
     });
@@ -79,17 +80,21 @@ export class CourseService {
     await this.courseDetailRepository.remove(course);
 
     try {
-      const coursesDetail = updateCourseDto.competencyId.map(
-        async (element) => {
-          const newEntry = this.courseDetailRepository.create({
-            course: { id: id },
-            competency: { id: element },
-            status: true,
-          });
-          return await this.courseDetailRepository.save(newEntry);
-        },
-      );
-      return await Promise.all(coursesDetail);
+      competencyId.map(async (element) => {
+        const newEntry = this.courseDetailRepository.create({
+          course: { id: id },
+          competency: { id: element },
+          status: true,
+        });
+        return await this.courseDetailRepository.save(newEntry);
+      });
+      const course = await this.courseRepository.preload({
+        id: id,
+        area: { id: areaId },
+        ...rest,
+      });
+      await this.courseRepository.save(course);
+      return course;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
