@@ -194,6 +194,9 @@ export class CompetencyService {
         where: whereCondition,
         relations: {
           user: { person: true },
+          course: {
+            area: true,
+          },
         },
         order: {
           area: { id: 'DESC' },
@@ -212,9 +215,9 @@ export class CompetencyService {
           id: assignment.id,
           activityClassroomId: assignment.activityClassroom.id,
           classroom: `${level?.name} - ${grade?.name} ${assignment.activityClassroom?.section}`,
-          area: area || null,
+          area: area || course?.area.name.toLocaleUpperCase(),
           // course: course?.name || 'Sin curso',
-          course: course?.name || null,
+          course: course?.name.toLocaleUpperCase() || null,
           teacher:
             `${person?.lastname ?? ''} ${person?.mLastname ?? ''} ${person?.name ?? ''}`.trim(),
         };
