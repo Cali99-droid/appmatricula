@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Area } from 'src/academic_structure/area/entities/area.entity';
-import { Course } from 'src/academic_structure/course/entities/course.entity';
+import { CourseDetail } from 'src/academic_structure/course/entities/course_detail.entity';
 import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
 import {
   Column,
@@ -28,13 +28,6 @@ export class Competency {
     unique: false,
   })
   name: string;
-
-  @ManyToOne(() => Course, (course) => course.competency, {
-    eager: true,
-    nullable: true,
-  })
-  @JoinColumn({ name: 'courseId' })
-  course?: Course;
 
   @ManyToOne(() => Area, (area) => area.competency, {
     eager: true,
@@ -77,4 +70,7 @@ export class Competency {
 
   @OneToMany(() => Ratings, (ratings) => ratings.competency)
   ratings?: Ratings[];
+
+  @OneToMany(() => CourseDetail, (course) => course.competency)
+  courseDetail?: CourseDetail[];
 }

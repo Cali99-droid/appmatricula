@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsArray,
   IsBoolean,
   IsNumber,
   IsOptional,
@@ -24,6 +25,15 @@ export class CreateCourseDto {
   })
   @IsNumber()
   areaId: number;
+
+  @ApiProperty({
+    example: [1, 2, 3],
+    description: 'id of the competency',
+    nullable: false,
+  })
+  @IsArray()
+  @IsNumber({}, { each: true })
+  competencyId: [number];
 
   @ApiProperty({
     example: 'true',
