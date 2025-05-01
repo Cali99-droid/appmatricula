@@ -8,7 +8,14 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
-import { Between, In, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  Between,
+  Code,
+  In,
+  LessThan,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { Family } from 'src/family/entities/family.entity';
 import axios from 'axios';
 import { Payment } from './entities/payment.entity';
@@ -1458,7 +1465,9 @@ export class TreasuryService {
         code: In(results.map((res) => res.code)),
       },
       relations: {
-        student: true,
+        student: {
+          person: true,
+        },
       },
     });
 
@@ -1478,7 +1487,15 @@ export class TreasuryService {
       return {
         status: false,
         message: 'No se encontró información',
-        alreadyPaid: debts.map((d) => d.code),
+        alreadyPaid: debts.map((d) => ({
+          code: d.code,
+          student:
+            d.student.person.lastname +
+            ' ' +
+            d.student.person.mLastname +
+            ' ' +
+            d.student.person.name,
+        })),
         numberOfRecords: debts.length,
         failedPayments: [],
         successfulPayments: [],
@@ -1495,7 +1512,15 @@ export class TreasuryService {
       return {
         status: false,
         message: 'Algunos pagos ya fueron registrados previamente.',
-        alreadyPaid: debtsPaid.map((d) => d.code),
+        alreadyPaid: debtsPaid.map((d) => ({
+          code: d.code,
+          student:
+            d.student.person.lastname +
+            ' ' +
+            d.student.person.mLastname +
+            ' ' +
+            d.student.person.name,
+        })),
         debtsPending: debtsPending.map((d) => d.code),
         numberOfRecords: debts.length,
         failedPayments: [],
