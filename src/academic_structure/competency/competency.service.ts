@@ -96,16 +96,23 @@ export class CompetencyService {
     }
   }
 
-  // ** COMPETENCIAS POR DOCENTE */
+  // ** CURSOS POR DOCENTE */
   async assignToTeacher(
     createTeacherCompetencyDto: CreateTeacherCompetencyDto,
   ) {
-    const { activityClassroomId, competencyId, userId } =
+    const { activityClassroomId, areaId, userId, courseId } =
       createTeacherCompetencyDto;
+
+    if (areaId && courseId) {
+      throw new BadRequestException(
+        'You cannot send areaId and courseId in the same request, only one of them.',
+      );
+    }
     try {
       const teacherAssignmentCreated = this.teacherAssignmentRepository.create({
         activityClassroom: { id: activityClassroomId },
-        competency: { id: competencyId },
+        area: { id: areaId },
+        course: { id: courseId },
         user: { id: userId },
         // phase: { id: phaseId },
       });
@@ -125,8 +132,8 @@ export class CompetencyService {
     const teacherCompetency = await this.teacherAssignmentRepository.preload({
       id: id,
       activityClassroom: { id: updateTeacherCompetencyDto.activityClassroomId },
-      competency: { id: updateTeacherCompetencyDto.competencyId },
-      // phase: { id: updateTeacherCompetencyDto.phaseId },
+      area: { id: updateTeacherCompetencyDto.areaId },
+      course: { id: updateTeacherCompetencyDto.courseId },
       user: { id: updateTeacherCompetencyDto.userId },
     });
 
@@ -189,7 +196,7 @@ export class CompetencyService {
           user: { person: true },
         },
         order: {
-          competency: { id: 'DESC' },
+          area: { id: 'DESC' },
         },
       });
       const formatAssignments = assignments.map((assignment) => {
@@ -197,17 +204,17 @@ export class CompetencyService {
         const grade = assignment.activityClassroom?.grade;
         const level = grade?.level;
         // const course = assignment.competency?.course;
-        const competency = assignment.competency;
+        const course = assignment.course;
         // const area = assignment.competency?.area?.name || course?.area?.name;
-        const area = assignment.competency?.area?.name;
+        const area = assignment.area?.name;
 
         return {
           id: assignment.id,
           activityClassroomId: assignment.activityClassroom.id,
           classroom: `${level?.name} - ${grade?.name} ${assignment.activityClassroom?.section}`,
-          area: area || 'Sin área',
+          area: area || null,
           // course: course?.name || 'Sin curso',
-          competency: competency?.name || 'Sin curso',
+          course: course?.name || null,
           teacher:
             `${person?.lastname ?? ''} ${person?.mLastname ?? ''} ${person?.name ?? ''}`.trim(),
         };

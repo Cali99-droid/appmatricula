@@ -7,9 +7,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Competency } from './competency.entity';
 import { User } from 'src/user/entities/user.entity';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import { Area } from 'src/academic_structure/area/entities/area.entity';
+import { Course } from 'src/academic_structure/course/entities/course.entity';
 
 @Entity()
 export class TeacherAssignment {
@@ -24,12 +25,19 @@ export class TeacherAssignment {
   @JoinColumn({ name: 'userId' })
   user?: User;
 
-  @ManyToOne(() => Competency, {
+  @ManyToOne(() => Area, {
     eager: true,
     nullable: true,
   })
-  @JoinColumn({ name: 'competencyId' })
-  competency?: Competency;
+  @JoinColumn({ name: 'areaId' })
+  area?: Area;
+
+  @ManyToOne(() => Course, {
+    eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'courseId' })
+  course?: Course;
 
   @ManyToOne(() => ActivityClassroom, {
     eager: true,

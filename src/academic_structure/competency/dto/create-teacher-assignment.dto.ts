@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber } from 'class-validator';
+import { IsNumber, IsOptional } from 'class-validator';
 import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreateTeacherCompetencyDto {
@@ -15,11 +15,22 @@ export class CreateTeacherCompetencyDto {
   @ApiProperty({
     example: 1,
     description: 'id of the competency',
-    nullable: false,
+    nullable: true,
   })
   @IsNumber()
-  @ExistId({ tableName: 'competency' })
-  competencyId: number;
+  @IsOptional()
+  @ExistId({ tableName: 'course' })
+  courseId: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'id of the competency',
+    nullable: true,
+  })
+  @IsNumber()
+  @IsOptional()
+  @ExistId({ tableName: 'area' })
+  areaId: number;
 
   @ApiProperty({
     example: 1,
