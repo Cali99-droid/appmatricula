@@ -50,10 +50,8 @@ export class CompetencyService {
   async findAll(courseId?: number, areaId?: number) {
     const competencys = await this.competencyRepository.find({
       where: {
-        course: { id: isNaN(courseId) ? undefined : courseId },
         area: { id: isNaN(areaId) ? undefined : areaId },
       },
-      relations: { course: true },
       order: {
         order: 'ASC',
       },

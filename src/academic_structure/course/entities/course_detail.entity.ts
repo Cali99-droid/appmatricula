@@ -1,38 +1,33 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Area } from 'src/academic_structure/area/entities/area.entity';
+import { Competency } from 'src/academic_structure/competency/entities/competency.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { CourseDetail } from './course_detail.entity';
+import { Course } from './course.entity';
 
 @Entity()
-export class Course {
+export class CourseDetail {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({
-    example: '2023',
-    description: 'Name of area',
-    uniqueItems: true,
+  @ManyToOne(() => Course, (course) => course.courseDetail, {
+    // eager: true,
   })
-  @Column('varchar', {
-    unique: true,
-  })
-  name: string;
+  @JoinColumn({ name: 'courseId' })
+  course?: Course;
 
-  @ManyToOne(() => Area, (area) => area.course, {
+  @ManyToOne(() => Competency, (competency) => competency.courseDetail, {
     eager: true,
   })
-  @JoinColumn({ name: 'areaId' })
-  area: Area;
+  @JoinColumn({ name: 'competencyId' })
+  competency?: Competency;
 
   @ApiProperty({
     example: 'true',
@@ -55,9 +50,4 @@ export class Course {
     onUpdate: 'CURRENT_TIMESTAMP(6)',
   })
   updatedAt: Date;
-
-  @OneToMany(() => CourseDetail, (courseDetail) => courseDetail.course, {
-    // eager: true,
-  })
-  courseDetail?: CourseDetail[];
 }
