@@ -35,7 +35,6 @@ export class CompetencyService {
     try {
       const newEntry = this.competencyRepository.create({
         name: createCompetencyDto.name,
-        course: { id: createCompetencyDto.courseId },
         area: { id: createCompetencyDto.areaId },
         order: createCompetencyDto.order,
         status: true,
@@ -72,10 +71,9 @@ export class CompetencyService {
   }
 
   async update(id: number, updateCompetencyDto: UpdateCompetencyDto) {
-    const { courseId, areaId, ...rest } = updateCompetencyDto;
+    const { areaId, ...rest } = updateCompetencyDto;
     const competency = await this.competencyRepository.preload({
       id: id,
-      course: { id: courseId },
       area: { id: areaId },
       ...rest,
     });
@@ -200,16 +198,17 @@ export class CompetencyService {
         const person = assignment.user?.person;
         const grade = assignment.activityClassroom?.grade;
         const level = grade?.level;
-        const course = assignment.competency?.course;
+        // const course = assignment.competency?.course;
         const competency = assignment.competency;
-        const area = assignment.competency?.area?.name || course?.area?.name;
+        // const area = assignment.competency?.area?.name || course?.area?.name;
+        const area = assignment.competency?.area?.name;
 
         return {
           id: assignment.id,
           activityClassroomId: assignment.activityClassroom.id,
           classroom: `${level?.name} - ${grade?.name} ${assignment.activityClassroom?.section}`,
           area: area || 'Sin área',
-          course: course?.name || 'Sin curso',
+          // course: course?.name || 'Sin curso',
           competency: competency?.name || 'Sin curso',
           teacher:
             `${person?.lastname ?? ''} ${person?.mLastname ?? ''} ${person?.name ?? ''}`.trim(),

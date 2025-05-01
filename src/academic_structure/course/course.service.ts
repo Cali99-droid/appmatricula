@@ -15,17 +15,20 @@ export class CourseService {
   ) {}
 
   async create(createCourseDto: CreateCourseDto) {
-    if (createCourseDto.order < 1)
-      throw new NotFoundException(`Order must be greater than 0`);
     try {
-      const newEntry = this.courseRepository.create({
-        name: createCourseDto.name,
-        area: { id: createCourseDto.areaId },
-        order: createCourseDto.order,
-        status: true,
+      const courses = createCourseDto.competencyId.map(async (element) => {
+        const newEntry = this.courseRepository.create({
+          name: createCourseDto.name,
+          area: { id: createCourseDto.areaId },
+          competency: { id: element },
+          status: true,
+        });
+        return await this.courseRepository.save(newEntry);
       });
-      const course = await this.courseRepository.save(newEntry);
-      return course;
+
+      const savedCourses = await Promise.all(courses);
+
+      return savedCourses;
     } catch (error) {
       // this.logger.error(error);
       handleDBExceptions(error, this.logger);
@@ -56,6 +59,7 @@ export class CourseService {
     const course = await this.courseRepository.preload({
       id: id,
       area: { id: areaId },
+      competency: { id: updateCourseDto.competencyId },
       ...rest,
     });
     if (!course) throw new NotFoundException(`Course with id: ${id} not found`);

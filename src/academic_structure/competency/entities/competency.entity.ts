@@ -29,13 +29,6 @@ export class Competency {
   })
   name: string;
 
-  @ManyToOne(() => Course, (course) => course.competency, {
-    eager: true,
-    nullable: true,
-  })
-  @JoinColumn({ name: 'courseId' })
-  course?: Course;
-
   @ManyToOne(() => Area, (area) => area.competency, {
     eager: true,
     nullable: true,
@@ -77,4 +70,7 @@ export class Competency {
 
   @OneToMany(() => Ratings, (ratings) => ratings.competency)
   ratings?: Ratings[];
+
+  @OneToMany(() => Course, (course) => course.competency)
+  course?: Course[];
 }

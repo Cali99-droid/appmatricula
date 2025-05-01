@@ -34,15 +34,11 @@ export class Course {
   @JoinColumn({ name: 'areaId' })
   area?: Area;
 
-  @ApiProperty({
-    example: 1,
-    description: 'Order of area',
-    uniqueItems: true,
+  @ManyToOne(() => Competency, (competency) => competency.course, {
+    eager: true,
   })
-  @Column('integer', {
-    unique: true,
-  })
-  order: number;
+  @JoinColumn({ name: 'competencyId' })
+  competency?: Competency;
 
   @ApiProperty({
     example: 'true',
