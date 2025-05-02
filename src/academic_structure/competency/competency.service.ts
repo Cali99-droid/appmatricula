@@ -199,7 +199,7 @@ export class CompetencyService {
           },
         },
         order: {
-          area: { id: 'DESC' },
+          area: { order: 'DESC' },
         },
       });
       const formatAssignments = assignments.map((assignment) => {
