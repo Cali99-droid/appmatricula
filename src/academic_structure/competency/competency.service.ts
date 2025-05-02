@@ -215,9 +215,13 @@ export class CompetencyService {
           id: assignment.id,
           activityClassroomId: assignment.activityClassroom.id,
           classroom: `${level?.name} - ${grade?.name} ${assignment.activityClassroom?.section}`,
+          areaId: assignment.area?.id || course?.area.id,
           area: area || course?.area.name.toLocaleUpperCase(),
+
           // course: course?.name || 'Sin curso',
+          courseId: assignment.course?.id || null,
           course: course?.name.toLocaleUpperCase() || null,
+          teacherId: assignment.user.id,
           teacher:
             `${person?.lastname ?? ''} ${person?.mLastname ?? ''} ${person?.name ?? ''}`.trim(),
         };
