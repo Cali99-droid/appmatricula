@@ -1518,6 +1518,15 @@ export class TreasuryService {
             d.student.person.name,
         })),
         debtsPending: debtsPending.map((d) => d.code),
+        debtsStudentPending: debtsPending.map((d) => ({
+          code: d.code,
+          student:
+            d.student.person.lastname +
+            ' ' +
+            d.student.person.mLastname +
+            ' ' +
+            d.student.person.name,
+        })),
         numberOfRecords: debts.length,
         failedPayments: [],
         failLength: 0,
@@ -1604,6 +1613,15 @@ export class TreasuryService {
         message: 'Algunos pagos no pudieron procesarse.',
         alreadyPaid: [],
         debtsPending: debtsPending.map((d) => d.code),
+        debtsStudentPending: debtsPending.map((d) => ({
+          code: d.code,
+          student:
+            d.student.person.lastname +
+            ' ' +
+            d.student.person.mLastname +
+            ' ' +
+            d.student.person.name,
+        })),
         numberOfRecords: failedPayments.length,
         failedPayments,
         failLength: failedPayments.length,
