@@ -33,7 +33,7 @@ export class Course {
   })
   @JoinColumn({ name: 'areaId' })
   area: Area;
-  
+
   @ApiProperty({
     example: 'true',
     description: 'status of the area',
