@@ -690,11 +690,12 @@ export class TreasuryService {
       throw new NotFoundException('No existe responsable de matrícula');
     }
 
+    // eslint-disable-next-line prefer-const
     serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
 
     if (debt.discount !== null) {
       debt.total = debt.total - (debt.total * debt.discount.percentage) / 100;
-      serie = `BB${campus.id}${level.id}`;
+      // serie = `BB${campus.id}${level.id}`;
     }
     if (debt.concept.code === 'C005') {
       // Si es traslado se procede a cancelar las deudas del mes
@@ -750,7 +751,7 @@ export class TreasuryService {
       cliente_direccion: family.address,
       cliente_email: client.user?.email || '',
       fecha_de_emision: new Date(),
-      fecha_de_vencimiento: debt.dateEnd,
+      fecha_de_vencimiento: new Date(),
       moneda: 1,
       porcentaje_de_igv: 0,
       total_gravada: '',
