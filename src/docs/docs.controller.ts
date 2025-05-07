@@ -1,11 +1,14 @@
 import { Controller, Get, Param, Query, Res } from '@nestjs/common';
 
 import { Response } from 'express';
+import * as path from 'path';
+import * as fs from 'fs';
 import { PdfService } from './pdf.service';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DownloadContractQueryDto } from './dto/downloadContractQuery.dto';
 import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
 import { Public, Resource } from 'nest-keycloak-connect';
+import { CardInput } from './interfaces/card-input.inteface';
 // import { GetUser } from 'src/auth/decorators/get-user.decorator';
 // import { Auth } from 'src/auth/decorators/auth.decorator';
 // import { User } from 'src/user/entities/user.entity';
@@ -52,6 +55,30 @@ export class DocsController {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=carnets.pdf');
     res.send(pdfBuffer);
+  }
+
+  @Get('download-report-card/student/:enrollmentId')
+  @Public()
+  async downloadStudentReportCard(
+    @Res() res: Response,
+    @Param('enrollmentId') id: string,
+  ) {
+    try {
+      const pdfBuffer = await this.pdfService.generateReportCard();
+
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename=student-report.pdf',
+        // 'Content-Length': pdfBuffer.length,
+      });
+
+      res.end(pdfBuffer);
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error generating PDF',
+        error: error.message,
+      });
+    }
   }
 
   @Get('download-contract/:idStudent')

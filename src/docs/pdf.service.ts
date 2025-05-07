@@ -28,7 +28,6 @@ import { addConstancy } from './constancy/constancy';
 import { Status } from 'src/enrollment/enum/status.enum';
 import { Person } from 'src/person/entities/person.entity';
 import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
-
 @Injectable()
 export class PdfService {
   constructor(
@@ -711,6 +710,103 @@ export class PdfService {
       doc.end();
     });
   }
+  async generateReportCard() {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 40,
+          bufferPages: true,
+        });
+
+        const buffers: Buffer[] = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+          const pdfData = Buffer.concat(buffers);
+          resolve(pdfData);
+        });
+
+        // Configuración segura de dimensiones
+        const leftMargin = this.safeNumber(40);
+        const pageWidth = this.safeNumber(doc.page.width - leftMargin * 2, 500);
+        const startY = this.safeNumber(50);
+
+        // Encabezado institucional
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(14)
+          .text('COLEGIO ALBERT EINSTEIN', { align: 'center' });
+
+        doc.fontSize(12).text('INFORME DE LOS PROCESOS DEL EDUCANDO - 2024', {
+          align: 'center',
+        });
+
+        doc.fontSize(11).text('NIVEL SECUNDARIA', { align: 'center' });
+
+        doc.moveDown(1);
+
+        // Información del estudiante
+        this.drawStudentInfo(doc, leftMargin, pageWidth, startY);
+        doc.moveDown(1);
+
+        // Tabla principal de calificaciones
+        this.drawMainTable(doc, leftMargin, pageWidth);
+        doc.moveDown(1);
+
+        // Secciones de calificaciones
+        this.drawSubjectSection(doc, 'MATEMÁTICA', [
+          {
+            competency: 'RESUELVE PROBLEMAS DE CANTIDAD',
+            grades: ['A', 'A', 'B', 'B'],
+          },
+          {
+            competency: 'RESUELVE PROBLEMAS DE REGULARIDAD',
+            grades: ['A', 'A', 'B', 'A'],
+          },
+          { competency: 'EQUIVALENCIA Y CAMBIO', grades: [] },
+          {
+            competency:
+              'RESUELVE PROBLEMAS DE FORMA, MOVIMIENTO Y LOCALIZACIÓN',
+            grades: ['A', 'B', 'B', 'B'],
+          },
+          {
+            competency:
+              'RESUELVE PROBLEMAS DE GESTIÓN DE DATOS E INCERTIDUMBRE',
+            grades: ['B', 'A', 'A', 'C'],
+          },
+        ]);
+
+        // Otras secciones (Comunicación, Ciencia y Tecnología, etc.)
+        // ... (similar a la sección de Matemática)
+
+        // Tabla de asistencias
+        this.drawAttendanceTable(doc, leftMargin, pageWidth);
+        doc.moveDown(1);
+
+        // Comentarios de la tutora
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(11)
+          .text('COMENTARIOS DE LA TUTORA', { underline: true });
+
+        doc
+          .font('Helvetica')
+          .text(
+            '________________________________________________________________________________',
+          )
+          .moveDown(2)
+          .text(
+            '________________________________________________________________________________',
+          );
+
+        doc.end();
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        reject(error);
+      }
+    });
+  }
+
   async fetchImage(url: string): Promise<ArrayBuffer> {
     const response = await fetch(url);
     const buffer = await response.arrayBuffer();
@@ -720,61 +816,6 @@ export class PdfService {
     return sharp(buffer).png().resize({ width: 200, height: 250 }).toBuffer();
   }
 
-  generateTable(doc: PDFKit.PDFDocument, data: any[]) {
-    const tableTop = 150;
-    const columnWidths = [150, 150, 150];
-    const rowHeight = 30;
-    let y = tableTop;
-
-    // Dibujar encabezado de la tabla
-    doc.fontSize(12).text('Columna 1', 50, y);
-    doc.text('Columna 2', 200, y);
-    doc.text('Columna 3', 350, y);
-
-    y += rowHeight;
-
-    // Dibujar filas de la tabla
-    data.forEach((row) => {
-      doc.fontSize(10).text(row.col1, 50, y);
-      doc.text(row.col2, 200, y);
-      doc.text(row.col3, 350, y);
-
-      // Dibujar líneas de las filas
-      this.drawRowLines(doc, y, columnWidths, rowHeight);
-
-      y += rowHeight;
-    });
-  }
-
-  // Dibujar las líneas de cada fila
-  drawRowLines(
-    doc: PDFKit.PDFDocument,
-    y: number,
-    columnWidths: number[],
-    rowHeight: number,
-  ) {
-    doc.lineWidth(0.5);
-    doc.strokeColor('#000');
-
-    // Dibujar la línea superior
-    doc.moveTo(50, y).lineTo(500, y).stroke();
-
-    // Dibujar las líneas verticales (columnas)
-    let xPos = 50;
-    columnWidths.forEach((width) => {
-      doc
-        .moveTo(xPos, y)
-        .lineTo(xPos, y + rowHeight)
-        .stroke();
-      xPos += width;
-    });
-
-    // Dibujar la línea inferior
-    doc
-      .moveTo(50, y + rowHeight)
-      .lineTo(500, y + rowHeight)
-      .stroke();
-  }
   async getCites(idDistrict: string) {
     console.log('first');
     //OBTENER TODOS LOS DISTRITOS
@@ -812,5 +853,297 @@ export class PdfService {
     } catch (error) {
       throw error;
     }
+  }
+
+  private safeNumber(value: number, defaultValue: number = 0): number {
+    return Number.isFinite(value) ? value : defaultValue;
+  }
+
+  private drawStudentInfo(
+    doc: PDFKit.PDFDocument,
+    leftMargin: number,
+    pageWidth: number,
+    startY: number,
+  ) {
+    const rowHeight = this.safeNumber(20);
+    const col1Width = this.safeNumber(100);
+    const col2Width = this.safeNumber(pageWidth - col1Width, 300);
+
+    // Encabezados
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(10)
+      .text('Código', leftMargin, startY)
+      .text('Apellidos y Nombres', leftMargin + col1Width, startY);
+
+    // Datos
+    doc
+      .font('Helvetica')
+      .text('18024181', leftMargin, startY + rowHeight)
+      .text(
+        'ROBLES MINAYA OMAR LEONCIO',
+        leftMargin + col1Width,
+        startY + rowHeight,
+      );
+
+    doc
+      .font('Helvetica-Bold')
+      .text('Salón', leftMargin, startY + rowHeight * 2)
+      .font('Helvetica')
+      .text(
+        'SECUNDARIA - QUINTO - E',
+        leftMargin + col1Width,
+        startY + rowHeight * 2,
+      );
+
+    // Bordes
+    doc.rect(leftMargin, startY, pageWidth, rowHeight * 3).stroke();
+    doc
+      .moveTo(leftMargin + col1Width, startY)
+      .lineTo(leftMargin + col1Width, startY + rowHeight * 3)
+      .stroke();
+
+    doc.y = startY + rowHeight * 3 + 10;
+  }
+
+  private drawMainTable(
+    doc: PDFKit.PDFDocument,
+    leftMargin: number,
+    pageWidth: number,
+  ) {
+    const startY = this.safeNumber(doc.y);
+    const rowHeight = this.safeNumber(20);
+    const colWidths = [
+      this.safeNumber(150),
+      this.safeNumber(60),
+      this.safeNumber(60),
+      this.safeNumber(60),
+      this.safeNumber(60),
+      this.safeNumber(80),
+      this.safeNumber(pageWidth - 150 - 60 * 4 - 80, 100),
+    ];
+
+    // Encabezados
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(10)
+      .text('ÁREA', leftMargin, startY)
+      .text('BIMESTRE', leftMargin + colWidths[0], startY)
+      .text(
+        'VALORACIÓN DESCRIPTIVA DEL ÁREA',
+        leftMargin +
+          colWidths[0] +
+          colWidths[1] +
+          colWidths[2] +
+          colWidths[3] +
+          colWidths[4] +
+          colWidths[5],
+        startY,
+      );
+
+    // Subencabezados
+    doc
+      .text('I', leftMargin + colWidths[0] + 15, startY + rowHeight)
+      .text(
+        'II',
+        leftMargin + colWidths[0] + colWidths[1] + 15,
+        startY + rowHeight,
+      )
+      .text(
+        'III',
+        leftMargin + colWidths[0] + colWidths[1] + colWidths[2] + 15,
+        startY + rowHeight,
+      )
+      .text(
+        'IV',
+        leftMargin +
+          colWidths[0] +
+          colWidths[1] +
+          colWidths[2] +
+          colWidths[3] +
+          15,
+        startY + rowHeight,
+      )
+      .text(
+        'Eval. Recup.',
+        leftMargin +
+          colWidths[0] +
+          colWidths[1] +
+          colWidths[2] +
+          colWidths[3] +
+          colWidths[4],
+        startY + rowHeight,
+      );
+
+    // Bordes
+    doc.rect(leftMargin, startY, pageWidth, rowHeight * 2).stroke();
+
+    // Líneas verticales
+    let xPos = leftMargin;
+    for (const width of colWidths) {
+      xPos += width;
+      doc
+        .moveTo(xPos, startY)
+        .lineTo(xPos, startY + rowHeight * 2)
+        .stroke();
+    }
+
+    // Línea horizontal
+    doc
+      .moveTo(leftMargin, startY + rowHeight)
+      .lineTo(leftMargin + pageWidth, startY + rowHeight)
+      .stroke();
+
+    doc.y = startY + rowHeight * 2 + 10;
+  }
+
+  private drawSubjectSection(
+    doc: PDFKit.PDFDocument,
+    subject: string,
+    competencies: { competency: string; grades: string[] }[],
+  ) {
+    const leftMargin = this.safeNumber(50);
+    const gradeColWidth = this.safeNumber(30);
+    const startX = this.safeNumber(400);
+
+    doc.font('Helvetica-Bold').fontSize(11).text(subject).moveDown(0.3);
+
+    competencies.forEach((item) => {
+      doc.font('Helvetica').fontSize(10).text(item.competency, leftMargin);
+
+      if (item.grades.length > 0) {
+        item.grades.forEach((grade, i) => {
+          doc.text(grade || '-', startX + i * gradeColWidth, doc.y - 15, {
+            width: gradeColWidth,
+            align: 'center',
+          });
+        });
+      }
+
+      doc.moveDown(0.8);
+    });
+
+    doc.moveDown(0.5);
+  }
+
+  private drawAttendanceTable(
+    doc: PDFKit.PDFDocument,
+    leftMargin: number,
+    pageWidth: number,
+  ) {
+    const startY = this.safeNumber(doc.y);
+    const rowHeight = this.safeNumber(20);
+    const colWidths = [
+      this.safeNumber(120),
+      this.safeNumber(40),
+      this.safeNumber(40),
+      this.safeNumber(40),
+      this.safeNumber(40),
+      this.safeNumber(50),
+      this.safeNumber(80),
+      this.safeNumber(40),
+      this.safeNumber(40),
+      this.safeNumber(40),
+      this.safeNumber(40),
+      this.safeNumber(50),
+    ];
+
+    // Encabezado
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(10)
+      .text('ASISTENCIAS Y TARDANZAS', leftMargin, startY)
+      .moveDown(0.5);
+
+    // Encabezados de columnas
+    const headers = [
+      '',
+      'I',
+      'II',
+      'III',
+      'IV',
+      'Total',
+      'CONDUCTA',
+      'I',
+      'II',
+      'III',
+      'IV',
+      'N.F.',
+    ];
+
+    headers.forEach((header, i) => {
+      doc.text(
+        header,
+        leftMargin + colWidths.slice(0, i).reduce((a, b) => a + b, 0),
+        startY + rowHeight,
+        {
+          width: colWidths[i],
+          align: 'center',
+        },
+      );
+    });
+
+    // Datos
+    const rows = [
+      [
+        'Tardanza Injustificada',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        'null',
+        'null',
+        'null',
+        'null',
+        '',
+      ],
+      ['Tardanza Justificada', '', '', '', '', '', '', '', '', '', '', ''],
+      ['Falta Injustificada', '', '', '', '', '', '', '', '', '', '', ''],
+      ['Falta Justificada', '', '', '', '', '', '', '', '', '', '', ''],
+    ];
+
+    rows.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        doc
+          .font(colIndex === 6 ? 'Helvetica-Bold' : 'Helvetica')
+          .fontSize(10)
+          .text(
+            cell || '-',
+            leftMargin +
+              colWidths.slice(0, colIndex).reduce((a, b) => a + b, 0),
+            startY + rowHeight * (rowIndex + 2),
+            {
+              width: colWidths[colIndex],
+              align: 'center',
+            },
+          );
+      });
+    });
+
+    // Bordes
+    const totalHeight = rowHeight * (rows.length + 2);
+    doc.rect(leftMargin, startY + rowHeight, pageWidth, totalHeight).stroke();
+
+    // Líneas verticales
+    let xPos = leftMargin;
+    for (const width of colWidths) {
+      xPos += width;
+      doc
+        .moveTo(xPos, startY + rowHeight)
+        .lineTo(xPos, startY + rowHeight + totalHeight)
+        .stroke();
+    }
+
+    // Líneas horizontales
+    for (let i = 1; i <= rows.length + 1; i++) {
+      doc
+        .moveTo(leftMargin, startY + rowHeight * (i + 1))
+        .lineTo(leftMargin + pageWidth, startY + rowHeight * (i + 1))
+        .stroke();
+    }
+
+    doc.y = startY + rowHeight * (rows.length + 3) + 10;
   }
 }
