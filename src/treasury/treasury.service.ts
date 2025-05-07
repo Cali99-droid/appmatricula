@@ -1311,7 +1311,7 @@ export class TreasuryService {
         let amount: number = d.total;
         if (d.discount !== null) {
           amount = d.total - (d.total * d.discount.percentage) / 100;
-          amount = Math.round(amount * 100);
+          amount = Math.round(amount);
         }
         total += amount;
         if (amount === 0) return null;
@@ -1386,7 +1386,7 @@ export class TreasuryService {
         let amount: number = d.total;
         if (d.discount !== null) {
           amount = d.total - (d.total * d.discount.percentage) / 100;
-          amount = Math.round(amount * 100);
+          amount = Math.round(amount);
         }
         total += amount;
         if (amount === 0) return null;
