@@ -15,8 +15,18 @@ export class CreateRatingsDto {
     description: 'id of the competency',
     nullable: false,
   })
+  @IsOptional()
   @IsNumber()
-  competencyId: number;
+  competencyId?: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'id of the course',
+    nullable: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  courseId?: number;
 
   @ApiProperty({
     example: 1,
@@ -27,8 +37,8 @@ export class CreateRatingsDto {
   bimesterId: number;
 
   @ApiProperty({
-    example: 1,
-    description: 'id of the qualification',
+    example: 'A',
+    description: 'qualification of ratings',
     nullable: false,
   })
   @IsString()
