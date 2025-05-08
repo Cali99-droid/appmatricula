@@ -63,21 +63,76 @@ export class DocsController {
     @Res() res: Response,
     @Param('enrollmentId') id: string,
   ) {
+    const reportData: any = {
+      schoolName: 'COLEGIO ALBERT EINSTEIN',
+      year: '2024',
+      level: 'SECUNDARIA',
+      studentCode: '18024181',
+      studentName: 'ROBLES MINAYA OMAR LEONCIO',
+      classroom: 'SECUNDARIA - QUINTO - E',
+      areas: [
+        {
+          name: 'MATEMÁTICA',
+          competencies: [
+            {
+              name: 'RESUELVE PROBLEMAS DE CANTIDAD',
+              grades: ['A', 'A', 'B', 'B'],
+            },
+            {
+              name: 'RESUELVE PROBLEMAS DE REGULARIDAD',
+              grades: ['A', 'A', 'B', 'A'],
+            },
+            { name: 'EQUIVALENCIA Y CAMBIO', grades: ['', '', '', ''] },
+            {
+              name: 'RESUELVE PROBLEMAS DE FORMA, MOVIMIENTO Y LOCALIZACIÓN',
+              grades: ['A', 'B', 'B', 'B'],
+            },
+            {
+              name: 'RESUELVE PROBLEMAS DE GESTIÓN DE DATOS E INCERTIDUMBRE',
+              grades: ['B', 'A', 'A', 'C'],
+            },
+          ],
+        },
+        {
+          name: 'COMUNICACIÓN',
+          competencies: [
+            {
+              name: 'SE COMUNICA ORALMENTE EN SU LENGUA MATERNA',
+              grades: ['B', 'B', 'B', 'B'],
+            },
+            {
+              name: 'LEE DIVERSOS TIPOS DE TEXTOS ESCRITOS EN SU LENGUA MATERNA',
+              grades: ['B', 'B', 'B', 'B'],
+            },
+            {
+              name: 'ESCRIBE DIVERSOS TIPOS DE TEXTOS EN SU LENGUA MATERNA',
+              grades: ['B', 'B', 'B', 'B'],
+            },
+          ],
+        },
+        // Agrega más áreas según sea necesario
+      ],
+      attendance: {
+        tardinessUnjustified: [0, 0, 0, 0],
+        tardinessJustified: [0, 0, 0, 0],
+        absenceUnjustified: [0, 0, 0, 0],
+        absenceJustified: [0, 0, 0, 0],
+      },
+    };
+
     try {
-      const pdfBuffer = await this.pdfService.generateReportCard();
+      const pdfBuffer = await this.pdfService.generateSchoolReport(reportData);
 
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename=student-report.pdf',
-        // 'Content-Length': pdfBuffer.length,
+        'Content-Disposition': 'attachment; filename=informe_escolar.pdf',
+        'Content-Length': pdfBuffer.length,
       });
 
       res.end(pdfBuffer);
     } catch (error) {
-      res.status(500).json({
-        message: 'Error generating PDF',
-        error: error.message,
-      });
+      console.error('Error generating PDF:', error);
+      res.status(500).send('Error al generar el PDF');
     }
   }
 

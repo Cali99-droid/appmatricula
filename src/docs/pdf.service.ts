@@ -28,6 +28,11 @@ import { addConstancy } from './constancy/constancy';
 import { Status } from 'src/enrollment/enum/status.enum';
 import { Person } from 'src/person/entities/person.entity';
 import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
+import * as pdfMake from 'pdfmake/build/pdfmake';
+import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
+(<any>pdfMake).addVirtualFileSystem(pdfFonts);
+
 @Injectable()
 export class PdfService {
   constructor(
@@ -710,110 +715,23 @@ export class PdfService {
       doc.end();
     });
   }
-  async generateReportCard() {
-    return new Promise((resolve, reject) => {
-      try {
-        const doc = new PDFDocument({
-          size: 'A4',
-          margin: 40,
-          bufferPages: true,
-        });
-
-        const buffers: Buffer[] = [];
-        doc.on('data', buffers.push.bind(buffers));
-        doc.on('end', () => {
-          const pdfData = Buffer.concat(buffers);
-          resolve(pdfData);
-        });
-
-        // Configuración segura de dimensiones
-        const leftMargin = this.safeNumber(40);
-        const pageWidth = this.safeNumber(doc.page.width - leftMargin * 2, 500);
-        const startY = this.safeNumber(50);
-
-        // Encabezado institucional
-        doc
-          .font('Helvetica-Bold')
-          .fontSize(14)
-          .text('COLEGIO ALBERT EINSTEIN', { align: 'center' });
-
-        doc.fontSize(12).text('INFORME DE LOS PROCESOS DEL EDUCANDO - 2024', {
-          align: 'center',
-        });
-
-        doc.fontSize(11).text('NIVEL SECUNDARIA', { align: 'center' });
-
-        doc.moveDown(1);
-
-        // Información del estudiante
-        this.drawStudentInfo(doc, leftMargin, pageWidth, startY);
-        doc.moveDown(1);
-
-        // Tabla principal de calificaciones
-        this.drawMainTable(doc, leftMargin, pageWidth);
-        doc.moveDown(1);
-
-        // Secciones de calificaciones
-        this.drawSubjectSection(doc, 'MATEMÁTICA', [
-          {
-            competency: 'RESUELVE PROBLEMAS DE CANTIDAD',
-            grades: ['A', 'A', 'B', 'B'],
-          },
-          {
-            competency: 'RESUELVE PROBLEMAS DE REGULARIDAD',
-            grades: ['A', 'A', 'B', 'A'],
-          },
-          { competency: 'EQUIVALENCIA Y CAMBIO', grades: [] },
-          {
-            competency:
-              'RESUELVE PROBLEMAS DE FORMA, MOVIMIENTO Y LOCALIZACIÓN',
-            grades: ['A', 'B', 'B', 'B'],
-          },
-          {
-            competency:
-              'RESUELVE PROBLEMAS DE GESTIÓN DE DATOS E INCERTIDUMBRE',
-            grades: ['B', 'A', 'A', 'C'],
-          },
-        ]);
-
-        // Otras secciones (Comunicación, Ciencia y Tecnología, etc.)
-        // ... (similar a la sección de Matemática)
-
-        // Tabla de asistencias
-        this.drawAttendanceTable(doc, leftMargin, pageWidth);
-        doc.moveDown(1);
-
-        // Comentarios de la tutora
-        doc
-          .font('Helvetica-Bold')
-          .fontSize(11)
-          .text('COMENTARIOS DE LA TUTORA', { underline: true });
-
-        doc
-          .font('Helvetica')
-          .text(
-            '________________________________________________________________________________',
-          )
-          .moveDown(2)
-          .text(
-            '________________________________________________________________________________',
-          );
-
-        doc.end();
-      } catch (error) {
-        console.error('Error generating PDF:', error);
-        reject(error);
-      }
-    });
-  }
 
   async fetchImage(url: string): Promise<ArrayBuffer> {
     const response = await fetch(url);
     const buffer = await response.arrayBuffer();
     return buffer;
   }
-  async convertWebPToPNG(buffer: ArrayBuffer): Promise<Buffer> {
-    return sharp(buffer).png().resize({ width: 200, height: 250 }).toBuffer();
+  async convertWebPToPNG(buffer: ArrayBuffer): Promise<ArrayBuffer> {
+    const pngBuffer = await sharp(buffer)
+      .png()
+      .resize({ width: 200, height: 250 })
+      .toBuffer();
+
+    // Convertir Buffer (Node.js) a ArrayBuffer
+    return pngBuffer.buffer.slice(
+      pngBuffer.byteOffset,
+      pngBuffer.byteOffset + pngBuffer.byteLength,
+    );
   }
 
   async getCites(idDistrict: string) {
@@ -822,7 +740,7 @@ export class PdfService {
     const url = this.configService.get('API_ADMISION');
     try {
       console.log('GET CITIES');
-      console.log(url);
+
       const dataDistrict = await firstValueFrom(
         this.httpService.get(`${url}/cities/district`),
       );
@@ -858,6 +776,73 @@ export class PdfService {
   private safeNumber(value: number, defaultValue: number = 0): number {
     return Number.isFinite(value) ? value : defaultValue;
   }
+  async generateReportCard() {
+    const url = this.configService.getOrThrow('AWS_URL_BUCKET');
+    const logoUrl = `${url}recursos/logo.png`;
+    const studentPhotoURL =
+      'https://caebucket.s3.us-west-2.amazonaws.com/colegio/1717429805090.webp';
+    const logo = await this.fetchImage(logoUrl);
+    const studentBuffer = await this.fetchImage(studentPhotoURL);
+    const studentPhoto = await this.convertWebPToPNG(studentBuffer);
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 40,
+          bufferPages: true,
+        });
+
+        const buffers: Buffer[] = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+          const pdfData = Buffer.concat(buffers);
+          resolve(pdfData);
+        });
+
+        // Configuración segura de dimensiones
+        const leftMargin = 40;
+        const pageWidth = doc.page.width - leftMargin * 2;
+        const startY = 50;
+
+        // Encabezado institucional
+        doc.image(logo, 30, 30, { width: 70, height: 70 });
+        doc
+          .image(studentPhoto, 495, 30, { width: 58, height: 73 })
+          .rect(495, 30, 58, 73)
+          .stroke();
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(14)
+          .text('COLEGIO ALBERT EINSTEIN', {
+            align: 'center',
+          });
+
+        doc.fontSize(12).text('INFORME DE LOS PROCESOS DEL EDUCANDO - 2024', {
+          align: 'center',
+          underline: true,
+        });
+
+        doc.fontSize(11).text('NIVEL SECUNDARIA', { align: 'center' });
+
+        // Información del estudiante
+        this.drawStudentInfo(doc, leftMargin, pageWidth, startY);
+        // doc.moveDown(1);
+        doc.fontSize(12).text('INFORME DE LOS PROCESOS DEL EDUCANDO - 2024');
+        // Tabla principal de calificaciones
+        // doc.table({
+        //   data: [
+        //     ['Column 1', 'Column 2', 'Column 3'],
+        //     ['One value goes here', 'Another one here', 'OK?'],
+        //   ],
+        // });
+        // this.drawMainTable(doc, leftMargin, pageWidth);
+        doc.end();
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        reject(error);
+      }
+    });
+  }
 
   private drawStudentInfo(
     doc: PDFKit.PDFDocument,
@@ -865,285 +850,486 @@ export class PdfService {
     pageWidth: number,
     startY: number,
   ) {
-    const rowHeight = this.safeNumber(20);
-    const col1Width = this.safeNumber(100);
-    const col2Width = this.safeNumber(pageWidth - col1Width, 300);
+    const rowHeight = 60;
+    const col1Width = 100;
+    const col2Width = pageWidth - col1Width;
 
     // Encabezados
     doc
       .font('Helvetica-Bold')
       .fontSize(10)
-      .text('Código', leftMargin, startY)
-      .text('Apellidos y Nombres', leftMargin + col1Width, startY);
+      .text('Código', leftMargin + 5, startY + rowHeight + 4)
+      .text(
+        'Apellidos y Nombres',
+        leftMargin + col1Width + 5,
+        startY + rowHeight + 4,
+      );
 
     // Datos
     doc
       .font('Helvetica')
-      .text('18024181', leftMargin, startY + rowHeight)
+      .text('18024181', leftMargin + 5, startY + 80)
       .text(
         'ROBLES MINAYA OMAR LEONCIO',
-        leftMargin + col1Width,
-        startY + rowHeight,
+        leftMargin + col1Width + 5,
+        startY + 80,
       );
-
+    doc
+      .lineCap('butt')
+      .moveTo(leftMargin, startY + rowHeight + 35)
+      .lineTo(pageWidth + 40, startY + rowHeight + 35)
+      .stroke();
     doc
       .font('Helvetica-Bold')
-      .text('Salón', leftMargin, startY + rowHeight * 2)
+      .text('Salón', leftMargin + 5, startY + rowHeight + 44)
       .font('Helvetica')
       .text(
         'SECUNDARIA - QUINTO - E',
-        leftMargin + col1Width,
-        startY + rowHeight * 2,
+        leftMargin + col1Width + 5,
+        startY + rowHeight + 44,
       );
 
     // Bordes
-    doc.rect(leftMargin, startY, pageWidth, rowHeight * 3).stroke();
+    doc.rect(leftMargin, startY + rowHeight, pageWidth, rowHeight).stroke();
     doc
-      .moveTo(leftMargin + col1Width, startY)
-      .lineTo(leftMargin + col1Width, startY + rowHeight * 3)
+      .moveTo(leftMargin + col1Width, startY + rowHeight)
+      .lineTo(leftMargin + col1Width, startY + rowHeight + rowHeight)
       .stroke();
 
-    doc.y = startY + rowHeight * 3 + 10;
+    doc.y = startY + rowHeight * 2 + 10;
   }
 
   private drawMainTable(
     doc: PDFKit.PDFDocument,
     leftMargin: number,
     pageWidth: number,
-  ) {
-    const startY = this.safeNumber(doc.y);
-    const rowHeight = this.safeNumber(20);
-    const colWidths = [
-      this.safeNumber(150),
-      this.safeNumber(60),
-      this.safeNumber(60),
-      this.safeNumber(60),
-      this.safeNumber(60),
-      this.safeNumber(80),
-      this.safeNumber(pageWidth - 150 - 60 * 4 - 80, 100),
+  ) {}
+
+  private createHeader(
+    reportData: any,
+    // logo: any,
+    // studentPhoto: any,
+  ): Content[] {
+    return [
+      {
+        columns: [
+          // {
+          //   width: 80, // ancho fijo
+          //   image: logo,
+          //   fit: [70, 80],
+          // },
+          {
+            width: '*', // ancho flexible (se expandirá)
+            stack: [
+              {
+                text: reportData.schoolName,
+                alignment: 'center',
+                bold: true,
+                fontSize: 12,
+              },
+              {
+                text: `\nINFORME DE LOS PROCESOS DEL EDUCANDO - ${reportData.year}\nNIVEL ${reportData.level}`,
+                alignment: 'center',
+                fontSize: 11,
+              },
+            ],
+            margin: [0, 10, 0, 0],
+          },
+          // {
+          //   width: 80, // ancho fijo
+          //   image: studentPhoto,
+          //   cover: {
+          //     width: 70,
+          //     height: 80,
+          //     valign: 'top',
+          //     align: 'center',
+          //   },
+          // },
+          // {
+          //   width: 80, // ancho fijo
+          //   table: {
+          //     widths: [80],
+          //     body: [
+          //       [
+          //         {
+          //           image: studentPhoto,
+          //           fit: [80, 80],
+          //         },
+          //       ],
+          //     ],
+          //   },
+          //   layout: {
+          //     fillColor: () => null,
+          //     hLineWidth: () => 1,
+          //     vLineWidth: () => 1,
+          //     hLineColor: () => '#000000',
+          //     vLineColor: () => '#000000',
+          //   },
+          // },
+        ],
+        columnGap: 10,
+      },
     ];
-
-    // Encabezados
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(10)
-      .text('ÁREA', leftMargin, startY)
-      .text('BIMESTRE', leftMargin + colWidths[0], startY)
-      .text(
-        'VALORACIÓN DESCRIPTIVA DEL ÁREA',
-        leftMargin +
-          colWidths[0] +
-          colWidths[1] +
-          colWidths[2] +
-          colWidths[3] +
-          colWidths[4] +
-          colWidths[5],
-        startY,
-      );
-
-    // Subencabezados
-    doc
-      .text('I', leftMargin + colWidths[0] + 15, startY + rowHeight)
-      .text(
-        'II',
-        leftMargin + colWidths[0] + colWidths[1] + 15,
-        startY + rowHeight,
-      )
-      .text(
-        'III',
-        leftMargin + colWidths[0] + colWidths[1] + colWidths[2] + 15,
-        startY + rowHeight,
-      )
-      .text(
-        'IV',
-        leftMargin +
-          colWidths[0] +
-          colWidths[1] +
-          colWidths[2] +
-          colWidths[3] +
-          15,
-        startY + rowHeight,
-      )
-      .text(
-        'Eval. Recup.',
-        leftMargin +
-          colWidths[0] +
-          colWidths[1] +
-          colWidths[2] +
-          colWidths[3] +
-          colWidths[4],
-        startY + rowHeight,
-      );
-
-    // Bordes
-    doc.rect(leftMargin, startY, pageWidth, rowHeight * 2).stroke();
-
-    // Líneas verticales
-    let xPos = leftMargin;
-    for (const width of colWidths) {
-      xPos += width;
-      doc
-        .moveTo(xPos, startY)
-        .lineTo(xPos, startY + rowHeight * 2)
-        .stroke();
-    }
-
-    // Línea horizontal
-    doc
-      .moveTo(leftMargin, startY + rowHeight)
-      .lineTo(leftMargin + pageWidth, startY + rowHeight)
-      .stroke();
-
-    doc.y = startY + rowHeight * 2 + 10;
   }
 
-  private drawSubjectSection(
-    doc: PDFKit.PDFDocument,
-    subject: string,
-    competencies: { competency: string; grades: string[] }[],
-  ) {
-    const leftMargin = this.safeNumber(50);
-    const gradeColWidth = this.safeNumber(30);
-    const startX = this.safeNumber(400);
-
-    doc.font('Helvetica-Bold').fontSize(11).text(subject).moveDown(0.3);
-
-    competencies.forEach((item) => {
-      doc.font('Helvetica').fontSize(10).text(item.competency, leftMargin);
-
-      if (item.grades.length > 0) {
-        item.grades.forEach((grade, i) => {
-          doc.text(grade || '-', startX + i * gradeColWidth, doc.y - 15, {
-            width: gradeColWidth,
-            align: 'center',
-          });
-        });
-      }
-
-      doc.moveDown(0.8);
-    });
-
-    doc.moveDown(0.5);
-  }
-
-  private drawAttendanceTable(
-    doc: PDFKit.PDFDocument,
-    leftMargin: number,
-    pageWidth: number,
-  ) {
-    const startY = this.safeNumber(doc.y);
-    const rowHeight = this.safeNumber(20);
-    const colWidths = [
-      this.safeNumber(120),
-      this.safeNumber(40),
-      this.safeNumber(40),
-      this.safeNumber(40),
-      this.safeNumber(40),
-      this.safeNumber(50),
-      this.safeNumber(80),
-      this.safeNumber(40),
-      this.safeNumber(40),
-      this.safeNumber(40),
-      this.safeNumber(40),
-      this.safeNumber(50),
-    ];
-
-    // Encabezado
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(10)
-      .text('ASISTENCIAS Y TARDANZAS', leftMargin, startY)
-      .moveDown(0.5);
-
-    // Encabezados de columnas
-    const headers = [
-      '',
-      'I',
-      'II',
-      'III',
-      'IV',
-      'Total',
-      'CONDUCTA',
-      'I',
-      'II',
-      'III',
-      'IV',
-      'N.F.',
-    ];
-
-    headers.forEach((header, i) => {
-      doc.text(
-        header,
-        leftMargin + colWidths.slice(0, i).reduce((a, b) => a + b, 0),
-        startY + rowHeight,
-        {
-          width: colWidths[i],
-          align: 'center',
-        },
-      );
-    });
-
-    // Datos
-    const rows = [
-      [
-        'Tardanza Injustificada',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        'null',
-        'null',
-        'null',
-        'null',
-        '',
+  private createStudentInfo(reportData: any): Content {
+    return {
+      columns: [
+        { width: '*', text: `Código\n${reportData.studentCode}` },
+        { width: '*', text: `Apellidos y Nombres\n${reportData.studentName}` },
+        { width: '*', text: `Salón\n${reportData.classroom}` },
       ],
-      ['Tardanza Justificada', '', '', '', '', '', '', '', '', '', '', ''],
-      ['Falta Injustificada', '', '', '', '', '', '', '', '', '', '', ''],
-      ['Falta Justificada', '', '', '', '', '', '', '', '', '', '', ''],
+    };
+  }
+
+  private createAreasTable(reportData: any): Content {
+    return {
+      style: 'tableExample',
+      color: '#444',
+      fontSize: 6,
+      table: {
+        widths: [200, 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+
+        // headerRows: 7,
+        // keepWithHeaderRows: 1,
+        body: [
+          [
+            { text: 'ÁREA', style: 'tableHeader', rowSpan: 2 },
+
+            { text: 'BIMESTRE', style: 'tableHeader', colSpan: 4 },
+            {},
+            {},
+            {},
+
+            { text: 'EVAL. RECUP.', style: 'tableHeader', rowSpan: 3 },
+            {
+              text: 'VALORACIÓN DESCRIPTIVA DEL ÁREA',
+              style: 'tableHeader',
+              rowSpan: 3,
+            },
+          ],
+          [
+            {}, // ÁREA (rowSpan)
+
+            { text: 'I', style: 'tableHeader' },
+            { text: 'II', style: 'tableHeader' },
+            { text: 'III', style: 'tableHeader' },
+            { text: 'IV', style: 'tableHeader' },
+            {}, // EVAL. RECUP. (rowSpan)
+            {}, // VALORACIÓN DESCRIPTIVA DEL ÁREA (rowSpan)
+          ],
+          [
+            { text: 'COMUNICACION', bold: true, style: '', colSpan: 7 }, // ÁREA (rowSpan)
+          ],
+          [
+            'RESUELVE PROBLEMAS DE CANTIDAD.',
+            'A',
+            'B',
+            'A',
+            'B',
+            { rowSpan: 3, text: '' },
+            { rowSpan: 3, text: '' },
+          ],
+          [
+            'RESUELVE PROBLEMAS DE REGULARIDAD, EQUIVALENCIA Y CAMBIO.',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+          [
+            'RESUELVE PROBLEMAS DE FORMA,MOVIMIENTO Y LOCALIZACIÓN.',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+          [
+            'RESUELVE PROBLEMAS DE GESTIÓN DE DATOS E INCERTIDUMBRE',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+          // [
+          //   {
+          //     text: 'Header 1ss',
+
+          //     style: 'tableHeader',
+          //     alignment: 'center',
+          //   },
+          //   {
+          //     text: 'Header 2',
+          //     colSpan: 3,
+          //     style: 'tableHeader',
+          //     alignment: 'center',
+          //   },
+          //   { text: 'Header 3', style: 'tableHeader', alignment: 'center' },
+          //   { text: 'Header 4', style: 'tableHeader', alignment: 'center' },
+          // ],
+          // [
+          //   'Sample value 1',
+          //   'Sample value 2',
+          //   'Sample value 3',
+          //   'Sample value 3',
+          // ],
+          // [
+          //   {
+          //     rowSpan: 3,
+          //     text: 'rowSpan set to 3\nLorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor',
+          //   },
+          //   'Sample value 2',
+          //   'Sample value 3',
+          //   'Sample value 3',
+          // ],
+          // ['', 'Sample value 2', 'Sample value 3', 'Sample value 3'],
+          // [
+          //   'Sample value 1',
+          //   'Sample value 2',
+          //   'Sample value 3',
+          //   'Sample value 3',
+          // ],
+          // [
+          //   'Sample value 1',
+          //   {
+          //     colSpan: 2,
+          //     rowSpan: 2,
+          //     text: 'Both:\nrowSpan and colSpan\ncan be defined at the same time',
+          //   },
+          //   '',
+          //   'Sample value 3',
+          // ],
+          // ['Sample value 1', '', '', 'Sample value 3'],
+        ],
+      },
+    };
+    // Cabecera de la tabla
+    const tableBody = [
+      [
+        { text: 'ÁREA', style: 'tableHeader', rowSpan: 2 },
+        { text: 'COMPETENCIAS', style: 'tableHeader', rowSpan: 2 },
+        { text: 'BIMESTRE', style: 'tableHeader', colSpan: 4 },
+        {},
+        {},
+        {},
+        { text: 'EVAL. RECUP.', style: 'tableHeader', rowSpan: 2 },
+      ],
+      [
+        {}, // ÁREA (rowSpan)
+        {}, // COMPETENCIAS (rowSpan)
+        { text: 'I', style: 'tableHeader' },
+        { text: 'II', style: 'tableHeader' },
+        { text: 'III', style: 'tableHeader' },
+        { text: 'IV', style: 'tableHeader' },
+        {}, // EVAL. RECUP. (rowSpan)
+      ],
     ];
 
-    rows.forEach((row, rowIndex) => {
-      row.forEach((cell, colIndex) => {
-        doc
-          .font(colIndex === 6 ? 'Helvetica-Bold' : 'Helvetica')
-          .fontSize(10)
-          .text(
-            cell || '-',
-            leftMargin +
-              colWidths.slice(0, colIndex).reduce((a, b) => a + b, 0),
-            startY + rowHeight * (rowIndex + 2),
-            {
-              width: colWidths[colIndex],
-              align: 'center',
-            },
-          );
+    // Filas de datos
+    reportData.areas.forEach((area) => {
+      area.competencies.forEach((competency, index) => {
+        const row = [
+          index === 0
+            ? { text: area.name, rowSpan: area.competencies.length }
+            : {},
+          { text: competency.name },
+          ...competency.grades.map((grade) => ({ text: grade })),
+          { text: '' }, // Eval. Recup. (vacío por defecto)
+        ];
+        tableBody.push(row);
       });
     });
 
-    // Bordes
-    const totalHeight = rowHeight * (rows.length + 2);
-    doc.rect(leftMargin, startY + rowHeight, pageWidth, totalHeight).stroke();
+    return {
+      table: {
+        headerRows: 2,
+        widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto'],
+        body: tableBody,
+      },
+      layout: {
+        hLineWidth: (i, node) =>
+          i === 0 || i === 1 || i === node.table.body.length ? 1 : 0,
+        vLineWidth: (i, node) => 0,
+        paddingTop: (i, node) => 4,
+        paddingBottom: (i, node) => 4,
+      },
+      margin: [0, 5, 0, 15],
+    };
+  }
 
-    // Líneas verticales
-    let xPos = leftMargin;
-    for (const width of colWidths) {
-      xPos += width;
-      doc
-        .moveTo(xPos, startY + rowHeight)
-        .lineTo(xPos, startY + rowHeight + totalHeight)
-        .stroke();
+  private createAttendanceTable(reportData: any): Content {
+    if (!reportData.attendance) {
+      return { text: '' };
     }
 
-    // Líneas horizontales
-    for (let i = 1; i <= rows.length + 1; i++) {
-      doc
-        .moveTo(leftMargin, startY + rowHeight * (i + 1))
-        .lineTo(leftMargin + pageWidth, startY + rowHeight * (i + 1))
-        .stroke();
-    }
+    return {
+      table: {
+        widths: [
+          '*',
+          'auto',
+          'auto',
+          'auto',
+          'auto',
+          'auto',
+          '*',
+          'auto',
+          'auto',
+          'auto',
+          'auto',
+          'auto',
+        ],
+        body: [
+          [
+            {
+              text: 'ASISTENCIAS Y TARDANZAS',
+              style: 'tableHeader',
+              colSpan: 6,
+            },
+            {},
+            {},
+            {},
+            {},
+            {},
+            { text: 'CONDUCTA', style: 'tableHeader', colSpan: 6 },
+            {},
+            {},
+            {},
+            {},
+            {},
+          ],
+          [
+            { text: 'TIPO', style: 'tableHeader' },
+            { text: 'I', style: 'tableHeader' },
+            { text: 'II', style: 'tableHeader' },
+            { text: 'III', style: 'tableHeader' },
+            { text: 'IV', style: 'tableHeader' },
+            { text: 'TOTAL', style: 'tableHeader' },
+            { text: 'CONDUCTA', style: 'tableHeader' },
+            { text: 'I', style: 'tableHeader' },
+            { text: 'II', style: 'tableHeader' },
+            { text: 'III', style: 'tableHeader' },
+            { text: 'IV', style: 'tableHeader' },
+            { text: 'N.F.', style: 'tableHeader' },
+          ],
+          [
+            'Tardanza Injustificada',
+            ...reportData.attendance.tardinessUnjustified.map((t) =>
+              t.toString(),
+            ),
+            '',
+            'CONDUCTA',
+            'null',
+            'null',
+            'null',
+            'null',
+            '',
+          ],
+          [
+            'Tardanza Justificada',
+            ...reportData.attendance.tardinessJustified.map((t) =>
+              t.toString(),
+            ),
+            '',
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+          ],
+          [
+            'Falta Injustificada',
+            ...reportData.attendance.absenceUnjustified.map((a) =>
+              a.toString(),
+            ),
+            '',
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+          ],
+          [
+            'Falta Justificada',
+            ...reportData.attendance.absenceJustified.map((a) => a.toString()),
+            '',
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+          ],
+        ],
+      },
+      layout: 'lightHorizontalLines',
+    };
+  }
 
-    doc.y = startY + rowHeight * (rows.length + 3) + 10;
+  async generateSchoolReport(reportData: any): Promise<Buffer> {
+    // const url = this.configService.getOrThrow('AWS_URL_BUCKET');
+    // const logoUrl = `${url}recursos/logo.png`;
+    // const studentPhotoURL =
+    //   'https://caebucket.s3.us-west-2.amazonaws.com/colegio/1717429805090.webp';
+    // const logo = await this.fetchImage(logoUrl);
+    // const studentBuffer = await this.fetchImage(studentPhotoURL);
+    // const studentPhoto = await this.convertWebPToPNG(studentBuffer);logo, studentPhoto
+
+    const docDefinition: TDocumentDefinitions = {
+      content: [
+        ...this.createHeader(reportData),
+        { text: '\n' },
+        this.createStudentInfo(reportData),
+        { text: '\n' },
+        this.createAreasTable(reportData),
+        { text: '\n' },
+        this.createAttendanceTable(reportData),
+        { text: '\n\nCOMENTARIOS DE LA TUTORA:\n\n\n', style: 'commentsTitle' },
+      ],
+      styles: {
+        header: {
+          fontSize: 14,
+          bold: true,
+          alignment: 'center',
+        },
+        subheader: {
+          fontSize: 10,
+          bold: true,
+          alignment: 'center',
+        },
+        tableHeader: {
+          bold: true,
+          fontSize: 10,
+          alignment: 'center',
+        },
+        areaTitle: {
+          fontSize: 10,
+          bold: true,
+          decoration: 'underline',
+          margin: [0, 10, 0, 5],
+        },
+        commentsTitle: {
+          bold: true,
+          decoration: 'underline',
+          margin: [0, 20, 0, 5],
+        },
+      },
+      defaultStyle: {
+        fontSize: 8,
+        margin: [0, 2, 0, 2],
+      },
+    };
+
+    return new Promise((resolve) => {
+      const pdfDoc = pdfMake.createPdf(docDefinition);
+      pdfDoc.getBuffer(resolve);
+    });
   }
 }
