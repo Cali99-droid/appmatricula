@@ -907,17 +907,17 @@ export class PdfService {
 
   private createHeader(
     reportData: any,
-    // logo: any,
-    // studentPhoto: any,
+    logo: any,
+    studentPhoto: any,
   ): Content[] {
     return [
       {
         columns: [
-          // {
-          //   width: 80, // ancho fijo
-          //   image: logo,
-          //   fit: [70, 80],
-          // },
+          {
+            width: 80, // ancho fijo
+            image: logo,
+            fit: [70, 80],
+          },
           {
             width: '*', // ancho flexible (se expandirá)
             stack: [
@@ -925,26 +925,28 @@ export class PdfService {
                 text: reportData.schoolName,
                 alignment: 'center',
                 bold: true,
-                fontSize: 12,
+                fontSize: 14,
+                color: '#0045AA',
               },
               {
                 text: `\nINFORME DE LOS PROCESOS DEL EDUCANDO - ${reportData.year}\nNIVEL ${reportData.level}`,
                 alignment: 'center',
                 fontSize: 11,
+                bold: true,
               },
             ],
             margin: [0, 10, 0, 0],
           },
-          // {
-          //   width: 80, // ancho fijo
-          //   image: studentPhoto,
-          //   cover: {
-          //     width: 70,
-          //     height: 80,
-          //     valign: 'top',
-          //     align: 'center',
-          //   },
-          // },
+          {
+            width: 80, // ancho fijo
+            image: studentPhoto,
+            cover: {
+              width: 70,
+              height: 80,
+              valign: 'top',
+              align: 'center',
+            },
+          },
           // {
           //   width: 80, // ancho fijo
           //   table: {
@@ -974,11 +976,43 @@ export class PdfService {
 
   private createStudentInfo(reportData: any): Content {
     return {
-      columns: [
-        { width: '*', text: `Código\n${reportData.studentCode}` },
-        { width: '*', text: `Apellidos y Nombres\n${reportData.studentName}` },
-        { width: '*', text: `Salón\n${reportData.classroom}` },
-      ],
+      // {
+      style: 'tableExample',
+      table: {
+        widths: [100, '*', 200],
+        body: [
+          [
+            {
+              text: 'Código',
+              style: 'tableHeader',
+              fillColor: '#FFEFCA',
+            },
+            {
+              text: 'Apellidos Y Nombres',
+              style: 'tableHeader',
+              fillColor: '#FFEFCA',
+            },
+            {
+              text: 'Salón',
+              style: 'tableHeader',
+              fillColor: '#FFEFCA',
+            },
+          ],
+          [
+            { text: reportData.studentCode, alignment: 'center' },
+            {
+              text: reportData.studentName,
+              color: '#767687',
+              alignment: 'center',
+            },
+            {
+              text: reportData.classroom,
+              color: '#767687',
+              alignment: 'center',
+            },
+          ],
+        ],
+      },
     };
   }
 
@@ -993,21 +1027,39 @@ export class PdfService {
         // headerRows: 7,
         // keepWithHeaderRows: 1,
         body: [
+          /**CABECERAS */
           [
-            { text: 'ÁREA', style: 'tableHeader', rowSpan: 2 },
+            {
+              text: 'ÁREA',
+              style: 'tableHeader',
+              rowSpan: 2,
+              fillColor: '#eeeeee',
+            },
 
-            { text: 'BIMESTRE', style: 'tableHeader', colSpan: 4 },
+            {
+              text: 'BIMESTRE',
+              style: 'tableHeader',
+              colSpan: 4,
+              fillColor: '#eeeeee',
+            },
             {},
             {},
             {},
 
-            { text: 'EVAL. RECUP.', style: 'tableHeader', rowSpan: 3 },
+            {
+              text: 'EVAL. RECUP.',
+              style: 'tableHeader',
+              rowSpan: 3,
+              fillColor: '#eeeeee',
+            },
             {
               text: 'VALORACIÓN DESCRIPTIVA DEL ÁREA',
               style: 'tableHeader',
               rowSpan: 3,
+              fillColor: '#eeeeee',
             },
           ],
+
           [
             {}, // ÁREA (rowSpan)
 
@@ -1018,8 +1070,15 @@ export class PdfService {
             {}, // EVAL. RECUP. (rowSpan)
             {}, // VALORACIÓN DESCRIPTIVA DEL ÁREA (rowSpan)
           ],
+          /**AREA 1 */
           [
-            { text: 'COMUNICACION', bold: true, style: '', colSpan: 7 }, // ÁREA (rowSpan)
+            {
+              text: 'MATEMÁTICA',
+              bold: true,
+              style: '',
+              colSpan: 7,
+              fillColor: '#DEEAFF',
+            }, // ÁREA (rowSpan)
           ],
           [
             'RESUELVE PROBLEMAS DE CANTIDAD.',
@@ -1027,8 +1086,8 @@ export class PdfService {
             'B',
             'A',
             'B',
-            { rowSpan: 3, text: '' },
-            { rowSpan: 3, text: '' },
+            { rowSpan: 4, text: '' },
+            { rowSpan: 4, text: '' },
           ],
           [
             'RESUELVE PROBLEMAS DE REGULARIDAD, EQUIVALENCIA Y CAMBIO.',
@@ -1057,57 +1116,93 @@ export class PdfService {
             '',
             '',
           ],
-          // [
-          //   {
-          //     text: 'Header 1ss',
+          /**FIN AREA 1 */
+          /**AREA 2 */
+          [
+            {
+              text: 'COMUNICACION',
+              bold: true,
+              style: '',
+              fillColor: '#DEEAFF',
+              colSpan: 7,
+            }, // ÁREA (rowSpan)
+          ],
+          [
+            'SE COMUNICA ORALMENTE EN SU LENGUA MATERNA.',
+            'A',
+            'B',
+            'A',
+            'B',
+            { rowSpan: 3, text: '' },
+            { rowSpan: 3, text: '' },
+          ],
+          [
+            'LEE DIVERSOS TIPOS DE TEXTOS ESCRITOS EN SU LENGUA MATERNA.',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+          [
+            'ESCRIBE DIVERSOS TIPOS DE TEXTOS EN SU LENGUA MATERNA',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
 
-          //     style: 'tableHeader',
-          //     alignment: 'center',
-          //   },
-          //   {
-          //     text: 'Header 2',
-          //     colSpan: 3,
-          //     style: 'tableHeader',
-          //     alignment: 'center',
-          //   },
-          //   { text: 'Header 3', style: 'tableHeader', alignment: 'center' },
-          //   { text: 'Header 4', style: 'tableHeader', alignment: 'center' },
-          // ],
-          // [
-          //   'Sample value 1',
-          //   'Sample value 2',
-          //   'Sample value 3',
-          //   'Sample value 3',
-          // ],
-          // [
-          //   {
-          //     rowSpan: 3,
-          //     text: 'rowSpan set to 3\nLorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor',
-          //   },
-          //   'Sample value 2',
-          //   'Sample value 3',
-          //   'Sample value 3',
-          // ],
-          // ['', 'Sample value 2', 'Sample value 3', 'Sample value 3'],
-          // [
-          //   'Sample value 1',
-          //   'Sample value 2',
-          //   'Sample value 3',
-          //   'Sample value 3',
-          // ],
-          // [
-          //   'Sample value 1',
-          //   {
-          //     colSpan: 2,
-          //     rowSpan: 2,
-          //     text: 'Both:\nrowSpan and colSpan\ncan be defined at the same time',
-          //   },
-          //   '',
-          //   'Sample value 3',
-          // ],
-          // ['Sample value 1', '', '', 'Sample value 3'],
+          /**FIN AREA 2 */
+          /**AREA 3 */
+          [
+            {
+              text: 'CIENCIA Y TECNOLOGÍA',
+              bold: true,
+              style: '',
+              fillColor: '#DEEAFF',
+              colSpan: 7,
+            }, // ÁREA (rowSpan)
+          ],
+          [
+            'INDAGA MEDIANTE MÉTODOS CIENTÍFICOS PARA CONSTRUIR SUS CONOCIMIENTOS.',
+            'A',
+            'B',
+            'A',
+            'B',
+            { rowSpan: 3, text: '' },
+            { rowSpan: 3, text: '' },
+          ],
+          [
+            'EXPLICA EL MUNDO FÍSICO BASÁNDOSE EN CONOCIMIENTOS SOBRE LOS SERES VIVOS, MATERIA Y ENERGÍA, BIODIVERSIDAD, TIERRA Y UNIVERSO.',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+          [
+            'DISEÑA Y CONSTRUYE SOLUCIONES TECNOLÓGICAS PARA RESOLVER PROBLEMAS DE SU ENTORNO.',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+
+          /**FIN AREA 2 */
         ],
       },
+      // layout: 'lightHorizontalLines',
+      // layout: {
+      //   fillColor: function (rowIndex, node, columnIndex) {
+      //     return rowIndex % 2 === 0 ? '#CCCCCC' : null;
+      //   },
+      // },
     };
     // Cabecera de la tabla
     const tableBody = [
@@ -1169,6 +1264,8 @@ export class PdfService {
     }
 
     return {
+      color: '#444',
+      fontSize: 6,
       table: {
         widths: [
           '*',
@@ -1190,13 +1287,19 @@ export class PdfService {
               text: 'ASISTENCIAS Y TARDANZAS',
               style: 'tableHeader',
               colSpan: 6,
+              fillColor: '#eeeeee',
             },
             {},
             {},
             {},
             {},
             {},
-            { text: 'CONDUCTA', style: 'tableHeader', colSpan: 6 },
+            {
+              text: 'CONDUCTA',
+              style: 'tableHeader',
+              colSpan: 6,
+              fillColor: '#eeeeee',
+            },
             {},
             {},
             {},
@@ -1210,7 +1313,7 @@ export class PdfService {
             { text: 'III', style: 'tableHeader' },
             { text: 'IV', style: 'tableHeader' },
             { text: 'TOTAL', style: 'tableHeader' },
-            { text: 'CONDUCTA', style: 'tableHeader' },
+            { text: 'BIMESTRE', style: 'tableHeader' },
             { text: 'I', style: 'tableHeader' },
             { text: 'II', style: 'tableHeader' },
             { text: 'III', style: 'tableHeader' },
@@ -1223,11 +1326,12 @@ export class PdfService {
               t.toString(),
             ),
             '',
-            'CONDUCTA',
-            'null',
-            'null',
-            'null',
-            'null',
+            { text: 'NOTA', fontSize: 8, alignment: 'center' },
+            '',
+
+            '',
+            '',
+            '',
             '',
           ],
           [
@@ -1236,7 +1340,7 @@ export class PdfService {
               t.toString(),
             ),
             '',
-            {},
+            { rowSpan: 3, text: '', colSpan: 6 },
             {},
             {},
             {},
@@ -1269,33 +1373,66 @@ export class PdfService {
           ],
         ],
       },
-      layout: 'lightHorizontalLines',
+      // layout: 'lightHorizontalLines',
     };
   }
 
   async generateSchoolReport(reportData: any): Promise<Buffer> {
-    // const url = this.configService.getOrThrow('AWS_URL_BUCKET');
-    // const logoUrl = `${url}recursos/logo.png`;
-    // const studentPhotoURL =
-    //   'https://caebucket.s3.us-west-2.amazonaws.com/colegio/1717429805090.webp';
-    // const logo = await this.fetchImage(logoUrl);
-    // const studentBuffer = await this.fetchImage(studentPhotoURL);
-    // const studentPhoto = await this.convertWebPToPNG(studentBuffer);logo, studentPhoto
+    const url = this.configService.getOrThrow('AWS_URL_BUCKET');
+    const logoUrl = `${url}recursos/logo.png`;
+    const studentPhotoURL =
+      'https://caebucket.s3.us-west-2.amazonaws.com/colegio/1717429805090.webp';
+    const logo = await this.fetchImage(logoUrl);
+    const studentBuffer = await this.fetchImage(studentPhotoURL);
+    const studentPhoto = await this.convertWebPToPNG(studentBuffer);
 
     const docDefinition: TDocumentDefinitions = {
+      watermark: {
+        text: 'TEST REPORT',
+        color: 'blue',
+        opacity: 0.1,
+        bold: true,
+        italics: false,
+      },
       content: [
-        ...this.createHeader(reportData),
+        ...this.createHeader(reportData, logo, studentPhoto),
         { text: '\n' },
         this.createStudentInfo(reportData),
         { text: '\n' },
         this.createAreasTable(reportData),
         { text: '\n' },
         this.createAttendanceTable(reportData),
-        { text: '\n\nCOMENTARIOS DE LA TUTORA:\n\n\n', style: 'commentsTitle' },
+        { text: '\n' },
+        {
+          style: 'tableExample',
+          table: {
+            widths: ['*'],
+            body: [
+              [
+                {
+                  text: 'COMENTARIOS DEL TUTOR',
+                  fillColor: '#eeeeee',
+                  style: 'tableHeader',
+                },
+              ],
+              [
+                {
+                  text: 'un comentario',
+                },
+              ],
+            ],
+          },
+        },
+        { text: '\n' },
+        {
+          qr: 'text in QR',
+          fit: 80,
+          alignment: 'right',
+        },
       ],
       styles: {
         header: {
-          fontSize: 14,
+          fontSize: 12,
           bold: true,
           alignment: 'center',
         },

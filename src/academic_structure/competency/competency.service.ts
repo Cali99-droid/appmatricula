@@ -228,7 +228,7 @@ export class CompetencyService {
           classroom: `${level?.name} - ${grade?.name} ${assignment.activityClassroom?.section}`,
           areaId: assignment.area?.id || course?.area.id,
           area: area || course?.area.name.toLocaleUpperCase(),
-
+          isTutor: assignment.isTutor,
           // course: course?.name || 'Sin curso',
           courseId: assignment.course?.id || null,
           course: course?.name.toLocaleUpperCase() || null,
