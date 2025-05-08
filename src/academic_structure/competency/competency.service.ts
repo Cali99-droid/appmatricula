@@ -109,7 +109,7 @@ export class CompetencyService {
   async assignToTeacher(
     createTeacherCompetencyDto: CreateTeacherCompetencyDto,
   ) {
-    const { activityClassroomId, areaId, userId, courseId } =
+    const { activityClassroomId, areaId, userId, courseId, isTutor } =
       createTeacherCompetencyDto;
 
     if (areaId && courseId) {
@@ -123,6 +123,7 @@ export class CompetencyService {
         area: { id: areaId },
         course: { id: courseId },
         user: { id: userId },
+        isTutor: isTutor,
         // phase: { id: phaseId },
       });
 
@@ -144,6 +145,7 @@ export class CompetencyService {
       area: { id: updateTeacherCompetencyDto.areaId },
       course: { id: updateTeacherCompetencyDto.courseId },
       user: { id: updateTeacherCompetencyDto.userId },
+      isTutor: updateTeacherCompetencyDto.isTutor,
     });
 
     if (!teacherCompetency)

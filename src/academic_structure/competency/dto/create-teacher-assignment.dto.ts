@@ -1,8 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional } from 'class-validator';
 import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreateTeacherCompetencyDto {
+  @ApiProperty({
+    example: 'true',
+    description: 'if the teacher is tutor',
+    nullable: false,
+  })
+  @IsBoolean()
+  isTutor: boolean;
   @ApiProperty({
     example: 1,
     description: 'id of the user',

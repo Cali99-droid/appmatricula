@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
@@ -17,6 +18,15 @@ export class TeacherAssignment {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
+
+  @ApiProperty({
+    example: 'true',
+    description: 'if the teacher is tutor',
+  })
+  @Column('bool', {
+    default: false,
+  })
+  isTutor: boolean;
 
   @ManyToOne(() => User, {
     eager: true,
