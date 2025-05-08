@@ -78,6 +78,11 @@ export class AreaService {
         competency: true,
         course: true,
       },
+      order: {
+        competency: {
+          order: 'ASC',
+        },
+      },
     });
     if (!area) throw new NotFoundException(`Area with id ${id} not found`);
     return area;
