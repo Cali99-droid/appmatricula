@@ -32,6 +32,15 @@ export class CompetencyService {
   async create(createCompetencyDto: CreateCompetencyDto) {
     if (createCompetencyDto.order < 1)
       throw new NotFoundException(`Order must be greater than 0`);
+    const existCompetency = await this.competencyRepository.findOneBy({
+      order: createCompetencyDto.order,
+      area: { id: createCompetencyDto.areaId },
+    });
+    if (existCompetency) {
+      throw new BadRequestException(
+        `Competency with order ${createCompetencyDto.order} already exists`,
+      );
+    }
     try {
       const newEntry = this.competencyRepository.create({
         name: createCompetencyDto.name,
