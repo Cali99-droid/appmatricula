@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Competency } from 'src/academic_structure/competency/entities/competency.entity';
+import { Course } from 'src/academic_structure/course/entities/course.entity';
 import { Bimester } from 'src/bimester/entities/bimester.entity';
 import { Student } from 'src/student/entities/student.entity';
 import { User } from 'src/user/entities/user.entity';
@@ -36,6 +37,12 @@ export class Ratings {
   })
   @JoinColumn({ name: 'competencyId' })
   competency?: Competency;
+
+  @ManyToOne(() => Course, (course) => course.ratings, {
+    eager: true,
+  })
+  @JoinColumn({ name: 'courseId' })
+  course?: Course;
 
   @ManyToOne(() => User, (teacher) => teacher.ratings, {
     eager: true,

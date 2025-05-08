@@ -26,9 +26,18 @@ export class RatingsService {
       const newEntry = this.ratingsRepository.create({
         student: { id: createRatingsDto.studentId },
         bimester: { id: createRatingsDto.bimesterId },
-        competency: { id: createRatingsDto.studentId },
+        competency: {
+          id: isNaN(createRatingsDto.competencyId)
+            ? undefined
+            : createRatingsDto.competencyId,
+        },
         teacher: { id: us.id },
         qualification: createRatingsDto.qualification,
+        course: {
+          id: isNaN(createRatingsDto.courseId)
+            ? undefined
+            : createRatingsDto.courseId,
+        },
         status: true,
       });
       const ratings = await this.ratingsRepository.save(newEntry);
@@ -77,7 +86,8 @@ export class RatingsService {
   }
 
   async update(id: number, updateRatingsDto: UpdateRatingsDto, user: any) {
-    const { studentId, bimesterId, competencyId, ...rest } = updateRatingsDto;
+    const { studentId, bimesterId, competencyId, courseId, ...rest } =
+      updateRatingsDto;
     const us = await this.userRepository.findOne({
       where: {
         email: user.email,
@@ -87,7 +97,8 @@ export class RatingsService {
       id: id,
       student: { id: studentId },
       bimester: { id: bimesterId },
-      competency: { id: competencyId },
+      competency: { id: isNaN(competencyId) ? undefined : competencyId },
+      course: { id: isNaN(courseId) ? undefined : courseId },
       teacher: { id: us.id },
       ...rest,
     });

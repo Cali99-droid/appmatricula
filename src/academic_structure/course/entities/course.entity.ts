@@ -11,6 +11,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { CourseDetail } from './course_detail.entity';
+import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
 
 @Entity()
 export class Course {
@@ -60,4 +61,9 @@ export class Course {
     // eager: true,
   })
   courseDetail?: CourseDetail[];
+
+  @OneToMany(() => Ratings, (ratings) => ratings.course, {
+    // eager: true,
+  })
+  ratings?: Ratings[];
 }
