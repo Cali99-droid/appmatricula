@@ -42,7 +42,7 @@ export class AreaService {
   }
 
   async findAll(levelId: number) {
-    let areas;
+    let areas: Area[];
     if (levelId) {
       areas = await this.areaRepository.find({
         where: {
@@ -67,6 +67,14 @@ export class AreaService {
         },
       });
     }
+    areas.map((area) => {
+      return area.competency.sort((a, b) => {
+        if (a.order !== b.order) {
+          return a.order - b.order; // ordena ascendente por 'order'
+        }
+        return a.name.localeCompare(b.name); // si el order es igual, ordena por 'name'
+      });
+    });
 
     return areas;
   }

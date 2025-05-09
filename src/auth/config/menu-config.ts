@@ -293,6 +293,32 @@ export const AdminMenu = {
         },
       ],
     },
+    {
+      id: 8,
+      label: 'Academico',
+      link: '/admin/academy',
+      icon: 'student',
+      tagSubMenu: true,
+      permissions: ['administrador-colegio'],
+      subMenu: [
+        {
+          id: 1,
+          label: 'Cursos',
+          icon: 'calendar',
+          link: '/admin/academy/courses',
+          permissions: ['modificar-feriados'],
+          subMenu: [],
+        },
+        {
+          id: 2,
+          label: 'Asignaciones',
+          icon: 'student',
+          link: '/admin/academy/assignments',
+          permissions: ['administrador-colegio'],
+          subMenu: [],
+        },
+      ],
+    },
   ],
   settingsMenu: [
     {
