@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import {
   BadRequestException,
   Injectable,
@@ -79,6 +79,19 @@ export class CompetencyService {
 
   async update(id: number, updateCompetencyDto: UpdateCompetencyDto) {
     const { areaId, ...rest } = updateCompetencyDto;
+    const existCompetency = await this.competencyRepository.findOne({
+      where: {
+        id: Not(id),
+        order: updateCompetencyDto.order,
+        area: { id: updateCompetencyDto.areaId },
+      },
+    });
+
+    if (existCompetency) {
+      throw new BadRequestException(
+        `Competency with order ${updateCompetencyDto.order} already exists in the specified area.`,
+      );
+    }
     const competency = await this.competencyRepository.preload({
       id: id,
       area: { id: areaId },

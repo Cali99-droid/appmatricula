@@ -41,7 +41,7 @@ export class Area {
     uniqueItems: true,
   })
   @Column('integer', {
-    unique: true,
+    // unique: true,
   })
   order: number;
 
