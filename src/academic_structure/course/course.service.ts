@@ -6,6 +6,7 @@ import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { Course } from './entities/course.entity';
 import { CourseDetail } from './entities/course_detail.entity';
+import { Competency } from '../competency/entities/competency.entity';
 
 @Injectable()
 export class CourseService {
@@ -15,6 +16,8 @@ export class CourseService {
     private readonly courseRepository: Repository<Course>,
     @InjectRepository(CourseDetail)
     private readonly courseDetailRepository: Repository<CourseDetail>,
+    @InjectRepository(Competency)
+    private readonly competencyRepository: Repository<Competency>,
   ) {}
 
   async create(createCourseDto: CreateCourseDto) {
@@ -22,7 +25,7 @@ export class CourseService {
       const existCompetency = await this.courseDetailRepository.findOneBy({
         competency: { id: competencyId },
       });
-      if (!existCompetency) {
+      if (existCompetency) {
         throw new NotFoundException(
           `Competency with id ${competencyId} exists`,
         );
@@ -83,11 +86,25 @@ export class CourseService {
 
   async update(id: number, updateCourseDto: UpdateCourseDto) {
     const { areaId, competencyId, ...rest } = updateCourseDto;
-    const course = await this.courseDetailRepository.find({
+    const course = await this.courseRepository.find({
+      where: { id: id },
+    });
+
+    if (!course) throw new NotFoundException(`Course with id: ${id} not found`);
+    for (const element of competencyId) {
+      console.log(element);
+      const competency = await this.competencyRepository.findOne({
+        where: { id: element },
+      });
+      console.log(competency);
+      if (!competency)
+        throw new NotFoundException(`Competency with id: ${element} not found`);
+    }
+
+    const courseDetails = await this.courseDetailRepository.find({
       where: { course: { id: id } },
     });
-    if (!course) throw new NotFoundException(`Course with id: ${id} not found`);
-    await this.courseDetailRepository.remove(course);
+    await this.courseDetailRepository.remove(courseDetails);
 
     try {
       competencyId.map(async (element) => {
@@ -112,9 +129,16 @@ export class CourseService {
 
   async remove(id: number) {
     const course = await this.courseRepository.findOneBy({ id });
+    const courseDetail = await this.courseDetailRepository.find({
+      where: { course: { id: id } },
+    });
     if (!course) throw new NotFoundException(`Course by id: '${id}' not found`);
     try {
+      for (const element of courseDetail) {
+        await this.courseDetailRepository.remove(element);
+      }
       await this.courseRepository.remove(course);
+      return { msg: `Course with id: ${id} was deleted` };
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
