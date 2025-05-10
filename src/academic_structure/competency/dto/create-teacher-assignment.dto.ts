@@ -35,7 +35,6 @@ export class CreateTeacherCompetencyDto {
     nullable: true,
   })
   @IsNumber()
-  @IsOptional()
   @ExistId({ tableName: 'area' })
   areaId: number;
 

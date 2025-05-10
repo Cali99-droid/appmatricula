@@ -125,24 +125,65 @@ export class CompetencyService {
     const { activityClassroomId, areaId, userId, courseId, isTutor } =
       createTeacherCompetencyDto;
 
-    if (areaId && courseId) {
-      throw new BadRequestException(
-        'You cannot send areaId and courseId in the same request, only one of them.',
-      );
-    }
     try {
-      const teacherAssignmentCreated = this.teacherAssignmentRepository.create({
+      // Validar si ya existe un tutor en el aula
+      if (isTutor) {
+        const existingTutor = await this.teacherAssignmentRepository.findOne({
+          where: {
+            activityClassroom: { id: activityClassroomId },
+            isTutor: true,
+          },
+        });
+
+        if (existingTutor) {
+          throw new BadRequestException(
+            'Ya existe un tutor asignado para esta aula.',
+          );
+        }
+      }
+
+      // Validar si ya existe un docente para el área en el aula
+      const existingAreaAssignment =
+        await this.teacherAssignmentRepository.findOne({
+          where: {
+            activityClassroom: { id: activityClassroomId },
+            area: { id: areaId },
+          },
+        });
+
+      if (existingAreaAssignment) {
+        throw new BadRequestException(
+          'Ya existe un docente asignado a esta área en el aula.',
+        );
+      }
+
+      // Validar si ya existe un docente para el curso en el aula (si se proporciona courseId)
+      if (courseId) {
+        const existingCourseAssignment =
+          await this.teacherAssignmentRepository.findOne({
+            where: {
+              activityClassroom: { id: activityClassroomId },
+              course: { id: courseId },
+            },
+          });
+
+        if (existingCourseAssignment) {
+          throw new BadRequestException(
+            'Ya existe un docente asignado a este curso en el aula.',
+          );
+        }
+      }
+
+      // Crear la asignación
+      const newAssignment = this.teacherAssignmentRepository.create({
         activityClassroom: { id: activityClassroomId },
         area: { id: areaId },
-        course: { id: courseId },
+        course: courseId ? { id: courseId } : undefined,
         user: { id: userId },
-        isTutor: isTutor,
-        // phase: { id: phaseId },
+        isTutor,
       });
 
-      return await this.teacherAssignmentRepository.save(
-        teacherAssignmentCreated,
-      );
+      return await this.teacherAssignmentRepository.save(newAssignment);
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
@@ -152,20 +193,71 @@ export class CompetencyService {
     id: number,
     updateTeacherCompetencyDto: UpdateTeacherCompetencyDto,
   ) {
+    const { activityClassroomId, areaId, courseId, userId, isTutor } =
+      updateTeacherCompetencyDto;
+
     const teacherCompetency = await this.teacherAssignmentRepository.preload({
-      id: id,
-      activityClassroom: { id: updateTeacherCompetencyDto.activityClassroomId },
-      area: { id: updateTeacherCompetencyDto.areaId },
-      course: { id: updateTeacherCompetencyDto.courseId },
-      user: { id: updateTeacherCompetencyDto.userId },
-      isTutor: updateTeacherCompetencyDto.isTutor,
+      id,
+      activityClassroom: { id: activityClassroomId },
+      area: { id: areaId },
+      course: courseId ? { id: courseId } : undefined,
+      user: { id: userId },
+      isTutor,
     });
 
-    if (!teacherCompetency)
-      throw new NotFoundException(
-        `teacher Competency with id: ${id} not found`,
-      );
+    if (!teacherCompetency) {
+      throw new NotFoundException(`Asignación con id ${id} no encontrada`);
+    }
+
     try {
+      // Validar tutor duplicado (excepto este registro)
+      if (isTutor) {
+        const existingTutor = await this.teacherAssignmentRepository.findOne({
+          where: {
+            activityClassroom: { id: activityClassroomId },
+            isTutor: true,
+          },
+        });
+
+        if (existingTutor && existingTutor.id !== id) {
+          throw new BadRequestException(
+            'Ya existe un tutor asignado para esta aula.',
+          );
+        }
+      }
+
+      // Validar duplicado de área
+      const existingAreaAssignment =
+        await this.teacherAssignmentRepository.findOne({
+          where: {
+            activityClassroom: { id: activityClassroomId },
+            area: { id: areaId },
+          },
+        });
+
+      if (existingAreaAssignment && existingAreaAssignment.id !== id) {
+        throw new BadRequestException(
+          'Ya existe un docente asignado a esta área en el aula.',
+        );
+      }
+
+      // Validar duplicado de curso
+      if (courseId) {
+        const existingCourseAssignment =
+          await this.teacherAssignmentRepository.findOne({
+            where: {
+              activityClassroom: { id: activityClassroomId },
+              course: { id: courseId },
+            },
+          });
+
+        if (existingCourseAssignment && existingCourseAssignment.id !== id) {
+          throw new BadRequestException(
+            'Ya existe un docente asignado a este curso en el aula.',
+          );
+        }
+      }
+
       await this.teacherAssignmentRepository.save(teacherCompetency);
       return teacherCompetency;
     } catch (error) {
