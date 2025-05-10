@@ -1,5 +1,10 @@
-import { Repository } from 'typeorm';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Repository, Not } from 'typeorm';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateAreaDto } from './dto/create-area.dto';
@@ -24,6 +29,16 @@ export class AreaService {
     if (areaExists) {
       throw new NotFoundException(
         `Area with name ${createAreaDto.name} already exists`,
+      );
+    }
+    const areaExistsOrder = await this.areaRepository.findOneBy({
+      name: createAreaDto.name,
+      order: createAreaDto.order,
+      level: { id: createAreaDto.levelId },
+    });
+    if (areaExistsOrder) {
+      throw new NotFoundException(
+        `Order with name ${createAreaDto.levelId} already exists`,
       );
     }
     try {
@@ -98,6 +113,19 @@ export class AreaService {
 
   async update(id: number, updateAreaDto: UpdateAreaDto) {
     const { levelId, ...rest } = updateAreaDto;
+    const existCompetency = await this.areaRepository.findOne({
+      where: {
+        id: Not(id),
+        order: updateAreaDto.order,
+        level: { id: updateAreaDto.levelId },
+      },
+    });
+
+    if (existCompetency) {
+      throw new BadRequestException(
+        `Level with order ${updateAreaDto.order} already exists in the specified area.`,
+      );
+    }
     const area = await this.areaRepository.preload({
       id: id,
       level: { id: levelId },
