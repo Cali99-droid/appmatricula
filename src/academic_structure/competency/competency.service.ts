@@ -143,20 +143,21 @@ export class CompetencyService {
       }
 
       // Validar si ya existe un docente para el área en el aula
-      const existingAreaAssignment =
-        await this.teacherAssignmentRepository.findOne({
-          where: {
-            activityClassroom: { id: activityClassroomId },
-            area: { id: areaId },
-          },
-        });
+      if (!courseId) {
+        const existingAreaAssignment =
+          await this.teacherAssignmentRepository.findOne({
+            where: {
+              activityClassroom: { id: activityClassroomId },
+              area: { id: areaId },
+            },
+          });
 
-      if (existingAreaAssignment) {
-        throw new BadRequestException(
-          'Ya existe un docente asignado a esta área en el aula.',
-        );
+        if (existingAreaAssignment) {
+          throw new BadRequestException(
+            'Ya existe un docente asignado a esta área en el aula.',
+          );
+        }
       }
-
       // Validar si ya existe un docente para el curso en el aula (si se proporciona courseId)
       if (courseId) {
         const existingCourseAssignment =
