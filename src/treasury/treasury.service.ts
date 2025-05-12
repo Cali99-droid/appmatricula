@@ -1509,7 +1509,7 @@ export class TreasuryService {
       return {
         status: false,
         message: 'Algunos pagos ya fueron registrados previamente.',
-        alreadyPaid: debts.map((d) => ({
+        alreadyPaid: debtsPaid.map((d) => ({
           code: d.code,
           student:
             d.student.person.lastname +
