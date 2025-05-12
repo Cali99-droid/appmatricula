@@ -20,12 +20,12 @@ export class Course {
   id: number;
 
   @ApiProperty({
-    example: '2023',
+    example: 'ALGEBRA',
     description: 'Name of area',
     uniqueItems: true,
   })
   @Column('varchar', {
-    unique: true,
+    unique: false,
   })
   name: string;
 
