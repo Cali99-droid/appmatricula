@@ -96,7 +96,6 @@ export class CourseService {
       const competency = await this.competencyRepository.findOne({
         where: { id: element },
       });
-      console.log(competency);
       if (!competency)
         throw new NotFoundException(`Competency with id: ${element} not found`);
     }
