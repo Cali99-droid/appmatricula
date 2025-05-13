@@ -261,6 +261,14 @@ export const AdminMenu = {
         },
         {
           id: 4,
+          label: 'Descuentos',
+          icon: 'reportPayment',
+          link: '/admin/treasury/discounts-stude',
+          permissions: ['administracion'],
+          subMenu: [],
+        },
+        {
+          id: 5,
           label: 'Bancos',
           link: '/admin/treasury',
           icon: 'bank',
@@ -271,7 +279,7 @@ export const AdminMenu = {
               id: 1,
               label: 'Genrar TXT',
               icon: 'userComportamiento',
-              link: 'download',
+              link: '/admin/treasury/banks',
               permissions: ['tesoreria-reporte'],
               subMenu: [],
             },
