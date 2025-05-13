@@ -263,7 +263,7 @@ export const AdminMenu = {
           id: 4,
           label: 'Descuentos',
           icon: 'reportPayment',
-          link: '/admin/treasury/discounts-stude',
+          link: '/admin/treasury/discounts-student',
           permissions: ['administracion'],
           subMenu: [],
         },
