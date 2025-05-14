@@ -55,4 +55,6 @@ export class Level {
     // eager: true,
   })
   area?: Area[];
+  // @OneToMany(() => Course, (sh) => sh.level)
+  // course?: Course[];
 }

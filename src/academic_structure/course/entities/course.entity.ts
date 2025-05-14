@@ -10,8 +10,9 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { CourseDetail } from './course_detail.entity';
 import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
+import { Competency } from 'src/academic_structure/competency/entities/competency.entity';
+import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 
 @Entity()
 export class Course {
@@ -35,6 +36,40 @@ export class Course {
   @JoinColumn({ name: 'areaId' })
   area: Area;
 
+  @ManyToOne(() => Competency, (competency) => competency.course, {
+    eager: true,
+  })
+  @JoinColumn({ name: 'competencyId' })
+  competency?: Competency;
+
+  // @ManyToOne(() => Year, (year) => year.course, {
+  //   eager: true,
+  // })
+  // @JoinColumn({ name: 'yearId' })
+  // year?: Year;
+
+  // @ManyToOne(() => Campus, (campus) => campus.course, {
+  //   eager: true,
+  // })
+  // @JoinColumn({ name: 'campusId' })
+  // campus?: Campus;
+
+  // @ManyToOne(() => Level, (level) => level.course, {
+  //   eager: true,
+  // })
+  // @JoinColumn({ name: 'leveld' })
+  // level?: Level;
+
+  @ManyToOne(
+    () => ActivityClassroom,
+    (activityClassroom) => activityClassroom.course,
+    {
+      eager: true,
+    },
+  )
+  @JoinColumn({ name: 'activityClassroomId' })
+  activityClassroom?: ActivityClassroom;
+
   @ApiProperty({
     example: 'true',
     description: 'status of the area',
@@ -56,11 +91,6 @@ export class Course {
     onUpdate: 'CURRENT_TIMESTAMP(6)',
   })
   updatedAt: Date;
-
-  @OneToMany(() => CourseDetail, (courseDetail) => courseDetail.course, {
-    // eager: true,
-  })
-  courseDetail?: CourseDetail[];
 
   @OneToMany(() => Ratings, (ratings) => ratings.course, {
     // eager: true,

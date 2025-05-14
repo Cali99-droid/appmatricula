@@ -56,42 +56,47 @@ export class AreaService {
     }
   }
 
-  async findAll(levelId: number) {
-    let areas: Area[];
-    if (levelId) {
-      areas = await this.areaRepository.find({
-        where: {
-          level: { id: levelId },
+  async findAll(levelId: number, activityClassRoomId?: number) {
+    const areas = await this.areaRepository.find({
+      where: {
+        level: { id: levelId },
+        course: {
+          activityClassroom: {
+            id: isNaN(activityClassRoomId) ? undefined : activityClassRoomId,
+          },
         },
-        order: {
-          order: 'ASC',
-        },
-        relations: {
-          competency: true,
-          course: true,
-        },
-      });
-    } else {
-      areas = await this.areaRepository.find({
-        order: {
-          order: 'ASC',
-        },
-        relations: {
-          competency: true,
-          course: true,
-        },
-      });
-    }
-    areas.map((area) => {
-      return area.competency.sort((a, b) => {
-        if (a.order !== b.order) {
-          return a.order - b.order; // ordena ascendente por 'order'
-        }
-        return a.name.localeCompare(b.name); // si el order es igual, ordena por 'name'
-      });
+        status: true,
+      },
+      relations: {
+        competency: true,
+        course: true,
+      },
+      order: {
+        order: 'ASC',
+      },
     });
 
-    return areas;
+    // Agrupa y transforma las áreas
+    const grouped = areas.map((area) => {
+      // Ordena las competencias por orden y luego por nombre
+      const sortedCompetencies = area.competency.sort((a, b) => {
+        if (a.order !== b.order) return a.order - b.order;
+        return a.name.localeCompare(b.name);
+      });
+
+      return {
+        id: area.id,
+        name: area.name,
+        order: area.order,
+        level: area.level,
+        totalCompetencies: sortedCompetencies.length,
+        totalCourses: area.course.length,
+        competencies: sortedCompetencies,
+        courses: area.course,
+      };
+    });
+
+    return grouped;
   }
 
   async findOne(id: number) {
