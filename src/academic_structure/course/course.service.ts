@@ -1,12 +1,15 @@
 import { Repository } from 'typeorm';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { Course } from './entities/course.entity';
-import { CourseDetail } from './entities/course_detail.entity';
-import { Competency } from '../competency/entities/competency.entity';
 
 @Injectable()
 export class CourseService {
@@ -14,44 +17,31 @@ export class CourseService {
   constructor(
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
-    @InjectRepository(CourseDetail)
-    private readonly courseDetailRepository: Repository<CourseDetail>,
-    @InjectRepository(Competency)
-    private readonly competencyRepository: Repository<Competency>,
   ) {}
 
   async create(createCourseDto: CreateCourseDto) {
-    for (const competencyId of createCourseDto.competencyId) {
-      const existCompetency = await this.courseDetailRepository.findOneBy({
-        competency: { id: competencyId },
-      });
-      if (existCompetency) {
-        throw new NotFoundException(
-          `Competency with id ${competencyId} exists`,
-        );
-      }
+    const existCompetency = await this.courseRepository.findOneBy({
+      area: { id: createCourseDto.areaId },
+      competency: { id: createCourseDto.competencyId },
+    });
+    if (existCompetency) {
+      throw new NotFoundException(
+        `Competency with id ${createCourseDto.competencyId} exists`,
+      );
     }
     try {
       const course = this.courseRepository.create({
         name: createCourseDto.name,
         area: { id: createCourseDto.areaId },
+        competency: { id: createCourseDto.competencyId },
+        activityClassroom: {
+          id: isNaN(createCourseDto.activityClassRoomId)
+            ? undefined
+            : createCourseDto.activityClassRoomId,
+        },
         status: true,
       });
-      await this.courseRepository.save(course);
-      const coursesDetail = createCourseDto.competencyId.map(
-        async (element) => {
-          const newEntry = this.courseDetailRepository.create({
-            course: { id: course.id },
-            competency: { id: element },
-            status: true,
-          });
-          return await this.courseDetailRepository.save(newEntry);
-        },
-      );
-
-      const savedCourses = await Promise.all(coursesDetail);
-
-      return savedCourses;
+      return await this.courseRepository.save(course);
     } catch (error) {
       // this.logger.error(error);
       handleDBExceptions(error, this.logger);
@@ -60,13 +50,14 @@ export class CourseService {
 
   async findAll(areaId?: number) {
     const courses = await this.courseRepository.find({
-      where: { area: { id: isNaN(areaId) ? undefined : areaId } },
+      where: {
+        area: { id: isNaN(areaId) ? undefined : areaId },
+        activityClassroom: { id: isNaN(areaId) ? undefined : areaId },
+      },
       relations: {
         area: true,
-        courseDetail: { competency: true, course: false },
-      },
-      order: {
-        courseDetail: { course: { name: 'ASC' }, competency: { order: 'ASC' } },
+        competency: true,
+        activityClassroom: true,
       },
     });
     return courses;
@@ -77,7 +68,8 @@ export class CourseService {
       where: { id: id },
       relations: {
         area: true,
-        courseDetail: { competency: true, course: false },
+        competency: true,
+        activityClassroom: true,
       },
     });
     if (!course) throw new NotFoundException(`Course with id ${id} not found`);
@@ -85,42 +77,37 @@ export class CourseService {
   }
 
   async update(id: number, updateCourseDto: UpdateCourseDto) {
-    const { areaId, competencyId, ...rest } = updateCourseDto;
-    const course = await this.courseRepository.find({
-      where: { id: id },
+    const existingCourse = await this.courseRepository.findOne({
+      where: [
+        {
+          area: { id: updateCourseDto.areaId },
+          competency: { id: updateCourseDto.competencyId },
+          activityClassroom: {
+            id: isNaN(updateCourseDto.activityClassRoomId)
+              ? undefined
+              : updateCourseDto.activityClassRoomId,
+          },
+        },
+      ],
     });
-
-    if (!course) throw new NotFoundException(`Course with id: ${id} not found`);
-    for (const element of competencyId) {
-      console.log(element);
-      const competency = await this.competencyRepository.findOne({
-        where: { id: element },
-      });
-      if (!competency)
-        throw new NotFoundException(`Competency with id: ${element} not found`);
+    if (existingCourse != undefined) {
+      if (id != existingCourse.id) {
+        throw new BadRequestException(`An Course with already exists.`);
+      }
     }
-
-    const courseDetails = await this.courseDetailRepository.find({
-      where: { course: { id: id } },
-    });
-    await this.courseDetailRepository.remove(courseDetails);
-
     try {
-      competencyId.map(async (element) => {
-        const newEntry = this.courseDetailRepository.create({
-          course: { id: id },
-          competency: { id: element },
-          status: true,
-        });
-        return await this.courseDetailRepository.save(newEntry);
-      });
       const course = await this.courseRepository.preload({
         id: id,
-        area: { id: areaId },
-        ...rest,
+        name: updateCourseDto.name,
+        area: { id: updateCourseDto.areaId },
+        competency: { id: updateCourseDto.competencyId },
+        activityClassroom: {
+          id: isNaN(updateCourseDto.activityClassRoomId)
+            ? undefined
+            : updateCourseDto.activityClassRoomId,
+        },
       });
-      await this.courseRepository.save(course);
-      return course;
+      return await this.courseRepository.save(course);
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
@@ -128,16 +115,9 @@ export class CourseService {
 
   async remove(id: number) {
     const course = await this.courseRepository.findOneBy({ id });
-    const courseDetail = await this.courseDetailRepository.find({
-      where: { course: { id: id } },
-    });
     if (!course) throw new NotFoundException(`Course by id: '${id}' not found`);
     try {
-      for (const element of courseDetail) {
-        await this.courseDetailRepository.remove(element);
-      }
       await this.courseRepository.remove(course);
-      return { msg: `Course with id: ${id} was deleted` };
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }

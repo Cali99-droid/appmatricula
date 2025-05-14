@@ -19,6 +19,7 @@ import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { AssignmentClassroom } from 'src/user/entities/assignments-classroom.entity';
 import { Ascent } from 'src/enrollment/entities/ascent.entity';
 import { SectionHistory } from 'src/enrollment/entities/section-history';
+import { Course } from 'src/academic_structure/course/entities/course.entity';
 
 @Entity()
 export class ActivityClassroom {
@@ -87,4 +88,6 @@ export class ActivityClassroom {
   currentClassroom?: SectionHistory;
   @OneToMany(() => SectionHistory, (sh) => sh.previousClassroom)
   previousClassroom?: SectionHistory;
+  @OneToMany(() => Course, (sh) => sh.activityClassroom)
+  course?: Course[];
 }

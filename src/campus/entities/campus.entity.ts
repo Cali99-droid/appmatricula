@@ -11,7 +11,6 @@ import { Year } from '../../years/entities/year.entity';
 import { CampusToLevel } from './campusToLevel.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { SchoolShift } from '../../school_shifts/entities/school_shift.entity';
-
 @Entity()
 export class Campus {
   @ApiProperty({
@@ -44,4 +43,6 @@ export class Campus {
     // eager: true,
   })
   schoolShift?: SchoolShift[];
+  // @OneToMany(() => Course, (sh) => sh.campus)
+  // course?: Course[];
 }

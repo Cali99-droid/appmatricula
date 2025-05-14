@@ -35,8 +35,11 @@ export class AreaController {
     description: 'Array of areas',
     type: [Area],
   })
-  findAll(@Query('levelId') levelId: string) {
-    return this.areaService.findAll(+levelId);
+  findAll(
+    @Query('levelId') levelId: string,
+    @Query('activityClassRoomId') activityClassRoomId: string,
+  ) {
+    return this.areaService.findAll(+levelId, +activityClassRoomId);
   }
 
   @Get(':id')
