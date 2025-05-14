@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Area } from 'src/academic_structure/area/entities/area.entity';
-import { CourseDetail } from 'src/academic_structure/course/entities/course_detail.entity';
 import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
+import { Course } from '../../course/entities/course.entity';
 import {
   Column,
   CreateDateColumn,
@@ -71,6 +71,6 @@ export class Competency {
   @OneToMany(() => Ratings, (ratings) => ratings.competency)
   ratings?: Ratings[];
 
-  @OneToMany(() => CourseDetail, (course) => course.competency)
-  courseDetail?: CourseDetail[];
+  @OneToMany(() => Course, (course) => course.competency)
+  course?: Course[];
 }

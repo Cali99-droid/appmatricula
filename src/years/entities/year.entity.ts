@@ -107,4 +107,9 @@ export class Year {
     },
   )
   enrollmentSchedule?: EnrollmentSchedule[];
+
+  // @OneToMany(() => Course, (course) => course.year, {
+  //   // eager: true,
+  // })
+  // course?: Course[];
 }
