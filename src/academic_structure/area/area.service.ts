@@ -59,7 +59,7 @@ export class AreaService {
   async findAll(levelId: number, activityClassRoomId?: number) {
     const areas = await this.areaRepository.find({
       where: {
-        level: { id: levelId },
+        level: { id: isNaN(levelId) ? undefined : levelId },
         course: {
           activityClassroom: {
             id: isNaN(activityClassRoomId) ? undefined : activityClassRoomId,

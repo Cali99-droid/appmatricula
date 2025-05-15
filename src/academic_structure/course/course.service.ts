@@ -20,6 +20,7 @@ export class CourseService {
   ) {}
 
   async create(createCourseDto: CreateCourseDto) {
+    console.log('createCourseDto', createCourseDto);
     const existCompetency = await this.courseRepository.findOneBy({
       area: { id: createCourseDto.areaId },
       competency: { id: createCourseDto.competencyId },
