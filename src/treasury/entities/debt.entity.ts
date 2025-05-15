@@ -45,7 +45,9 @@ export class Debt {
     description: 'is canceled of debt?',
     default: false,
   })
-  @Column('boolean')
+  @Column('boolean', {
+    default: false,
+  })
   isCanceled: boolean;
 
   @Column('varchar', {

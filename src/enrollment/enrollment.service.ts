@@ -212,6 +212,7 @@ export class EnrollmentService {
           status: false,
           description: enrroll.code,
           code: `MAT${enrroll.code}`,
+          isCanceled: false,
         });
 
         await this.debtRepository.save(createdDebt);
