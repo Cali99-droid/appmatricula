@@ -25,19 +25,19 @@ export class CreateCourseDto {
   @IsNumber()
   areaId: number;
 
-  @ApiProperty({
-    example: 1,
-    description: 'id of the competency',
-    nullable: false,
-  })
-  competencyId: number;
+  // @ApiProperty({
+  //   example: 1,
+  //   description: 'id of the competency',
+  //   nullable: false,
+  // })
+  // competencyId: number;
 
-  @ApiProperty({
-    example: 1,
-    description: 'id of the activityClassRoom',
-    nullable: false,
-  })
-  activityClassRoomId?: number;
+  // @ApiProperty({
+  //   example: 1,
+  //   description: 'id of the activityClassRoom',
+  //   nullable: false,
+  // })
+  // activityClassRoomId?: number;
 
   @ApiProperty({
     example: 'true',

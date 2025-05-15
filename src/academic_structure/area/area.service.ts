@@ -56,64 +56,59 @@ export class AreaService {
     }
   }
 
-  async findAll(levelId: number, activityClassRoomId?: number) {
-    const areas = await this.areaRepository.find({
-      where: {
-        level: { id: levelId },
-        course: {
-          activityClassroom: {
-            id: isNaN(activityClassRoomId) ? undefined : activityClassRoomId,
-          },
-        },
-        status: true,
-      },
-      relations: {
-        competency: true,
-        course: true,
-      },
-      order: {
-        order: 'ASC',
-      },
-    });
+  async findAll(levelId?: number) {
+    const query = this.areaRepository
+      .createQueryBuilder('area')
+      .leftJoinAndSelect('area.competency', 'competency')
+      .leftJoinAndSelect('competency.course', 'course')
+      .where('1 = 1');
 
-    // Agrupa y transforma las áreas
-    const grouped = areas.map((area) => {
-      // Ordena las competencias por orden y luego por nombre
-      const sortedCompetencies = area.competency.sort((a, b) => {
+    if (levelId) {
+      query.andWhere('area.level = :levelId', { levelId });
+    }
+
+    query.orderBy('area.order', 'ASC');
+
+    const areas = await query.getMany();
+
+    return areas.map((area) => {
+      const sortedCompetencias = (area.competency || []).sort((a, b) => {
         if (a.order !== b.order) return a.order - b.order;
         return a.name.localeCompare(b.name);
       });
 
       return {
         id: area.id,
-        name: area.name,
-        order: area.order,
-        level: area.level,
-        totalCompetencies: sortedCompetencies.length,
-        totalCourses: area.course.length,
-        competencies: sortedCompetencies,
-        courses: area.course,
+        nombre: area.name,
+        nivel: area.level,
+        totalCompetencias: sortedCompetencias.length,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        competencias: sortedCompetencias.map(({ area, ...rest }) => rest),
       };
     });
-
-    return grouped;
   }
 
   async findOne(id: number) {
-    const area = await this.areaRepository.findOne({
-      where: { id: id },
-      relations: {
-        competency: true,
-        course: true,
-      },
-      order: {
-        competency: {
-          order: 'ASC',
+    try {
+      const area = await this.areaRepository.findOne({
+        where: { id: id },
+        relations: {
+          competency: true,
+          // course: true,
         },
-      },
-    });
-    if (!area) throw new NotFoundException(`Area with id ${id} not found`);
-    return area;
+        order: {
+          competency: {
+            order: 'ASC',
+          },
+        },
+      });
+      if (!area) throw new NotFoundException(`Area with id ${id} not found`);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      area.competency = area.competency.map(({ area, ...rest }) => rest);
+      return area;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
   async update(id: number, updateAreaDto: UpdateAreaDto) {

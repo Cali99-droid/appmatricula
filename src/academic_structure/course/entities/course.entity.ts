@@ -1,18 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Area } from 'src/academic_structure/area/entities/area.entity';
+
 import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
-import { Competency } from 'src/academic_structure/competency/entities/competency.entity';
-import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+
+import { ActivityCourse } from './activityCourse.entity';
+import { Area } from 'src/academic_structure/area/entities/area.entity';
 
 @Entity()
 export class Course {
@@ -30,46 +30,6 @@ export class Course {
   })
   name: string;
 
-  @ManyToOne(() => Area, (area) => area.course, {
-    eager: true,
-  })
-  @JoinColumn({ name: 'areaId' })
-  area: Area;
-
-  @ManyToOne(() => Competency, (competency) => competency.course, {
-    eager: true,
-  })
-  @JoinColumn({ name: 'competencyId' })
-  competency?: Competency;
-
-  // @ManyToOne(() => Year, (year) => year.course, {
-  //   eager: true,
-  // })
-  // @JoinColumn({ name: 'yearId' })
-  // year?: Year;
-
-  // @ManyToOne(() => Campus, (campus) => campus.course, {
-  //   eager: true,
-  // })
-  // @JoinColumn({ name: 'campusId' })
-  // campus?: Campus;
-
-  // @ManyToOne(() => Level, (level) => level.course, {
-  //   eager: true,
-  // })
-  // @JoinColumn({ name: 'leveld' })
-  // level?: Level;
-
-  @ManyToOne(
-    () => ActivityClassroom,
-    (activityClassroom) => activityClassroom.course,
-    {
-      eager: true,
-    },
-  )
-  @JoinColumn({ name: 'activityClassroomId' })
-  activityClassroom?: ActivityClassroom;
-
   @ApiProperty({
     example: 'true',
     description: 'status of the area',
@@ -78,6 +38,47 @@ export class Course {
     default: true,
   })
   status: boolean;
+
+  @ManyToOne(() => Area, (area) => area.course, { eager: true })
+  area: Area;
+
+  // @ApiProperty({
+  //   example: 'true',
+  //   description: 'status of the area',
+  // })
+  // @Column('bool', {
+  //   default: true,
+  // })
+  // isForAllClassrooms: boolean;
+
+  @OneToMany(() => ActivityCourse, (activityCourse) => activityCourse.course, {
+    eager: true,
+  })
+  activityCourse: ActivityCourse[];
+
+  // @ManyToOne(
+  //   () => ActivityClassroom,
+  //   (activityClassroom) => activityClassroom.course,
+  //   {
+  //     eager: true,
+  //     nullable: true,
+  //   },
+  // )
+  // @JoinColumn({ name: 'activityClassroomId' })
+  // activityClassroom?: ActivityClassroom;
+
+  // @ManyToMany(() => ActivityClassroom, (ac) => ac.courses)
+  // @JoinTable({
+  //   name: 'course_classroom',
+  //   joinColumn: { name: 'cuorse_id' },
+  //   inverseJoinColumn: { name: 'activityClassroomId' },
+  // })
+  // activityClassrooms: ActivityClassroom[];
+
+  @OneToMany(() => Ratings, (ratings) => ratings.course, {
+    // eager: true,
+  })
+  ratings?: Ratings[];
 
   @CreateDateColumn({
     type: 'timestamp',
@@ -91,9 +92,4 @@ export class Course {
     onUpdate: 'CURRENT_TIMESTAMP(6)',
   })
   updatedAt: Date;
-
-  @OneToMany(() => Ratings, (ratings) => ratings.course, {
-    // eager: true,
-  })
-  ratings?: Ratings[];
 }

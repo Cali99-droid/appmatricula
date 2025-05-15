@@ -57,20 +57,35 @@ export class CompetencyService {
   }
 
   async findAll(courseId?: number, areaId?: number) {
+    const where: any = {};
+
+    if (!isNaN(areaId)) {
+      where.area = { id: areaId };
+    }
+
+    if (!isNaN(courseId)) {
+      where.curso = { id: courseId };
+    }
+
     const competencys = await this.competencyRepository.find({
-      where: {
-        area: { id: isNaN(areaId) ? undefined : areaId },
-      },
+      where,
+      // relations: {
+      //   course: true,
+      // },
       order: {
         order: 'ASC',
       },
     });
+
     return competencys;
   }
 
   async findOne(id: number) {
     const competency = await this.competencyRepository.findOne({
       where: { id: id },
+      // relations: {
+      //   course: true,
+      // },
     });
     if (!competency)
       throw new NotFoundException(`Competency with id ${id} not found`);
@@ -311,9 +326,9 @@ export class CompetencyService {
         where: whereCondition,
         relations: {
           user: { person: true },
-          course: {
-            area: true,
-          },
+          // course: {
+          //   area: true,
+          // },
         },
         order: {
           area: { order: 'DESC' },
@@ -326,14 +341,14 @@ export class CompetencyService {
         // const course = assignment.competency?.course;
         const course = assignment.course;
         // const area = assignment.competency?.area?.name || course?.area?.name;
-        const area = assignment.area?.name;
+        // const area = assignment.area?.name;
 
         return {
           id: assignment.id,
           activityClassroomId: assignment.activityClassroom.id,
           classroom: `${level?.name} - ${grade?.name} ${assignment.activityClassroom?.section}`,
-          areaId: assignment.area?.id || course?.area.id,
-          area: area || course?.area.name.toLocaleUpperCase(),
+          // areaId: assignment.area?.id || course?.area.id,
+          // area: area || course?.area.name.toLocaleUpperCase(),
           isTutor: assignment.isTutor,
           // course: course?.name || 'Sin curso',
           courseId: assignment.course?.id || null,
