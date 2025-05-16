@@ -68,8 +68,13 @@ export class AreaService {
         status: true,
       },
       relations: {
+        level: true,
         competency: true,
-        course: true,
+        course: {
+          activityClassroom: {
+            grade: true,
+          },
+        },
       },
       order: {
         order: 'ASC',
