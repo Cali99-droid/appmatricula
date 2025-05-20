@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Area } from 'src/academic_structure/area/entities/area.entity';
 import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
-import { Course } from '../../course/entities/course.entity';
 import {
   Column,
   CreateDateColumn,
@@ -29,13 +28,6 @@ export class Competency {
   })
   name: string;
 
-  @ManyToOne(() => Area, (area) => area.competency, {
-    eager: true,
-    nullable: true,
-  })
-  @JoinColumn({ name: 'areaId' })
-  area?: Area;
-
   @ApiProperty({
     example: 1,
     description: 'Order of competency',
@@ -55,6 +47,24 @@ export class Competency {
   })
   status: boolean;
 
+  @ManyToOne(() => Area, (area) => area.competency, {
+    eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'areaId' })
+  area?: Area;
+
+  // @ManyToOne(() => Course, (course) => course.competency, {
+  //   nullable: true,
+  //   onDelete: 'SET NULL',
+  // })
+  // course?: Course;
+  //   @OneToMany(() => CursoPeriodo, cursoPeriodo => cursoPeriodo.curso)
+  // periodos: CursoPeriodo[];
+
+  @OneToMany(() => Ratings, (ratings) => ratings.competency)
+  ratings?: Ratings[];
+
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',
@@ -67,10 +77,4 @@ export class Competency {
     onUpdate: 'CURRENT_TIMESTAMP(6)',
   })
   updatedAt: Date;
-
-  @OneToMany(() => Ratings, (ratings) => ratings.competency)
-  ratings?: Ratings[];
-
-  @OneToMany(() => Course, (course) => course.competency)
-  course?: Course[];
 }

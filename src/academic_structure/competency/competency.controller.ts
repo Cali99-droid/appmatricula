@@ -45,6 +45,7 @@ export class CompetencyController {
     description: 'Array of competencys',
     type: [Competency],
   })
+  /**TODO crear DTO */
   findAll(
     @Query('courseId') courseId?: string,
     @Query('areaId') areaId?: string,
@@ -160,7 +161,6 @@ export class CompetencyController {
     description: 'competency  not found ',
   })
   findOne(@Param('id') id: string) {
-    console.log('dsbhsdnb');
     return this.competencyService.findOne(+id);
   }
 }

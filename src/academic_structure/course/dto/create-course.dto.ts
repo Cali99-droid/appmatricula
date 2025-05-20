@@ -1,11 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsBoolean,
-  IsNumber,
-  IsOptional,
-  IsString,
-  MinLength,
-} from 'class-validator';
+import { IsBoolean, IsNumber, IsString, MinLength } from 'class-validator';
 
 export class CreateCourseDto {
   @ApiProperty({
@@ -25,21 +19,21 @@ export class CreateCourseDto {
   @IsNumber()
   areaId: number;
 
-  @ApiProperty({
-    example: 1,
-    description: 'id of the competency',
-    nullable: false,
-  })
-  @IsNumber()
-  competencyId: number;
 
-  @ApiProperty({
-    example: 1,
-    description: 'id of the activityClassRoom',
-    nullable: false,
-  })
-  @IsNumber()
-  activityClassRoomId?: number;
+  // @ApiProperty({
+  //   example: 1,
+  //   description: 'id of the competency',
+  //   nullable: false,
+  // })
+  // competencyId: number;
+
+  // @ApiProperty({
+  //   example: 1,
+  //   description: 'id of the activityClassRoom',
+  //   nullable: false,
+  // })
+  // activityClassRoomId?: number;
+
 
   @ApiProperty({
     example: 'true',
@@ -47,6 +41,5 @@ export class CreateCourseDto {
     nullable: false,
   })
   @IsBoolean()
-  @IsOptional()
   status?: boolean;
 }

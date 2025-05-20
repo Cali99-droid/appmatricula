@@ -29,12 +29,6 @@ export class Area {
   })
   name: string;
 
-  @ManyToOne(() => Level, (level) => level.area, {
-    eager: true,
-  })
-  @JoinColumn({ name: 'levelId' })
-  level?: Level;
-
   @ApiProperty({
     example: 1,
     description: 'Order of area',
@@ -67,13 +61,19 @@ export class Area {
   })
   updatedAt: Date;
 
-  @OneToMany(() => Course, (course) => course.area, {
-    // eager: true,
+  @ManyToOne(() => Level, (level) => level.area, {
+    eager: true,
   })
-  course?: Course[];
+  @JoinColumn({ name: 'levelId' })
+  level?: Level;
 
   @OneToMany(() => Competency, (competency) => competency.area, {
     // eager: true,
   })
   competency?: Competency[];
+
+  @OneToMany(() => Course, (course) => course.area, {
+    // eager: true,
+  })
+  course?: Course[];
 }
