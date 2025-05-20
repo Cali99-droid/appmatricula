@@ -60,7 +60,7 @@ export class AreaService {
     const query = this.areaRepository
       .createQueryBuilder('area')
       .leftJoinAndSelect('area.competency', 'competency')
-      .leftJoinAndSelect('competency.course', 'course')
+      .leftJoinAndSelect('area.course', 'course')
       .where('1 = 1');
 
     if (levelId) {
@@ -84,6 +84,7 @@ export class AreaService {
         totalCompetencias: sortedCompetencias.length,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         competencias: sortedCompetencias.map(({ area, ...rest }) => rest),
+        courses: area.course,
       };
     });
   }

@@ -5,9 +5,9 @@ import { CourseController } from './course.controller';
 import { Course } from './entities/course.entity';
 import { Competency } from '../competency/entities/competency.entity';
 import { ActivityCourse } from './entities/activityCourse.entity';
-import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { Area } from '../area/entities/area.entity';
 import { Level } from 'src/level/entities/level.entity';
+import { Grade } from 'src/grade/entities/grade.entity';
 
 @Module({
   controllers: [CourseController],
@@ -17,7 +17,7 @@ import { Level } from 'src/level/entities/level.entity';
       Course,
       Competency,
       ActivityCourse,
-      ActivityClassroom,
+      Grade,
       Area,
       Level,
     ]),

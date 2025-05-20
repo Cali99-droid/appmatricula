@@ -8,11 +8,12 @@ import { Course } from './entities/course.entity';
 import { CreateActivityCourseDto } from './dto/activityCourse.dto';
 import { ActivityCourse } from './entities/activityCourse.entity';
 import { Competency } from '../competency/entities/competency.entity';
-import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { ActivityCourseResponseDto } from './dto/activityCourseResponse.dto';
 import { UpdateActivityCourseDto } from './dto/update-activityCourse.dto';
 import { Area } from '../area/entities/area.entity';
 import { Level } from 'src/level/entities/level.entity';
+import { Grade } from 'src/grade/entities/grade.entity';
+import { SearchActivityCourseDto } from './dto/search-activity-course.dto';
 
 @Injectable()
 export class CourseService {
@@ -24,8 +25,8 @@ export class CourseService {
     private readonly activityCourseRepository: Repository<ActivityCourse>,
     @InjectRepository(Competency)
     private readonly competencyRepository: Repository<Competency>,
-    @InjectRepository(ActivityClassroom)
-    private readonly activityClassroomRepository: Repository<ActivityClassroom>,
+    @InjectRepository(Grade)
+    private readonly gradeRepository: Repository<Grade>,
     @InjectRepository(Area)
     private readonly areaRepository: Repository<Area>,
     @InjectRepository(Level)
@@ -51,7 +52,7 @@ export class CourseService {
         //     ? undefined
         //     : createCourseDto.activityClassRoomId,
         // },
-        status: true,
+        status: createCourseDto.status,
       });
       return await this.courseRepository.save(course);
     } catch (error) {
@@ -108,6 +109,7 @@ export class CourseService {
         id: id,
         name: updateCourseDto.name,
         area: { id: updateCourseDto.areaId },
+        status: updateCourseDto.status,
         // competency: { id: updateCourseDto.competencyId },
         // activityClassroom: {
         //   id: isNaN(updateCourseDto.activityClassRoomId)
@@ -133,12 +135,11 @@ export class CourseService {
   /**ACTIVITY */
   async createActivityCourse(createDto: CreateActivityCourseDto): Promise<any> {
     try {
-      const { courseId, forAllClassrooms, competencies, activityClassrooms } =
-        createDto;
+      const { courseId, forAllGrades, competencies, grades } = createDto;
 
       const cursoPeriodo = this.activityCourseRepository.create({
         course: { id: courseId },
-        forAllClassrooms,
+        forAllGrades,
       });
 
       // Asignar competencias
@@ -147,11 +148,10 @@ export class CourseService {
       });
 
       // Asignar aulas si no es para todas
-      if (!forAllClassrooms && activityClassrooms) {
-        cursoPeriodo.activityClassrooms =
-          await this.activityClassroomRepository.findBy({
-            id: In(activityClassrooms),
-          });
+      if (!forAllGrades && grades) {
+        cursoPeriodo.grades = await this.gradeRepository.findBy({
+          id: In(grades),
+        });
       }
 
       const saved = await this.activityCourseRepository.save(cursoPeriodo);
@@ -210,8 +210,8 @@ export class CourseService {
     }
 
     // Actualizar propiedades básicas
-    if (updateDto.forAllClassrooms !== undefined) {
-      cursoPeriodo.forAllClassrooms = updateDto.forAllClassrooms;
+    if (updateDto.forAllGrades !== undefined) {
+      cursoPeriodo.forAllGrades = updateDto.forAllGrades;
     }
 
     // Actualizar competencias si vienen en el DTO
@@ -227,11 +227,10 @@ export class CourseService {
     }
 
     // Actualizar aulas si vienen en el DTO y no es para todas
-    if (updateDto.activityClassrooms && !cursoPeriodo.forAllClassrooms) {
-      cursoPeriodo.activityClassrooms =
-        await this.activityClassroomRepository.findBy({
-          id: In(updateDto.activityClassrooms),
-        });
+    if (updateDto.grades && !cursoPeriodo.forAllGrades) {
+      cursoPeriodo.grades = await this.gradeRepository.findBy({
+        id: In(updateDto.grades),
+      });
     }
 
     const saved = await this.activityCourseRepository.save(cursoPeriodo);
@@ -248,15 +247,15 @@ export class CourseService {
       handleDBExceptions(error, this.logger);
     }
   }
-
+  /**es por GRADO */
   async findByActivityClassroom(id: number) {
     try {
-      const ac = await this.activityClassroomRepository.findOne({
+      const ac = await this.gradeRepository.findOne({
         where: { id: id },
       });
       // 1. Obtener todas las áreas activas
       const areas = await this.areaRepository.find({
-        where: { status: true, level: { id: ac.grade.level.id } },
+        where: { status: true, level: { id: ac.level.id } },
         relations: ['level'],
       });
 
@@ -264,7 +263,7 @@ export class CourseService {
       const cursosPeriodo = await this.activityCourseRepository.find({
         where: {
           // periodo: { id: periodoId },
-          activityClassrooms: { id: id }, // Relación ManyToMany con aulas
+          grades: { id: id }, // Relación ManyToMany con aulas
         },
         relations: [
           'course',
@@ -286,7 +285,7 @@ export class CourseService {
               id: c.id,
               nombre: c.name,
             })),
-            forAllClassrooms: cp.forAllClassrooms,
+            forAllClassrooms: cp.forAllGrades,
           }));
 
         return {
@@ -305,60 +304,126 @@ export class CourseService {
     }
   }
 
-  async getActivityCourseBylevel(nivelId: number = 3) {
-    // 1. Obtener el nivel con sus áreas
-    const nivel = await this.levelRepository.findOne({
-      where: { id: nivelId },
-      relations: ['area'],
-    });
+  async getParamsActivityCourse(
+    searchActivityCourseDto: SearchActivityCourseDto,
+  ) {
+    try {
+      const { gradeId, areaId } = searchActivityCourseDto;
+      let areas;
+      let courses;
+      const grade = await this.gradeRepository.findOne({
+        where: { id: gradeId },
+      });
+      if (!grade) {
+        throw new NotFoundException(`Grado con ID ${gradeId} no encontrado`);
+      }
 
-    if (!nivel) {
-      throw new NotFoundException(`Nivel con ID ${nivelId} no encontrado`);
-    }
-
-    // 2. Obtener todos los cursosPeriodo para las áreas de este nivel
-    const cursosPeriodo = await this.activityCourseRepository.find({
-      where: {
-        course: {
-          area: {
-            level: { id: nivelId },
+      // 1. Obtener todas las áreas activas
+      if (!areaId) {
+        areas = await this.areaRepository.find({
+          where: { status: true, level: { id: grade.level.id } },
+          relations: ['level', 'competency'],
+        });
+        courses = await this.activityCourseRepository.find({
+          where: {
+            // periodo: { id: periodoId },
+            grades: { id: gradeId }, // Relación ManyToMany con aulas
           },
-        },
-        active: true,
-      },
-      relations: [
-        'course',
-        'course.area',
+          relations: ['course', 'course.area', 'grades', 'competencies'],
+        });
+      } else {
+        areas = await this.areaRepository.find({
+          where: { status: true, id: +areaId },
+          relations: ['level', 'competency'],
+        });
 
-        'activityClassrooms',
-        'competencies',
-      ],
-    });
+        courses = await this.activityCourseRepository.find({
+          where: {
+            // periodo: { id: periodoId },
+            course: {
+              area: {
+                id: +areaId,
+              },
+            }, // Relación ManyToMany con aulas
+          },
+          relations: ['course', 'course.area', 'grades', 'competencies'],
+        });
+      }
 
-    // 3. Estructurar la respuesta
-    const resultado: any = {
-      // nivel: {
-      //   id: nivel.id,
-      //   nombre: nivel.nombre,
-      // },
-      areas: nivel.area.map((area) => ({
-        id: area.id,
-        nombre: area.name,
-        cursosPeriodo: cursosPeriodo
+      // 3. Estructurar la respuesta
+      return areas.map((area) => {
+        const cursosFiltrados = courses
           .filter((cp) => cp.course.area.id === area.id)
-          .map(this.mapToResponseDto),
-      })),
-    };
+          .map((cp) => ({
+            id: cp.id,
+            name: cp.course.name,
+            // descripcion: cp.course.descripcion,
+            competencias: cp.competencies.map((c) => ({
+              id: c.id,
+              name: c.name,
+            })),
+            grades: cp.grades.map((g) => ({
+              id: g.id,
+              name: g.name,
+            })),
+          }));
 
-    return resultado;
+        return {
+          id: area.id,
+          name: area.name,
+          competencies: area.competency.length,
+          coursesLength: cursosFiltrados.length,
+          courses: cursosFiltrados,
+        };
+      });
+      // // 3. Estructurar la respuesta
+      // const resultado: any = {
+      //   // nivel: {
+      //   //   id: nivel.id,
+      //   //   nombre: nivel.nombre,
+      //   // },
+      //   areas: level.area.map((area) => ({
+      //     id: area.id,
+      //     name: area.name,
+      //     coursesLength: courses
+      //       .filter((cp) => cp.course.area.id === area.id)
+      //       .map(this.mapToResponseDto).length,
+      //     competenciesLength: area.competency.length,
+      //     courses: courses
+      //       .filter((cp) => cp.course.area.id === area.id)
+      //       .map(this.mapResponse),
+      //   })),
+      // };
+
+      // return resultado;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
-
+  private mapResponse(activityCourse: ActivityCourse) {
+    return {
+      id: activityCourse.id,
+      forAllClassrooms: activityCourse.forAllGrades,
+      active: activityCourse.active,
+      courseName: activityCourse.course.name,
+      competencies:
+        activityCourse.competencies?.map((competencia) => ({
+          id: competencia.id,
+          name: competencia.name,
+        })) || [],
+      activityClassroom:
+        activityCourse.grades?.map((aula) => ({
+          id: aula.id,
+          classroom: aula.name,
+        })) || [],
+    };
+  }
   private mapToResponseDto(
     activityCourse: ActivityCourse,
   ): ActivityCourseResponseDto {
     return {
       id: activityCourse.id,
-      forAllClassrooms: activityCourse.forAllClassrooms,
+      forAllClassrooms: activityCourse.forAllGrades,
       active: activityCourse.active,
       course: {
         id: activityCourse.course.id,
@@ -373,9 +438,9 @@ export class CourseService {
       //   nombre: activityCourse.periodo.nombre,
       // },
       activityClassroom:
-        activityCourse.activityClassrooms?.map((aula) => ({
+        activityCourse.grades?.map((aula) => ({
           id: aula.id,
-          section: aula.section,
+          section: aula.name,
         })) || [],
       competencies:
         activityCourse.competencies?.map((competencia) => ({

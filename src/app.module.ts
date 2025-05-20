@@ -46,6 +46,7 @@ import { AreaModule } from './academic_structure/area/area.module';
 import { CompetencyModule } from './academic_structure/competency/competency.module';
 import { CourseModule } from './academic_structure/course/course.module';
 import { RatingsModule } from './academic_structure/ratings/ratings.module';
+import { AcademicAssignmentModule } from './academic_structure/academic_assignment/academic_assignment.module';
 
 @Module({
   imports: [
@@ -99,6 +100,8 @@ import { RatingsModule } from './academic_structure/ratings/ratings.module';
     KeycloakModule,
 
     TreasuryModule,
+
+    AcademicAssignmentModule,
   ],
   providers: [ExistIdConstraint, AuthService],
 })

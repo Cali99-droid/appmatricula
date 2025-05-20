@@ -17,6 +17,7 @@ import { Course } from './entities/course.entity';
 import { CreateActivityCourseDto } from './dto/activityCourse.dto';
 import { ActivityCourseResponseDto } from './dto/activityCourseResponse.dto';
 import { UpdateActivityCourseDto } from './dto/update-activityCourse.dto';
+import { SearchActivityCourseDto } from './dto/search-activity-course.dto';
 
 @ApiTags('Course')
 @Controller('course')
@@ -75,10 +76,11 @@ export class CourseController {
     return this.courseService.createActivityCourse(createCursoPeriodoDto);
   }
 
-  @Get('/activity-course')
-  findAllActivityCourse(): Promise<ActivityCourseResponseDto[]> {
-    console.log('llamos');
-    return this.courseService.getActivityCourseBylevel();
+  @Get('/activity-course/search/params')
+  findAllActivityCourse(
+    @Query() searchActivityCourseDto: SearchActivityCourseDto,
+  ) {
+    return this.courseService.getParamsActivityCourse(searchActivityCourseDto);
   }
   @Get('/activity-course/:id')
   findOneActivityCourse(
@@ -119,7 +121,7 @@ export class CourseController {
     return this.courseService.findOne(+id);
   }
 
-  @Get('/by-activity-classroom/:activityClassroomId')
+  @Get('/by-area/:area')
   findByActivityClassroom(
     @Param('activityClassroomId', ParseIntPipe) activityClassroomId: number,
   ) {

@@ -8,7 +8,8 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Course } from './course.entity';
-import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+
+import { Grade } from 'src/grade/entities/grade.entity';
 
 @Entity()
 export class ActivityCourse {
@@ -16,7 +17,7 @@ export class ActivityCourse {
   id: number;
 
   @Column({ default: false }) // ← El flag ahora vive aquí
-  forAllClassrooms: boolean;
+  forAllGrades: boolean;
 
   @Column({ default: true })
   active: boolean;
@@ -40,17 +41,17 @@ export class ActivityCourse {
   @ManyToOne(() => Course, (course) => course.activityCourse)
   course: Course;
 
-  @ManyToMany(() => ActivityClassroom)
+  @ManyToMany(() => Grade)
   @JoinTable({
-    name: 'course_activityClassroom', // nombre de la tabla intermedia
+    name: 'course_grade', // nombre de la tabla intermedia
     joinColumn: {
       name: 'activityCourseId', // nombre de la columna que referencia a esta entidad
       referencedColumnName: 'id',
     },
     inverseJoinColumn: {
-      name: 'activityClassroomId', // nombre de la columna que referencia a la entidad relacionada
+      name: 'gradeId', // nombre de la columna que referencia a la entidad relacionada
       referencedColumnName: 'id',
     },
   })
-  activityClassrooms: ActivityClassroom[]; // ← Aulas específicas (si paraTodasAulas es false)
+  grades: Grade[]; // ← Aulas específicas (si paraTodasAulas es false)
 }

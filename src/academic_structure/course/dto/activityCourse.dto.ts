@@ -21,7 +21,7 @@ export class CreateActivityCourseDto {
   //   periodoId: number;
 
   @IsBoolean()
-  forAllClassrooms: boolean;
+  forAllGrades: boolean;
 
   @IsArray()
   @ValidateNested({ each: true })
@@ -31,7 +31,7 @@ export class CreateActivityCourseDto {
   @IsArray()
   @IsInt({ each: true })
   @IsOptional()
-  activityClassrooms?: number[];
+  grades?: number[];
 
   @CreateDateColumn({
     type: 'timestamp',
