@@ -32,13 +32,13 @@ export class AreaService {
       );
     }
     const areaExistsOrder = await this.areaRepository.findOneBy({
-      name: createAreaDto.name,
+      // name: createAreaDto.name,
       order: createAreaDto.order,
       level: { id: createAreaDto.levelId },
     });
     if (areaExistsOrder) {
       throw new NotFoundException(
-        `Order with name ${createAreaDto.levelId} already exists`,
+        `Order number: ${createAreaDto.order} already exists`,
       );
     }
     try {
@@ -115,15 +115,15 @@ export class AreaService {
 
   async update(id: number, updateAreaDto: UpdateAreaDto) {
     const { levelId, ...rest } = updateAreaDto;
-    const existCompetency = await this.areaRepository.findOne({
+    const existArea = await this.areaRepository.findOne({
       where: {
         id: Not(id),
         order: updateAreaDto.order,
         level: { id: updateAreaDto.levelId },
       },
     });
-
-    if (existCompetency) {
+    console.log(existArea);
+    if (existArea) {
       throw new BadRequestException(
         `Level with order ${updateAreaDto.order} already exists in the specified area.`,
       );
