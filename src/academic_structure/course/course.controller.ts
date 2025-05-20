@@ -78,7 +78,7 @@ export class CourseController {
 
   @Post('/activity-course')
   createActivityCourse(
-    @Query() createCursoPeriodoDto: CreateActivityCourseDto,
+    @Body() createCursoPeriodoDto: CreateActivityCourseDto,
   ): Promise<ActivityCourseResponseDto> {
     return this.courseService.createActivityCourse(createCursoPeriodoDto);
   }
