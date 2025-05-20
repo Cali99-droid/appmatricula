@@ -71,6 +71,7 @@ export class AreaService {
 
     const areas = await query.getMany();
 
+
     return areas.map((area) => {
       const sortedCompetencias = (area.competency || []).sort((a, b) => {
         if (a.order !== b.order) return a.order - b.order;

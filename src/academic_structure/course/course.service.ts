@@ -34,6 +34,7 @@ export class CourseService {
   ) {}
 
   async create(createCourseDto: CreateCourseDto) {
+
     // const existCompetency = await this.courseRepository.findOneBy({
     //   competency: { id: createCourseDto.competencyId },
     // });
@@ -42,6 +43,7 @@ export class CourseService {
     //     `Competency with id ${createCourseDto.competencyId} exists`,
     //   );
     // }
+
     try {
       const course = this.courseRepository.create({
         name: createCourseDto.name,

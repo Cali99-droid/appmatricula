@@ -19,6 +19,7 @@ export class CreateCourseDto {
   @IsNumber()
   areaId: number;
 
+
   // @ApiProperty({
   //   example: 1,
   //   description: 'id of the competency',
@@ -32,6 +33,7 @@ export class CreateCourseDto {
   //   nullable: false,
   // })
   // activityClassRoomId?: number;
+
 
   @ApiProperty({
     example: 'true',
