@@ -8,7 +8,13 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AreaService } from './area.service';
 import { CreateAreaDto } from './dto/create-area.dto';
 import { UpdateAreaDto } from './dto/update-area.dto';
@@ -34,6 +40,12 @@ export class AreaController {
     status: 200,
     description: 'Array of areas',
     type: [Area],
+  })
+  @ApiQuery({
+    name: 'levelId',
+    required: true,
+    description: 'Id of the level',
+    type: Number,
   })
   findAll(@Query('levelId') levelId: string) {
     return this.areaService.findAll(+levelId);

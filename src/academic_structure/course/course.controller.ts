@@ -9,7 +9,13 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
@@ -69,14 +75,27 @@ export class CourseController {
   }
 
   /**ACTIVTY COURSE */
+
   @Post('/activity-course')
   createActivityCourse(
-    @Body() createCursoPeriodoDto: CreateActivityCourseDto,
+    @Query() createCursoPeriodoDto: CreateActivityCourseDto,
   ): Promise<ActivityCourseResponseDto> {
     return this.courseService.createActivityCourse(createCursoPeriodoDto);
   }
 
   @Get('/activity-course')
+  @ApiQuery({
+    name: 'levelId',
+    required: true,
+    description: 'level Id ',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'campusId',
+    required: true,
+    description: 'campus Id ',
+    type: Number,
+  })
   findAllActivityCourse(
     @Query() searchActivityCourseDto: SearchActivityCourseDto,
   ) {

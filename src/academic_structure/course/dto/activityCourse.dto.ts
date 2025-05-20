@@ -56,9 +56,10 @@ export class CreateActivityCourseDto {
   forAllGrades: boolean;
 
   @ApiProperty({
-    example: true,
+    example: [1, 2, 3],
     description: 'array of competencies',
     nullable: false,
+    isArray: true,
   })
   @IsArray()
   @IsInt({ each: true })
@@ -66,9 +67,10 @@ export class CreateActivityCourseDto {
   competencies: number[];
 
   @ApiProperty({
-    example: true,
+    example: [1, 2, 3],
     description: 'array of grades',
     nullable: false,
+    isArray: true,
   })
   @IsArray()
   @IsInt({ each: true })
