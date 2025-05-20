@@ -1,15 +1,18 @@
 import { Competency } from 'src/academic_structure/competency/entities/competency.entity';
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinTable,
   ManyToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Course } from './course.entity';
 
 import { Grade } from 'src/grade/entities/grade.entity';
+import { Campus } from 'src/campus/entities/campus.entity';
 
 @Entity()
 export class ActivityCourse {
@@ -23,6 +26,9 @@ export class ActivityCourse {
   active: boolean;
   //   @ManyToOne(() => PeriodoAcademico)
   //   periodo: PeriodoAcademico;
+
+  @ManyToOne(() => Campus)
+  campus: Campus;
 
   @ManyToMany(() => Competency)
   @JoinTable({
@@ -54,4 +60,17 @@ export class ActivityCourse {
     },
   })
   grades: Grade[]; // ← Aulas específicas (si paraTodasAulas es false)
+
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+  })
+  updatedAt: Date;
 }

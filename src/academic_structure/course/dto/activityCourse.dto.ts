@@ -3,46 +3,76 @@ import {
   IsBoolean,
   IsArray,
   IsOptional,
-  ValidateNested,
+  IsNumber,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
-
-class CompetencyCourseDto {
-  @IsInt()
-  id: number;
-}
+import { ApiProperty } from '@nestjs/swagger';
+import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreateActivityCourseDto {
+  @ApiProperty({
+    example: 1,
+    description: 'id of the course',
+    nullable: false,
+  })
+  @IsNumber()
   @IsInt()
+  @ExistId({ tableName: 'course' })
   courseId: number;
 
-  //   @IsInt()
-  //   periodoId: number;
+  @ApiProperty({
+    example: 1,
+    description: 'id of the course',
+    nullable: false,
+  })
+  @IsNumber()
+  @IsInt()
+  @ExistId({ tableName: 'level' })
+  levelId: number;
 
+  // @ApiProperty({
+  //   example: 1,
+  //   description: 'id of the phase',
+  //   nullable: false,
+  // })
+  // @IsNumber()
+  // @ExistId({ tableName: 'phase' })
+  // phaseId: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'id of the campusDetail',
+    nullable: false,
+  })
+  @IsNumber()
+  @ExistId({ tableName: 'campus' })
+  campusId: number;
+
+  @ApiProperty({
+    example: true,
+    description: 'if is for all grades',
+    nullable: false,
+  })
   @IsBoolean()
   forAllGrades: boolean;
 
+  @ApiProperty({
+    example: true,
+    description: 'array of competencies',
+    nullable: false,
+  })
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CompetencyCourseDto)
-  competencies: CompetencyCourseDto[];
+  @IsInt({ each: true })
+  @ExistId({ tableName: 'competency', isArray: true })
+  competencies: number[];
 
+  @ApiProperty({
+    example: true,
+    description: 'array of grades',
+    nullable: false,
+  })
   @IsArray()
   @IsInt({ each: true })
   @IsOptional()
+  @ExistId({ tableName: 'grade', isArray: true })
   grades?: number[];
-
-  @CreateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP(6)',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP(6)',
-    onUpdate: 'CURRENT_TIMESTAMP(6)',
-  })
-  updatedAt: Date;
 }

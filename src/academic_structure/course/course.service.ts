@@ -1,5 +1,10 @@
 import { In, Repository } from 'typeorm';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -34,7 +39,6 @@ export class CourseService {
   ) {}
 
   async create(createCourseDto: CreateCourseDto) {
-
     // const existCompetency = await this.courseRepository.findOneBy({
     //   competency: { id: createCourseDto.competencyId },
     // });
@@ -137,16 +141,62 @@ export class CourseService {
   /**ACTIVITY */
   async createActivityCourse(createDto: CreateActivityCourseDto): Promise<any> {
     try {
-      const { courseId, forAllGrades, competencies, grades } = createDto;
+      const {
+        courseId,
+        forAllGrades,
+        competencies,
+        grades,
+        campusId,
+        levelId,
+      } = createDto;
+
+      const level = await this.levelRepository.findOne({
+        where: {
+          id: levelId,
+          // grade: {
+          //   id: In(grades),
+          // },
+        },
+        relations: {
+          area: {
+            course: true,
+          },
+          grade: true,
+        },
+      });
+
+      const courseIds = level.area
+        .filter((a) => a.course.length != 0)
+        .map((a) => a.course)
+        .flat()
+        .map((c) => c.id);
+      if (!courseIds.includes(courseId)) {
+        throw new BadRequestException(
+          'El curso no esta habilitado para este nivel',
+        );
+      }
+
+      // Obtener los IDs de los grados de ese nivel
+      const levelGradeIds = level.grade.map((g) => g.id);
+
+      // Verificar si TODOS los `grades` que recibiste están en los del nivel
+      const allMatch = grades.every((id) => levelGradeIds.includes(id));
+
+      if (!allMatch) {
+        throw new BadRequestException(
+          'Alguno de los grados nos pertenecen al nivel',
+        );
+      }
 
       const cursoPeriodo = this.activityCourseRepository.create({
         course: { id: courseId },
+        campus: { id: campusId },
         forAllGrades,
       });
 
       // Asignar competencias
       cursoPeriodo.competencies = await this.competencyRepository.findBy({
-        id: In(competencies.map((c) => c.id)),
+        id: In(competencies),
       });
 
       // Asignar aulas si no es para todas
@@ -219,7 +269,7 @@ export class CourseService {
     // Actualizar competencias si vienen en el DTO
     if (updateDto.competencies) {
       cursoPeriodo.competencies = await this.competencyRepository.findBy({
-        id: In(updateDto.competencies.map((c) => c.id)),
+        id: In(updateDto.competencies),
       });
     }
 
@@ -306,51 +356,71 @@ export class CourseService {
     }
   }
 
-  async getParamsActivityCourse(
+  async getActivityCourseParams(
     searchActivityCourseDto: SearchActivityCourseDto,
   ) {
     try {
-      const { gradeId, areaId } = searchActivityCourseDto;
-      let areas;
-      let courses;
-      const grade = await this.gradeRepository.findOne({
-        where: { id: gradeId },
+      const { gradeId, levelId, campusId } = searchActivityCourseDto;
+      // let areas;
+      // let courses;
+      // const grade = await this.gradeRepository.findOne({
+      //   where: { id: gradeId },
+      // });
+      // if (!grade) {
+      //   throw new NotFoundException(`Grado con ID ${gradeId} no encontrado`);
+      // }
+
+      const areas = await this.areaRepository.find({
+        where: { status: true, level: { id: levelId } },
+        relations: ['level', 'competency'],
       });
-      if (!grade) {
-        throw new NotFoundException(`Grado con ID ${gradeId} no encontrado`);
-      }
-
-      // 1. Obtener todas las áreas activas
-      if (!areaId) {
-        areas = await this.areaRepository.find({
-          where: { status: true, level: { id: grade.level.id } },
-          relations: ['level', 'competency'],
-        });
-        courses = await this.activityCourseRepository.find({
-          where: {
-            // periodo: { id: periodoId },
-            grades: { id: gradeId }, // Relación ManyToMany con aulas
+      const courses = await this.activityCourseRepository.find({
+        where: {
+          campus: {
+            id: campusId,
           },
-          relations: ['course', 'course.area', 'grades', 'competencies'],
-        });
-      } else {
-        areas = await this.areaRepository.find({
-          where: { status: true, id: +areaId },
-          relations: ['level', 'competency'],
-        });
+          // periodo: { id: periodoId },
+          grades: {
+            level: {
+              id: levelId,
+            },
+          }, // Relación ManyToMany con aulas
+        },
+        relations: ['course', 'course.area', 'grades', 'competencies'],
+      });
+      console.log(courses);
 
-        courses = await this.activityCourseRepository.find({
-          where: {
-            // periodo: { id: periodoId },
-            course: {
-              area: {
-                id: +areaId,
-              },
-            }, // Relación ManyToMany con aulas
-          },
-          relations: ['course', 'course.area', 'grades', 'competencies'],
-        });
-      }
+      // // 1. Obtener todas las áreas activas
+      // if (!areaId) {
+      //   areas = await this.areaRepository.find({
+      //     where: { status: true, level: { id: grade.level.id } },
+      //     relations: ['level', 'competency'],
+      //   });
+      //   courses = await this.activityCourseRepository.find({
+      //     where: {
+      //       // periodo: { id: periodoId },
+      //       grades: { id: gradeId }, // Relación ManyToMany con aulas
+      //     },
+      //     relations: ['course', 'course.area', 'grades', 'competencies'],
+      //   });
+      // } else {
+      //   areas = await this.areaRepository.find({
+      //     where: { status: true, id: +areaId },
+      //     relations: ['level', 'competency'],
+      //   });
+
+      //   courses = await this.activityCourseRepository.find({
+      //     where: {
+      //       // periodo: { id: periodoId },
+      //       course: {
+      //         area: {
+      //           id: +areaId,
+      //         },
+      //       }, // Relación ManyToMany con aulas
+      //     },
+      //     relations: ['course', 'course.area', 'grades', 'competencies'],
+      //   });
+      // }
 
       // 3. Estructurar la respuesta
       return areas.map((area) => {

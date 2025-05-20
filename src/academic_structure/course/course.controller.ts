@@ -76,11 +76,11 @@ export class CourseController {
     return this.courseService.createActivityCourse(createCursoPeriodoDto);
   }
 
-  @Get('/activity-course/search/params')
+  @Get('/activity-course')
   findAllActivityCourse(
     @Query() searchActivityCourseDto: SearchActivityCourseDto,
   ) {
-    return this.courseService.getParamsActivityCourse(searchActivityCourseDto);
+    return this.courseService.getActivityCourseParams(searchActivityCourseDto);
   }
   @Get('/activity-course/:id')
   findOneActivityCourse(
