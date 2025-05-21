@@ -20,6 +20,7 @@ import { Level } from 'src/level/entities/level.entity';
 import { Grade } from 'src/grade/entities/grade.entity';
 import { SearchActivityCourseDto } from './dto/search-activity-course.dto';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import { Campus } from 'src/campus/entities/campus.entity';
 
 @Injectable()
 export class CourseService {
@@ -258,7 +259,7 @@ export class CourseService {
   ): Promise<any> {
     const cursoPeriodo = await this.activityCourseRepository.findOne({
       where: { id },
-      relations: ['competencies', 'activityClassrooms'],
+      relations: ['competencies'],
     });
 
     if (!cursoPeriodo) {
@@ -275,6 +276,10 @@ export class CourseService {
       cursoPeriodo.competencies = await this.competencyRepository.findBy({
         id: In(updateDto.competencies),
       });
+    }
+
+    if (updateDto.campusId) {
+      cursoPeriodo.campus = { id: updateDto.campusId } as Campus;
     }
 
     // Actualizar curso si viene
