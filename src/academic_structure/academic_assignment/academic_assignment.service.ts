@@ -279,12 +279,13 @@ export class AcademicAssignmentService {
           where: {
             activityClassroom: { id: activityClassroomId },
             area: { id: areaId },
+            actCourse: { id: null },
           },
         });
 
       if (existingAreaAssignment && existingAreaAssignment.id !== id) {
         throw new BadRequestException(
-          'Ya existe un docente asignado a esta área en el aula.',
+          'Ya existe un area asignada a esta área en el aula.',
         );
       }
 
