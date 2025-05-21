@@ -19,6 +19,7 @@ import { Area } from '../area/entities/area.entity';
 import { Level } from 'src/level/entities/level.entity';
 import { Grade } from 'src/grade/entities/grade.entity';
 import { SearchActivityCourseDto } from './dto/search-activity-course.dto';
+import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 
 @Injectable()
 export class CourseService {
@@ -36,6 +37,9 @@ export class CourseService {
     private readonly areaRepository: Repository<Area>,
     @InjectRepository(Level)
     private readonly levelRepository: Repository<Level>,
+
+    @InjectRepository(ActivityClassroom)
+    private readonly activityClassroomRepository: Repository<ActivityClassroom>,
   ) {}
 
   async create(createCourseDto: CreateCourseDto) {
@@ -302,35 +306,45 @@ export class CourseService {
   /**es por GRADO */
   async findByActivityClassroom(id: number) {
     try {
-      const ac = await this.gradeRepository.findOne({
+      const ac = await this.activityClassroomRepository.findOne({
         where: { id: id },
       });
+
+      if (!ac) {
+        throw new NotFoundException('this classroom doesnt exists');
+      }
+      const yearId = ac.phase.year.id;
       // 1. Obtener todas las áreas activas
       const areas = await this.areaRepository.find({
-        where: { status: true, level: { id: ac.level.id } },
+        where: { status: true, level: { id: ac.grade.level.id } },
         relations: ['level'],
       });
 
       // 2. Obtener cursos del periodo para el aula específica
       const cursosPeriodo = await this.activityCourseRepository.find({
-        where: {
-          // periodo: { id: periodoId },
-          grades: { id: id }, // Relación ManyToMany con aulas
-        },
-        relations: [
-          'course',
-          'course.area',
-          'activityClassrooms',
-          'competencies',
+        where: [
+          {
+            campus: {
+              year: { id: yearId },
+              campusDetail: { id: ac.classroom.campusDetail.id },
+            },
+            grades: {
+              id: ac.grade.id,
+            },
+          },
+          {
+            forAllGrades: true,
+          },
         ],
-      });
 
+        relations: ['course', 'course.area', 'competencies'],
+      });
       // 3. Estructurar la respuesta
       return areas.map((area) => {
         const cursosFiltrados = cursosPeriodo
           .filter((cp) => cp.course.area.id === area.id)
           .map((cp) => ({
-            id: cp.course.id,
+            id: cp.id,
             nombre: cp.course.name,
             // descripcion: cp.course.descripcion,
             competencias: cp.competencies.map((c) => ({
@@ -343,10 +357,10 @@ export class CourseService {
         return {
           id: area.id,
           nombre: area.name,
-          nivel: {
-            id: area.level.id,
-            nombre: area.level.name,
-          },
+          // nivel: {
+          //   id: area.level.id,
+          //   nombre: area.level.name,
+          // },
           cursos: cursosFiltrados,
           cantidadCursos: cursosFiltrados.length,
         };
@@ -360,7 +374,7 @@ export class CourseService {
     searchActivityCourseDto: SearchActivityCourseDto,
   ) {
     try {
-      const { gradeId, levelId, campusId } = searchActivityCourseDto;
+      const { levelId, campusId } = searchActivityCourseDto;
       // let areas;
       // let courses;
       // const grade = await this.gradeRepository.findOne({
@@ -388,7 +402,6 @@ export class CourseService {
         },
         relations: ['course', 'course.area', 'grades', 'competencies'],
       });
-      console.log(courses);
 
       // // 1. Obtener todas las áreas activas
       // if (!areaId) {
@@ -430,10 +443,12 @@ export class CourseService {
             id: cp.id,
             name: cp.course.name,
             // descripcion: cp.course.descripcion,
+            forAllGrades: cp.forAllGrades,
             competencias: cp.competencies.map((c) => ({
               id: c.id,
               name: c.name,
             })),
+
             grades: cp.grades.map((g) => ({
               id: g.id,
               name: g.name,

@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Area } from '../area/entities/area.entity';
+import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 
 @Injectable()
 export class AcademicAssignmentService {
@@ -20,11 +21,20 @@ export class AcademicAssignmentService {
     private readonly academicAssignmentRepository: Repository<AcademicAssignment>,
     @InjectRepository(Area)
     private readonly areaRepository: Repository<Area>,
+
+    @InjectRepository(ActivityClassroom)
+    private readonly activityClassroomRepository: Repository<ActivityClassroom>,
   ) {}
   async create(createAcademicAssignmentDto: CreateAcademicAssignmentDto) {
     try {
-      const { activityClassroomId, areaId, userId, actCourseId, isTutor } =
-        createAcademicAssignmentDto;
+      const {
+        activityClassroomId,
+        areaId,
+        userId,
+        actCourseId,
+        isTutor,
+        typeAssignment,
+      } = createAcademicAssignmentDto;
       if (isTutor) {
         const existingTutor = await this.academicAssignmentRepository.findOne({
           where: {
@@ -79,6 +89,7 @@ export class AcademicAssignmentService {
         area: { id: areaId },
         actCourse: actCourseId ? { id: actCourseId } : undefined,
         user: { id: userId },
+        typeAssignment: typeAssignment,
         isTutor,
       });
       return await this.academicAssignmentRepository.save(newAssignment);
@@ -87,26 +98,38 @@ export class AcademicAssignmentService {
     }
   }
 
-  async findAll(activityClassroomId: number = 105) {
+  async findAll(activityClassroomId: number) {
     try {
+      const actClassroom = await this.activityClassroomRepository.findOne({
+        where: {
+          id: parseInt(activityClassroomId.toString()),
+        },
+      });
+
+      if (!actClassroom) {
+        throw new NotFoundException('no existe el aula');
+      }
+
       const academicAssignments = await this.academicAssignmentRepository.find({
         where: {
-          activityClassroom: { id: activityClassroomId },
+          activityClassroom: {
+            id: actClassroom.id,
+          },
         },
         relations: [
           'area',
           'actCourse',
           'actCourse.course',
+          'actCourse.competencies',
           'user',
           'user.person',
         ],
       });
-      console.log(academicAssignments);
-      // 2. Obtener todas las áreas posibles por nivel (para incluir las que no tienen cursos)
+
       const areas = await this.areaRepository.find({
         where: {
           level: {
-            id: academicAssignments[0].activityClassroom.grade.level.id,
+            id: actClassroom.grade.level.id,
           },
         },
         relations: ['course'],
@@ -116,47 +139,47 @@ export class AcademicAssignmentService {
       return areas.map((area) => {
         // Buscar si el docente está asignado directamente al área
         const asignacionArea = academicAssignments.find(
-          (a) => a.area?.id === area.id,
+          (a) => a.area?.id === area.id && !a.actCourse,
         );
 
         // Filtrar cursos del área
-        const cursosDelArea = area.course.map((curso) => {
-          // Buscar asignaciones a cursos específicos de este curso
-          const asignacionCurso = academicAssignments.find(
-            (a) => a.actCourse?.course?.id === curso.id,
-          );
-
-          return {
-            id: curso.id,
-            nombre: curso.name,
-            asignacionCurso: asignacionCurso
-              ? {
-                  id: asignacionCurso.id,
-                  docente: asignacionCurso.user.person.name,
-                }
-              : undefined,
-          };
-        });
+        const cursosDelArea = area.course
+          .map((curso) => {
+            // Buscar asignaciones a cursos específicos de este curso
+            const asignacionCurso = academicAssignments.find(
+              (a) => a.actCourse?.course?.id === curso.id,
+            );
+            return {
+              id: asignacionCurso?.id,
+              courseId: asignacionCurso?.actCourse.id,
+              name: asignacionCurso?.actCourse.course.name,
+              teacher: asignacionCurso?.user?.person?.name || null,
+              isTutor: asignacionCurso?.isTutor || false,
+              competencies: asignacionCurso?.actCourse?.competencies.map(
+                (c) => c.name,
+              ),
+              // courseAssignment: asignacionCurso
+              //   ? {
+              //       id: asignacionCurso.id,
+              //       teacher: asignacionCurso.user.person.name,
+              //     }
+              //   : null,
+            };
+          })
+          .filter((c) => c.teacher !== null);
 
         return {
-          area: {
-            id: area.id,
-            nombre: area.name,
-          },
-          asignacionArea:
-            cursosDelArea.length === 0
-              ? {
-                  id: asignacionArea?.id,
-                  docente: asignacionArea?.user.person.name,
-                }
-              : undefined,
-          cursos: cursosDelArea,
+          asignacionAreaId: asignacionArea?.id || null,
+          areaId: area.id,
+          isTutor: asignacionArea?.isTutor || false,
+          area: area.name,
+          teacher: asignacionArea?.user?.person?.name || null,
+          courses: cursosDelArea,
         };
       });
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
-    return `This action returns all academicAssignment`;
   }
 
   async findOne(id: number) {
@@ -167,7 +190,21 @@ export class AcademicAssignmentService {
             id,
           },
         });
-      return academicAssignment;
+
+      return {
+        id: academicAssignment.id,
+        isTutor: academicAssignment.isTutor,
+        typeAssignment: academicAssignment.typeAssignment,
+        user: {
+          id: academicAssignment.user.id,
+          email: academicAssignment.user.email,
+        },
+        area: {
+          id: academicAssignment.area.id,
+          name: academicAssignment.area.name,
+        },
+        actCourse: academicAssignment.actCourse,
+      };
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
@@ -177,8 +214,14 @@ export class AcademicAssignmentService {
     id: number,
     updateAcademicAssignmentDto: UpdateAcademicAssignmentDto,
   ) {
-    const { activityClassroomId, areaId, actCourseId, userId, isTutor } =
-      updateAcademicAssignmentDto;
+    const {
+      activityClassroomId,
+      areaId,
+      userId,
+      actCourseId,
+      isTutor,
+      typeAssignment,
+    } = updateAcademicAssignmentDto;
 
     const teacherCompetency = await this.academicAssignmentRepository.preload({
       id,
@@ -186,6 +229,7 @@ export class AcademicAssignmentService {
       area: { id: areaId },
       actCourse: actCourseId ? { id: actCourseId } : undefined,
       user: { id: userId },
+      typeAssignment: typeAssignment,
       isTutor,
     });
 
@@ -249,7 +293,16 @@ export class AcademicAssignmentService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} academicAssignment`;
+  async remove(id: number) {
+    try {
+      const result = await this.academicAssignmentRepository.delete(id);
+      if (result.affected === 0) {
+        throw new NotFoundException(
+          `Asignacion no encontrada con ID ${id} no encontrado`,
+        );
+      }
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 }

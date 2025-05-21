@@ -6,11 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { AcademicAssignmentService } from './academic_assignment.service';
 import { CreateAcademicAssignmentDto } from './dto/create-academic_assignment.dto';
 import { UpdateAcademicAssignmentDto } from './dto/update-academic_assignment.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('academic-assignment')
 @Controller('academic-assignment')
 export class AcademicAssignmentController {
   constructor(
@@ -23,8 +26,8 @@ export class AcademicAssignmentController {
   }
 
   @Get()
-  findAll() {
-    return this.academicAssignmentService.findAll();
+  findAll(@Query('activityClassroomId') activityClassroomId: number) {
+    return this.academicAssignmentService.findAll(+activityClassroomId);
   }
 
   @Get(':id')

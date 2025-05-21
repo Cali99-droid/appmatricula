@@ -101,6 +101,7 @@ export class CourseController {
   ) {
     return this.courseService.getActivityCourseParams(searchActivityCourseDto);
   }
+
   @Get('/activity-course/:id')
   findOneActivityCourse(
     @Param('id', ParseIntPipe) id: number,
@@ -140,7 +141,7 @@ export class CourseController {
     return this.courseService.findOne(+id);
   }
 
-  @Get('/by-area/:area')
+  @Get('/activity-course/by-classroom/:activityClassroomId')
   findByActivityClassroom(
     @Param('activityClassroomId', ParseIntPipe) activityClassroomId: number,
   ) {
