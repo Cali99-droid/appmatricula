@@ -149,12 +149,21 @@ export class AcademicAssignmentService {
             const asignacionCurso = academicAssignments.find(
               (a) => a.actCourse?.course?.id === curso.id,
             );
+
+            const fullName = [
+              asignacionCurso?.user?.person?.lastname,
+              asignacionCurso?.user?.person?.mLastname,
+              asignacionCurso?.user?.person?.name,
+            ]
+              .filter(Boolean) // elimina valores falsy como null, undefined o ''
+              .join(' ') // une con un espacio
+              .trim();
             return {
               id: asignacionCurso?.id,
               courseId: asignacionCurso?.actCourse.id,
               name: asignacionCurso?.actCourse.course.name,
-              teacherId: asignacionCurso?.user?.person?.id || null,
-              teacher: asignacionCurso?.user?.person?.name || null,
+              teacherId: asignacionCurso?.user?.id || null,
+              teacher: fullName || null,
               isTutor: asignacionCurso?.isTutor || false,
               competencies: asignacionCurso?.actCourse?.competencies.map(
                 (c) => c.name,
@@ -169,13 +178,21 @@ export class AcademicAssignmentService {
           })
           .filter((c) => c.teacher !== null);
 
+        const fullName = [
+          asignacionArea?.user?.person?.lastname,
+          asignacionArea?.user?.person?.mLastname,
+          asignacionArea?.user?.person?.name,
+        ]
+          .filter(Boolean) // elimina valores falsy como null, undefined o ''
+          .join(' ') // une con un espacio
+          .trim(); // elimina espacios sobrantes
         return {
           asignacionAreaId: asignacionArea?.id || null,
           areaId: area.id,
           isTutor: asignacionArea?.isTutor || false,
           area: area.name,
-          teacherId: asignacionArea?.user?.person?.id || null,
-          teacher: asignacionArea?.user?.person?.name || null,
+          teacherId: asignacionArea?.user?.id || null,
+          teacher: fullName || null,
           courses: cursosDelArea,
         };
       });
