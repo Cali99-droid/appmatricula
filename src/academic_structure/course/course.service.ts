@@ -394,17 +394,25 @@ export class CourseService {
         relations: ['level', 'competency'],
       });
       const courses = await this.activityCourseRepository.find({
-        where: {
-          campus: {
-            id: campusId,
-          },
-          // periodo: { id: periodoId },
-          grades: {
-            level: {
-              id: levelId,
+        where: [
+          {
+            campus: {
+              id: campusId,
             },
-          }, // Relación ManyToMany con aulas
-        },
+
+            grades: {
+              level: {
+                id: levelId,
+              },
+            },
+          },
+          {
+            campus: {
+              id: campusId,
+            },
+            forAllGrades: true,
+          },
+        ],
         relations: ['course', 'course.area', 'grades', 'competencies'],
       });
 
