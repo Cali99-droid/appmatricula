@@ -153,6 +153,7 @@ export class AcademicAssignmentService {
               id: asignacionCurso?.id,
               courseId: asignacionCurso?.actCourse.id,
               name: asignacionCurso?.actCourse.course.name,
+              teacherId: asignacionCurso?.user?.person?.id || null,
               teacher: asignacionCurso?.user?.person?.name || null,
               isTutor: asignacionCurso?.isTutor || false,
               competencies: asignacionCurso?.actCourse?.competencies.map(
@@ -173,6 +174,7 @@ export class AcademicAssignmentService {
           areaId: area.id,
           isTutor: asignacionArea?.isTutor || false,
           area: area.name,
+          teacherId: asignacionArea?.user?.person?.id || null,
           teacher: asignacionArea?.user?.person?.name || null,
           courses: cursosDelArea,
         };
