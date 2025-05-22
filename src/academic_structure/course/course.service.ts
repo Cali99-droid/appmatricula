@@ -157,6 +157,24 @@ export class CourseService {
         phaseId,
       } = createDto;
 
+      const acourse = await this.activityCourseRepository.findOne({
+        where: [
+          {
+            competencies: { id: In(competencies) },
+            campus: { id: campusId },
+            grades: { id: In(grades) },
+          },
+          {
+            forAllGrades: true,
+            competencies: { id: In(competencies) },
+            campus: { id: campusId },
+          },
+        ],
+      });
+
+      if (acourse) {
+        throw new BadRequestException('Competencia en uso');
+      }
       const level = await this.levelRepository.findOne({
         where: {
           id: levelId,
