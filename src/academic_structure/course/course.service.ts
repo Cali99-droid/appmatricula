@@ -399,6 +399,9 @@ export class CourseService {
       const areas = await this.areaRepository.find({
         where: { status: true, level: { id: levelId } },
         relations: ['level', 'competency'],
+        order: {
+          order: 'ASC',
+        },
       });
 
       let courses = await this.activityCourseRepository.find({
@@ -422,6 +425,11 @@ export class CourseService {
           },
         ],
         relations: ['course', 'course.area', 'grades', 'competencies'],
+        order: {
+          competencies: {
+            order: 'ASC',
+          },
+        },
       });
       if (gradeId) {
         courses = await this.activityCourseRepository.find({
@@ -443,40 +451,13 @@ export class CourseService {
             },
           ],
           relations: ['course', 'course.area', 'grades', 'competencies'],
+          order: {
+            competencies: {
+              order: 'ASC',
+            },
+          },
         });
       }
-
-      // // 1. Obtener todas las áreas activas
-      // if (!areaId) {
-      //   areas = await this.areaRepository.find({
-      //     where: { status: true, level: { id: grade.level.id } },
-      //     relations: ['level', 'competency'],
-      //   });
-      //   courses = await this.activityCourseRepository.find({
-      //     where: {
-      //       // periodo: { id: periodoId },
-      //       grades: { id: gradeId }, // Relación ManyToMany con aulas
-      //     },
-      //     relations: ['course', 'course.area', 'grades', 'competencies'],
-      //   });
-      // } else {
-      //   areas = await this.areaRepository.find({
-      //     where: { status: true, id: +areaId },
-      //     relations: ['level', 'competency'],
-      //   });
-
-      //   courses = await this.activityCourseRepository.find({
-      //     where: {
-      //       // periodo: { id: periodoId },
-      //       course: {
-      //         area: {
-      //           id: +areaId,
-      //         },
-      //       }, // Relación ManyToMany con aulas
-      //     },
-      //     relations: ['course', 'course.area', 'grades', 'competencies'],
-      //   });
-      // }
 
       // 3. Estructurar la respuesta
       return areas.map((area) => {
@@ -490,6 +471,7 @@ export class CourseService {
             competencias: cp.competencies.map((c) => ({
               id: c.id,
               name: c.name,
+              order: c.order,
             })),
 
             grades: cp.grades.map((g) => ({
@@ -501,6 +483,7 @@ export class CourseService {
         return {
           id: area.id,
           name: area.name,
+          order: area.order,
           competencies: area.competency.length,
           coursesLength: cursosFiltrados.length,
           courses: cursosFiltrados,
