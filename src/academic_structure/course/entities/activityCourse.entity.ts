@@ -13,6 +13,7 @@ import { Course } from './course.entity';
 
 import { Grade } from 'src/grade/entities/grade.entity';
 import { Campus } from 'src/campus/entities/campus.entity';
+import { Phase } from 'src/phase/entities/phase.entity';
 
 @Entity()
 export class ActivityCourse {
@@ -24,8 +25,9 @@ export class ActivityCourse {
 
   @Column({ default: true })
   active: boolean;
-  //   @ManyToOne(() => PeriodoAcademico)
-  //   periodo: PeriodoAcademico;
+
+  @ManyToOne(() => Phase)
+  phase: Phase;
 
   @ManyToOne(() => Campus)
   campus: Campus;

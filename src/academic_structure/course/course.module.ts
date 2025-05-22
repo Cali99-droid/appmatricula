@@ -9,6 +9,7 @@ import { Area } from '../area/entities/area.entity';
 import { Level } from 'src/level/entities/level.entity';
 import { Grade } from 'src/grade/entities/grade.entity';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import { Phase } from 'src/phase/entities/phase.entity';
 
 @Module({
   controllers: [CourseController],
@@ -22,6 +23,7 @@ import { ActivityClassroom } from 'src/activity_classroom/entities/activity_clas
       Area,
       Level,
       ActivityClassroom,
+      Phase,
     ]),
   ],
 })

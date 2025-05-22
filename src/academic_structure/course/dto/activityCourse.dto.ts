@@ -48,6 +48,15 @@ export class CreateActivityCourseDto {
   campusId: number;
 
   @ApiProperty({
+    example: 1,
+    description: 'id of the campusDetail',
+    nullable: false,
+  })
+  @IsNumber()
+  @ExistId({ tableName: 'phase' })
+  phaseId: number;
+
+  @ApiProperty({
     example: true,
     description: 'if is for all grades',
     nullable: false,

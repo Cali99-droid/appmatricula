@@ -7,6 +7,7 @@ export class SearchActivityCourseDto {
   // @IsNumber()
   // @Min(1)
 
+  @IsOptional()
   @ExistId({ tableName: 'level' })
   levelId?: number;
 

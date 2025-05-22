@@ -21,6 +21,7 @@ import { Grade } from 'src/grade/entities/grade.entity';
 import { SearchActivityCourseDto } from './dto/search-activity-course.dto';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { Campus } from 'src/campus/entities/campus.entity';
+import { Phase } from 'src/phase/entities/phase.entity';
 
 @Injectable()
 export class CourseService {
@@ -153,6 +154,7 @@ export class CourseService {
         grades,
         campusId,
         levelId,
+        phaseId,
       } = createDto;
 
       const level = await this.levelRepository.findOne({
@@ -282,6 +284,10 @@ export class CourseService {
       cursoPeriodo.campus = { id: updateDto.campusId } as Campus;
     }
 
+    if (updateDto.phaseId) {
+      cursoPeriodo.phase = { id: updateDto.phaseId } as Phase;
+    }
+
     // Actualizar curso si viene
     if (updateDto.courseId) {
       cursoPeriodo.course = { id: updateDto.courseId } as Course;
@@ -379,7 +385,7 @@ export class CourseService {
     searchActivityCourseDto: SearchActivityCourseDto,
   ) {
     try {
-      const { levelId, campusId } = searchActivityCourseDto;
+      const { levelId, campusId, gradeId } = searchActivityCourseDto;
       // let areas;
       // let courses;
       // const grade = await this.gradeRepository.findOne({
@@ -393,7 +399,8 @@ export class CourseService {
         where: { status: true, level: { id: levelId } },
         relations: ['level', 'competency'],
       });
-      const courses = await this.activityCourseRepository.find({
+
+      let courses = await this.activityCourseRepository.find({
         where: [
           {
             campus: {
@@ -415,6 +422,28 @@ export class CourseService {
         ],
         relations: ['course', 'course.area', 'grades', 'competencies'],
       });
+      if (gradeId) {
+        courses = await this.activityCourseRepository.find({
+          where: [
+            {
+              campus: {
+                id: campusId,
+              },
+
+              grades: {
+                id: In([gradeId]),
+              },
+            },
+            {
+              campus: {
+                id: campusId,
+              },
+              forAllGrades: true,
+            },
+          ],
+          relations: ['course', 'course.area', 'grades', 'competencies'],
+        });
+      }
 
       // // 1. Obtener todas las áreas activas
       // if (!areaId) {
