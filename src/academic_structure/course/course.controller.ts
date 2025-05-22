@@ -96,6 +96,18 @@ export class CourseController {
     description: 'campus Id ',
     type: Number,
   })
+  @ApiQuery({
+    name: 'gradeId',
+    required: true,
+    description: 'grade Id ',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'phaseId',
+    required: true,
+    description: 'phase Id ',
+    type: Number,
+  })
   findAllActivityCourse(
     @Query() searchActivityCourseDto: SearchActivityCourseDto,
   ) {

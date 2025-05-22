@@ -53,7 +53,6 @@ export class CreateActivityCourseDto {
     nullable: false,
   })
   @IsNumber()
-  @IsOptional()
   @ExistId({ tableName: 'phase' })
   phaseId: number;
 

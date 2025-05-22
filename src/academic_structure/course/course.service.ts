@@ -154,7 +154,7 @@ export class CourseService {
         grades,
         campusId,
         levelId,
-        phaseId = 3,
+        phaseId,
       } = createDto;
 
       const acourse = await this.activityCourseRepository.findOne({
@@ -404,94 +404,68 @@ export class CourseService {
     searchActivityCourseDto: SearchActivityCourseDto,
   ) {
     try {
-      const { levelId, campusId, gradeId } = searchActivityCourseDto;
-      // let areas;
-      // let courses;
-      // const grade = await this.gradeRepository.findOne({
-      //   where: { id: gradeId },
-      // });
-      // if (!grade) {
-      //   throw new NotFoundException(`Grado con ID ${gradeId} no encontrado`);
-      // }
+      const { levelId, campusId, gradeId, phaseId } = searchActivityCourseDto;
 
+      // 1. Obtener áreas del nivel
       const areas = await this.areaRepository.find({
-        where: { status: true, level: { id: levelId } },
-        relations: ['level', 'competency'],
-        order: {
-          order: 'ASC',
+        where: {
+          status: true,
+          level: {
+            id: levelId,
+          },
         },
+        relations: ['level', 'competency'],
+        order: { order: 'ASC' },
       });
 
-      let courses = await this.activityCourseRepository.find({
+      // 2. Construir condiciones dinámicas para los cursos
+      const whereConditions: any[] = [];
+
+      if (gradeId) {
+        whereConditions.push({
+          campus: { id: campusId },
+          grades: { id: In([gradeId]) },
+        });
+      }
+
+      // Agregar cursos generales (forAllGrades)
+      whereConditions.push({
+        campus: { id: campusId },
+        forAllGrades: true,
+      });
+
+      const courses = await this.activityCourseRepository.find({
         where: [
           {
-            campus: {
-              id: campusId,
-            },
-
-            grades: {
-              level: {
-                id: levelId,
-              },
-            },
+            phase: { id: phaseId },
+            campus: { id: campusId },
+            grades: { id: In([gradeId]) },
           },
           {
-            campus: {
-              id: campusId,
-            },
+            phase: { id: phaseId },
+            campus: { id: campusId },
             forAllGrades: true,
           },
         ],
         relations: ['course', 'course.area', 'grades', 'competencies'],
         order: {
-          competencies: {
-            order: 'ASC',
-          },
+          competencies: { order: 'ASC' },
         },
       });
-      if (gradeId) {
-        courses = await this.activityCourseRepository.find({
-          where: [
-            {
-              campus: {
-                id: campusId,
-              },
 
-              grades: {
-                id: In([gradeId]),
-              },
-            },
-            {
-              campus: {
-                id: campusId,
-              },
-              forAllGrades: true,
-            },
-          ],
-          relations: ['course', 'course.area', 'grades', 'competencies'],
-          order: {
-            competencies: {
-              order: 'ASC',
-            },
-          },
-        });
-      }
-
-      // 3. Estructurar la respuesta
+      // 3. Estructurar la respuesta agrupada por área
       return areas.map((area) => {
-        const cursosFiltrados = courses
+        const filteredCourses = courses
           .filter((cp) => cp.course.area.id === area.id)
           .map((cp) => ({
             id: cp.id,
             name: cp.course.name,
-            // descripcion: cp.course.descripcion,
             forAllGrades: cp.forAllGrades,
             competencias: cp.competencies.map((c) => ({
               id: c.id,
               name: c.name,
               order: c.order,
             })),
-
             grades: cp.grades.map((g) => ({
               id: g.id,
               name: g.name,
@@ -503,34 +477,15 @@ export class CourseService {
           name: area.name,
           order: area.order,
           competencies: area.competency.length,
-          coursesLength: cursosFiltrados.length,
-          courses: cursosFiltrados,
+          coursesLength: filteredCourses.length,
+          courses: filteredCourses,
         };
       });
-      // // 3. Estructurar la respuesta
-      // const resultado: any = {
-      //   // nivel: {
-      //   //   id: nivel.id,
-      //   //   nombre: nivel.nombre,
-      //   // },
-      //   areas: level.area.map((area) => ({
-      //     id: area.id,
-      //     name: area.name,
-      //     coursesLength: courses
-      //       .filter((cp) => cp.course.area.id === area.id)
-      //       .map(this.mapToResponseDto).length,
-      //     competenciesLength: area.competency.length,
-      //     courses: courses
-      //       .filter((cp) => cp.course.area.id === area.id)
-      //       .map(this.mapResponse),
-      //   })),
-      // };
-
-      // return resultado;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
   }
+
   private mapResponse(activityCourse: ActivityCourse) {
     return {
       id: activityCourse.id,

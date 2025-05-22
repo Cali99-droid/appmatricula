@@ -17,4 +17,8 @@ export class SearchActivityCourseDto {
   @IsOptional()
   @ExistId({ tableName: 'grade' })
   gradeId?: number;
+
+  @IsOptional()
+  @ExistId({ tableName: 'phase' })
+  phaseId?: number;
 }
