@@ -154,7 +154,7 @@ export class CourseService {
         grades,
         campusId,
         levelId,
-        phaseId,
+        phaseId = 3,
       } = createDto;
 
       const acourse = await this.activityCourseRepository.findOne({
