@@ -198,6 +198,7 @@ export class CourseService {
       const cursoPeriodo = this.activityCourseRepository.create({
         course: { id: courseId },
         campus: { id: campusId },
+        phase: { id: phaseId },
         forAllGrades,
       });
 
