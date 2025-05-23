@@ -80,7 +80,7 @@ export class EnrollmentService {
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -212,6 +212,7 @@ export class EnrollmentService {
           status: false,
           description: enrroll.code,
           code: `MAT${enrroll.code}`,
+          isCanceled: false,
         });
 
         await this.debtRepository.save(createdDebt);

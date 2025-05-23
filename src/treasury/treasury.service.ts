@@ -444,7 +444,7 @@ export class TreasuryService {
     endDate: string,
     userId: number,
   ) {
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),
@@ -697,11 +697,12 @@ export class TreasuryService {
       throw new NotFoundException('No existe responsable de matrícula');
     }
 
+    // eslint-disable-next-line prefer-const
     serie = `B${createPaidDto.paymentMethod}${campus.id}${level.id}`;
 
     if (debt.discount !== null) {
       debt.total = debt.total - (debt.total * debt.discount.percentage) / 100;
-      serie = `BB${campus.id}${level.id}`;
+      // serie = `BB${campus.id}${level.id}`;
     }
     if (debt.concept.code === 'C005') {
       // Si es traslado se procede a cancelar las deudas del mes
@@ -757,7 +758,7 @@ export class TreasuryService {
       cliente_direccion: family.address,
       cliente_email: client.user?.email || '',
       fecha_de_emision: new Date(),
-      fecha_de_vencimiento: debt.dateEnd,
+      fecha_de_vencimiento: new Date(),
       moneda: 1,
       porcentaje_de_igv: 0,
       total_gravada: '',
@@ -1314,12 +1315,14 @@ export class TreasuryService {
     //**diciembre cambiar a fin de fase regualr vencimiento deuda */
     const details = debts
       .map((d) => {
-        total += d.total;
         let amount: number = d.total;
         if (d.discount !== null) {
           amount = d.total - (d.total * d.discount.percentage) / 100;
+          amount = Math.round(amount);
         }
+        total += amount;
         if (amount === 0) return null;
+
         return {
           type: 'DD',
           account: '37508739262',
@@ -1342,7 +1345,7 @@ export class TreasuryService {
     /**agregar espacios en blanco nombre 54 */
     /**antes de la RR agregar dos 0 */
     const name = 'ASOCIACION EDUCATIVA LUZ Y CIENCIA';
-    const cantRegisters = debts.length;
+    const cantRegisters = details.length;
     const header = this.sanitizeText(
       `CC37508739262C${name.padEnd(40)}${this.formatDate(new Date().toString())}${cantRegisters.toString().padStart(9, '0')}${total.toString().padStart(13, '0')}00R`,
     ).padEnd(250, ' ');
@@ -1390,8 +1393,9 @@ export class TreasuryService {
         let amount: number = d.total;
         if (d.discount !== null) {
           amount = d.total - (d.total * d.discount.percentage) / 100;
+          amount = Math.round(amount);
         }
-        total += d.total;
+        total += amount;
         if (amount === 0) return null;
         return {
           type: '02',
@@ -1427,7 +1431,7 @@ export class TreasuryService {
     /**FOOTER */
 
     const typeTotal = '03';
-    const cantRegisters = debts.length;
+    const cantRegisters = details.length;
     const sumTotal = total + '00';
 
     // const generateDate = this.formatDate(new Date().toString());
@@ -1522,6 +1526,15 @@ export class TreasuryService {
             d.student.person.name,
         })),
         debtsPending: debtsPending.map((d) => d.code),
+        debtsStudentPending: debtsPending.map((d) => ({
+          code: d.code,
+          student:
+            d.student.person.lastname +
+            ' ' +
+            d.student.person.mLastname +
+            ' ' +
+            d.student.person.name,
+        })),
         numberOfRecords: debts.length,
         failedPayments: [],
         failLength: 0,
@@ -1536,6 +1549,7 @@ export class TreasuryService {
 
     for (const [studentId, studentDebts] of Object.entries(groupedBySerie)) {
       // Obtener fechas para cada deuda de este estudiante
+      console.log(studentId);
       const obDebts = studentDebts.map((d) => {
         const date = results.find((res) => res.code === d.code);
         return {
@@ -1607,6 +1621,15 @@ export class TreasuryService {
         message: 'Algunos pagos no pudieron procesarse.',
         alreadyPaid: [],
         debtsPending: debtsPending.map((d) => d.code),
+        debtsStudentPending: debtsPending.map((d) => ({
+          code: d.code,
+          student:
+            d.student.person.lastname +
+            ' ' +
+            d.student.person.mLastname +
+            ' ' +
+            d.student.person.name,
+        })),
         numberOfRecords: failedPayments.length,
         failedPayments,
         failLength: failedPayments.length,

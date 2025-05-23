@@ -171,8 +171,8 @@ export class AuthService {
         });
         await this.userRepository.save(us);
         let roles = [];
-        if (user.resource_access['client-test-appae']) {
-          roles = user.resource_access['client-test-appae'].roles;
+        if (user.resource_access['appcolegioae']) {
+          roles = user.resource_access['appcolegioae'].roles;
         }
         console.log('roelsas');
         console.log(roles);
@@ -187,8 +187,8 @@ export class AuthService {
         });
         await this.userRepository.save(us);
         let roles = [];
-        if (user.resource_access['client-test-appae']) {
-          roles = user.resource_access['client-test-appae'].roles;
+        if (user.resource_access['appcolegioae']) {
+          roles = user.resource_access['appcolegioae'].roles;
         }
         console.log(roles);
         const menu = this.generateMenu(roles);
@@ -207,8 +207,8 @@ export class AuthService {
     }
 
     let roles = [];
-    if (user.resource_access['client-test-appae']) {
-      roles = user.resource_access['client-test-appae'].roles;
+    if (user.resource_access['appcolegioae']) {
+      roles = user.resource_access['appcolegioae'].roles;
     }
     console.log(roles);
     const menu = this.generateMenu(roles);
