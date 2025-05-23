@@ -413,25 +413,16 @@ export const AdminMenu = {
           subMenu: [],
         },
         {
-          id: 10,
-          label: 'Cronograma',
-          icon: 'module',
-          link: '/admin/enrollment/schedule',
-          permissions: ['configuracion-cronograma'],
-
-          subMenu: [],
-        },
-        {
-          id: 10,
-          label: 'Cronograma',
-          icon: 'module',
-          link: '/admin/enrollment/schedule',
-          permissions: ['configuracion-cronograma'],
-
-          subMenu: [],
-        },
-        {
           id: 11,
+          label: 'Cronograma',
+          icon: 'module',
+          link: '/admin/enrollment/schedule',
+          permissions: ['configuracion-cronograma'],
+
+          subMenu: [],
+        },
+        {
+          id: 12,
           label: 'Area x Cursos',
           icon: 'module',
           link: '/admin/configuration/area',
