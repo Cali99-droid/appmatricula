@@ -340,7 +340,7 @@ export const AdminMenu = {
           label: 'Cursos',
           icon: 'calendar',
           link: '/admin/academy/courses',
-          permissions: ['administrador-colegi'],
+          permissions: ['administrador-colegio'],
           subMenu: [],
         },
         {
