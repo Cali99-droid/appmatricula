@@ -302,7 +302,7 @@ export const AdminMenu = {
       link: '/admin/academy',
       icon: 'student',
       tagSubMenu: true,
-      permissions: ['administrador-colegio'],
+      permissions: ['academico'],
       subMenu: [
         {
           id: 1,
