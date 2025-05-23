@@ -1,11 +1,15 @@
 import {
   BadRequestException,
+  HttpException,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 
 export const handleDBExceptions = (error: any, logger: Logger) => {
   // const logger = new Logger('DBError');
+  if (error instanceof HttpException) {
+    throw error;
+  }
   if (error.errno === 1062) {
     throw new BadRequestException(error.sqlMessage);
   }

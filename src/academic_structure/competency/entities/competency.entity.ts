@@ -1,12 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Area } from 'src/academic_structure/area/entities/area.entity';
-import { Course } from 'src/academic_structure/course/entities/course.entity';
+import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -23,23 +24,19 @@ export class Competency {
     uniqueItems: true,
   })
   @Column('varchar', {
-    unique: true,
+    unique: false,
   })
   name: string;
 
-  @ManyToOne(() => Course, (course) => course.competency, {
-    eager: true,
-    nullable: true,
+  @ApiProperty({
+    example: 1,
+    description: 'Order of competency',
+    uniqueItems: true,
   })
-  @JoinColumn({ name: 'courseId' })
-  course?: Course;
-
-  @ManyToOne(() => Area, (area) => area.competency, {
-    eager: true,
-    nullable: true,
+  @Column('integer', {
+    // unique: true,
   })
-  @JoinColumn({ name: 'areaId' })
-  area?: Area;
+  order: number;
 
   @ApiProperty({
     example: 'true',
@@ -49,6 +46,24 @@ export class Competency {
     default: true,
   })
   status: boolean;
+
+  @ManyToOne(() => Area, (area) => area.competency, {
+    eager: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'areaId' })
+  area?: Area;
+
+  // @ManyToOne(() => Course, (course) => course.competency, {
+  //   nullable: true,
+  //   onDelete: 'SET NULL',
+  // })
+  // course?: Course;
+  //   @OneToMany(() => CursoPeriodo, cursoPeriodo => cursoPeriodo.curso)
+  // periodos: CursoPeriodo[];
+
+  @OneToMany(() => Ratings, (ratings) => ratings.competency)
+  ratings?: Ratings[];
 
   @CreateDateColumn({
     type: 'timestamp',

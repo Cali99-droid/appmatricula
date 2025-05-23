@@ -25,15 +25,19 @@ export class Area {
     uniqueItems: true,
   })
   @Column('varchar', {
-    unique: true,
+    unique: false,
   })
   name: string;
 
-  @ManyToOne(() => Level, (level) => level.area, {
-    eager: true,
+  @ApiProperty({
+    example: 1,
+    description: 'Order of area',
+    uniqueItems: true,
   })
-  @JoinColumn({ name: 'levelId' })
-  level?: Level;
+  @Column('integer', {
+    // unique: true,
+  })
+  order: number;
 
   @ApiProperty({
     example: 'true',
@@ -57,13 +61,19 @@ export class Area {
   })
   updatedAt: Date;
 
-  @OneToMany(() => Course, (course) => course.area, {
-    // eager: true,
+  @ManyToOne(() => Level, (level) => level.area, {
+    eager: true,
   })
-  course?: Course[];
+  @JoinColumn({ name: 'levelId' })
+  level?: Level;
 
   @OneToMany(() => Competency, (competency) => competency.area, {
     // eager: true,
   })
   competency?: Competency[];
+
+  @OneToMany(() => Course, (course) => course.area, {
+    // eager: true,
+  })
+  course?: Course[];
 }

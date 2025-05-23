@@ -1,11 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsBoolean,
-  IsNumber,
-  IsOptional,
-  IsString,
-  MinLength,
-} from 'class-validator';
+import { IsBoolean, IsNumber, IsString, MinLength } from 'class-validator';
 
 export class CreateCourseDto {
   @ApiProperty({
@@ -31,6 +25,5 @@ export class CreateCourseDto {
     nullable: false,
   })
   @IsBoolean()
-  @IsOptional()
   status?: boolean;
 }

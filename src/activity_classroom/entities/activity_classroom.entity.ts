@@ -87,4 +87,7 @@ export class ActivityClassroom {
   currentClassroom?: SectionHistory;
   @OneToMany(() => SectionHistory, (sh) => sh.previousClassroom)
   previousClassroom?: SectionHistory;
+
+  // @OneToMany(() => Course, (sh) => sh.activityClassroom)
+  // course?: Course[];
 }

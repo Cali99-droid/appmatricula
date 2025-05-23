@@ -91,14 +91,6 @@ export class UserService {
   // }
 
   async findAll(filterDto: FilterUserByRoleDto) {
-    // const users = await this.userRepository.find({
-    //   relations: {
-    //     roles: true,
-    //     assignments: {
-    //       campusDetail: true,
-    //     },
-    //   },
-    // });
     const { role } = filterDto;
     const usKy = await this.keycloakService.getUsersByRole(role);
 

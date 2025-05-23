@@ -7,12 +7,23 @@ import {
   Param,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { Course } from './entities/course.entity';
+import { CreateActivityCourseDto } from './dto/activityCourse.dto';
+import { ActivityCourseResponseDto } from './dto/activityCourseResponse.dto';
+import { UpdateActivityCourseDto } from './dto/update-activityCourse.dto';
+import { SearchActivityCourseDto } from './dto/search-activity-course.dto';
 
 @ApiTags('Course')
 @Controller('course')
@@ -39,23 +50,6 @@ export class CourseController {
     return this.courseService.findAll(+areaId);
   }
 
-  @Get(':id')
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description:
-      'El término de búsqueda utilizado para encontrar grados específicos, puedes enviar el solo el id',
-    type: String,
-  })
-  @ApiResponse({ status: 200, description: 'Detail course', type: Course })
-  @ApiResponse({
-    status: 404,
-    description: 'course  not found ',
-  })
-  findOne(@Param('id') id: string) {
-    return this.courseService.findOne(+id);
-  }
-
   @Patch(':id')
   @ApiResponse({ status: 200, description: 'Course was updated', type: Course })
   @ApiResponse({
@@ -78,5 +72,91 @@ export class CourseController {
   })
   remove(@Param('id') id: string) {
     return this.courseService.remove(+id);
+  }
+
+  /**ACTIVTY COURSE */
+
+  @Post('/activity-course')
+  createActivityCourse(
+    @Body() createCursoPeriodoDto: CreateActivityCourseDto,
+  ): Promise<ActivityCourseResponseDto> {
+    return this.courseService.createActivityCourse(createCursoPeriodoDto);
+  }
+
+  @Get('/activity-course')
+  @ApiQuery({
+    name: 'levelId',
+    required: true,
+    description: 'level Id ',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'campusId',
+    required: true,
+    description: 'campus Id ',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'gradeId',
+    required: true,
+    description: 'grade Id ',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'phaseId',
+    required: true,
+    description: 'phase Id ',
+    type: Number,
+  })
+  findAllActivityCourse(
+    @Query() searchActivityCourseDto: SearchActivityCourseDto,
+  ) {
+    return this.courseService.getActivityCourseParams(searchActivityCourseDto);
+  }
+
+  @Get('/activity-course/:id')
+  findOneActivityCourse(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ActivityCourseResponseDto> {
+    return this.courseService.findOneActivityCourse(id);
+  }
+
+  @Patch('/activity-course/:id')
+  updateActivityCourse(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateCursoPeriodoDto: UpdateActivityCourseDto,
+  ): Promise<ActivityCourseResponseDto> {
+    return this.courseService.updateActivityCourse(id, updateCursoPeriodoDto);
+  }
+
+  @Delete('/activity-course/:id')
+  removeActivityCourse(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.courseService.removeActivityCourse(id);
+  }
+
+  /**FIN activity course */
+
+  @Get(':id')
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description:
+      'El término de búsqueda utilizado para encontrar grados específicos, puedes enviar el solo el id',
+    type: String,
+  })
+  @ApiResponse({ status: 200, description: 'Detail course', type: Course })
+  @ApiResponse({
+    status: 404,
+    description: 'course  not found ',
+  })
+  findOne(@Param('id') id: string) {
+    return this.courseService.findOne(+id);
+  }
+
+  @Get('/activity-course/by-classroom/:activityClassroomId')
+  findByActivityClassroom(
+    @Param('activityClassroomId', ParseIntPipe) activityClassroomId: number,
+  ) {
+    return this.courseService.findByActivityClassroom(activityClassroomId);
   }
 }

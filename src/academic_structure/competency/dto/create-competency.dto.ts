@@ -23,7 +23,15 @@ export class CreateCompetencyDto {
     nullable: false,
   })
   @IsNumber()
-  courseId: number;
+  areaId?: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Order from area',
+    nullable: false,
+  })
+  @IsNumber()
+  order: number;
 
   @ApiProperty({
     example: 'true',

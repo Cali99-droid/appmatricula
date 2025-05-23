@@ -15,6 +15,7 @@ import {
 
 import { Assignment } from './assignments.entity';
 import { AssignmentClassroom } from './assignments-classroom.entity';
+import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
 
 @Entity()
 export class User {
@@ -100,4 +101,7 @@ export class User {
   checkFieldsBeforeUpdate() {
     this.checkFieldsBeforeInsert();
   }
+
+  @OneToMany(() => Ratings, (ratings) => ratings.teacher)
+  ratings?: Ratings[];
 }

@@ -28,6 +28,10 @@ import { addConstancy } from './constancy/constancy';
 import { Status } from 'src/enrollment/enum/status.enum';
 import { Person } from 'src/person/entities/person.entity';
 import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
+import * as pdfMake from 'pdfmake/build/pdfmake';
+import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
+(<any>pdfMake).addVirtualFileSystem(pdfFonts);
 
 @Injectable()
 export class PdfService {
@@ -711,77 +715,32 @@ export class PdfService {
       doc.end();
     });
   }
+
   async fetchImage(url: string): Promise<ArrayBuffer> {
     const response = await fetch(url);
     const buffer = await response.arrayBuffer();
     return buffer;
   }
-  async convertWebPToPNG(buffer: ArrayBuffer): Promise<Buffer> {
-    return sharp(buffer).png().resize({ width: 200, height: 250 }).toBuffer();
+  async convertWebPToPNG(buffer: ArrayBuffer): Promise<ArrayBuffer> {
+    const pngBuffer = await sharp(buffer)
+      .png()
+      .resize({ width: 200, height: 250 })
+      .toBuffer();
+
+    // Convertir Buffer (Node.js) a ArrayBuffer
+    return pngBuffer.buffer.slice(
+      pngBuffer.byteOffset,
+      pngBuffer.byteOffset + pngBuffer.byteLength,
+    );
   }
 
-  generateTable(doc: PDFKit.PDFDocument, data: any[]) {
-    const tableTop = 150;
-    const columnWidths = [150, 150, 150];
-    const rowHeight = 30;
-    let y = tableTop;
-
-    // Dibujar encabezado de la tabla
-    doc.fontSize(12).text('Columna 1', 50, y);
-    doc.text('Columna 2', 200, y);
-    doc.text('Columna 3', 350, y);
-
-    y += rowHeight;
-
-    // Dibujar filas de la tabla
-    data.forEach((row) => {
-      doc.fontSize(10).text(row.col1, 50, y);
-      doc.text(row.col2, 200, y);
-      doc.text(row.col3, 350, y);
-
-      // Dibujar líneas de las filas
-      this.drawRowLines(doc, y, columnWidths, rowHeight);
-
-      y += rowHeight;
-    });
-  }
-
-  // Dibujar las líneas de cada fila
-  drawRowLines(
-    doc: PDFKit.PDFDocument,
-    y: number,
-    columnWidths: number[],
-    rowHeight: number,
-  ) {
-    doc.lineWidth(0.5);
-    doc.strokeColor('#000');
-
-    // Dibujar la línea superior
-    doc.moveTo(50, y).lineTo(500, y).stroke();
-
-    // Dibujar las líneas verticales (columnas)
-    let xPos = 50;
-    columnWidths.forEach((width) => {
-      doc
-        .moveTo(xPos, y)
-        .lineTo(xPos, y + rowHeight)
-        .stroke();
-      xPos += width;
-    });
-
-    // Dibujar la línea inferior
-    doc
-      .moveTo(50, y + rowHeight)
-      .lineTo(500, y + rowHeight)
-      .stroke();
-  }
   async getCites(idDistrict: string) {
     console.log('first');
     //OBTENER TODOS LOS DISTRITOS
     const url = this.configService.get('API_ADMISION');
     try {
       console.log('GET CITIES');
-      console.log(url);
+
       const dataDistrict = await firstValueFrom(
         this.httpService.get(`${url}/cities/district`),
       );
@@ -812,5 +771,702 @@ export class PdfService {
     } catch (error) {
       throw error;
     }
+  }
+
+  private safeNumber(value: number, defaultValue: number = 0): number {
+    return Number.isFinite(value) ? value : defaultValue;
+  }
+  async generateReportCard() {
+    const url = this.configService.getOrThrow('AWS_URL_BUCKET');
+    const logoUrl = `${url}recursos/logo.png`;
+    const studentPhotoURL =
+      'https://caebucket.s3.us-west-2.amazonaws.com/colegio/1717429805090.webp';
+    const logo = await this.fetchImage(logoUrl);
+    const studentBuffer = await this.fetchImage(studentPhotoURL);
+    const studentPhoto = await this.convertWebPToPNG(studentBuffer);
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 40,
+          bufferPages: true,
+        });
+
+        const buffers: Buffer[] = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+          const pdfData = Buffer.concat(buffers);
+          resolve(pdfData);
+        });
+
+        // Configuración segura de dimensiones
+        const leftMargin = 40;
+        const pageWidth = doc.page.width - leftMargin * 2;
+        const startY = 50;
+
+        // Encabezado institucional
+        doc.image(logo, 30, 30, { width: 70, height: 70 });
+        doc
+          .image(studentPhoto, 495, 30, { width: 58, height: 73 })
+          .rect(495, 30, 58, 73)
+          .stroke();
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(14)
+          .text('COLEGIO ALBERT EINSTEIN', {
+            align: 'center',
+          });
+
+        doc.fontSize(12).text('INFORME DE LOS PROCESOS DEL EDUCANDO - 2024', {
+          align: 'center',
+          underline: true,
+        });
+
+        doc.fontSize(11).text('NIVEL SECUNDARIA', { align: 'center' });
+
+        // Información del estudiante
+        this.drawStudentInfo(doc, leftMargin, pageWidth, startY);
+        // doc.moveDown(1);
+        doc.fontSize(12).text('INFORME DE LOS PROCESOS DEL EDUCANDO - 2024');
+        // Tabla principal de calificaciones
+        // doc.table({
+        //   data: [
+        //     ['Column 1', 'Column 2', 'Column 3'],
+        //     ['One value goes here', 'Another one here', 'OK?'],
+        //   ],
+        // });
+        // this.drawMainTable(doc, leftMargin, pageWidth);
+        doc.end();
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        reject(error);
+      }
+    });
+  }
+
+  private drawStudentInfo(
+    doc: PDFKit.PDFDocument,
+    leftMargin: number,
+    pageWidth: number,
+    startY: number,
+  ) {
+    const rowHeight = 60;
+    const col1Width = 100;
+    const col2Width = pageWidth - col1Width;
+
+    // Encabezados
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(10)
+      .text('Código', leftMargin + 5, startY + rowHeight + 4)
+      .text(
+        'Apellidos y Nombres',
+        leftMargin + col1Width + 5,
+        startY + rowHeight + 4,
+      );
+
+    // Datos
+    doc
+      .font('Helvetica')
+      .text('18024181', leftMargin + 5, startY + 80)
+      .text(
+        'ROBLES MINAYA OMAR LEONCIO',
+        leftMargin + col1Width + 5,
+        startY + 80,
+      );
+    doc
+      .lineCap('butt')
+      .moveTo(leftMargin, startY + rowHeight + 35)
+      .lineTo(pageWidth + 40, startY + rowHeight + 35)
+      .stroke();
+    doc
+      .font('Helvetica-Bold')
+      .text('Salón', leftMargin + 5, startY + rowHeight + 44)
+      .font('Helvetica')
+      .text(
+        'SECUNDARIA - QUINTO - E',
+        leftMargin + col1Width + 5,
+        startY + rowHeight + 44,
+      );
+
+    // Bordes
+    doc.rect(leftMargin, startY + rowHeight, pageWidth, rowHeight).stroke();
+    doc
+      .moveTo(leftMargin + col1Width, startY + rowHeight)
+      .lineTo(leftMargin + col1Width, startY + rowHeight + rowHeight)
+      .stroke();
+
+    doc.y = startY + rowHeight * 2 + 10;
+  }
+
+  private drawMainTable(
+    doc: PDFKit.PDFDocument,
+    leftMargin: number,
+    pageWidth: number,
+  ) {}
+
+  private createHeader(
+    reportData: any,
+    logo: any,
+    studentPhoto: any,
+  ): Content[] {
+    return [
+      {
+        columns: [
+          {
+            width: 80, // ancho fijo
+            image: logo,
+            fit: [70, 80],
+          },
+          {
+            width: '*', // ancho flexible (se expandirá)
+            stack: [
+              {
+                text: reportData.schoolName,
+                alignment: 'center',
+                bold: true,
+                fontSize: 14,
+                color: '#0045AA',
+              },
+              {
+                text: `\nINFORME DE LOS PROCESOS DEL EDUCANDO - ${reportData.year}\nNIVEL ${reportData.level}`,
+                alignment: 'center',
+                fontSize: 11,
+                bold: true,
+              },
+            ],
+            margin: [0, 10, 0, 0],
+          },
+          {
+            width: 80, // ancho fijo
+            image: studentPhoto,
+            cover: {
+              width: 70,
+              height: 80,
+              valign: 'top',
+              align: 'center',
+            },
+          },
+          // {
+          //   width: 80, // ancho fijo
+          //   table: {
+          //     widths: [80],
+          //     body: [
+          //       [
+          //         {
+          //           image: studentPhoto,
+          //           fit: [80, 80],
+          //         },
+          //       ],
+          //     ],
+          //   },
+          //   layout: {
+          //     fillColor: () => null,
+          //     hLineWidth: () => 1,
+          //     vLineWidth: () => 1,
+          //     hLineColor: () => '#000000',
+          //     vLineColor: () => '#000000',
+          //   },
+          // },
+        ],
+        columnGap: 10,
+      },
+    ];
+  }
+
+  private createStudentInfo(reportData: any): Content {
+    return {
+      // {
+      style: 'tableExample',
+      table: {
+        widths: [100, '*', 200],
+        body: [
+          [
+            {
+              text: 'Código',
+              style: 'tableHeader',
+              fillColor: '#FFEFCA',
+            },
+            {
+              text: 'Apellidos Y Nombres',
+              style: 'tableHeader',
+              fillColor: '#FFEFCA',
+            },
+            {
+              text: 'Salón',
+              style: 'tableHeader',
+              fillColor: '#FFEFCA',
+            },
+          ],
+          [
+            { text: reportData.studentCode, alignment: 'center' },
+            {
+              text: reportData.studentName,
+              color: '#767687',
+              alignment: 'center',
+            },
+            {
+              text: reportData.classroom,
+              color: '#767687',
+              alignment: 'center',
+            },
+          ],
+        ],
+      },
+    };
+  }
+
+  private createAreasTable(reportData: any): Content {
+    return {
+      style: 'tableExample',
+      color: '#444',
+      fontSize: 6,
+      table: {
+        widths: [200, 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+
+        // headerRows: 7,
+        // keepWithHeaderRows: 1,
+        body: [
+          /**CABECERAS */
+          [
+            {
+              text: 'ÁREA',
+              style: 'tableHeader',
+              rowSpan: 2,
+              fillColor: '#eeeeee',
+            },
+
+            {
+              text: 'BIMESTRE',
+              style: 'tableHeader',
+              colSpan: 4,
+              fillColor: '#eeeeee',
+            },
+            {},
+            {},
+            {},
+
+            {
+              text: 'EVAL. RECUP.',
+              style: 'tableHeader',
+              rowSpan: 3,
+              fillColor: '#eeeeee',
+            },
+            {
+              text: 'VALORACIÓN DESCRIPTIVA DEL ÁREA',
+              style: 'tableHeader',
+              rowSpan: 3,
+              fillColor: '#eeeeee',
+            },
+          ],
+
+          [
+            {}, // ÁREA (rowSpan)
+
+            { text: 'I', style: 'tableHeader' },
+            { text: 'II', style: 'tableHeader' },
+            { text: 'III', style: 'tableHeader' },
+            { text: 'IV', style: 'tableHeader' },
+            {}, // EVAL. RECUP. (rowSpan)
+            {}, // VALORACIÓN DESCRIPTIVA DEL ÁREA (rowSpan)
+          ],
+          /**AREA 1 */
+          [
+            {
+              text: 'MATEMÁTICA',
+              bold: true,
+              style: '',
+              colSpan: 7,
+              fillColor: '#DEEAFF',
+            }, // ÁREA (rowSpan)
+          ],
+          [
+            'RESUELVE PROBLEMAS DE CANTIDAD.',
+            'A',
+            'B',
+            'A',
+            'B',
+            { rowSpan: 4, text: '' },
+            { rowSpan: 4, text: '' },
+          ],
+          [
+            'RESUELVE PROBLEMAS DE REGULARIDAD, EQUIVALENCIA Y CAMBIO.',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+          [
+            'RESUELVE PROBLEMAS DE FORMA,MOVIMIENTO Y LOCALIZACIÓN.',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+          [
+            'RESUELVE PROBLEMAS DE GESTIÓN DE DATOS E INCERTIDUMBRE',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+          /**FIN AREA 1 */
+          /**AREA 2 */
+          [
+            {
+              text: 'COMUNICACION',
+              bold: true,
+              style: '',
+              fillColor: '#DEEAFF',
+              colSpan: 7,
+            }, // ÁREA (rowSpan)
+          ],
+          [
+            'SE COMUNICA ORALMENTE EN SU LENGUA MATERNA.',
+            'A',
+            'B',
+            'A',
+            'B',
+            { rowSpan: 3, text: '' },
+            { rowSpan: 3, text: '' },
+          ],
+          [
+            'LEE DIVERSOS TIPOS DE TEXTOS ESCRITOS EN SU LENGUA MATERNA.',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+          [
+            'ESCRIBE DIVERSOS TIPOS DE TEXTOS EN SU LENGUA MATERNA',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+
+          /**FIN AREA 2 */
+          /**AREA 3 */
+          [
+            {
+              text: 'CIENCIA Y TECNOLOGÍA',
+              bold: true,
+              style: '',
+              fillColor: '#DEEAFF',
+              colSpan: 7,
+            }, // ÁREA (rowSpan)
+          ],
+          [
+            'INDAGA MEDIANTE MÉTODOS CIENTÍFICOS PARA CONSTRUIR SUS CONOCIMIENTOS.',
+            'A',
+            'B',
+            'A',
+            'B',
+            { rowSpan: 3, text: '' },
+            { rowSpan: 3, text: '' },
+          ],
+          [
+            'EXPLICA EL MUNDO FÍSICO BASÁNDOSE EN CONOCIMIENTOS SOBRE LOS SERES VIVOS, MATERIA Y ENERGÍA, BIODIVERSIDAD, TIERRA Y UNIVERSO.',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+          [
+            'DISEÑA Y CONSTRUYE SOLUCIONES TECNOLÓGICAS PARA RESOLVER PROBLEMAS DE SU ENTORNO.',
+            'A',
+            'B',
+            'A',
+            'B',
+            '',
+            '',
+          ],
+
+          /**FIN AREA 2 */
+        ],
+      },
+      // layout: 'lightHorizontalLines',
+      // layout: {
+      //   fillColor: function (rowIndex, node, columnIndex) {
+      //     return rowIndex % 2 === 0 ? '#CCCCCC' : null;
+      //   },
+      // },
+    };
+    // Cabecera de la tabla
+    const tableBody = [
+      [
+        { text: 'ÁREA', style: 'tableHeader', rowSpan: 2 },
+        { text: 'COMPETENCIAS', style: 'tableHeader', rowSpan: 2 },
+        { text: 'BIMESTRE', style: 'tableHeader', colSpan: 4 },
+        {},
+        {},
+        {},
+        { text: 'EVAL. RECUP.', style: 'tableHeader', rowSpan: 2 },
+      ],
+      [
+        {}, // ÁREA (rowSpan)
+        {}, // COMPETENCIAS (rowSpan)
+        { text: 'I', style: 'tableHeader' },
+        { text: 'II', style: 'tableHeader' },
+        { text: 'III', style: 'tableHeader' },
+        { text: 'IV', style: 'tableHeader' },
+        {}, // EVAL. RECUP. (rowSpan)
+      ],
+    ];
+
+    // Filas de datos
+    reportData.areas.forEach((area) => {
+      area.competencies.forEach((competency, index) => {
+        const row = [
+          index === 0
+            ? { text: area.name, rowSpan: area.competencies.length }
+            : {},
+          { text: competency.name },
+          ...competency.grades.map((grade) => ({ text: grade })),
+          { text: '' }, // Eval. Recup. (vacío por defecto)
+        ];
+        tableBody.push(row);
+      });
+    });
+
+    return {
+      table: {
+        headerRows: 2,
+        widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto'],
+        body: tableBody,
+      },
+      layout: {
+        hLineWidth: (i, node) =>
+          i === 0 || i === 1 || i === node.table.body.length ? 1 : 0,
+        vLineWidth: (i, node) => 0,
+        paddingTop: (i, node) => 4,
+        paddingBottom: (i, node) => 4,
+      },
+      margin: [0, 5, 0, 15],
+    };
+  }
+
+  private createAttendanceTable(reportData: any): Content {
+    if (!reportData.attendance) {
+      return { text: '' };
+    }
+
+    return {
+      color: '#444',
+      fontSize: 6,
+      table: {
+        widths: [
+          '*',
+          'auto',
+          'auto',
+          'auto',
+          'auto',
+          'auto',
+          '*',
+          'auto',
+          'auto',
+          'auto',
+          'auto',
+          'auto',
+        ],
+        body: [
+          [
+            {
+              text: 'ASISTENCIAS Y TARDANZAS',
+              style: 'tableHeader',
+              colSpan: 6,
+              fillColor: '#eeeeee',
+            },
+            {},
+            {},
+            {},
+            {},
+            {},
+            {
+              text: 'CONDUCTA',
+              style: 'tableHeader',
+              colSpan: 6,
+              fillColor: '#eeeeee',
+            },
+            {},
+            {},
+            {},
+            {},
+            {},
+          ],
+          [
+            { text: 'TIPO', style: 'tableHeader' },
+            { text: 'I', style: 'tableHeader' },
+            { text: 'II', style: 'tableHeader' },
+            { text: 'III', style: 'tableHeader' },
+            { text: 'IV', style: 'tableHeader' },
+            { text: 'TOTAL', style: 'tableHeader' },
+            { text: 'BIMESTRE', style: 'tableHeader' },
+            { text: 'I', style: 'tableHeader' },
+            { text: 'II', style: 'tableHeader' },
+            { text: 'III', style: 'tableHeader' },
+            { text: 'IV', style: 'tableHeader' },
+            { text: 'N.F.', style: 'tableHeader' },
+          ],
+          [
+            'Tardanza Injustificada',
+            ...reportData.attendance.tardinessUnjustified.map((t) =>
+              t.toString(),
+            ),
+            '',
+            { text: 'NOTA', fontSize: 8, alignment: 'center' },
+            '',
+
+            '',
+            '',
+            '',
+            '',
+          ],
+          [
+            'Tardanza Justificada',
+            ...reportData.attendance.tardinessJustified.map((t) =>
+              t.toString(),
+            ),
+            '',
+            { rowSpan: 3, text: '', colSpan: 6 },
+            {},
+            {},
+            {},
+            {},
+            {},
+          ],
+          [
+            'Falta Injustificada',
+            ...reportData.attendance.absenceUnjustified.map((a) =>
+              a.toString(),
+            ),
+            '',
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+          ],
+          [
+            'Falta Justificada',
+            ...reportData.attendance.absenceJustified.map((a) => a.toString()),
+            '',
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+          ],
+        ],
+      },
+      // layout: 'lightHorizontalLines',
+    };
+  }
+
+  async generateSchoolReport(reportData: any): Promise<Buffer> {
+    const url = this.configService.getOrThrow('AWS_URL_BUCKET');
+    const logoUrl = `${url}recursos/logo.png`;
+    const studentPhotoURL =
+      'https://caebucket.s3.us-west-2.amazonaws.com/colegio/1717429805090.webp';
+    const logo = await this.fetchImage(logoUrl);
+    const studentBuffer = await this.fetchImage(studentPhotoURL);
+    const studentPhoto = await this.convertWebPToPNG(studentBuffer);
+
+    const docDefinition: TDocumentDefinitions = {
+      watermark: {
+        text: 'TEST REPORT',
+        color: 'blue',
+        opacity: 0.1,
+        bold: true,
+        italics: false,
+      },
+      content: [
+        ...this.createHeader(reportData, logo, studentPhoto),
+        { text: '\n' },
+        this.createStudentInfo(reportData),
+        { text: '\n' },
+        this.createAreasTable(reportData),
+        { text: '\n' },
+        this.createAttendanceTable(reportData),
+        { text: '\n' },
+        {
+          style: 'tableExample',
+          table: {
+            widths: ['*'],
+            body: [
+              [
+                {
+                  text: 'COMENTARIOS DEL TUTOR',
+                  fillColor: '#eeeeee',
+                  style: 'tableHeader',
+                },
+              ],
+              [
+                {
+                  text: 'un comentario',
+                },
+              ],
+            ],
+          },
+        },
+        { text: '\n' },
+        {
+          qr: 'text in QR',
+          fit: 80,
+          alignment: 'right',
+        },
+      ],
+      styles: {
+        header: {
+          fontSize: 12,
+          bold: true,
+          alignment: 'center',
+        },
+        subheader: {
+          fontSize: 10,
+          bold: true,
+          alignment: 'center',
+        },
+        tableHeader: {
+          bold: true,
+          fontSize: 10,
+          alignment: 'center',
+        },
+        areaTitle: {
+          fontSize: 10,
+          bold: true,
+          decoration: 'underline',
+          margin: [0, 10, 0, 5],
+        },
+        commentsTitle: {
+          bold: true,
+          decoration: 'underline',
+          margin: [0, 20, 0, 5],
+        },
+      },
+      defaultStyle: {
+        fontSize: 8,
+        margin: [0, 2, 0, 2],
+      },
+    };
+
+    return new Promise((resolve) => {
+      const pdfDoc = pdfMake.createPdf(docDefinition);
+      pdfDoc.getBuffer(resolve);
+    });
   }
 }

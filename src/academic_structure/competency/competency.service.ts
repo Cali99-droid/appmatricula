@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import {
   BadRequestException,
   Injectable,
@@ -15,6 +15,7 @@ import { CreateTeacherCompetencyDto } from './dto/create-teacher-assignment.dto'
 import { TeacherAssignment } from './entities/teacher_assignment.entity';
 import { UpdateTeacherCompetencyDto } from './dto/update-teacher-assignment.dto';
 import { GetTeacherAssignmentDto } from './dto/get-teacher-assignment.dto';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class CompetencyService {
@@ -24,13 +25,27 @@ export class CompetencyService {
     private readonly competencyRepository: Repository<Competency>,
     @InjectRepository(TeacherAssignment)
     private readonly teacherAssignmentRepository: Repository<TeacherAssignment>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async create(createCompetencyDto: CreateCompetencyDto) {
+    if (createCompetencyDto.order < 1)
+      throw new NotFoundException(`Order must be greater than 0`);
+    const existCompetency = await this.competencyRepository.findOneBy({
+      order: createCompetencyDto.order,
+      area: { id: createCompetencyDto.areaId },
+    });
+    if (existCompetency) {
+      throw new BadRequestException(
+        `Competency with order ${createCompetencyDto.order} already exists`,
+      );
+    }
     try {
       const newEntry = this.competencyRepository.create({
         name: createCompetencyDto.name,
-        course: { id: createCompetencyDto.courseId },
+        area: { id: createCompetencyDto.areaId },
+        order: createCompetencyDto.order,
         status: true,
       });
       const competency = await this.competencyRepository.save(newEntry);
@@ -41,20 +56,36 @@ export class CompetencyService {
     }
   }
 
-  async findAll(courseId?: number) {
+  async findAll(courseId?: number, areaId?: number) {
+    const where: any = {};
+
+    if (!isNaN(areaId)) {
+      where.area = { id: areaId };
+    }
+
+    if (!isNaN(courseId)) {
+      where.curso = { id: courseId };
+    }
+
     const competencys = await this.competencyRepository.find({
-      where: { course: { id: isNaN(courseId) ? undefined : courseId } },
-      relations: { course: true },
+      where,
+      // relations: {
+      //   course: true,
+      // },
       order: {
-        name: 'ASC',
+        order: 'ASC',
       },
     });
+
     return competencys;
   }
 
   async findOne(id: number) {
     const competency = await this.competencyRepository.findOne({
       where: { id: id },
+      // relations: {
+      //   course: true,
+      // },
     });
     if (!competency)
       throw new NotFoundException(`Competency with id ${id} not found`);
@@ -62,10 +93,23 @@ export class CompetencyService {
   }
 
   async update(id: number, updateCompetencyDto: UpdateCompetencyDto) {
-    const { courseId, ...rest } = updateCompetencyDto;
+    const { areaId, ...rest } = updateCompetencyDto;
+    const existCompetency = await this.competencyRepository.findOne({
+      where: {
+        id: Not(id),
+        order: updateCompetencyDto.order,
+        area: { id: updateCompetencyDto.areaId },
+      },
+    });
+
+    if (existCompetency) {
+      throw new BadRequestException(
+        `Competency with order ${updateCompetencyDto.order} already exists in the specified area.`,
+      );
+    }
     const competency = await this.competencyRepository.preload({
       id: id,
-      course: { id: courseId },
+      area: { id: areaId },
       ...rest,
     });
     if (!competency)
@@ -89,23 +133,73 @@ export class CompetencyService {
     }
   }
 
-  // ** COMPETENCIAS POR DOCENTE */
+  // ** CURSOS POR DOCENTE */
   async assignToTeacher(
     createTeacherCompetencyDto: CreateTeacherCompetencyDto,
   ) {
-    const { activityClassroomId, competencyId, userId } =
+    const { activityClassroomId, areaId, userId, courseId, isTutor } =
       createTeacherCompetencyDto;
+
     try {
-      const teacherAssignmentCreated = this.teacherAssignmentRepository.create({
+      // Validar si ya existe un tutor en el aula
+      if (isTutor) {
+        const existingTutor = await this.teacherAssignmentRepository.findOne({
+          where: {
+            activityClassroom: { id: activityClassroomId },
+            isTutor: true,
+          },
+        });
+
+        if (existingTutor) {
+          throw new BadRequestException(
+            'Ya existe un tutor asignado para esta aula.',
+          );
+        }
+      }
+
+      // Validar si ya existe un docente para el área en el aula
+      if (!courseId) {
+        const existingAreaAssignment =
+          await this.teacherAssignmentRepository.findOne({
+            where: {
+              activityClassroom: { id: activityClassroomId },
+              area: { id: areaId },
+            },
+          });
+
+        if (existingAreaAssignment) {
+          throw new BadRequestException(
+            'Ya existe un docente asignado a esta área en el aula.',
+          );
+        }
+      }
+      // Validar si ya existe un docente para el curso en el aula (si se proporciona courseId)
+      if (courseId) {
+        const existingCourseAssignment =
+          await this.teacherAssignmentRepository.findOne({
+            where: {
+              activityClassroom: { id: activityClassroomId },
+              course: { id: courseId },
+            },
+          });
+
+        if (existingCourseAssignment) {
+          throw new BadRequestException(
+            'Ya existe un docente asignado a este curso en el aula.',
+          );
+        }
+      }
+
+      // Crear la asignación
+      const newAssignment = this.teacherAssignmentRepository.create({
         activityClassroom: { id: activityClassroomId },
-        competency: { id: competencyId },
+        area: { id: areaId },
+        course: courseId ? { id: courseId } : undefined,
         user: { id: userId },
-        // phase: { id: phaseId },
+        isTutor,
       });
 
-      return await this.teacherAssignmentRepository.save(
-        teacherAssignmentCreated,
-      );
+      return await this.teacherAssignmentRepository.save(newAssignment);
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
@@ -115,19 +209,71 @@ export class CompetencyService {
     id: number,
     updateTeacherCompetencyDto: UpdateTeacherCompetencyDto,
   ) {
+    const { activityClassroomId, areaId, courseId, userId, isTutor } =
+      updateTeacherCompetencyDto;
+
     const teacherCompetency = await this.teacherAssignmentRepository.preload({
-      id: id,
-      activityClassroom: { id: updateTeacherCompetencyDto.activityClassroomId },
-      competency: { id: updateTeacherCompetencyDto.competencyId },
-      // phase: { id: updateTeacherCompetencyDto.phaseId },
-      user: { id: updateTeacherCompetencyDto.userId },
+      id,
+      activityClassroom: { id: activityClassroomId },
+      area: { id: areaId },
+      course: courseId ? { id: courseId } : undefined,
+      user: { id: userId },
+      isTutor,
     });
 
-    if (!teacherCompetency)
-      throw new NotFoundException(
-        `teacher Competency with id: ${id} not found`,
-      );
+    if (!teacherCompetency) {
+      throw new NotFoundException(`Asignación con id ${id} no encontrada`);
+    }
+
     try {
+      // Validar tutor duplicado (excepto este registro)
+      if (isTutor) {
+        const existingTutor = await this.teacherAssignmentRepository.findOne({
+          where: {
+            activityClassroom: { id: activityClassroomId },
+            isTutor: true,
+          },
+        });
+
+        if (existingTutor && existingTutor.id !== id) {
+          throw new BadRequestException(
+            'Ya existe un tutor asignado para esta aula.',
+          );
+        }
+      }
+
+      // Validar duplicado de área
+      const existingAreaAssignment =
+        await this.teacherAssignmentRepository.findOne({
+          where: {
+            activityClassroom: { id: activityClassroomId },
+            area: { id: areaId },
+          },
+        });
+
+      if (existingAreaAssignment && existingAreaAssignment.id !== id) {
+        throw new BadRequestException(
+          'Ya existe un docente asignado a esta área en el aula.',
+        );
+      }
+
+      // Validar duplicado de curso
+      if (courseId) {
+        const existingCourseAssignment =
+          await this.teacherAssignmentRepository.findOne({
+            where: {
+              activityClassroom: { id: activityClassroomId },
+              course: { id: courseId },
+            },
+          });
+
+        if (existingCourseAssignment && existingCourseAssignment.id !== id) {
+          throw new BadRequestException(
+            'Ya existe un docente asignado a este curso en el aula.',
+          );
+        }
+      }
+
       await this.teacherAssignmentRepository.save(teacherCompetency);
       return teacherCompetency;
     } catch (error) {
@@ -135,43 +281,79 @@ export class CompetencyService {
     }
   }
 
-  async getAssignToTeacher(queryTeacherCompetencyDto: GetTeacherAssignmentDto) {
+  async getAssignToTeacher(
+    queryTeacherCompetencyDto: GetTeacherAssignmentDto,
+    user: any,
+  ) {
     const { activityClassroomId, userId } = queryTeacherCompetencyDto;
     const whereCondition: any = {};
+    const roles = user.resource_access['client-test-appae'].roles as any[];
 
-    if (userId) {
+    const autPerm = [
+      'administrador-colegio',
+      // 'secretaria',
+      // 'administrador-sede',
+      // 'generador-carnet',
+    ];
+
+    const isAdmin = roles.some((e) => autPerm.includes(e));
+    if (isAdmin) {
+      if (userId) {
+        whereCondition.user = {
+          id: +userId,
+        };
+      }
+
+      if (activityClassroomId) {
+        whereCondition.activityClassroom = {
+          id: +activityClassroomId,
+        };
+      }
+    } else {
+      const us = await this.userRepository.findOne({
+        where: {
+          email: user.email,
+        },
+      });
+
       whereCondition.user = {
-        id: +userId,
+        id: us.id,
       };
     }
 
-    if (activityClassroomId) {
-      whereCondition.activityClassroom = {
-        id: +activityClassroomId,
-      };
-    }
     try {
       const assignments = await this.teacherAssignmentRepository.find({
         where: whereCondition,
         relations: {
           user: { person: true },
+          // course: {
+          //   area: true,
+          // },
         },
         order: {
-          competency: 'DESC',
+          area: { order: 'DESC' },
         },
       });
       const formatAssignments = assignments.map((assignment) => {
         const person = assignment.user?.person;
         const grade = assignment.activityClassroom?.grade;
         const level = grade?.level;
-        const course = assignment.competency?.course;
-        const area = assignment.competency?.area?.name || course?.area?.name;
+        // const course = assignment.competency?.course;
+        const course = assignment.course;
+        // const area = assignment.competency?.area?.name || course?.area?.name;
+        // const area = assignment.area?.name;
 
         return {
           id: assignment.id,
+          activityClassroomId: assignment.activityClassroom.id,
           classroom: `${level?.name} - ${grade?.name} ${assignment.activityClassroom?.section}`,
-          area: area || 'Sin área',
-          course: course?.name || 'Sin curso',
+          // areaId: assignment.area?.id || course?.area.id,
+          // area: area || course?.area.name.toLocaleUpperCase(),
+          isTutor: assignment.isTutor,
+          // course: course?.name || 'Sin curso',
+          courseId: assignment.course?.id || null,
+          course: course?.name.toLocaleUpperCase() || null,
+          teacherId: assignment.user.id,
           teacher:
             `${person?.lastname ?? ''} ${person?.mLastname ?? ''} ${person?.name ?? ''}`.trim(),
         };

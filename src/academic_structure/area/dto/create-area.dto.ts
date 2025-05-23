@@ -19,6 +19,14 @@ export class CreateAreaDto {
 
   @ApiProperty({
     example: 1,
+    description: 'Order from area',
+    nullable: false,
+  })
+  @IsNumber()
+  order: number;
+
+  @ApiProperty({
+    example: 1,
     description: 'id of the level',
     nullable: false,
   })
