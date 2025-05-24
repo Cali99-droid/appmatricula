@@ -168,7 +168,7 @@ export const AdminMenu = {
       subMenu: [
         {
           id: 1,
-          label: 'Usuarios',
+          label: 'Asignación Rol',
           icon: 'userAdd',
           link: '/admin/staff/users',
           permissions: ['users'],
@@ -184,7 +184,7 @@ export const AdminMenu = {
         // },
         {
           id: 3,
-          label: 'Asignación Rol',
+          label: 'Usuarios',
           icon: 'user',
           link: '/admin/staff/teachers-assigments',
           permissions: ['secretaria'],
