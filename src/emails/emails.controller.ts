@@ -108,25 +108,21 @@ export class EmailsController {
   @Public()
   async handleSnsNotification(
     @Headers('x-amz-sns-message-type') messageType: string,
-    @Headers('content-type') contentType: string,
-    @Body() body: any,
+
+    @Body() body: string,
     @Req() req: Request,
   ) {
-    console.log('🧾 Content-Type:', contentType);
-    console.log('📦 Raw Body:', body);
+    console.log('📦 Body recibido como string:', body);
     let payload: any;
-
-    // 🔍 Si viene como string (text/plain), lo parseamos
-    if (typeof body === 'string') {
-      try {
-        payload = JSON.parse(body);
-      } catch (err) {
-        console.log('❌ Error al parsear el body SNS:', err);
-        return;
-      }
-    } else {
-      payload = body;
+    try {
+      payload = JSON.parse(body);
+    } catch (e) {
+      console.error('❌ No se pudo parsear el body:', e);
+      return;
     }
+
+    console.log('✅ Payload:', payload);
+    console.log('📎 SubscribeURL:', payload?.SubscribeURL);
 
     // 🔔 CONFIRMAR SUSCRIPCIÓN
     if (messageType === 'SubscriptionConfirmation') {
@@ -163,10 +159,19 @@ export class EmailsController {
       const type = notification.notificationType;
       console.log(`📨 Evento recibido: ${type}`);
 
-      // Aquí puedes guardar el evento según el tipo
-      // Ej: await this.emailEventService.registerBounce(notification)
+      if (messageType === 'Notification') {
+        const notification = JSON.parse(payload.Message);
+        const type = notification.notificationType;
 
-      return { message: 'Evento procesado' };
+        if (type === 'Bounce')
+          await this.emailsService.registerBounce(notification);
+        else if (type === 'Complaint')
+          await this.emailsService.registerComplaint(notification);
+        else if (type === 'Delivery')
+          await this.emailsService.registerDelivery(notification);
+
+        return { message: 'Evento procesado' };
+      }
     }
 
     return { message: 'Tipo de mensaje no manejado' };
