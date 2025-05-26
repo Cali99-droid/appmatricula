@@ -12,6 +12,7 @@ import {
   Req,
   HttpException,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
 import { EmailsService } from './emails.service';
 import { CreateEmailDto } from './dto/create-email.dto';
@@ -23,6 +24,7 @@ import { MailParams } from './interfaces/mail-params.interface';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { Public } from 'nest-keycloak-connect';
+import { Response } from 'express';
 @ApiTags('Emails')
 @Controller('emails')
 export class EmailsController {
@@ -106,74 +108,24 @@ export class EmailsController {
 
   @Post('/logs')
   @Public()
-  async handleSnsNotification(
-    @Headers('x-amz-sns-message-type') messageType: string,
-
-    @Body() body: string,
-    @Req() req: Request,
-  ) {
-    console.log('📦 Body recibido como string:', body);
-    let payload: any;
-    try {
-      payload = JSON.parse(body);
-    } catch (e) {
-      console.error('❌ No se pudo parsear el body:', e);
-      return;
-    }
-
-    console.log('✅ Payload:', payload);
-    console.log('📎 SubscribeURL:', payload?.SubscribeURL);
-
-    // 🔔 CONFIRMAR SUSCRIPCIÓN
-    if (messageType === 'SubscriptionConfirmation') {
-      const subscribeUrl = payload?.SubscribeURL;
-      console.log(
-        `🔔 Confirmando suscripción automáticamente: ${subscribeUrl}`,
-      );
-
-      if (!subscribeUrl) {
-        console.log('❌ No se encontró SubscribeURL en el mensaje');
-        return;
-      }
-
+  async handleSnsNotification(@Body() body: any, @Res() res: Response) {
+    const { Type, Message, SubscribeURL, TopicArn } = body;
+    console.log(body);
+    if (Type === 'SubscriptionConfirmation') {
+      // Attempt to automatically confirm the subscription
       try {
-        await firstValueFrom(this.httpService.get(subscribeUrl));
-        console.log('✅ Suscripción confirmada');
-        return { message: 'Suscripción confirmada' };
-      } catch (err) {
-        console.log('❌ Error al confirmar la suscripción', err);
-        return;
+        const response = await this.httpService.axiosRef.get(SubscribeURL);
+        console.log('Subscription confirmed successfully:', response.data);
+        return res.status(200).send('Subscription confirmed.');
+      } catch (error) {
+        console.error('Error confirming subscription:', error);
+        return res.status(500).send('Error confirming subscription.');
       }
+    } else if (Type === 'Notification') {
+      // Handle regular SNS notifications
+      console.log('Received SNS notification:', Message);
+      // Process the notification message here
     }
-
-    // 📬 PROCESAR EVENTO
-    if (messageType === 'Notification') {
-      let notification: any;
-      try {
-        notification = JSON.parse(payload.Message);
-      } catch (err) {
-        console.log('❌ Error al parsear payload.Message:', err);
-        return;
-      }
-
-      const type = notification.notificationType;
-      console.log(`📨 Evento recibido: ${type}`);
-
-      if (messageType === 'Notification') {
-        const notification = JSON.parse(payload.Message);
-        const type = notification.notificationType;
-
-        if (type === 'Bounce')
-          await this.emailsService.registerBounce(notification);
-        else if (type === 'Complaint')
-          await this.emailsService.registerComplaint(notification);
-        else if (type === 'Delivery')
-          await this.emailsService.registerDelivery(notification);
-
-        return { message: 'Evento procesado' };
-      }
-    }
-
-    return { message: 'Tipo de mensaje no manejado' };
+    return res.status(200).send('Request received');
   }
 }
