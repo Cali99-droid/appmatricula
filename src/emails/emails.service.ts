@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateEmailDto } from './dto/create-email.dto';
 import { CreateEmailByStudentDto } from './dto/create-byStudent.dto';
-import { UpdateEmailDto } from './dto/update-email.dto';
+
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Not, Repository } from 'typeorm';
@@ -413,9 +413,6 @@ export class EmailsService {
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
-  }
-  update(id: number, updateEmailDto: UpdateEmailDto) {
-    return `This action updates a #${id} email`;
   }
 
   remove(id: number) {

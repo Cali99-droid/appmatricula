@@ -82,10 +82,6 @@ export class EmailsController {
     return this.emailsService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEmailDto: UpdateEmailDto) {
-    return this.emailsService.update(+id, updateEmailDto);
-  }
   @Put('crm/:id')
   updateOnpened(@Param('id') id: string) {
     return this.emailsService.updateOpened(+id);
@@ -97,6 +93,7 @@ export class EmailsController {
   }
 
   @Post('test')
+  @Public()
   sendEmailWithSES() {
     const params: MailParams = {
       to: 'orellano428@gmail.com',
@@ -114,45 +111,61 @@ export class EmailsController {
     @Body() body: any,
     @Req() req: Request,
   ) {
-    let payload = body;
+    let payload: any;
 
-    // A veces NestJS parsea automáticamente, pero a veces SNS envía como texto plano
+    // 🔍 Si viene como string (text/plain), lo parseamos
     if (typeof body === 'string') {
       try {
         payload = JSON.parse(body);
       } catch (err) {
-        console.error('❌ Error al parsear el body:', err);
+        console.log('❌ Error al parsear el body SNS:', err);
         return;
       }
+    } else {
+      payload = body;
     }
 
+    // 🔔 CONFIRMAR SUSCRIPCIÓN
     if (messageType === 'SubscriptionConfirmation') {
-      const subscribeUrl = payload.SubscribeURL;
-      console.log('🔔 Confirmando suscripción automáticamente:', subscribeUrl);
+      const subscribeUrl = payload?.SubscribeURL;
+      console.log(
+        `🔔 Confirmando suscripción automáticamente: ${subscribeUrl}`,
+      );
 
       if (!subscribeUrl) {
-        console.error('❌ No se encontró SubscribeURL en el mensaje');
+        console.log('❌ No se encontró SubscribeURL en el mensaje');
         return;
       }
 
-      await firstValueFrom(this.httpService.get(subscribeUrl));
-      return { message: 'Suscripción confirmada' };
+      try {
+        await firstValueFrom(this.httpService.get(subscribeUrl));
+        console.log('✅ Suscripción confirmada');
+        return { message: 'Suscripción confirmada' };
+      } catch (err) {
+        console.log('❌ Error al confirmar la suscripción', err);
+        return;
+      }
     }
 
-    if (messageType !== 'Notification') {
-      throw new HttpException('Tipo no soportado', HttpStatus.BAD_REQUEST);
+    // 📬 PROCESAR EVENTO
+    if (messageType === 'Notification') {
+      let notification: any;
+      try {
+        notification = JSON.parse(payload.Message);
+      } catch (err) {
+        console.log('❌ Error al parsear payload.Message:', err);
+        return;
+      }
+
+      const type = notification.notificationType;
+      console.log(`📨 Evento recibido: ${type}`);
+
+      // Aquí puedes guardar el evento según el tipo
+      // Ej: await this.emailEventService.registerBounce(notification)
+
+      return { message: 'Evento procesado' };
     }
 
-    const notificationType = payload?.notificationType;
-
-    if (notificationType === 'Bounce') {
-      await this.emailsService.registerBounce(payload);
-    } else if (notificationType === 'Complaint') {
-      await this.emailsService.registerComplaint(payload);
-    } else if (notificationType === 'Delivery') {
-      await this.emailsService.registerDelivery(payload);
-    }
-
-    return { ok: true };
+    return { message: 'Tipo de mensaje no manejado' };
   }
 }
