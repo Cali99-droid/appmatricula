@@ -108,10 +108,12 @@ export class EmailsController {
   @Public()
   async handleSnsNotification(
     @Headers('x-amz-sns-message-type') messageType: string,
+    @Headers('content-type') contentType: string,
     @Body() body: any,
     @Req() req: Request,
   ) {
-    console.log('📦 Raw body recibido:', body);
+    console.log('🧾 Content-Type:', contentType);
+    console.log('📦 Raw Body:', body);
     let payload: any;
 
     // 🔍 Si viene como string (text/plain), lo parseamos
