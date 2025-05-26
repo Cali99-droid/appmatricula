@@ -18,6 +18,7 @@ import { UserService } from 'src/user/user.service';
 import { AdminMenu } from './config/menu-config';
 import { Person } from 'src/person/entities/person.entity';
 import { KeycloakService } from 'src/keycloak/keycloak.service';
+import { KeycloakTokenPayload } from './interfaces/keycloak-token-payload .interface';
 
 @Injectable()
 export class AuthService {
@@ -145,7 +146,7 @@ export class AuthService {
     return tokens;
   }
 
-  async getMenu(user: any) {
+  async getMenu(user: KeycloakTokenPayload) {
     const userBD = await this.userRepository.findOneBy({
       // sub: user.sub,
       email: user.email,
@@ -157,9 +158,13 @@ export class AuthService {
       });
       if (!existPerson) {
         const person = this.personRepository.create({
-          name: user.given_name,
-          lastname: user.family_name,
-          mLastname: user.family_name.split(' ')[1] || user.family_name,
+          name: user.given_name.toLocaleUpperCase(),
+          lastname:
+            user.family_name.split(' ')[0].toLocaleUpperCase() ||
+            user.family_name.toLocaleUpperCase(),
+          mLastname:
+            user.family_name.split(' ')[1].toLocaleUpperCase() ||
+            user.family_name.toLocaleUpperCase(),
           docNumber: user.dni,
         });
         const newPerson = await this.personRepository.save(person);
@@ -174,8 +179,6 @@ export class AuthService {
         if (user.resource_access['appcolegioae']) {
           roles = user.resource_access['appcolegioae'].roles;
         }
-        console.log('roelsas');
-        console.log(roles);
         const menu = this.generateMenu(roles);
         return menu;
       } else {
@@ -210,7 +213,7 @@ export class AuthService {
     if (user.resource_access['appcolegioae']) {
       roles = user.resource_access['appcolegioae'].roles;
     }
-    console.log(roles);
+
     const menu = this.generateMenu(roles);
     return menu;
   }

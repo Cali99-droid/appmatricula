@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Query,
@@ -16,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { EmailsService } from './emails.service';
 import { CreateEmailDto } from './dto/create-email.dto';
-import { UpdateEmailDto } from './dto/update-email.dto';
+
 import { FindActivityClassroomDto } from './dto/find-activity_classroom.dto';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CreateEmailByStudentDto } from './dto/create-byStudent.dto';

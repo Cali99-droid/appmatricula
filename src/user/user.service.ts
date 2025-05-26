@@ -95,7 +95,7 @@ export class UserService {
     const usKy = await this.keycloakService.getUsersByRole(role);
 
     const subs = usKy.map((us: { id: any }) => us.id);
-    console.log(subs.length);
+
     const users = await this.userRepository.find({
       where: {
         sub: In(subs),
