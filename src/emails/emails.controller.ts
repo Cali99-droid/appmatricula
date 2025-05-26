@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Query,
@@ -11,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { EmailsService } from './emails.service';
 import { CreateEmailDto } from './dto/create-email.dto';
-import { UpdateEmailDto } from './dto/update-email.dto';
+
 import { FindActivityClassroomDto } from './dto/find-activity_classroom.dto';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CreateEmailByStudentDto } from './dto/create-byStudent.dto';
@@ -72,10 +71,6 @@ export class EmailsController {
     return this.emailsService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEmailDto: UpdateEmailDto) {
-    return this.emailsService.update(+id, updateEmailDto);
-  }
   @Put('crm/:id')
   updateOnpened(@Param('id') id: string) {
     return this.emailsService.updateOpened(+id);
