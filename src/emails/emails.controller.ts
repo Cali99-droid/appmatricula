@@ -111,6 +111,7 @@ export class EmailsController {
     @Body() body: any,
     @Req() req: Request,
   ) {
+    console.log('📦 Raw body recibido:', body);
     let payload: any;
 
     // 🔍 Si viene como string (text/plain), lo parseamos
