@@ -8,6 +8,10 @@ import {
   Delete,
   Query,
   Put,
+  Headers,
+  Req,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { EmailsService } from './emails.service';
 import { CreateEmailDto } from './dto/create-email.dto';
@@ -16,10 +20,16 @@ import { FindActivityClassroomDto } from './dto/find-activity_classroom.dto';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CreateEmailByStudentDto } from './dto/create-byStudent.dto';
 import { MailParams } from './interfaces/mail-params.interface';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
+import { Public } from 'nest-keycloak-connect';
 @ApiTags('Emails')
 @Controller('emails')
 export class EmailsController {
-  constructor(private readonly emailsService: EmailsService) {}
+  constructor(
+    private readonly emailsService: EmailsService,
+    private readonly httpService: HttpService,
+  ) {}
 
   @Post('many')
   @ApiQuery({
@@ -95,5 +105,44 @@ export class EmailsController {
       text: 'ESTE ES UN TEST DE EMAIL DESDE SNS',
     };
     return this.emailsService.sendEmailWithSES(params);
+  }
+
+  @Post('/logs')
+  @Public()
+  async handleSnsNotification(
+    @Headers('x-amz-sns-message-type') messageType: string,
+    @Body() body: any,
+    @Req() req: Request,
+  ) {
+    if (messageType === 'SubscriptionConfirmation') {
+      const subscribeUrl = body.SubscribeURL;
+      console.log('🔔 Confirmando suscripción automáticamente:', subscribeUrl);
+      await firstValueFrom(this.httpService.get(subscribeUrl));
+      return { message: 'Suscripción confirmada' };
+    }
+    // SNS envia JSON como string en el campo Message
+    if (messageType === 'SubscriptionConfirmation') {
+      console.log('Confirmación de subscripción SNS');
+      // Aquí podrías hacer una llamada HTTP al URL de confirmación
+      return;
+    }
+
+    if (messageType !== 'Notification') {
+      throw new HttpException('Tipo no soportado', HttpStatus.BAD_REQUEST);
+    }
+
+    const payload = JSON.parse(body?.Message);
+
+    const notificationType = payload?.notificationType;
+
+    if (notificationType === 'Bounce') {
+      await this.emailsService.registerBounce(payload);
+    } else if (notificationType === 'Complaint') {
+      await this.emailsService.registerComplaint(payload);
+    } else if (notificationType === 'Delivery') {
+      await this.emailsService.registerDelivery(payload);
+    }
+
+    return { ok: true };
   }
 }

@@ -19,13 +19,14 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { TypeEmail } from './enum/type-email';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { Person } from 'src/person/entities/person.entity';
+
 import { Student } from 'src/student/entities/student.entity';
 import * as aws from '@aws-sdk/client-ses';
 import * as nodemailer from 'nodemailer';
 import { MailParams } from './interfaces/mail-params.interface';
 import { EmailDetail } from './entities/emailDetail.entity';
 import { getBodyEmail, getText } from './helpers/bodyEmail';
+import { EmailEventLog } from './entities/EmailEventLog,entity';
 @Injectable()
 export class EmailsService {
   private readonly logger = new Logger('EmailsService');
@@ -44,12 +45,13 @@ export class EmailsService {
     private readonly familyRepository: Repository<Family>,
     @InjectRepository(Email)
     private readonly emailRepository: Repository<Email>,
-    @InjectRepository(Person)
-    private readonly personRepository: Repository<Person>,
+
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(EmailDetail)
     private readonly emailDetailRepository: Repository<EmailDetail>,
+    @InjectRepository(EmailEventLog)
+    private readonly emailEventLogRepository: Repository<EmailEventLog>,
     private readonly httpService: HttpService,
   ) {
     /**nodemailer SES */
@@ -471,5 +473,37 @@ export class EmailsService {
     };
 
     await this.transporter.sendMail(mailOptions);
+  }
+
+  async registerBounce(payload: any) {
+    const bounce = payload.bounce;
+    for (const recipient of bounce.bouncedRecipients) {
+      await this.emailEventLogRepository.save({
+        email: recipient.emailAddress,
+        eventType: 'Bounce',
+        reason: bounce.bounceType,
+      });
+    }
+  }
+
+  async registerComplaint(payload: any) {
+    const complaint = payload.complaint;
+    for (const recipient of complaint.complainedRecipients) {
+      await this.emailEventLogRepository.save({
+        email: recipient.emailAddress,
+        eventType: 'Complaint',
+        reason: 'User marked as spam',
+      });
+    }
+  }
+
+  async registerDelivery(payload: any) {
+    const delivery = payload.delivery;
+    for (const recipient of delivery.recipients) {
+      await this.emailEventLogRepository.save({
+        email: recipient,
+        eventType: 'Delivery',
+      });
+    }
   }
 }
