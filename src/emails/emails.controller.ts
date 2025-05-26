@@ -114,24 +114,34 @@ export class EmailsController {
     @Body() body: any,
     @Req() req: Request,
   ) {
+    let payload = body;
+
+    // A veces NestJS parsea automáticamente, pero a veces SNS envía como texto plano
+    if (typeof body === 'string') {
+      try {
+        payload = JSON.parse(body);
+      } catch (err) {
+        console.error('❌ Error al parsear el body:', err);
+        return;
+      }
+    }
+
     if (messageType === 'SubscriptionConfirmation') {
-      const subscribeUrl = body.SubscribeURL;
+      const subscribeUrl = payload.SubscribeURL;
       console.log('🔔 Confirmando suscripción automáticamente:', subscribeUrl);
+
+      if (!subscribeUrl) {
+        console.error('❌ No se encontró SubscribeURL en el mensaje');
+        return;
+      }
+
       await firstValueFrom(this.httpService.get(subscribeUrl));
       return { message: 'Suscripción confirmada' };
-    }
-    // SNS envia JSON como string en el campo Message
-    if (messageType === 'SubscriptionConfirmation') {
-      console.log('Confirmación de subscripción SNS');
-      // Aquí podrías hacer una llamada HTTP al URL de confirmación
-      return;
     }
 
     if (messageType !== 'Notification') {
       throw new HttpException('Tipo no soportado', HttpStatus.BAD_REQUEST);
     }
-
-    const payload = JSON.parse(body?.Message);
 
     const notificationType = payload?.notificationType;
 
