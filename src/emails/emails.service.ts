@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateEmailDto } from './dto/create-email.dto';
 import { CreateEmailByStudentDto } from './dto/create-byStudent.dto';
-import { UpdateEmailDto } from './dto/update-email.dto';
+
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Not, Repository } from 'typeorm';
@@ -19,13 +19,28 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { TypeEmail } from './enum/type-email';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { Person } from 'src/person/entities/person.entity';
+
 import { Student } from 'src/student/entities/student.entity';
 import * as aws from '@aws-sdk/client-ses';
 import * as nodemailer from 'nodemailer';
 import { MailParams } from './interfaces/mail-params.interface';
 import { EmailDetail } from './entities/emailDetail.entity';
 import { getBodyEmail, getText } from './helpers/bodyEmail';
+import { EmailEventLog } from './entities/EmailEventLog,entity';
+
+interface EmailEventPayload {
+  Message?: string;
+  bounce?: {
+    bounceType: string;
+    bouncedRecipients: Array<{ emailAddress: string }>;
+  };
+  complaint?: {
+    complainedRecipients: Array<{ emailAddress: string }>;
+  };
+  delivery?: {
+    recipients: string[];
+  };
+}
 @Injectable()
 export class EmailsService {
   private readonly logger = new Logger('EmailsService');
@@ -44,12 +59,13 @@ export class EmailsService {
     private readonly familyRepository: Repository<Family>,
     @InjectRepository(Email)
     private readonly emailRepository: Repository<Email>,
-    @InjectRepository(Person)
-    private readonly personRepository: Repository<Person>,
+
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(EmailDetail)
     private readonly emailDetailRepository: Repository<EmailDetail>,
+    @InjectRepository(EmailEventLog)
+    private readonly emailEventLogRepository: Repository<EmailEventLog>,
     private readonly httpService: HttpService,
   ) {
     /**nodemailer SES */
@@ -412,9 +428,6 @@ export class EmailsService {
       handleDBExceptions(error, this.logger);
     }
   }
-  update(id: number, updateEmailDto: UpdateEmailDto) {
-    return `This action updates a #${id} email`;
-  }
 
   remove(id: number) {
     return `This action removes a #${id} email`;
@@ -431,21 +444,13 @@ export class EmailsService {
       subject,
       text,
       html,
-      // attachments: 'ni se que es',
     };
 
     try {
       await this.transporter.sendMail(mailOptions as any);
-      // this.logger.log(
-      //   'Email sent',
-      //   JSON.stringify({
-      //     ...mailOptions,
-      //     attachments: undefined,
-      //     html: undefined,
-      //   }),
-      // );
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error('Error sending email:', error); // 👈 Log detallado
+      throw error;
     }
   }
 
@@ -471,5 +476,88 @@ export class EmailsService {
     };
 
     await this.transporter.sendMail(mailOptions);
+  }
+
+  private async saveEmailEvent(
+    email: string,
+    eventType: 'Bounce' | 'Complaint' | 'Delivery',
+    reason?: string,
+  ): Promise<void> {
+    try {
+      await this.emailEventLogRepository.save({
+        email,
+        eventType,
+        reason,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error(`Error saving ${eventType} event for ${email}:`, error);
+      // Considerar notificación a sistema de monitoreo
+    }
+  }
+
+  private parsePayloadMessage(payload: EmailEventPayload): any {
+    try {
+      return payload.Message ? JSON.parse(payload.Message) : payload;
+    } catch (error) {
+      console.error('Error parsing message payload:', error);
+      return payload;
+    }
+  }
+
+  async registerBounce(payload: EmailEventPayload): Promise<void> {
+    const parsedPayload = this.parsePayloadMessage(payload);
+    const bounce = parsedPayload.bounce || payload.bounce;
+
+    if (!bounce || !bounce.bouncedRecipients) {
+      console.warn('Invalid bounce payload:', payload);
+      return;
+    }
+
+    await Promise.all(
+      bounce.bouncedRecipients.map((recipient) =>
+        this.saveEmailEvent(
+          recipient.emailAddress,
+          'Bounce',
+          bounce.bounceType,
+        ),
+      ),
+    );
+  }
+
+  async registerComplaint(payload: EmailEventPayload): Promise<void> {
+    const parsedPayload = this.parsePayloadMessage(payload);
+    const complaint = parsedPayload.complaint || payload.complaint;
+
+    if (!complaint || !complaint.complainedRecipients) {
+      console.warn('Invalid complaint payload:', payload);
+      return;
+    }
+
+    await Promise.all(
+      complaint.complainedRecipients.map((recipient) =>
+        this.saveEmailEvent(
+          recipient.emailAddress,
+          'Complaint',
+          'User marked as spam',
+        ),
+      ),
+    );
+  }
+
+  async registerDelivery(payload: EmailEventPayload): Promise<void> {
+    const parsedPayload = this.parsePayloadMessage(payload);
+    const delivery = parsedPayload.delivery || payload.delivery;
+
+    if (!delivery || !delivery.recipients) {
+      console.warn('Invalid delivery payload:', payload);
+      return;
+    }
+
+    await Promise.all(
+      delivery.recipients.map((recipient) =>
+        this.saveEmailEvent(recipient, 'Delivery'),
+      ),
+    );
   }
 }
