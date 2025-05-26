@@ -125,6 +125,16 @@ export class EmailsController {
       // Handle regular SNS notifications
       console.log('Received SNS notification:', Message);
       // Process the notification message here
+      const notificationType = body.notificationType;
+      if (notificationType === 'Bounce') {
+        await this.emailsService.registerBounce(body);
+      }
+      if (notificationType === 'Complaint') {
+        await this.emailsService.registerComplaint(body);
+      }
+      if (notificationType === 'Delivery') {
+        await this.emailsService.registerDelivery(body);
+      }
     }
     return res.status(200).send('Request received');
   }

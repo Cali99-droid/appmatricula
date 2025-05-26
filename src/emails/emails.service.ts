@@ -473,6 +473,10 @@ export class EmailsService {
   }
 
   async registerBounce(payload: any) {
+    console.log('Bounce:', payload.bounce);
+    const parsedBody = JSON.parse(payload.Message);
+    // Further processing: block email, update database, etc.
+    console.log('Bounce Details:', parsedBody.bounce);
     const bounce = payload.bounce;
     for (const recipient of bounce.bouncedRecipients) {
       await this.emailEventLogRepository.save({
@@ -495,6 +499,10 @@ export class EmailsService {
   }
 
   async registerDelivery(payload: any) {
+    console.log('Delivery:', payload.delivery);
+    const parsedBody = JSON.parse(payload.Message);
+    // Further processing: track delivery, update database, etc.
+    console.log('Delivery Details:', parsedBody.delivery);
     const delivery = payload.delivery;
     for (const recipient of delivery.recipients) {
       await this.emailEventLogRepository.save({
