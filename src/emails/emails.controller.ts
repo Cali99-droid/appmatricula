@@ -111,40 +111,65 @@ export class EmailsController {
   async handleSnsNotification(@Body() rawBody: string, @Res() res: Response) {
     let body;
     try {
-      body = JSON.parse(rawBody); // Parsea el texto plano a JSON
+      body = JSON.parse(rawBody);
     } catch (e) {
+      console.error('Error parsing rawBody:', rawBody, e);
       return res.status(400).send('Invalid JSON');
     }
 
     const { Type, Message, SubscribeURL, TopicArn } = body;
 
+    // Validación de campos obligatorios
+    if (!Type) {
+      return res.status(400).send('Missing Type field');
+    }
+
     if (Type === 'SubscriptionConfirmation') {
+      if (!SubscribeURL) {
+        return res.status(400).send('Missing SubscribeURL');
+      }
       try {
         const response = await this.httpService.axiosRef.get(SubscribeURL);
         console.log('Subscription confirmed successfully:', response.data);
-        return res.status(200).send('Subscription confirmed.');
+        return res.status(200).send('Subscription confirmed');
       } catch (error) {
         console.error('Error confirming subscription:', error);
-        return res.status(502).send('Error confirming subscription.');
+        return res.status(502).send('Error confirming subscription');
       }
     } else if (Type === 'Notification') {
+      if (!Message) {
+        return res.status(400).send('Missing Message');
+      }
       try {
-        const message = JSON.parse(Message);
+        const message =
+          typeof Message === 'string' ? JSON.parse(Message) : Message;
         const notificationType = message.notificationType;
 
-        if (notificationType === 'Bounce') {
-          await this.emailsService.registerBounce(message);
-        } else if (notificationType === 'Complaint') {
-          await this.emailsService.registerComplaint(message);
-        } else if (notificationType === 'Delivery') {
-          await this.emailsService.registerDelivery(message);
+        if (!notificationType) {
+          return res.status(400).send('Missing notificationType');
+        }
+
+        switch (notificationType) {
+          case 'Bounce':
+            await this.emailsService.registerBounce(message);
+            break;
+          case 'Complaint':
+            await this.emailsService.registerComplaint(message);
+            break;
+          case 'Delivery':
+            await this.emailsService.registerDelivery(message);
+            break;
+          default:
+            console.warn('Unknown notificationType:', notificationType);
         }
       } catch (e) {
-        console.error('Error processing notification:', e);
+        console.error('Error processing notification:', Message, e);
         return res.status(400).send('Invalid notification message');
       }
+    } else {
+      console.warn('Unknown SNS Type:', Type);
     }
 
-    return res.status(200).send('Request processed');
+    return res.status(200).send('OK'); // Respuesta obligatoria para SNS
   }
 }

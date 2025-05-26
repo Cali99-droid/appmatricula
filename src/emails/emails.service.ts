@@ -27,6 +27,20 @@ import { MailParams } from './interfaces/mail-params.interface';
 import { EmailDetail } from './entities/emailDetail.entity';
 import { getBodyEmail, getText } from './helpers/bodyEmail';
 import { EmailEventLog } from './entities/EmailEventLog,entity';
+
+interface EmailEventPayload {
+  Message?: string;
+  bounce?: {
+    bounceType: string;
+    bouncedRecipients: Array<{ emailAddress: string }>;
+  };
+  complaint?: {
+    complainedRecipients: Array<{ emailAddress: string }>;
+  };
+  delivery?: {
+    recipients: string[];
+  };
+}
 @Injectable()
 export class EmailsService {
   private readonly logger = new Logger('EmailsService');
@@ -430,21 +444,13 @@ export class EmailsService {
       subject,
       text,
       html,
-      // attachments: 'ni se que es',
     };
 
     try {
       await this.transporter.sendMail(mailOptions as any);
-      // this.logger.log(
-      //   'Email sent',
-      //   JSON.stringify({
-      //     ...mailOptions,
-      //     attachments: undefined,
-      //     html: undefined,
-      //   }),
-      // );
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error('Error sending email:', error); // 👈 Log detallado
+      throw error;
     }
   }
 
@@ -472,43 +478,86 @@ export class EmailsService {
     await this.transporter.sendMail(mailOptions);
   }
 
-  async registerBounce(payload: any) {
-    console.log('Bounce:', payload.bounce);
-    const parsedBody = JSON.parse(payload.Message);
-    // Further processing: block email, update database, etc.
-    console.log('Bounce Details:', parsedBody.bounce);
-    const bounce = payload.bounce;
-    for (const recipient of bounce.bouncedRecipients) {
+  private async saveEmailEvent(
+    email: string,
+    eventType: 'Bounce' | 'Complaint' | 'Delivery',
+    reason?: string,
+  ): Promise<void> {
+    try {
       await this.emailEventLogRepository.save({
-        email: recipient.emailAddress,
-        eventType: 'Bounce',
-        reason: bounce.bounceType,
+        email,
+        eventType,
+        reason,
+        timestamp: new Date(),
       });
+    } catch (error) {
+      console.error(`Error saving ${eventType} event for ${email}:`, error);
+      // Considerar notificación a sistema de monitoreo
     }
   }
 
-  async registerComplaint(payload: any) {
-    const complaint = payload.complaint;
-    for (const recipient of complaint.complainedRecipients) {
-      await this.emailEventLogRepository.save({
-        email: recipient.emailAddress,
-        eventType: 'Complaint',
-        reason: 'User marked as spam',
-      });
+  private parsePayloadMessage(payload: EmailEventPayload): any {
+    try {
+      return payload.Message ? JSON.parse(payload.Message) : payload;
+    } catch (error) {
+      console.error('Error parsing message payload:', error);
+      return payload;
     }
   }
 
-  async registerDelivery(payload: any) {
-    console.log('Delivery:', payload.delivery);
-    const parsedBody = JSON.parse(payload.Message);
-    // Further processing: track delivery, update database, etc.
-    console.log('Delivery Details:', parsedBody.delivery);
-    const delivery = payload.delivery;
-    for (const recipient of delivery.recipients) {
-      await this.emailEventLogRepository.save({
-        email: recipient,
-        eventType: 'Delivery',
-      });
+  async registerBounce(payload: EmailEventPayload): Promise<void> {
+    const parsedPayload = this.parsePayloadMessage(payload);
+    const bounce = parsedPayload.bounce || payload.bounce;
+
+    if (!bounce || !bounce.bouncedRecipients) {
+      console.warn('Invalid bounce payload:', payload);
+      return;
     }
+
+    await Promise.all(
+      bounce.bouncedRecipients.map((recipient) =>
+        this.saveEmailEvent(
+          recipient.emailAddress,
+          'Bounce',
+          bounce.bounceType,
+        ),
+      ),
+    );
+  }
+
+  async registerComplaint(payload: EmailEventPayload): Promise<void> {
+    const parsedPayload = this.parsePayloadMessage(payload);
+    const complaint = parsedPayload.complaint || payload.complaint;
+
+    if (!complaint || !complaint.complainedRecipients) {
+      console.warn('Invalid complaint payload:', payload);
+      return;
+    }
+
+    await Promise.all(
+      complaint.complainedRecipients.map((recipient) =>
+        this.saveEmailEvent(
+          recipient.emailAddress,
+          'Complaint',
+          'User marked as spam',
+        ),
+      ),
+    );
+  }
+
+  async registerDelivery(payload: EmailEventPayload): Promise<void> {
+    const parsedPayload = this.parsePayloadMessage(payload);
+    const delivery = parsedPayload.delivery || payload.delivery;
+
+    if (!delivery || !delivery.recipients) {
+      console.warn('Invalid delivery payload:', payload);
+      return;
+    }
+
+    await Promise.all(
+      delivery.recipients.map((recipient) =>
+        this.saveEmailEvent(recipient, 'Delivery'),
+      ),
+    );
   }
 }
