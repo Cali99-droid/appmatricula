@@ -4,7 +4,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { useContainer } from 'class-validator';
 import * as express from 'express';
-import { text } from 'body-parser';
+import * as bodyParser from 'body-parser';
 //testrt port solve space
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
@@ -24,6 +24,7 @@ async function bootstrap() {
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(bodyParser.text({ type: 'text/plain' }));
 
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const config = new DocumentBuilder()

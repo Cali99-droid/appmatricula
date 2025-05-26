@@ -108,34 +108,43 @@ export class EmailsController {
 
   @Post('/logs')
   @Public()
-  async handleSnsNotification(@Body() body: any, @Res() res: Response) {
+  async handleSnsNotification(@Body() rawBody: string, @Res() res: Response) {
+    let body;
+    try {
+      body = JSON.parse(rawBody); // Parsea el texto plano a JSON
+    } catch (e) {
+      return res.status(400).send('Invalid JSON');
+    }
+
     const { Type, Message, SubscribeURL, TopicArn } = body;
-    console.log(body);
+
     if (Type === 'SubscriptionConfirmation') {
-      // Attempt to automatically confirm the subscription
       try {
         const response = await this.httpService.axiosRef.get(SubscribeURL);
         console.log('Subscription confirmed successfully:', response.data);
         return res.status(200).send('Subscription confirmed.');
       } catch (error) {
         console.error('Error confirming subscription:', error);
-        return res.status(500).send('Error confirming subscription.');
+        return res.status(502).send('Error confirming subscription.');
       }
     } else if (Type === 'Notification') {
-      // Handle regular SNS notifications
-      console.log('Received SNS notification:', Message);
-      // Process the notification message here
-      const notificationType = body.notificationType;
-      if (notificationType === 'Bounce') {
-        await this.emailsService.registerBounce(body);
-      }
-      if (notificationType === 'Complaint') {
-        await this.emailsService.registerComplaint(body);
-      }
-      if (notificationType === 'Delivery') {
-        await this.emailsService.registerDelivery(body);
+      try {
+        const message = JSON.parse(Message);
+        const notificationType = message.notificationType;
+
+        if (notificationType === 'Bounce') {
+          await this.emailsService.registerBounce(message);
+        } else if (notificationType === 'Complaint') {
+          await this.emailsService.registerComplaint(message);
+        } else if (notificationType === 'Delivery') {
+          await this.emailsService.registerDelivery(message);
+        }
+      } catch (e) {
+        console.error('Error processing notification:', e);
+        return res.status(400).send('Invalid notification message');
       }
     }
-    return res.status(200).send('Request received');
+
+    return res.status(200).send('Request processed');
   }
 }
