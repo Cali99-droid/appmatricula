@@ -5,12 +5,18 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
+  // Delete,
+  Query,
 } from '@nestjs/common';
 import { AcademicRecordsService } from './academic_records.service';
 import { CreateAcademicRecordDto } from './dto/create-academic_record.dto';
-import { UpdateAcademicRecordDto } from './dto/update-academic_record.dto';
 
+import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AcademicRecordsResponseDto } from './dto/res-academic-record.dto';
+
+@ApiTags('Academic-records')
 @Controller('academic-records')
 export class AcademicRecordsController {
   constructor(
@@ -18,13 +24,61 @@ export class AcademicRecordsController {
   ) {}
 
   @Post()
-  create(@Body() createAcademicRecordDto: CreateAcademicRecordDto) {
-    return this.academicRecordsService.create(createAcademicRecordDto);
+  @ApiOperation({
+    summary: 'Crear calificaciones',
+    description: 'Crea calificaciones masivas',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Creado exitosamente',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Las competencias no pertenecen al curso o area',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Asignación  no encontrado',
+  })
+  @Roles({
+    roles: ['docente'],
+  })
+  create(
+    @Body() createAcademicRecordDto: CreateAcademicRecordDto,
+    @AuthenticatedUser() payload: KeycloakTokenPayload,
+  ) {
+    return this.academicRecordsService.create(createAcademicRecordDto, payload);
   }
 
-  @Get()
-  findAll() {
-    return this.academicRecordsService.findAll();
+  @ApiOperation({
+    summary: 'Obtener los estudiantes y sus calificaciones de una asignación',
+    description:
+      'Obtiene las lista de estudiantes con sus calificaciones segun las competencias del area y/o curso',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de estudiantes y calificaciones',
+    type: AcademicRecordsResponseDto,
+  })
+  @ApiQuery({
+    name: 'bimesterId',
+    required: true,
+    description: 'Id of the bimester',
+    type: Number,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Asignación o parámetro no encontrado',
+  })
+  @Roles({
+    roles: ['docente'],
+  })
+  @Get(':academicRecordId')
+  findAll(
+    @Param('academicRecordId') academicRecordId: number,
+    @Query('bimesterId') bimesterId: number,
+  ): Promise<AcademicRecordsResponseDto> {
+    return this.academicRecordsService.findAll(+academicRecordId, +bimesterId);
   }
 
   // @Get(':id')
@@ -32,16 +86,35 @@ export class AcademicRecordsController {
   //   return this.academicRecordsService.findOne(+id);
   // }
 
-  @Patch(':id')
+  @Patch()
+  @ApiOperation({
+    summary: 'Actualizar calificaciones',
+    description: 'Actualiza calificaciones masivas',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Actualizado exitosamente',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Las competencias no pertenecen al curso o area',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Asignación  no encontrado',
+  })
+  @Roles({
+    roles: ['docente'],
+  })
   update(
-    @Param('id') id: string,
-    @Body() updateAcademicRecordDto: UpdateAcademicRecordDto,
+    @Body() updateAcademicRecordDto: CreateAcademicRecordDto,
+    @AuthenticatedUser() payload: KeycloakTokenPayload,
   ) {
-    return this.academicRecordsService.update(+id, updateAcademicRecordDto);
+    return this.academicRecordsService.update(updateAcademicRecordDto, payload);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.academicRecordsService.remove(+id);
-  }
+  // @Delete(':id')
+  // remove(@Param('id') id: string) {
+  //   return this.academicRecordsService.remove(+id);
+  // }
 }

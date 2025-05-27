@@ -14,6 +14,7 @@ import { Area } from '../area/entities/area.entity';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 import { User } from 'src/user/entities/user.entity';
+import { TeacherAssignmentResponseDto } from './dto/res-assignment.dto';
 
 @Injectable()
 export class AcademicAssignmentService {
@@ -332,7 +333,10 @@ export class AcademicAssignmentService {
   }
 
   /**TEACHER ASSIGMENTS */
-  async findTeacherAssigments(yearId: number, payload: KeycloakTokenPayload) {
+  async findTeacherAssigments(
+    yearId: number,
+    payload: KeycloakTokenPayload,
+  ): Promise<TeacherAssignmentResponseDto[]> {
     try {
       const us = await this.userRepository.findOne({
         where: {
@@ -386,7 +390,7 @@ export class AcademicAssignmentService {
             name: aa.actCourse?.course?.name,
             // competency: aa.actCourse?.competencies,
           },
-        };
+        } as TeacherAssignmentResponseDto;
       });
 
       return formatData;

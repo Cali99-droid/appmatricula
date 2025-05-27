@@ -6,13 +6,16 @@ import {
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { ValueGrade } from '../enum/value-grade.enum';
 import { Student } from 'src/student/entities/student.entity';
 import { Competency } from 'src/academic_structure/competency/entities/competency.entity';
 import { User } from 'src/user/entities/user.entity';
+import { Bimester } from 'src/bimester/entities/bimester.entity';
 @Entity()
+@Unique(['student', 'competency', 'academicAssignment', 'bimester'])
 export class AcademicRecord {
   @ApiProperty()
   @PrimaryGeneratedColumn()
@@ -25,12 +28,6 @@ export class AcademicRecord {
     nullable: true,
   })
   value: ValueGrade;
-
-  @ApiProperty()
-  @Column('varchar', {
-    nullable: true,
-  })
-  comment: string;
 
   @ManyToOne(() => AcademicAssignment)
   academicAssignment: AcademicAssignment;
@@ -46,6 +43,9 @@ export class AcademicRecord {
 
   @ManyToOne(() => Competency)
   competency: Competency;
+
+  @ManyToOne(() => Bimester)
+  bimester: Bimester;
 
   @CreateDateColumn({
     type: 'timestamp',

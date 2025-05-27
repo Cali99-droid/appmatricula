@@ -7,6 +7,7 @@ import { AcademicAssignment } from '../academic_assignment/entities/academic_ass
 import { Student } from 'src/student/entities/student.entity';
 import { ActivityClassroomModule } from 'src/activity_classroom/activity_classroom.module';
 import { User } from 'src/user/entities/user.entity';
+import { Bimester } from 'src/bimester/entities/bimester.entity';
 
 @Module({
   controllers: [AcademicRecordsController],
@@ -17,6 +18,7 @@ import { User } from 'src/user/entities/user.entity';
       AcademicAssignment,
       Student,
       User,
+      Bimester,
     ]),
 
     ActivityClassroomModule,

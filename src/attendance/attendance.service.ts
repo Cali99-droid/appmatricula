@@ -270,6 +270,8 @@ export class AttendanceService {
             parentTwoId: { user: true },
           },
         });
+
+        await this.attendanceRepository.save(attendance);
         if (family) {
           const { parentOneId, parentTwoId, student } = family;
           if (parentOneId && parentOneId.user) {
@@ -293,7 +295,7 @@ export class AttendanceService {
             );
           }
         }
-        await this.attendanceRepository.save(attendance);
+
         // const lastFiveRecords = await this.findLastFiveRecords(user);
         // this.attendanceGateway.emitLastFiveAttendances(lastFiveRecords);
 
