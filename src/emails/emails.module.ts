@@ -11,6 +11,7 @@ import { HttpModule } from '@nestjs/axios';
 import { Person } from 'src/person/entities/person.entity';
 import { Student } from 'src/student/entities/student.entity';
 import { EmailDetail } from './entities/emailDetail.entity';
+import { EmailEventLog } from './entities/EmailEventLog,entity';
 
 @Module({
   controllers: [EmailsController],
@@ -24,6 +25,7 @@ import { EmailDetail } from './entities/emailDetail.entity';
       Person,
       Student,
       EmailDetail,
+      EmailEventLog,
     ]),
     ConfigModule,
     HttpModule,
