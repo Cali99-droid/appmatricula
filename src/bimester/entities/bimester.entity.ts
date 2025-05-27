@@ -3,12 +3,10 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Phase } from 'src/phase/entities/phase.entity';
-import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
 
 @Entity()
 export class Bimester {
@@ -45,7 +43,4 @@ export class Bimester {
   @ManyToOne(() => Phase, (phase) => phase.bimester)
   @JoinColumn({ name: 'phaseId' })
   phase?: Phase;
-
-  @OneToMany(() => Ratings, (ratings) => ratings.bimester)
-  ratings?: Ratings[];
 }

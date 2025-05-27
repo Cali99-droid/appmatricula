@@ -15,7 +15,7 @@ import { CardInput } from './interfaces/card-input.inteface';
 //cambio
 @ApiTags('Docs')
 @Controller('docs')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 export class DocsController {
   constructor(private readonly pdfService: PdfService) {}
 

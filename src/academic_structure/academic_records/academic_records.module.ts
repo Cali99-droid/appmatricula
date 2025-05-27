@@ -1,0 +1,25 @@
+import { Module } from '@nestjs/common';
+import { AcademicRecordsService } from './academic_records.service';
+import { AcademicRecordsController } from './academic_records.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AcademicRecord } from './entities/academic_record.entity';
+import { AcademicAssignment } from '../academic_assignment/entities/academic_assignment.entity';
+import { Student } from 'src/student/entities/student.entity';
+import { ActivityClassroomModule } from 'src/activity_classroom/activity_classroom.module';
+import { User } from 'src/user/entities/user.entity';
+
+@Module({
+  controllers: [AcademicRecordsController],
+  providers: [AcademicRecordsService],
+  imports: [
+    TypeOrmModule.forFeature([
+      AcademicRecord,
+      AcademicAssignment,
+      Student,
+      User,
+    ]),
+
+    ActivityClassroomModule,
+  ],
+})
+export class AcademicRecordsModule {}

@@ -9,7 +9,6 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
 
 import { ActivityCourse } from './activityCourse.entity';
 import { Area } from 'src/academic_structure/area/entities/area.entity';
@@ -74,11 +73,6 @@ export class Course {
   //   inverseJoinColumn: { name: 'activityClassroomId' },
   // })
   // activityClassrooms: ActivityClassroom[];
-
-  @OneToMany(() => Ratings, (ratings) => ratings.course, {
-    // eager: true,
-  })
-  ratings?: Ratings[];
 
   @CreateDateColumn({
     type: 'timestamp',

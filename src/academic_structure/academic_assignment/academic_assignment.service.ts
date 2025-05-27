@@ -12,6 +12,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { Area } from '../area/entities/area.entity';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class AcademicAssignmentService {
@@ -24,6 +26,9 @@ export class AcademicAssignmentService {
 
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
+
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
   async create(createAcademicAssignmentDto: CreateAcademicAssignmentDto) {
     try {
@@ -321,6 +326,70 @@ export class AcademicAssignmentService {
           `Asignacion no encontrada con ID ${id} no encontrado`,
         );
       }
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  /**TEACHER ASSIGMENTS */
+  async findTeacherAssigments(yearId: number, payload: KeycloakTokenPayload) {
+    try {
+      const us = await this.userRepository.findOne({
+        where: {
+          email: payload.email,
+        },
+      });
+      if (!us) {
+        throw new NotFoundException('User not found');
+      }
+
+      const academicAssignments = await this.academicAssignmentRepository.find({
+        where: {
+          user: { id: us.id },
+          activityClassroom: {
+            phase: {
+              year: {
+                id: yearId,
+              },
+            },
+          },
+        },
+        relations: [
+          'area',
+          'actCourse',
+          'actCourse.course',
+          // 'actCourse.competencies',
+        ],
+        order: {
+          area: {
+            order: 'ASC',
+          },
+        },
+      });
+
+      const formatData = academicAssignments.map((aa) => {
+        return {
+          id: aa.id,
+          isTutor: aa.isTutor,
+          typeAssignment: aa.typeAssignment,
+          area: aa.area.name,
+          phase: aa.activityClassroom.phase.type,
+          activityClassroomId: aa.activityClassroom.id,
+          gradeId: aa.activityClassroom.grade.id,
+          grade: aa.activityClassroom.grade.name,
+          activityClassroom: `${aa.activityClassroom.grade.name} ${aa.activityClassroom.section}`,
+          level: aa.activityClassroom.grade.level.name,
+          campusId: aa.activityClassroom.classroom.campusDetail.id,
+          campus: aa.activityClassroom.classroom.campusDetail.name,
+          course: {
+            id: aa.actCourse?.id,
+            name: aa.actCourse?.course?.name,
+            // competency: aa.actCourse?.competencies,
+          },
+        };
+      });
+
+      return formatData;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
