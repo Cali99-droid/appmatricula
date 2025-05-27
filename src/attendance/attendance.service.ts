@@ -252,6 +252,7 @@ export class AttendanceService {
           arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
           typeSchedule: TypeSchedule.Individual,
         });
+        await this.attendanceRepository.save(attendance);
         const classroomInfo = `${grade.name} ${section} ${grade.level.name}`;
         const dataStudent = {
           name: person.name,
@@ -270,6 +271,7 @@ export class AttendanceService {
             parentTwoId: { user: true },
           },
         });
+
         if (family) {
           const { parentOneId, parentTwoId, student } = family;
           if (parentOneId && parentOneId.user) {
@@ -293,7 +295,7 @@ export class AttendanceService {
             );
           }
         }
-        await this.attendanceRepository.save(attendance);
+
         // const lastFiveRecords = await this.findLastFiveRecords(user);
         // this.attendanceGateway.emitLastFiveAttendances(lastFiveRecords);
 

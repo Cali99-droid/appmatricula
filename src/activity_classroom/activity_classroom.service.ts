@@ -181,6 +181,7 @@ export class ActivityClassroomService {
         'secretaria',
         'administrador-sede',
         'generador-carnet',
+        'cordinador-academico',
       ];
 
       const isAdmin = roles.some((e) => autPerm.includes(e));
