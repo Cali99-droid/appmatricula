@@ -773,9 +773,6 @@ export class PdfService {
     }
   }
 
-  private safeNumber(value: number, defaultValue: number = 0): number {
-    return Number.isFinite(value) ? value : defaultValue;
-  }
   async generateReportCard() {
     const url = this.configService.getOrThrow('AWS_URL_BUCKET');
     const logoUrl = `${url}recursos/logo.png`;
@@ -1017,212 +1014,233 @@ export class PdfService {
   }
 
   private createAreasTable(reportData: any): Content {
-    return {
-      style: 'tableExample',
-      color: '#444',
-      fontSize: 6,
-      table: {
-        widths: [200, 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+    // return {
+    //   style: 'tableExample',
+    //   color: '#444',
+    //   fontSize: 6,
+    //   table: {
+    //     widths: [200, 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
 
-        // headerRows: 7,
-        // keepWithHeaderRows: 1,
-        body: [
-          /**CABECERAS */
-          [
-            {
-              text: 'ÁREA',
-              style: 'tableHeader',
-              rowSpan: 2,
-              fillColor: '#eeeeee',
-            },
+    // headerRows: 7,
+    // keepWithHeaderRows: 1,
+    //   body: [
+    //     /**CABECERAS */
+    //     [
+    //       {
+    //         text: 'ÁREA',
+    //         style: 'tableHeader',
+    //         rowSpan: 2,
+    //         fillColor: '#eeeeee',
+    //       },
+    //       {
+    //         text: 'BIMESTRE',
+    //         style: 'tableHeader',
+    //         colSpan: 4,
+    //         fillColor: '#eeeeee',
+    //       },
+    //       {},
+    //       {},
+    //       {},
 
-            {
-              text: 'BIMESTRE',
-              style: 'tableHeader',
-              colSpan: 4,
-              fillColor: '#eeeeee',
-            },
-            {},
-            {},
-            {},
+    //       {
+    //         text: 'EVAL. RECUP.',
+    //         style: 'tableHeader',
+    //         rowSpan: 3,
+    //         fillColor: '#eeeeee',
+    //       },
+    //       {
+    //         text: 'VALORACIÓN DESCRIPTIVA DEL ÁREA',
+    //         style: 'tableHeader',
+    //         rowSpan: 3,
+    //         fillColor: '#eeeeee',
+    //       },
+    //     ],
 
-            {
-              text: 'EVAL. RECUP.',
-              style: 'tableHeader',
-              rowSpan: 3,
-              fillColor: '#eeeeee',
-            },
-            {
-              text: 'VALORACIÓN DESCRIPTIVA DEL ÁREA',
-              style: 'tableHeader',
-              rowSpan: 3,
-              fillColor: '#eeeeee',
-            },
-          ],
+    //     [
+    //       {}, // ÁREA (rowSpan)
 
-          [
-            {}, // ÁREA (rowSpan)
+    //       { text: 'I', style: 'tableHeader' },
+    //       { text: 'II', style: 'tableHeader' },
+    //       { text: 'III', style: 'tableHeader' },
+    //       { text: 'IV', style: 'tableHeader' },
+    //       {}, // EVAL. RECUP. (rowSpan)
+    //       {}, // VALORACIÓN DESCRIPTIVA DEL ÁREA (rowSpan)
+    //     ],
+    //     /**AREA 1 */
+    //     [
+    //       {
+    //         text: 'MATEMÁTICA',
+    //         bold: true,
+    //         style: '',
+    //         colSpan: 7,
+    //         fillColor: '#DEEAFF',
+    //       }, // ÁREA (rowSpan)
+    //     ],
+    //     [
+    //       'RESUELVE PROBLEMAS DE CANTIDAD.',
+    //       'A',
+    //       'B',
+    //       'A',
+    //       'B',
+    //       { rowSpan: 4, text: '' },
+    //       { rowSpan: 4, text: '' },
+    //     ],
+    //     [
+    //       'RESUELVE PROBLEMAS DE REGULARIDAD, EQUIVALENCIA Y CAMBIO.',
+    //       'A',
+    //       'B',
+    //       'A',
+    //       'B',
+    //       '',
+    //       '',
+    //     ],
+    //     [
+    //       'RESUELVE PROBLEMAS DE FORMA,MOVIMIENTO Y LOCALIZACIÓN.',
+    //       'A',
+    //       'B',
+    //       'A',
+    //       'B',
+    //       '',
+    //       '',
+    //     ],
+    //     [
+    //       'RESUELVE PROBLEMAS DE GESTIÓN DE DATOS E INCERTIDUMBRE',
+    //       'A',
+    //       'B',
+    //       'A',
+    //       'B',
+    //       '',
+    //       '',
+    //     ],
+    //     /**FIN AREA 1 */
+    //     /**AREA 2 */
+    //     [
+    //       {
+    //         text: 'COMUNICACION',
+    //         bold: true,
+    //         style: '',
+    //         fillColor: '#DEEAFF',
+    //         colSpan: 7,
+    //       }, // ÁREA (rowSpan)
+    //     ],
+    //     [
+    //       'SE COMUNICA ORALMENTE EN SU LENGUA MATERNA.',
+    //       'A',
+    //       'B',
+    //       'A',
+    //       'B',
+    //       { rowSpan: 3, text: '' },
+    //       { rowSpan: 3, text: '' },
+    //     ],
+    //     [
+    //       'LEE DIVERSOS TIPOS DE TEXTOS ESCRITOS EN SU LENGUA MATERNA.',
+    //       'A',
+    //       'B',
+    //       'A',
+    //       'B',
+    //       '',
+    //       '',
+    //     ],
+    //     [
+    //       'ESCRIBE DIVERSOS TIPOS DE TEXTOS EN SU LENGUA MATERNA',
+    //       'A',
+    //       'B',
+    //       'A',
+    //       'B',
+    //       '',
+    //       '',
+    //     ],
 
-            { text: 'I', style: 'tableHeader' },
-            { text: 'II', style: 'tableHeader' },
-            { text: 'III', style: 'tableHeader' },
-            { text: 'IV', style: 'tableHeader' },
-            {}, // EVAL. RECUP. (rowSpan)
-            {}, // VALORACIÓN DESCRIPTIVA DEL ÁREA (rowSpan)
-          ],
-          /**AREA 1 */
-          [
-            {
-              text: 'MATEMÁTICA',
-              bold: true,
-              style: '',
-              colSpan: 7,
-              fillColor: '#DEEAFF',
-            }, // ÁREA (rowSpan)
-          ],
-          [
-            'RESUELVE PROBLEMAS DE CANTIDAD.',
-            'A',
-            'B',
-            'A',
-            'B',
-            { rowSpan: 4, text: '' },
-            { rowSpan: 4, text: '' },
-          ],
-          [
-            'RESUELVE PROBLEMAS DE REGULARIDAD, EQUIVALENCIA Y CAMBIO.',
-            'A',
-            'B',
-            'A',
-            'B',
-            '',
-            '',
-          ],
-          [
-            'RESUELVE PROBLEMAS DE FORMA,MOVIMIENTO Y LOCALIZACIÓN.',
-            'A',
-            'B',
-            'A',
-            'B',
-            '',
-            '',
-          ],
-          [
-            'RESUELVE PROBLEMAS DE GESTIÓN DE DATOS E INCERTIDUMBRE',
-            'A',
-            'B',
-            'A',
-            'B',
-            '',
-            '',
-          ],
-          /**FIN AREA 1 */
-          /**AREA 2 */
-          [
-            {
-              text: 'COMUNICACION',
-              bold: true,
-              style: '',
-              fillColor: '#DEEAFF',
-              colSpan: 7,
-            }, // ÁREA (rowSpan)
-          ],
-          [
-            'SE COMUNICA ORALMENTE EN SU LENGUA MATERNA.',
-            'A',
-            'B',
-            'A',
-            'B',
-            { rowSpan: 3, text: '' },
-            { rowSpan: 3, text: '' },
-          ],
-          [
-            'LEE DIVERSOS TIPOS DE TEXTOS ESCRITOS EN SU LENGUA MATERNA.',
-            'A',
-            'B',
-            'A',
-            'B',
-            '',
-            '',
-          ],
-          [
-            'ESCRIBE DIVERSOS TIPOS DE TEXTOS EN SU LENGUA MATERNA',
-            'A',
-            'B',
-            'A',
-            'B',
-            '',
-            '',
-          ],
+    //     /**FIN AREA 2 */
+    //     /**AREA 3 */
+    //     [
+    //       {
+    //         text: 'CIENCIA Y TECNOLOGÍA',
+    //         bold: true,
+    //         style: '',
+    //         fillColor: '#DEEAFF',
+    //         colSpan: 7,
+    //       }, // ÁREA (rowSpan)
+    //     ],
+    //     [
+    //       'INDAGA MEDIANTE MÉTODOS CIENTÍFICOS PARA CONSTRUIR SUS CONOCIMIENTOS.',
+    //       'A',
+    //       'B',
+    //       'A',
+    //       'B',
+    //       { rowSpan: 3, text: '' },
+    //       { rowSpan: 3, text: '' },
+    //     ],
+    //     [
+    //       'EXPLICA EL MUNDO FÍSICO BASÁNDOSE EN CONOCIMIENTOS SOBRE LOS SERES VIVOS, MATERIA Y ENERGÍA, BIODIVERSIDAD, TIERRA Y UNIVERSO.',
+    //       'A',
+    //       'B',
+    //       'A',
+    //       'B',
+    //       '',
+    //       '',
+    //     ],
+    //     [
+    //       'DISEÑA Y CONSTRUYE SOLUCIONES TECNOLÓGICAS PARA RESOLVER PROBLEMAS DE SU ENTORNO.',
+    //       'A',
+    //       'B',
+    //       'A',
+    //       'B',
+    //       '',
+    //       '',
+    //     ],
 
-          /**FIN AREA 2 */
-          /**AREA 3 */
-          [
-            {
-              text: 'CIENCIA Y TECNOLOGÍA',
-              bold: true,
-              style: '',
-              fillColor: '#DEEAFF',
-              colSpan: 7,
-            }, // ÁREA (rowSpan)
-          ],
-          [
-            'INDAGA MEDIANTE MÉTODOS CIENTÍFICOS PARA CONSTRUIR SUS CONOCIMIENTOS.',
-            'A',
-            'B',
-            'A',
-            'B',
-            { rowSpan: 3, text: '' },
-            { rowSpan: 3, text: '' },
-          ],
-          [
-            'EXPLICA EL MUNDO FÍSICO BASÁNDOSE EN CONOCIMIENTOS SOBRE LOS SERES VIVOS, MATERIA Y ENERGÍA, BIODIVERSIDAD, TIERRA Y UNIVERSO.',
-            'A',
-            'B',
-            'A',
-            'B',
-            '',
-            '',
-          ],
-          [
-            'DISEÑA Y CONSTRUYE SOLUCIONES TECNOLÓGICAS PARA RESOLVER PROBLEMAS DE SU ENTORNO.',
-            'A',
-            'B',
-            'A',
-            'B',
-            '',
-            '',
-          ],
-
-          /**FIN AREA 2 */
-        ],
-      },
-      // layout: 'lightHorizontalLines',
-      // layout: {
-      //   fillColor: function (rowIndex, node, columnIndex) {
-      //     return rowIndex % 2 === 0 ? '#CCCCCC' : null;
-      //   },
-      // },
-    };
+    //     /**FIN AREA 2 */
+    //   ],
+    // },
+    // layout: 'lightHorizontalLines',
+    // layout: {
+    //   fillColor: function (rowIndex, node, columnIndex) {
+    //     return rowIndex % 2 === 0 ? '#CCCCCC' : null;
+    //   },
+    // },
+    // };
     // Cabecera de la tabla
     const tableBody = [
       [
-        { text: 'ÁREA', style: 'tableHeader', rowSpan: 2 },
-        { text: 'COMPETENCIAS', style: 'tableHeader', rowSpan: 2 },
-        { text: 'BIMESTRE', style: 'tableHeader', colSpan: 4 },
+        {
+          text: 'ÁREA',
+          style: 'tableHeader',
+          rowSpan: 2,
+          fillColor: '#eeeeee',
+        },
+        // { text: 'COMPETENCIAS', style: 'tableHeader', rowSpan: 2 },
+        {
+          text: 'BIMESTRE',
+          style: 'tableHeader',
+          colSpan: 4,
+          fillColor: '#eeeeee',
+        },
         {},
         {},
         {},
-        { text: 'EVAL. RECUP.', style: 'tableHeader', rowSpan: 2 },
+        {
+          text: 'EVAL. RECUP.',
+          style: 'tableHeader',
+          rowSpan: 3,
+          fillColor: '#eeeeee',
+        },
+        {
+          text: 'VALORACIÓN DESCRIPTIVA DEL ÁREA',
+          style: 'tableHeader',
+          rowSpan: 3,
+          fillColor: '#eeeeee',
+        },
       ],
       [
         {}, // ÁREA (rowSpan)
-        {}, // COMPETENCIAS (rowSpan)
+
         { text: 'I', style: 'tableHeader' },
         { text: 'II', style: 'tableHeader' },
         { text: 'III', style: 'tableHeader' },
         { text: 'IV', style: 'tableHeader' },
         {}, // EVAL. RECUP. (rowSpan)
+        {},
       ],
     ];
 

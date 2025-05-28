@@ -1,14 +1,13 @@
 import { Controller, Get, Param, Query, Res } from '@nestjs/common';
 
 import { Response } from 'express';
-import * as path from 'path';
-import * as fs from 'fs';
+
 import { PdfService } from './pdf.service';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DownloadContractQueryDto } from './dto/downloadContractQuery.dto';
 import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
 import { Public, Resource } from 'nest-keycloak-connect';
-import { CardInput } from './interfaces/card-input.inteface';
+
 // import { GetUser } from 'src/auth/decorators/get-user.decorator';
 // import { Auth } from 'src/auth/decorators/auth.decorator';
 // import { User } from 'src/user/entities/user.entity';

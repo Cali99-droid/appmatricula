@@ -1,4 +1,10 @@
-import { IsArray, IsEnum, IsInt, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
 import { ExistId } from 'src/common/validation/exist-id';
 import { ValueGrade } from '../enum/value-grade.enum';
 import { Type } from 'class-transformer';
@@ -68,6 +74,7 @@ export class CompetencyRecordDto {
     required: false,
   })
   @IsInt()
+  @IsOptional()
   academicRecordId?: number;
 
   @ApiProperty({
