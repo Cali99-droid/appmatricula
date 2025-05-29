@@ -380,122 +380,131 @@ export class AcademicRecordsService {
       await queryRunner.release();
     }
   }
-  remove(id: number) {
-    return `This action removes a #${id} academicRecord`;
-  }
 
-  async generateSchoolReport(studentId: number = 2237, yearId: number = 16) {
-    const bimesters = await this.bimesterService.findAll(yearId);
-    // 3. Obtener todas las calificaciones del estudiante en el periodo
+  async generateSchoolReport(studentId: number, yearId: number) {
+    try {
+      const bimesters = await this.bimesterService.findAll(yearId);
+      // 3. Obtener todas las calificaciones del estudiante en el periodo
 
-    const enrollStudent = await this.enrollmentRepository.findOne({
-      where: {
-        student: { id: studentId },
-        activityClassroom: {
-          phase: {
-            year: { id: yearId },
-          },
-        },
-      },
-    });
-    const classroom =
-      enrollStudent.activityClassroom.grade.name +
-      ' ' +
-      enrollStudent.activityClassroom.section;
-    const year = enrollStudent.activityClassroom.phase.year.name;
-    const level = enrollStudent.activityClassroom.grade.level;
-    const student = enrollStudent.student;
-    const studentName =
-      student.person.lastname +
-      ' ' +
-      student.person.mLastname +
-      ' ' +
-      student.person.name;
-    const code = enrollStudent.student.code;
+      if (bimesters.length < 0) {
+        throw new NotFoundException('Bimestres no encontrados ');
+      }
 
-    const areas = await this.areaRepository.find({
-      where: {
-        level: { id: level.id },
-        status: true,
-      },
-      relations: {
-        competency: true,
-      },
-    });
-    const calificaciones = await this.academicRecordRepository.find({
-      where: {
-        student: { id: studentId },
-        academicAssignment: {
+      const enrollStudent = await this.enrollmentRepository.findOne({
+        where: {
+          student: { id: studentId },
           activityClassroom: {
             phase: {
               year: { id: yearId },
             },
           },
         },
-      },
-      relations: ['competency', 'academicAssignment', 'bimester'],
-    });
+      });
 
-    const areasDto = areas.map((area) => {
-      const competenciasDto = area.competency.map((competencia) => {
-        // Inicializar array de calificaciones por bimestre
-        const grades = Array(bimesters.length).fill('');
+      if (!enrollStudent) {
+        throw new NotFoundException('Matricula no encontrada');
+      }
+      const classroom =
+        enrollStudent.activityClassroom.grade.name +
+        ' ' +
+        enrollStudent.activityClassroom.section;
+      const year = enrollStudent.activityClassroom.phase.year.name;
+      const level = enrollStudent.activityClassroom.grade.level;
+      const student = enrollStudent.student;
+      const studentName =
+        student.person.lastname +
+        ' ' +
+        student.person.mLastname +
+        ' ' +
+        student.person.name;
+      const code = enrollStudent.student.code;
 
-        // Llenar con calificaciones existentes
-        calificaciones
-          .filter((c) => c.competency.id === competencia.id)
-          .forEach((c) => {
-            const bimestreIndex = bimesters.findIndex(
-              (b) => b.id === c.bimester.id,
-            );
-            if (bimestreIndex >= 0) {
-              grades[bimestreIndex] = c.value;
-            }
-          });
+      const areas = await this.areaRepository.find({
+        where: {
+          level: { id: level.id },
+          status: true,
+        },
+        relations: {
+          competency: true,
+        },
+      });
+      const calificaciones = await this.academicRecordRepository.find({
+        where: {
+          student: { id: studentId },
+          academicAssignment: {
+            activityClassroom: {
+              phase: {
+                year: { id: yearId },
+              },
+            },
+          },
+        },
+        relations: ['competency', 'academicAssignment', 'bimester'],
+      });
+
+      const areasDto = areas.map((area) => {
+        const competenciasDto = area.competency.map((competencia) => {
+          // Inicializar array de calificaciones por bimestre
+          const grades = Array(bimesters.length).fill('');
+
+          // Llenar con calificaciones existentes
+          calificaciones
+            .filter((c) => c.competency.id === competencia.id)
+            .forEach((c) => {
+              const bimestreIndex = bimesters.findIndex(
+                (b) => b.id === c.bimester.id,
+              );
+              if (bimestreIndex >= 0) {
+                grades[bimestreIndex] = c.value;
+              }
+            });
+
+          return {
+            id: competencia.id,
+            name: competencia.name,
+            grades,
+          };
+        });
 
         return {
-          id: competencia.id,
-          name: competencia.name,
-          grades,
+          id: area.id,
+          name: area.name,
+          competencies: competenciasDto,
         };
       });
 
-      return {
-        id: area.id,
-        name: area.name,
-        competencies: competenciasDto,
+      // return {
+      //   periodo: {
+      //     id: studentId,
+      //     level: level.name,
+      //     bimesters,
+      //   },
+      //   areas: areasDto,
+      // };
+
+      const reportData: any = {
+        schoolName: 'COLEGIO ALBERT EINSTEIN',
+        year: year,
+        level: level.name.toUpperCase(),
+        studentCode: code,
+        studentPhoto: student.photo || '1717429805090.webp',
+        studentName: studentName.toUpperCase(),
+        classroom: classroom.toUpperCase(),
+        areas: areasDto,
+        attendance: {
+          tardinessUnjustified: [0, 0, 0, 0],
+          tardinessJustified: [0, 0, 0, 0],
+          absenceUnjustified: [0, 0, 0, 0],
+          absenceJustified: [0, 0, 0, 0],
+        },
       };
-    });
 
-    // return {
-    //   periodo: {
-    //     id: studentId,
-    //     level: level.name,
-    //     bimesters,
-    //   },
-    //   areas: areasDto,
-    // };
+      const doc = await this.pdfService.generateSchoolReport(reportData);
 
-    const reportData: any = {
-      schoolName: 'COLEGIO ALBERT EINSTEIN',
-      year: year,
-      level: level.name.toUpperCase(),
-      studentCode: code,
-      studentPhoto: student.photo || '1717429805090.webp',
-      studentName: studentName.toUpperCase(),
-      classroom: classroom.toUpperCase(),
-      areas: areasDto,
-      attendance: {
-        tardinessUnjustified: [0, 0, 0, 0],
-        tardinessJustified: [0, 0, 0, 0],
-        absenceUnjustified: [0, 0, 0, 0],
-        absenceJustified: [0, 0, 0, 0],
-      },
-    };
-
-    const doc = await this.pdfService.generateSchoolReport(reportData);
-
-    return doc;
+      return doc;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
   private validarDuplicadosEnPayload(
     updateAcademicRecordDto: UpdateAcademicRecordDto,

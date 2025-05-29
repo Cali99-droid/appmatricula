@@ -115,13 +115,21 @@ export class AcademicRecordsController {
     return this.academicRecordsService.update(updateAcademicRecordDto, payload);
   }
 
-  @Get('/download/report-grades')
-  async generateSchoolReport(@Res() res: Response) {
-    // @Query('bimesterId') bimesterId: number, // @Param('academicRecordId') academicRecordId: number,
-
+  @ApiOperation({
+    summary: 'Descargar boleta de notas',
+    description: 'descarga la boleta de notas con todos los bimestres',
+  })
+  @Get('/download/report-grades/:studentId')
+  async generateSchoolReport(
+    @Res() res: Response,
+    @Query('yearId') yearId: number,
+    @Param('studentId') studentId: number,
+  ) {
     try {
-      const pdfBuffer =
-        await this.academicRecordsService.generateSchoolReport();
+      const pdfBuffer = await this.academicRecordsService.generateSchoolReport(
+        studentId,
+        yearId,
+      );
 
       res.set({
         'Content-Type': 'application/pdf',
