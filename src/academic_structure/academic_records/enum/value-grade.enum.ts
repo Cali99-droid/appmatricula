@@ -3,5 +3,5 @@ export enum ValueGrade {
   A = 'A',
   B = 'B',
   C = 'C',
-  N = '',
+  // N = '',
 }
