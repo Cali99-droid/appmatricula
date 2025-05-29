@@ -163,7 +163,7 @@ export class AuthService {
             user.family_name.split(' ')[0].toLocaleUpperCase() ||
             user.family_name.toLocaleUpperCase(),
           mLastname:
-            user.family_name.split(' ')[1].toLocaleUpperCase() ||
+            user.family_name.split(' ')[1]?.toLocaleUpperCase() ||
             user.family_name.toLocaleUpperCase(),
           docNumber: user.dni,
         });
