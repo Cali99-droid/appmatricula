@@ -222,7 +222,7 @@ export class AcademicRecordsService {
       });
 
       return {
-        studentCode: estudiante.studentCode,
+        studentPhoto: estudiante.photo,
         studentId: estudiante.id,
         student: `${estudiante.lastname} ${estudiante.mLastname} ${estudiante.name}`,
         competencies: competenciasDto,

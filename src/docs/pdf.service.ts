@@ -905,28 +905,9 @@ export class PdfService {
       {
         columns: [
           {
-            width: 80, // ancho fijo
+            width: 400, // ancho fijo
             image: logo,
-            fit: [70, 80],
-          },
-          {
-            width: '*', // ancho flexible (se expandirá)
-            stack: [
-              {
-                text: reportData.schoolName,
-                alignment: 'center',
-                bold: true,
-                fontSize: 14,
-                color: '#0045AA',
-              },
-              {
-                text: `\nINFORME DE LOS PROCESOS DEL EDUCANDO - ${reportData.year}\nNIVEL ${reportData.level}`,
-                alignment: 'center',
-                fontSize: 11,
-                bold: true,
-              },
-            ],
-            margin: [0, 10, 0, 0],
+            // fit: [70, 80],
           },
           {
             width: 80, // ancho fijo
@@ -960,7 +941,8 @@ export class PdfService {
           //   },
           // },
         ],
-        columnGap: 10,
+
+        columnGap: 50,
       },
     ];
   }
@@ -968,6 +950,7 @@ export class PdfService {
   private createStudentInfo(reportData: any): Content {
     return {
       // {
+
       style: 'tableExample',
       table: {
         widths: [100, '*', 200],
@@ -1404,7 +1387,7 @@ export class PdfService {
 
   async generateSchoolReport(reportData: any): Promise<Buffer> {
     const url = this.configService.getOrThrow('AWS_URL_BUCKET');
-    const logoUrl = `${url}recursos/logo.png`;
+    const logoUrl = `${url}recursos/logo-ae-completo.png`;
     const studentPhotoURL = `https://caebucket.s3.us-west-2.amazonaws.com/colegio/${reportData.studentPhoto}`;
     const logo = await this.fetchImage(logoUrl);
     const studentBuffer = await this.fetchImage(studentPhotoURL);
@@ -1420,6 +1403,14 @@ export class PdfService {
       },
       content: [
         ...this.createHeader(reportData, logo, studentPhoto),
+        {
+          text: `INFORME DE LOS PROCESOS DEL EDUCANDO - ${reportData.year} NIVEL ${reportData.level}`,
+          alignment: 'center',
+          fontSize: 14,
+          // font: 'Courier-Bold',
+          bold: true,
+          color: '#0045AA',
+        },
         { text: '\n' },
         this.createStudentInfo(reportData),
         { text: '\n' },
@@ -1441,7 +1432,7 @@ export class PdfService {
               ],
               [
                 {
-                  text: 'un comentario',
+                  text: '',
                 },
               ],
             ],

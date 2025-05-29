@@ -17,7 +17,7 @@ export class CompetencyDto {
 
 export class StudentCompetencyDto {
   @ApiProperty({ example: '25134487800020', nullable: true })
-  studentCode: string | null;
+  studentPhoto: string | null;
 
   @ApiProperty({ example: 2237 })
   studentId: number;
