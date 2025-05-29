@@ -896,12 +896,6 @@ export class PdfService {
     doc.y = startY + rowHeight * 2 + 10;
   }
 
-  private drawMainTable(
-    doc: PDFKit.PDFDocument,
-    leftMargin: number,
-    pageWidth: number,
-  ) {}
-
   private createHeader(
     reportData: any,
     logo: any,
@@ -1209,38 +1203,45 @@ export class PdfService {
           rowSpan: 2,
           fillColor: '#eeeeee',
         },
-        // { text: 'COMPETENCIAS', style: 'tableHeader', rowSpan: 2 },
+        {
+          text: 'COMPETENCIAS',
+          style: 'tableHeader',
+          rowSpan: 2,
+          fillColor: '#eeeeee',
+        },
         {
           text: 'BIMESTRE',
           style: 'tableHeader',
           colSpan: 4,
           fillColor: '#eeeeee',
         },
+
         {},
         {},
         {},
         {
           text: 'EVAL. RECUP.',
           style: 'tableHeader',
-          rowSpan: 3,
+          rowSpan: 2,
+
           fillColor: '#eeeeee',
         },
         {
           text: 'VALORACIÓN DESCRIPTIVA DEL ÁREA',
           style: 'tableHeader',
-          rowSpan: 3,
+          rowSpan: 2,
           fillColor: '#eeeeee',
         },
       ],
       [
         {}, // ÁREA (rowSpan)
-
+        {}, // copetencias (rowSpan)
         { text: 'I', style: 'tableHeader' },
         { text: 'II', style: 'tableHeader' },
         { text: 'III', style: 'tableHeader' },
         { text: 'IV', style: 'tableHeader' },
         {}, // EVAL. RECUP. (rowSpan)
-        {},
+        {}, // EVAL. RECUP. (rowSpan)
       ],
     ];
 
@@ -1253,25 +1254,31 @@ export class PdfService {
             : {},
           { text: competency.name },
           ...competency.grades.map((grade) => ({ text: grade })),
-          { text: '' }, // Eval. Recup. (vacío por defecto)
+          { rowSpan: area.competencies.length, text: '' }, // Eval. Recup. (vacío por defecto)
+          { rowSpan: area.competencies.length, text: '' }, // VALORACIÓN DESCRIPTIVA DEL ÁREA
         ];
+
         tableBody.push(row);
       });
     });
 
     return {
+      style: 'tableExample',
+      color: '#444',
+      fontSize: 6,
       table: {
-        headerRows: 2,
-        widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto'],
+        headerRows: 8,
+        keepWithHeaderRows: 1,
+        widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
         body: tableBody,
       },
-      layout: {
-        hLineWidth: (i, node) =>
-          i === 0 || i === 1 || i === node.table.body.length ? 1 : 0,
-        vLineWidth: (i, node) => 0,
-        paddingTop: (i, node) => 4,
-        paddingBottom: (i, node) => 4,
-      },
+      // layout: {
+      //   hLineWidth: (i, node) =>
+      //     i === 0 || i === 1 || i === node.table.body.length ? 1 : 0,
+      //   vLineWidth: (i, node) => 0,
+      //   paddingTop: (i, node) => 4,
+      //   paddingBottom: (i, node) => 4,
+      // },
       margin: [0, 5, 0, 15],
     };
   }

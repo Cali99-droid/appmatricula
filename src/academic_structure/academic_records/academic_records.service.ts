@@ -22,6 +22,10 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { User } from 'src/user/entities/user.entity';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 import { AcademicRecordsResponseDto } from './dto/res-academic-record.dto';
+import { BimesterService } from 'src/bimester/bimester.service';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { Area } from '../area/entities/area.entity';
+import { PdfService } from 'src/docs/pdf.service';
 
 @Injectable()
 export class AcademicRecordsService {
@@ -37,7 +41,17 @@ export class AcademicRecordsService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
 
+    @InjectRepository(Enrollment)
+    private readonly enrollmentRepository: Repository<Enrollment>,
+
+    @InjectRepository(Area)
+    private readonly areaRepository: Repository<Area>,
+
     private activityClassroomService: ActivityClassroomService,
+
+    private bimesterService: BimesterService,
+
+    private pdfService: PdfService,
     @Inject(DataSource)
     private dataSource: DataSource,
   ) {}
@@ -125,9 +139,8 @@ export class AcademicRecordsService {
       }
       await queryRunner.commitTransaction();
     } catch (error) {
-      handleDBExceptions(error, this.logger);
       await queryRunner.rollbackTransaction();
-      throw error;
+      handleDBExceptions(error, this.logger);
     } finally {
       await queryRunner.release();
     }
@@ -366,6 +379,119 @@ export class AcademicRecordsService {
   }
   remove(id: number) {
     return `This action removes a #${id} academicRecord`;
+  }
+
+  async generateSchoolReport(studentId: number = 2237, yearId: number = 16) {
+    const bimesters = await this.bimesterService.findAll(yearId);
+    // 3. Obtener todas las calificaciones del estudiante en el periodo
+
+    const enrollStudent = await this.enrollmentRepository.findOne({
+      where: {
+        student: { id: studentId },
+        activityClassroom: {
+          phase: {
+            year: { id: yearId },
+          },
+        },
+      },
+    });
+    const classroom =
+      enrollStudent.activityClassroom.grade.name +
+      ' ' +
+      enrollStudent.activityClassroom.section;
+    const year = enrollStudent.activityClassroom.phase.year.name;
+    const level = enrollStudent.activityClassroom.grade.level;
+    const student = enrollStudent.student;
+    const studentName =
+      student.person.lastname +
+      ' ' +
+      student.person.mLastname +
+      ' ' +
+      student.person.name;
+    const code = enrollStudent.student.code;
+
+    const areas = await this.areaRepository.find({
+      where: {
+        level: { id: level.id },
+        status: true,
+      },
+      relations: {
+        competency: true,
+      },
+    });
+    const calificaciones = await this.academicRecordRepository.find({
+      where: {
+        student: { id: studentId },
+        academicAssignment: {
+          activityClassroom: {
+            phase: {
+              year: { id: yearId },
+            },
+          },
+        },
+      },
+      relations: ['competency', 'academicAssignment', 'bimester'],
+    });
+
+    const areasDto = areas.map((area) => {
+      const competenciasDto = area.competency.map((competencia) => {
+        // Inicializar array de calificaciones por bimestre
+        const grades = Array(bimesters.length).fill('');
+
+        // Llenar con calificaciones existentes
+        calificaciones
+          .filter((c) => c.competency.id === competencia.id)
+          .forEach((c) => {
+            const bimestreIndex = bimesters.findIndex(
+              (b) => b.id === c.bimester.id,
+            );
+            if (bimestreIndex >= 0) {
+              grades[bimestreIndex] = c.value;
+            }
+          });
+
+        return {
+          id: competencia.id,
+          name: competencia.name,
+          grades,
+        };
+      });
+
+      return {
+        id: area.id,
+        name: area.name,
+        competencies: competenciasDto,
+      };
+    });
+
+    // return {
+    //   periodo: {
+    //     id: studentId,
+    //     level: level.name,
+    //     bimesters,
+    //   },
+    //   areas: areasDto,
+    // };
+
+    const reportData: any = {
+      schoolName: 'COLEGIO ALBERT EINSTEIN',
+      year: year,
+      level: level.name.toUpperCase(),
+      studentCode: code,
+      studentName: studentName.toUpperCase(),
+      classroom: classroom.toUpperCase(),
+      areas: areasDto,
+      attendance: {
+        tardinessUnjustified: [0, 0, 0, 0],
+        tardinessJustified: [0, 0, 0, 0],
+        absenceUnjustified: [0, 0, 0, 0],
+        absenceJustified: [0, 0, 0, 0],
+      },
+    };
+
+    const doc = await this.pdfService.generateSchoolReport(reportData);
+
+    return doc;
   }
   private validarDuplicadosEnPayload(
     updateAcademicRecordDto: UpdateAcademicRecordDto,

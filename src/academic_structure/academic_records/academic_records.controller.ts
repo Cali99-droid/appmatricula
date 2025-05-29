@@ -7,6 +7,7 @@ import {
   Param,
   // Delete,
   Query,
+  Res,
 } from '@nestjs/common';
 import { AcademicRecordsService } from './academic_records.service';
 import { CreateAcademicRecordDto } from './dto/create-academic_record.dto';
@@ -15,6 +16,7 @@ import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AcademicRecordsResponseDto } from './dto/res-academic-record.dto';
+import { Response } from 'express';
 
 @ApiTags('Academic-records')
 @Controller('academic-records')
@@ -111,6 +113,27 @@ export class AcademicRecordsController {
     @AuthenticatedUser() payload: KeycloakTokenPayload,
   ) {
     return this.academicRecordsService.update(updateAcademicRecordDto, payload);
+  }
+
+  @Get('/download/report-grades')
+  async generateSchoolReport(@Res() res: Response) {
+    // @Query('bimesterId') bimesterId: number, // @Param('academicRecordId') academicRecordId: number,
+
+    try {
+      const pdfBuffer =
+        await this.academicRecordsService.generateSchoolReport();
+
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename=informe_escolar.pdf',
+        'Content-Length': pdfBuffer.length,
+      });
+
+      res.end(pdfBuffer);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      res.status(500).send('Error al generar el PDF');
+    }
   }
 
   // @Delete(':id')

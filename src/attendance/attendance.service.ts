@@ -35,6 +35,7 @@ import { MailParams } from 'src/emails/interfaces/mail-params.interface';
 import { getBodyEmail, getText } from './helpers/bodyEmail';
 import { SlackService } from 'src/enrollment/slack.service';
 import { Status } from 'src/enrollment/enum/status.enum';
+import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 // import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
@@ -252,6 +253,7 @@ export class AttendanceService {
           arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
           typeSchedule: TypeSchedule.Individual,
         });
+        await this.attendanceRepository.save(attendance);
         const classroomInfo = `${grade.name} ${section} ${grade.level.name}`;
         const dataStudent = {
           name: person.name,
@@ -271,7 +273,6 @@ export class AttendanceService {
           },
         });
 
-        await this.attendanceRepository.save(attendance);
         if (family) {
           const { parentOneId, parentTwoId, student } = family;
           if (parentOneId && parentOneId.user) {
@@ -522,7 +523,7 @@ export class AttendanceService {
 
       return formatAttendances;
     } catch (error) {
-      this.logger.error(error);
+      handleDBExceptions(this.logger, error);
     }
   }
 

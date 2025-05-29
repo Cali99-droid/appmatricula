@@ -33,6 +33,6 @@ import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
     HttpModule,
     ConfigModule,
   ],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, PdfService],
 })
 export class DocsModule {}

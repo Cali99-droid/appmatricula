@@ -8,6 +8,10 @@ import { Student } from 'src/student/entities/student.entity';
 import { ActivityClassroomModule } from 'src/activity_classroom/activity_classroom.module';
 import { User } from 'src/user/entities/user.entity';
 import { Bimester } from 'src/bimester/entities/bimester.entity';
+import { BimesterModule } from 'src/bimester/bimester.module';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { Area } from '../area/entities/area.entity';
+import { DocsModule } from 'src/docs/docs.module';
 
 @Module({
   controllers: [AcademicRecordsController],
@@ -19,9 +23,13 @@ import { Bimester } from 'src/bimester/entities/bimester.entity';
       Student,
       User,
       Bimester,
+      Enrollment,
+      Area,
     ]),
 
     ActivityClassroomModule,
+    BimesterModule,
+    DocsModule,
   ],
 })
 export class AcademicRecordsModule {}

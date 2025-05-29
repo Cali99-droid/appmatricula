@@ -9,5 +9,6 @@ import { Phase } from 'src/phase/entities/phase.entity';
   controllers: [BimesterController],
   providers: [BimesterService],
   imports: [TypeOrmModule.forFeature([Bimester, Phase])],
+  exports: [BimesterService],
 })
 export class BimesterModule {}
