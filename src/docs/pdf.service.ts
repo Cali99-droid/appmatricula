@@ -1405,8 +1405,7 @@ export class PdfService {
   async generateSchoolReport(reportData: any): Promise<Buffer> {
     const url = this.configService.getOrThrow('AWS_URL_BUCKET');
     const logoUrl = `${url}recursos/logo.png`;
-    const studentPhotoURL =
-      'https://caebucket.s3.us-west-2.amazonaws.com/colegio/1717429805090.webp';
+    const studentPhotoURL = `https://caebucket.s3.us-west-2.amazonaws.com/colegio/${reportData.studentPhoto}`;
     const logo = await this.fetchImage(logoUrl);
     const studentBuffer = await this.fetchImage(studentPhotoURL);
     const studentPhoto = await this.convertWebPToPNG(studentBuffer);

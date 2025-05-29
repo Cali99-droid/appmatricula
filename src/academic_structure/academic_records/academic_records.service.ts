@@ -155,6 +155,9 @@ export class AcademicRecordsService {
     if (!bimesterId) {
       throw new NotFoundException('Param bimesterId is required');
     }
+    if (!academicRecordId) {
+      throw new NotFoundException('Param academicRecordId is required');
+    }
     const academicAssign = await this.academicAssignmentRepository.findOne({
       where: {
         id: academicRecordId,
@@ -478,6 +481,7 @@ export class AcademicRecordsService {
       year: year,
       level: level.name.toUpperCase(),
       studentCode: code,
+      studentPhoto: student.photo || '1717429805090.webp',
       studentName: studentName.toUpperCase(),
       classroom: classroom.toUpperCase(),
       areas: areasDto,
