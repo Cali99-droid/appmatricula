@@ -287,7 +287,7 @@ export class CompetencyService {
   ) {
     const { activityClassroomId, userId } = queryTeacherCompetencyDto;
     const whereCondition: any = {};
-    const roles = user.resource_access['client-test-appae'].roles as any[];
+    const roles = user.resource_access['appcolegioae'].roles as any[];
 
     const autPerm = [
       'administrador-colegio',

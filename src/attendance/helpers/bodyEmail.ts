@@ -1,4 +1,3 @@
-import { Student } from 'src/student/entities/student.entity';
 import { Shift } from '../enum/shift.enum';
 import { ConditionAttendance } from '../enum/condition.enum';
 import * as moment from 'moment-timezone';
@@ -6,7 +5,7 @@ import { getCondition, getShift } from './getEnums';
 
 const timeZone = 'America/Lima';
 export function getBodyEmail(
-  student: Student,
+  student: string,
   currentTime: Date,
   arrivalDate: Date,
   shift: Shift,
@@ -58,7 +57,7 @@ export function getBodyEmail(
 <body>
   <div class="container">
     <h1>Datos de Asistencia</h1>
-    <p><strong>Estudiante:</strong> <span class="highlight">${student.person.name}</span></p>
+    <p><strong>Estudiante:</strong> <span class="highlight">${student}</span></p>
     <p><strong>Hora:</strong> <span class="highlight">${moment.utc(currentTime).tz(timeZone).format('HH:mm:ss')}</span></p>
     <p><strong>Fecha:</strong> <span class="highlight">${arrivalDate}</span></p>
     <p><strong>Condición:</strong> <span class="highlight">${getCondition(condition)}</span></p>
@@ -79,7 +78,7 @@ export function getBodyEmail(
 }
 
 export function getText(
-  student: Student,
+  student: string,
   currentTime: Date,
   arrivalDate: Date,
   shift: Shift,
@@ -88,7 +87,7 @@ export function getText(
   const text = `
 Datos de Asistencia:
 
-Estudiante: ${student.person.name}
+Estudiante: ${student}
 Hora: ${moment.utc(currentTime).tz(timeZone).format('HH:mm:ss')}
 Fecha: ${arrivalDate}
 Condición: ${getCondition(condition)}
