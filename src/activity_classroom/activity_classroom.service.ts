@@ -15,6 +15,7 @@ import { SearchClassroomsDto } from 'src/common/dto/search-classrooms.dto';
 import { ConfigService } from '@nestjs/config';
 import { User } from 'src/user/entities/user.entity';
 import { Ascent } from 'src/enrollment/entities/ascent.entity';
+import { Status } from 'src/enrollment/enum/status.enum';
 @Injectable()
 export class ActivityClassroomService {
   private readonly logger = new Logger('ActivityClassroomService');
@@ -418,6 +419,9 @@ export class ActivityClassroomService {
         },
         where: {
           id,
+          enrollment: {
+            status: Status.MATRICULADO,
+          },
         },
         order: {
           enrollment: {

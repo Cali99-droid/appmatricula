@@ -849,7 +849,7 @@ export class PdfService {
   ) {
     const rowHeight = 60;
     const col1Width = 100;
-    const col2Width = pageWidth - col1Width;
+    // const col2Width = pageWidth - col1Width;
 
     // Encabezados
     doc
@@ -991,203 +991,17 @@ export class PdfService {
   }
 
   private createAreasTable(reportData: any): Content {
-    // return {
-    //   style: 'tableExample',
-    //   color: '#444',
-    //   fontSize: 6,
-    //   table: {
-    //     widths: [200, 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
-
-    // headerRows: 7,
-    // keepWithHeaderRows: 1,
-    //   body: [
-    //     /**CABECERAS */
-    //     [
-    //       {
-    //         text: 'ÁREA',
-    //         style: 'tableHeader',
-    //         rowSpan: 2,
-    //         fillColor: '#eeeeee',
-    //       },
-    //       {
-    //         text: 'BIMESTRE',
-    //         style: 'tableHeader',
-    //         colSpan: 4,
-    //         fillColor: '#eeeeee',
-    //       },
-    //       {},
-    //       {},
-    //       {},
-
-    //       {
-    //         text: 'EVAL. RECUP.',
-    //         style: 'tableHeader',
-    //         rowSpan: 3,
-    //         fillColor: '#eeeeee',
-    //       },
-    //       {
-    //         text: 'VALORACIÓN DESCRIPTIVA DEL ÁREA',
-    //         style: 'tableHeader',
-    //         rowSpan: 3,
-    //         fillColor: '#eeeeee',
-    //       },
-    //     ],
-
-    //     [
-    //       {}, // ÁREA (rowSpan)
-
-    //       { text: 'I', style: 'tableHeader' },
-    //       { text: 'II', style: 'tableHeader' },
-    //       { text: 'III', style: 'tableHeader' },
-    //       { text: 'IV', style: 'tableHeader' },
-    //       {}, // EVAL. RECUP. (rowSpan)
-    //       {}, // VALORACIÓN DESCRIPTIVA DEL ÁREA (rowSpan)
-    //     ],
-    //     /**AREA 1 */
-    //     [
-    //       {
-    //         text: 'MATEMÁTICA',
-    //         bold: true,
-    //         style: '',
-    //         colSpan: 7,
-    //         fillColor: '#DEEAFF',
-    //       }, // ÁREA (rowSpan)
-    //     ],
-    //     [
-    //       'RESUELVE PROBLEMAS DE CANTIDAD.',
-    //       'A',
-    //       'B',
-    //       'A',
-    //       'B',
-    //       { rowSpan: 4, text: '' },
-    //       { rowSpan: 4, text: '' },
-    //     ],
-    //     [
-    //       'RESUELVE PROBLEMAS DE REGULARIDAD, EQUIVALENCIA Y CAMBIO.',
-    //       'A',
-    //       'B',
-    //       'A',
-    //       'B',
-    //       '',
-    //       '',
-    //     ],
-    //     [
-    //       'RESUELVE PROBLEMAS DE FORMA,MOVIMIENTO Y LOCALIZACIÓN.',
-    //       'A',
-    //       'B',
-    //       'A',
-    //       'B',
-    //       '',
-    //       '',
-    //     ],
-    //     [
-    //       'RESUELVE PROBLEMAS DE GESTIÓN DE DATOS E INCERTIDUMBRE',
-    //       'A',
-    //       'B',
-    //       'A',
-    //       'B',
-    //       '',
-    //       '',
-    //     ],
-    //     /**FIN AREA 1 */
-    //     /**AREA 2 */
-    //     [
-    //       {
-    //         text: 'COMUNICACION',
-    //         bold: true,
-    //         style: '',
-    //         fillColor: '#DEEAFF',
-    //         colSpan: 7,
-    //       }, // ÁREA (rowSpan)
-    //     ],
-    //     [
-    //       'SE COMUNICA ORALMENTE EN SU LENGUA MATERNA.',
-    //       'A',
-    //       'B',
-    //       'A',
-    //       'B',
-    //       { rowSpan: 3, text: '' },
-    //       { rowSpan: 3, text: '' },
-    //     ],
-    //     [
-    //       'LEE DIVERSOS TIPOS DE TEXTOS ESCRITOS EN SU LENGUA MATERNA.',
-    //       'A',
-    //       'B',
-    //       'A',
-    //       'B',
-    //       '',
-    //       '',
-    //     ],
-    //     [
-    //       'ESCRIBE DIVERSOS TIPOS DE TEXTOS EN SU LENGUA MATERNA',
-    //       'A',
-    //       'B',
-    //       'A',
-    //       'B',
-    //       '',
-    //       '',
-    //     ],
-
-    //     /**FIN AREA 2 */
-    //     /**AREA 3 */
-    //     [
-    //       {
-    //         text: 'CIENCIA Y TECNOLOGÍA',
-    //         bold: true,
-    //         style: '',
-    //         fillColor: '#DEEAFF',
-    //         colSpan: 7,
-    //       }, // ÁREA (rowSpan)
-    //     ],
-    //     [
-    //       'INDAGA MEDIANTE MÉTODOS CIENTÍFICOS PARA CONSTRUIR SUS CONOCIMIENTOS.',
-    //       'A',
-    //       'B',
-    //       'A',
-    //       'B',
-    //       { rowSpan: 3, text: '' },
-    //       { rowSpan: 3, text: '' },
-    //     ],
-    //     [
-    //       'EXPLICA EL MUNDO FÍSICO BASÁNDOSE EN CONOCIMIENTOS SOBRE LOS SERES VIVOS, MATERIA Y ENERGÍA, BIODIVERSIDAD, TIERRA Y UNIVERSO.',
-    //       'A',
-    //       'B',
-    //       'A',
-    //       'B',
-    //       '',
-    //       '',
-    //     ],
-    //     [
-    //       'DISEÑA Y CONSTRUYE SOLUCIONES TECNOLÓGICAS PARA RESOLVER PROBLEMAS DE SU ENTORNO.',
-    //       'A',
-    //       'B',
-    //       'A',
-    //       'B',
-    //       '',
-    //       '',
-    //     ],
-
-    //     /**FIN AREA 2 */
-    //   ],
-    // },
-    // layout: 'lightHorizontalLines',
-    // layout: {
-    //   fillColor: function (rowIndex, node, columnIndex) {
-    //     return rowIndex % 2 === 0 ? '#CCCCCC' : null;
-    //   },
-    // },
-    // };
-    // Cabecera de la tabla
     const tableBody = [
       [
         {
-          text: 'ÁREA',
+          text: '\nÁREA',
           style: 'tableHeader',
           rowSpan: 2,
           fillColor: '#eeeeee',
+          alignment: 'center',
         },
         {
-          text: 'COMPETENCIAS',
+          text: '\nCOMPETENCIAS',
           style: 'tableHeader',
           rowSpan: 2,
           fillColor: '#eeeeee',
@@ -1214,6 +1028,7 @@ export class PdfService {
           style: 'tableHeader',
           rowSpan: 2,
           fillColor: '#eeeeee',
+          fontSize: 7,
         },
       ],
       [
@@ -1248,11 +1063,11 @@ export class PdfService {
     return {
       style: 'tableExample',
       color: '#444',
-      fontSize: 6,
+      fontSize: 10,
       table: {
         headerRows: 8,
         keepWithHeaderRows: 1,
-        widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+        widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 45],
         body: tableBody,
       },
       // layout: {
@@ -1389,22 +1204,25 @@ export class PdfService {
     const url = this.configService.getOrThrow('AWS_URL_BUCKET');
     const logoUrl = `${url}recursos/logo-ae-completo.png`;
     const studentPhotoURL = `https://caebucket.s3.us-west-2.amazonaws.com/colegio/${reportData.studentPhoto}`;
+    const firmaDirectorURL = `${url}recursos/firma-director.png`;
     const logo = await this.fetchImage(logoUrl);
+    const firmaDirectorBuff = await this.fetchImage(firmaDirectorURL);
     const studentBuffer = await this.fetchImage(studentPhotoURL);
     const studentPhoto = await this.convertWebPToPNG(studentBuffer);
+    // const firmaDirector = await this.convertWebPToPNG(firmaDirectorBuff);
 
     const docDefinition: TDocumentDefinitions = {
-      watermark: {
-        text: 'TEST REPORT',
-        color: 'blue',
-        opacity: 0.1,
-        bold: true,
-        italics: false,
-      },
+      // watermark: {
+      //   text: 'TEST REPORT',
+      //   color: 'blue',
+      //   opacity: 0.1,
+      //   bold: true,
+      //   italics: false,
+      // },
       content: [
         ...this.createHeader(reportData, logo, studentPhoto),
         {
-          text: `INFORME DE LOS PROCESOS DEL EDUCANDO - ${reportData.year} NIVEL ${reportData.level}`,
+          text: `INFORME DE LOS PROCESOS DEL EDUCANDO - ${reportData.year} \nNIVEL ${reportData.level}`,
           alignment: 'center',
           fontSize: 14,
           // font: 'Courier-Bold',
@@ -1415,9 +1233,9 @@ export class PdfService {
         this.createStudentInfo(reportData),
         { text: '\n' },
         this.createAreasTable(reportData),
-        { text: '\n' },
-        this.createAttendanceTable(reportData),
-        { text: '\n' },
+        // { text: '\n' },
+        // this.createAttendanceTable(reportData),
+        // { text: '\n' },
         {
           style: 'tableExample',
           table: {
@@ -1432,18 +1250,61 @@ export class PdfService {
               ],
               [
                 {
-                  text: '',
+                  text: '\n\n\n\n',
                 },
               ],
             ],
           },
         },
-        { text: '\n' },
+        // { text: '\n' },
+        // { text: '\n' },
+        // { text: '\n' },
         {
-          qr: 'text in QR',
-          fit: 80,
-          alignment: 'right',
+          margin: [0, 40, 0, 0], // Espacio arriba del bloque de firmas
+          columns: [
+            // Columna izquierda (Firma tutor)
+            {
+              width: '50%',
+              stack: [
+                {
+                  text: '______________________________', // Línea para firma
+                  alignment: 'center',
+                },
+                {
+                  text: 'TUTOR(A)',
+                  bold: true,
+                  fontSize: 10,
+                  alignment: 'center',
+                  margin: [0, 5, 0, 0], // Espacio entre línea y texto
+                },
+              ],
+            },
+            // Columna derecha (Firma director)
+            {
+              width: '50%',
+              stack: [
+                {
+                  image: firmaDirectorBuff as any,
+                  width: 200,
+                  height: 60,
+                  alignment: 'center',
+                },
+                // {
+                //   text: 'DIRECTOR(A)',
+                //   alignment: 'right',
+                //   margin: [0, 5, 0, 0], // Espacio entre imagen y texto
+                // },
+              ],
+            },
+          ],
+          // columnGap: 250, // Espacio entre columnas
         },
+
+        // {
+        //   qr: 'text in QR',
+        //   fit: 80,
+        //   alignment: 'right',
+        // },
       ],
       styles: {
         header: {
