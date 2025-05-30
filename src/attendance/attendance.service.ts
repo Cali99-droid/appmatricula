@@ -273,12 +273,13 @@ export class AttendanceService {
           },
         });
 
+        await this.attendanceRepository.save(attendance);
         if (family) {
-          const { parentOneId, parentTwoId, student } = family;
+          const { parentOneId, parentTwoId } = family;
           if (parentOneId && parentOneId.user) {
             this.sendEmailWithSES(
               parentOneId,
-              student[0],
+              student.person.name,
               currentTime,
               attendance.arrivalDate,
               shift,
@@ -288,7 +289,7 @@ export class AttendanceService {
           if (parentTwoId && parentTwoId.user) {
             this.sendEmailWithSES(
               parentTwoId,
-              student[0],
+              student.person.name,
               currentTime,
               attendance.arrivalDate,
               shift,
@@ -352,6 +353,7 @@ export class AttendanceService {
         typeSchedule: TypeSchedule.General,
         activityClassroom: { id: activityClassroom.id },
       });
+      await this.attendanceRepository.save(attendance);
       const classroomInfo = `${grade.name} ${section} ${grade.level.name}`;
 
       const dataStudent = {
@@ -373,12 +375,12 @@ export class AttendanceService {
       });
 
       if (family) {
-        const { parentOneId, parentTwoId, student } = family;
+        const { parentOneId, parentTwoId } = family;
 
         if (parentOneId && parentOneId.user) {
           this.sendEmailWithSES(
             parentOneId,
-            student[0],
+            student.person.name,
             currentTime,
             attendance.arrivalDate,
             shift,
@@ -388,7 +390,7 @@ export class AttendanceService {
         if (parentTwoId && parentTwoId.user) {
           this.sendEmailWithSES(
             parentTwoId,
-            student[0],
+            student.person.name,
             currentTime,
             attendance.arrivalDate,
             shift,
@@ -397,7 +399,6 @@ export class AttendanceService {
         }
       }
 
-      await this.attendanceRepository.save(attendance);
       return dataStudent;
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -405,7 +406,7 @@ export class AttendanceService {
   }
   async sendEmailWithSES(
     parent: Person,
-    student: Student,
+    student: string,
     currentTime: Date,
     arrivalDate: Date,
     shift: Shift,

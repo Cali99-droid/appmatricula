@@ -126,4 +126,5 @@ export class CompetencyService {
       handleDBExceptions(error, this.logger);
     }
   }
+
 }

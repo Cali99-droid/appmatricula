@@ -440,7 +440,7 @@ export class EmailsService {
       from:
         '"Asistencia Colegio AE"' +
         this.configService.getOrThrow<string>('AWS_SES_FROM'),
-      to,
+      to: this.env === 'prod' ? to : 'orellano428@gmail.com',
       subject,
       text,
       html,
