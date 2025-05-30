@@ -213,6 +213,7 @@ export class AcademicRecordsService {
         return {
           id: competencia.id,
           name: competencia.name,
+          order: competencia.order,
           // cod: index,
           academicRecordId: calificacionExistente
             ? calificacionExistente.id

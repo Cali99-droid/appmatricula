@@ -896,53 +896,32 @@ export class PdfService {
     doc.y = startY + rowHeight * 2 + 10;
   }
 
-  private createHeader(
-    reportData: any,
-    logo: any,
-    studentPhoto: any,
-  ): Content[] {
+  private createHeader(logo: any, studentPhoto: any): Content[] {
     return [
       {
-        columns: [
-          {
-            width: 400, // ancho fijo
-            image: logo,
-            // fit: [70, 80],
-          },
-          {
-            width: 80, // ancho fijo
-            image: studentPhoto,
-            cover: {
-              width: 70,
-              height: 80,
-              valign: 'top',
-              align: 'center',
-            },
-          },
-          // {
-          //   width: 80, // ancho fijo
-          //   table: {
-          //     widths: [80],
-          //     body: [
-          //       [
-          //         {
-          //           image: studentPhoto,
-          //           fit: [80, 80],
-          //         },
-          //       ],
-          //     ],
-          //   },
-          //   layout: {
-          //     fillColor: () => null,
-          //     hLineWidth: () => 1,
-          //     vLineWidth: () => 1,
-          //     hLineColor: () => '#000000',
-          //     vLineColor: () => '#000000',
-          //   },
-          // },
-        ],
-
-        columnGap: 50,
+        table: {
+          widths: ['*', '*'], // Columnas de igual ancho
+          body: [
+            [
+              // Celda izquierda (logo)
+              {
+                image: logo,
+                width: 250,
+                height: 50,
+                alignment: 'left',
+              },
+              // Celda derecha (foto estudiante)
+              {
+                image: studentPhoto,
+                width: 60,
+                height: 70,
+                alignment: 'right',
+                margin: [0, -15, 0, 0],
+              },
+            ],
+          ],
+        },
+        layout: 'noBorders', // Oculta los bordes de la tabla
       },
     ];
   }
@@ -1016,20 +995,20 @@ export class PdfService {
         {},
         {},
         {},
-        {
-          text: 'EVAL. RECUP.',
-          style: 'tableHeader',
-          rowSpan: 2,
+        // {
+        //   text: 'EVAL. RECUP.',
+        //   style: 'tableHeader',
+        //   rowSpan: 2,
 
-          fillColor: '#eeeeee',
-        },
-        {
-          text: 'VALORACIÓN DESCRIPTIVA DEL ÁREA',
-          style: 'tableHeader',
-          rowSpan: 2,
-          fillColor: '#eeeeee',
-          fontSize: 7,
-        },
+        //   fillColor: '#eeeeee',
+        // },
+        // {
+        //   text: 'VALORACIÓN DESCRIPTIVA DEL ÁREA',
+        //   style: 'tableHeader',
+        //   rowSpan: 2,
+        //   fillColor: '#eeeeee',
+        //   fontSize: 7,
+        // },
       ],
       [
         {}, // ÁREA (rowSpan)
@@ -1038,8 +1017,8 @@ export class PdfService {
         { text: 'II', style: 'tableHeader' },
         { text: 'III', style: 'tableHeader' },
         { text: 'IV', style: 'tableHeader' },
-        {}, // EVAL. RECUP. (rowSpan)
-        {}, // EVAL. RECUP. (rowSpan)
+        // {}, // EVAL. RECUP. (rowSpan)
+        // {}, // EVAL. RECUP. (rowSpan)
       ],
     ];
 
@@ -1052,8 +1031,8 @@ export class PdfService {
             : {},
           { text: competency.name },
           ...competency.grades.map((grade) => ({ text: grade })),
-          { rowSpan: area.competencies.length, text: '' }, // Eval. Recup. (vacío por defecto)
-          { rowSpan: area.competencies.length, text: '' }, // VALORACIÓN DESCRIPTIVA DEL ÁREA
+          // { rowSpan: area.competencies.length, text: '' }, // Eval. Recup. (vacío por defecto)
+          // { rowSpan: area.competencies.length, text: '' }, // VALORACIÓN DESCRIPTIVA DEL ÁREA
         ];
 
         tableBody.push(row);
@@ -1063,11 +1042,11 @@ export class PdfService {
     return {
       style: 'tableExample',
       color: '#444',
-      fontSize: 10,
+      fontSize: 8,
       table: {
         headerRows: 8,
         keepWithHeaderRows: 1,
-        widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 45],
+        widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto'],
         body: tableBody,
       },
       // layout: {
@@ -1220,7 +1199,8 @@ export class PdfService {
       //   italics: false,
       // },
       content: [
-        ...this.createHeader(reportData, logo, studentPhoto),
+        ...this.createHeader(logo, studentPhoto),
+        { text: '\n' },
         {
           text: `INFORME DE LOS PROCESOS DEL EDUCANDO - ${reportData.year} \nNIVEL ${reportData.level}`,
           alignment: 'center',
@@ -1285,8 +1265,8 @@ export class PdfService {
               stack: [
                 {
                   image: firmaDirectorBuff as any,
-                  width: 200,
-                  height: 60,
+                  width: 140,
+                  height: 40,
                   alignment: 'center',
                 },
                 // {

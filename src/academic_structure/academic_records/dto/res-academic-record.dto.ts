@@ -8,6 +8,9 @@ export class CompetencyDto {
   @ApiProperty({ example: 'RESUELVE PROBLEMAS DE CANTIDAD' })
   name: string;
 
+  @ApiProperty({ example: 1 })
+  order: number;
+
   @ApiProperty({ example: 2 })
   academicRecordId: number;
 
