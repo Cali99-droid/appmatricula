@@ -35,6 +35,7 @@ import { MailParams } from 'src/emails/interfaces/mail-params.interface';
 import { getBodyEmail, getText } from './helpers/bodyEmail';
 import { SlackService } from 'src/enrollment/slack.service';
 import { Status } from 'src/enrollment/enum/status.enum';
+import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 // import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
@@ -73,7 +74,7 @@ export class AttendanceService {
   async create(createAttendanceDto: CreateAttendanceDto, user: any) {
     // Obtener el usuario con las relaciones necesarias
 
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     /**capturar fecha y hora actual */
     const currentTime = new Date();
@@ -252,6 +253,7 @@ export class AttendanceService {
           arrivalDate: this.convertISODateToYYYYMMDD(currentDate),
           typeSchedule: TypeSchedule.Individual,
         });
+        await this.attendanceRepository.save(attendance);
         const classroomInfo = `${grade.name} ${section} ${grade.level.name}`;
         const dataStudent = {
           name: person.name,
@@ -453,7 +455,7 @@ export class AttendanceService {
   }
 
   async findLastFiveRecords(user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     try {
       // Construir opciones de consulta para asistencias
@@ -522,7 +524,7 @@ export class AttendanceService {
 
       return formatAttendances;
     } catch (error) {
-      this.logger.error(error);
+      handleDBExceptions(this.logger, error);
     }
   }
 

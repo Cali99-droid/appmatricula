@@ -163,7 +163,7 @@ export class AuthService {
             user.family_name.split(' ')[0].toLocaleUpperCase() ||
             user.family_name.toLocaleUpperCase(),
           mLastname:
-            user.family_name.split(' ')[1].toLocaleUpperCase() ||
+            user.family_name.split(' ')[1]?.toLocaleUpperCase() ||
             user.family_name.toLocaleUpperCase(),
           docNumber: user.dni,
         });
@@ -176,8 +176,8 @@ export class AuthService {
         });
         await this.userRepository.save(us);
         let roles = [];
-        if (user.resource_access['appcolegioae']) {
-          roles = user.resource_access['appcolegioae'].roles;
+        if (user.resource_access['client-test-appae']) {
+          roles = user.resource_access['client-test-appae'].roles;
         }
         const menu = this.generateMenu(roles);
         return menu;
@@ -190,8 +190,8 @@ export class AuthService {
         });
         await this.userRepository.save(us);
         let roles = [];
-        if (user.resource_access['appcolegioae']) {
-          roles = user.resource_access['appcolegioae'].roles;
+        if (user.resource_access['client-test-appae']) {
+          roles = user.resource_access['client-test-appae'].roles;
         }
         console.log(roles);
         const menu = this.generateMenu(roles);
@@ -210,8 +210,8 @@ export class AuthService {
     }
 
     let roles = [];
-    if (user.resource_access['appcolegioae']) {
-      roles = user.resource_access['appcolegioae'].roles;
+    if (user.resource_access['client-test-appae']) {
+      roles = user.resource_access['client-test-appae'].roles;
     }
 
     const menu = this.generateMenu(roles);

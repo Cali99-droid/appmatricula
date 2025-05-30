@@ -15,6 +15,7 @@ import { SearchClassroomsDto } from 'src/common/dto/search-classrooms.dto';
 import { ConfigService } from '@nestjs/config';
 import { User } from 'src/user/entities/user.entity';
 import { Ascent } from 'src/enrollment/entities/ascent.entity';
+import { Status } from 'src/enrollment/enum/status.enum';
 @Injectable()
 export class ActivityClassroomService {
   private readonly logger = new Logger('ActivityClassroomService');
@@ -144,7 +145,7 @@ export class ActivityClassroomService {
   async searchParams(searchClassroomsDto: SearchClassroomsDto, user: any) {
     try {
       const { yearId, phaseId, campusId, levelId } = searchClassroomsDto;
-      const roles = user.resource_access['appcolegioae'].roles;
+      const roles = user.resource_access['client-test-appae'].roles;
       // Obtener el usuario con las relaciones necesarias
       const us = await this.userRepository.findOne({
         where: {
@@ -178,6 +179,7 @@ export class ActivityClassroomService {
       };
       const autPerm = [
         'administrador-colegio',
+        'cordinador-academico',
         'secretaria',
         'administrador-sede',
         'generador-carnet',
@@ -418,6 +420,9 @@ export class ActivityClassroomService {
         },
         where: {
           id,
+          enrollment: {
+            status: Status.MATRICULADO,
+          },
         },
         order: {
           enrollment: {

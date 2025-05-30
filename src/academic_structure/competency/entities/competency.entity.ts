@@ -1,13 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Area } from 'src/academic_structure/area/entities/area.entity';
-import { Ratings } from 'src/academic_structure/ratings/entities/ratings.entity';
+
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -61,9 +60,6 @@ export class Competency {
   // course?: Course;
   //   @OneToMany(() => CursoPeriodo, cursoPeriodo => cursoPeriodo.curso)
   // periodos: CursoPeriodo[];
-
-  @OneToMany(() => Ratings, (ratings) => ratings.competency)
-  ratings?: Ratings[];
 
   @CreateDateColumn({
     type: 'timestamp',
