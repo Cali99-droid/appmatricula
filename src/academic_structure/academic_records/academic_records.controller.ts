@@ -12,7 +12,7 @@ import {
 import { AcademicRecordsService } from './academic_records.service';
 import { CreateAcademicRecordDto } from './dto/create-academic_record.dto';
 
-import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
+import { AuthenticatedUser, Public, Roles } from 'nest-keycloak-connect';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AcademicRecordsResponseDto } from './dto/res-academic-record.dto';
@@ -120,6 +120,7 @@ export class AcademicRecordsController {
     description: 'descarga la boleta de notas con todos los bimestres',
   })
   @Get('/download/report-grades/:studentId')
+  @Public()
   async generateSchoolReport(
     @Res() res: Response,
     @Query('yearId') yearId: number,

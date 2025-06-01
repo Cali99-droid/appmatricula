@@ -1042,7 +1042,7 @@ export class PdfService {
     return {
       style: 'tableExample',
       color: '#444',
-      fontSize: 8,
+      fontSize: 7,
       table: {
         headerRows: 8,
         keepWithHeaderRows: 1,
