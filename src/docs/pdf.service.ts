@@ -1320,9 +1320,11 @@ export class PdfService {
       },
     };
 
-    return new Promise((resolve) => {
+    return new Promise<Buffer>((resolve) => {
       const pdfDoc = pdfMake.createPdf(docDefinition);
-      pdfDoc.getBuffer(resolve);
+      pdfDoc.getBuffer((buffer) => {
+        resolve(Buffer.from(buffer)); // <-- Convertir a Buffer de Node.js
+      });
     });
   }
 }

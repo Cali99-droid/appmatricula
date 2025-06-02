@@ -8,6 +8,8 @@ import {
   // Delete,
   Query,
   Res,
+  NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { AcademicRecordsService } from './academic_records.service';
 import { CreateAcademicRecordDto } from './dto/create-academic_record.dto';
@@ -119,30 +121,42 @@ export class AcademicRecordsController {
     summary: 'Descargar boleta de notas',
     description: 'descarga la boleta de notas con todos los bimestres',
   })
-  @Get('/download/report-grades/:studentId')
+  @Get('/download/report-grades/:activityClassroomId')
   @Public()
   async generateSchoolReport(
     @Res() res: Response,
     @Query('yearId') yearId: number,
-    @Param('studentId') studentId: number,
+    @Param('activityClassroomId') activityClassroomId: number,
   ) {
     try {
-      const pdfBuffer = await this.academicRecordsService.generateSchoolReport(
-        studentId,
-        yearId,
+      await this.academicRecordsService.generateSchoolReport(
+        +activityClassroomId,
+        +yearId,
+        res,
       );
-
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename=informe_escolar.pdf',
-        'Content-Length': pdfBuffer.length,
-      });
-
-      res.end(pdfBuffer);
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      res.status(500).send('Error al generar el PDF');
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      throw new InternalServerErrorException('Error al generar boletas');
     }
+    // try {
+    //   const pdfBuffer = await this.academicRecordsService.generateSchoolReport(
+    //     activityClassroomId,
+    //     yearId,
+    //   );
+
+    //   res.set({
+    //     'Content-Type': 'application/pdf',
+    //     'Content-Disposition': 'attachment; filename=informe_escolar.pdf',
+    //     'Content-Length': pdfBuffer.length,
+    //   });
+
+    //   res.end(pdfBuffer);
+    // } catch (error) {
+    //   console.error('Error generating PDF:', error);
+    //   res.status(500).send('Error al generar el PDF');
+    // }
   }
 
   // @Delete(':id')
