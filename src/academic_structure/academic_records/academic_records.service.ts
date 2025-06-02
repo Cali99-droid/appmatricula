@@ -28,6 +28,10 @@ import { Area } from '../area/entities/area.entity';
 import { PdfService } from 'src/docs/pdf.service';
 import * as archiver from 'archiver';
 import { Response } from 'express';
+import {
+  ResReportAcademicRecord,
+  StundetReportDto,
+} from './dto/res-report-academic-record';
 @Injectable()
 export class AcademicRecordsService {
   private readonly logger = new Logger('AcademicRecordsService');
@@ -523,6 +527,104 @@ export class AcademicRecordsService {
     } catch (error) {
       handleDBExceptions(error, this.logger);
       throw error; // Re-lanzar el error para que el controlador lo maneje
+    }
+  }
+
+  async getReportByClassroom(
+    activityClassroomId: number,
+    bimesterId: number,
+  ): Promise<ResReportAcademicRecord> {
+    try {
+      const bimestre = await this.bimesterService.findOne(bimesterId);
+      const ac =
+        await this.activityClassroomService.findOne(activityClassroomId);
+
+      // Obtener todas las matrículas del aula
+      const enrollStudents = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: {
+            id: activityClassroomId,
+          },
+        },
+        relations: [
+          'student',
+          'student.person',
+          'activityClassroom',
+          'activityClassroom.grade',
+          'activityClassroom.phase.year',
+        ],
+      });
+
+      const areas = await this.areaRepository.find({
+        where: {
+          level: { id: ac.grade.level.id },
+          status: true,
+        },
+        relations: ['competency'],
+      });
+
+      const calificaciones = await this.academicRecordRepository.find({
+        where: {
+          bimester: { id: bimesterId },
+          academicAssignment: {
+            activityClassroom: { id: activityClassroomId },
+          },
+        },
+        relations: ['student', 'competency'],
+      });
+
+      const estudiantesDto: StundetReportDto[] = enrollStudents.map(
+        (matricula) => {
+          const estudiante = matricula.student;
+          const notasDto: any[] = [];
+
+          areas.forEach((area) => {
+            area.competency.forEach((competencia) => {
+              const calificacion = calificaciones.find(
+                (c) =>
+                  c.student.id === estudiante.id &&
+                  c.competency.id === competencia.id,
+              );
+
+              notasDto.push({
+                competenciaId: competencia.id,
+                valor: calificacion?.value || '',
+              });
+            });
+          });
+
+          return {
+            id: estudiante.id,
+            code: estudiante.code,
+            name: `${estudiante.person.lastname} ${estudiante.person.mLastname} ${estudiante.person.name}`,
+            photo: estudiante.photo,
+            qualifications: notasDto,
+          };
+        },
+      );
+
+      return {
+        classroom: {
+          id: ac.id,
+          name: `${ac.grade.name} ${ac.section}`,
+          level: ac.grade.level.name,
+        },
+        bimestre: {
+          id: bimestre.id,
+          name: bimestre.name,
+        },
+        areas: areas.map((area) => ({
+          id: area.id,
+          name: area.name,
+          competencies: area.competency.map((competencia) => ({
+            id: competencia.id,
+            name: competencia.name,
+          })),
+        })),
+        students: estudiantesDto,
+      };
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
     }
   }
   private validarDuplicadosEnPayload(
