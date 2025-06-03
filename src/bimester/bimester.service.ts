@@ -61,6 +61,21 @@ export class BimesterService {
     return bimesters;
   }
 
+  async findAllAux(yearId: number) {
+    const bimesters = await this.bimesterRepository.find({
+      where: {
+        phase: {
+          year: { id: !isNaN(+yearId) ? +yearId : undefined },
+        },
+      },
+      order: {
+        name: 'ASC',
+      },
+    });
+
+    return bimesters;
+  }
+
   async findOne(id: number) {
     const bimester = await this.bimesterRepository.findOne({
       where: { id: id },

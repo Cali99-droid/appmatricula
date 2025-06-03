@@ -328,6 +328,15 @@ export const AdminMenu = {
           permissions: ['asignaciones-docente'],
           subMenu: [],
         },
+
+        {
+          id: 3,
+          label: 'Reporte Calificaciones',
+          icon: 'student',
+          link: '/admin/academy/assignments',
+          permissions: ['reporte-calificaciones'],
+          subMenu: [],
+        },
       ],
     },
   ],

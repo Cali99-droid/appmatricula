@@ -32,6 +32,7 @@ import {
   ResReportAcademicRecord,
   StundetReportDto,
 } from './dto/res-report-academic-record';
+import { Status } from 'src/enrollment/enum/status.enum';
 @Injectable()
 export class AcademicRecordsService {
   private readonly logger = new Logger('AcademicRecordsService');
@@ -393,7 +394,7 @@ export class AcademicRecordsService {
     res: Response,
   ): Promise<void> {
     try {
-      const bimesters = await this.bimesterService.findAll(+yearId);
+      const bimesters = await this.bimesterService.findAllAux(+yearId);
 
       if (bimesters.length === 0) {
         throw new NotFoundException('Bimestres no encontrados');
@@ -407,6 +408,7 @@ export class AcademicRecordsService {
           activityClassroom: {
             id: activityClassroomId,
           },
+          status: Status.MATRICULADO,
         },
         relations: [
           'student',
@@ -415,6 +417,14 @@ export class AcademicRecordsService {
           'activityClassroom.grade',
           'activityClassroom.phase.year',
         ],
+        order: {
+          student: {
+            person: {
+              lastname: 'ASC',
+              mLastname: 'ASC',
+            },
+          },
+        },
       });
 
       if (!enrollStudents || enrollStudents.length === 0) {
@@ -517,7 +527,7 @@ export class AcademicRecordsService {
           const pdfBuffer =
             await this.pdfService.generateSchoolReport(reportData);
           archive.append(pdfBuffer, {
-            name: `BOLETA_${code}_${student.person.lastname}.pdf`,
+            name: `BOLETA_${student.person.lastname}_${student.person.mLastname}_${student.person.name}_${code}.pdf`,
           });
         }),
       );
@@ -525,7 +535,6 @@ export class AcademicRecordsService {
       // Finalizar el archivo ZIP
       await archive.finalize();
     } catch (error) {
-      console.log(error);
       handleDBExceptions(error, this.logger);
     }
   }
@@ -545,6 +554,7 @@ export class AcademicRecordsService {
           activityClassroom: {
             id: activityClassroomId,
           },
+          status: Status.MATRICULADO,
         },
         relations: [
           'student',
@@ -553,6 +563,14 @@ export class AcademicRecordsService {
           'activityClassroom.grade',
           'activityClassroom.phase.year',
         ],
+        order: {
+          student: {
+            person: {
+              lastname: 'ASC',
+              mLastname: 'ASC',
+            },
+          },
+        },
       });
 
       const areas = await this.areaRepository.find({

@@ -31,8 +31,6 @@ import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
-import { handleDBExceptions } from 'src/common/helpers/handleDBException';
-import { error } from 'console';
 (<any>pdfMake).addVirtualFileSystem(pdfFonts);
 
 @Injectable()
@@ -1034,6 +1032,7 @@ export class PdfService {
             : {},
           { text: competency.name },
           ...competency.grades.map((grade) => ({ text: grade })),
+
           // { rowSpan: area.competencies.length, text: '' }, // Eval. Recup. (vacío por defecto)
           // { rowSpan: area.competencies.length, text: '' }, // VALORACIÓN DESCRIPTIVA DEL ÁREA
         ];

@@ -129,7 +129,7 @@ export class AcademicRecordsController {
   })
   @Get('/download/report-grades/:activityClassroomId')
   @Roles({
-    roles: ['administrador-colegio'],
+    roles: ['cordinador-academico'],
   })
   async generateSchoolReport(
     @Res() res: Response,
@@ -202,7 +202,7 @@ export class AcademicRecordsController {
   })
   @Get('/classroom/report')
   @Roles({
-    roles: ['administrador-colegio'],
+    roles: ['cordinador-academico'],
   })
   getReportByClassroom(
     @Query('bimesterId') bimesterId: number,
