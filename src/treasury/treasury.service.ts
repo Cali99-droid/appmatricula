@@ -437,7 +437,7 @@ export class TreasuryService {
     endDate: string,
     userId: number,
   ) {
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),
@@ -612,7 +612,9 @@ export class TreasuryService {
       case '856d8fb4-a94a-4885-9afa-50dd73582933':
         return 'Sonia Huaman';
       case '9f0cfdcf-7176-4244-a057-4488ef85be84':
-        return 'Yeraldin  Eugenio';
+        return 'Yeraldin Eugenio';
+      case '7a615a7d-c302-479a-bea0-07fe7bd623f4':
+        return 'Cielo Quijano';
       default:
         return sub;
     }
@@ -809,6 +811,7 @@ export class TreasuryService {
           concept: { id: debt.concept.id },
           student: { id: debt.student.id },
           debt: { id: debt.id },
+          status: true,
         },
         relations: {
           debt: true,
@@ -825,7 +828,7 @@ export class TreasuryService {
         );
         existingPayment.receipt = receipt;
         await this.paymentRepository.save(existingPayment);
-        return bill;
+        return existingPayment;
       } else {
         console.log('crear nuevo');
         return null;
