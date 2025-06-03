@@ -525,8 +525,8 @@ export class AcademicRecordsService {
       // Finalizar el archivo ZIP
       await archive.finalize();
     } catch (error) {
+      console.log(error);
       handleDBExceptions(error, this.logger);
-      throw error; // Re-lanzar el error para que el controlador lo maneje
     }
   }
 

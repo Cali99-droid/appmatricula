@@ -31,6 +31,8 @@ import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
+import { handleDBExceptions } from 'src/common/helpers/handleDBException';
+import { error } from 'console';
 (<any>pdfMake).addVirtualFileSystem(pdfFonts);
 
 @Injectable()
@@ -970,6 +972,7 @@ export class PdfService {
   }
 
   private createAreasTable(reportData: any): Content {
+    console.log(reportData.areas);
     const tableBody = [
       [
         {
@@ -1189,142 +1192,145 @@ export class PdfService {
     const studentBuffer = await this.fetchImage(studentPhotoURL);
     const studentPhoto = await this.convertWebPToPNG(studentBuffer);
     // const firmaDirector = await this.convertWebPToPNG(firmaDirectorBuff);
-
-    const docDefinition: TDocumentDefinitions = {
-      // watermark: {
-      //   text: 'TEST REPORT',
-      //   color: 'blue',
-      //   opacity: 0.1,
-      //   bold: true,
-      //   italics: false,
-      // },
-      content: [
-        ...this.createHeader(logo, studentPhoto),
-        { text: '\n' },
-        {
-          text: `INFORME DE LOS PROCESOS DEL EDUCANDO - ${reportData.year} \nNIVEL ${reportData.level}`,
-          alignment: 'center',
-          fontSize: 14,
-          // font: 'Courier-Bold',
-          bold: true,
-          color: '#0045AA',
-        },
-        { text: '\n' },
-        this.createStudentInfo(reportData),
-        { text: '\n' },
-        this.createAreasTable(reportData),
-        // { text: '\n' },
-        // this.createAttendanceTable(reportData),
-        // { text: '\n' },
-        {
-          style: 'tableExample',
-          table: {
-            widths: ['*'],
-            body: [
-              [
-                {
-                  text: 'COMENTARIOS DEL TUTOR',
-                  fillColor: '#eeeeee',
-                  style: 'tableHeader',
-                },
+    try {
+      const docDefinition: TDocumentDefinitions = {
+        // watermark: {
+        //   text: 'TEST REPORT',
+        //   color: 'blue',
+        //   opacity: 0.1,
+        //   bold: true,
+        //   italics: false,
+        // },
+        content: [
+          ...this.createHeader(logo, studentPhoto),
+          { text: '\n' },
+          {
+            text: `INFORME DE LOS PROCESOS DEL EDUCANDO - ${reportData.year} \nNIVEL ${reportData.level}`,
+            alignment: 'center',
+            fontSize: 14,
+            // font: 'Courier-Bold',
+            bold: true,
+            color: '#0045AA',
+          },
+          { text: '\n' },
+          this.createStudentInfo(reportData),
+          { text: '\n' },
+          this.createAreasTable(reportData),
+          // { text: '\n' },
+          // this.createAttendanceTable(reportData),
+          // { text: '\n' },
+          {
+            style: 'tableExample',
+            table: {
+              widths: ['*'],
+              body: [
+                [
+                  {
+                    text: 'COMENTARIOS DEL TUTOR',
+                    fillColor: '#eeeeee',
+                    style: 'tableHeader',
+                  },
+                ],
+                [
+                  {
+                    text: '\n\n\n\n',
+                  },
+                ],
               ],
-              [
-                {
-                  text: '\n\n\n\n',
-                },
-              ],
+            },
+          },
+          // { text: '\n' },
+          // { text: '\n' },
+          // { text: '\n' },
+          {
+            margin: [0, 40, 0, 0], // Espacio arriba del bloque de firmas
+            columns: [
+              // Columna izquierda (Firma tutor)
+              {
+                width: '50%',
+                stack: [
+                  {
+                    text: '______________________________', // Línea para firma
+                    alignment: 'center',
+                  },
+                  {
+                    text: 'TUTOR(A)',
+                    bold: true,
+                    fontSize: 10,
+                    alignment: 'center',
+                    margin: [0, 5, 0, 0], // Espacio entre línea y texto
+                  },
+                ],
+              },
+              // Columna derecha (Firma director)
+              {
+                width: '50%',
+                stack: [
+                  {
+                    image: firmaDirectorBuff as any,
+                    width: 140,
+                    height: 40,
+                    alignment: 'center',
+                  },
+                  // {
+                  //   text: 'DIRECTOR(A)',
+                  //   alignment: 'right',
+                  //   margin: [0, 5, 0, 0], // Espacio entre imagen y texto
+                  // },
+                ],
+              },
             ],
+            // columnGap: 250, // Espacio entre columnas
+          },
+
+          // {
+          //   qr: 'text in QR',
+          //   fit: 80,
+          //   alignment: 'right',
+          // },
+        ],
+        styles: {
+          header: {
+            fontSize: 12,
+            bold: true,
+            alignment: 'center',
+          },
+          subheader: {
+            fontSize: 10,
+            bold: true,
+            alignment: 'center',
+          },
+          tableHeader: {
+            bold: true,
+            fontSize: 10,
+            alignment: 'center',
+          },
+          areaTitle: {
+            fontSize: 10,
+            bold: true,
+            decoration: 'underline',
+            margin: [0, 10, 0, 5],
+          },
+          commentsTitle: {
+            bold: true,
+            decoration: 'underline',
+            margin: [0, 20, 0, 5],
           },
         },
-        // { text: '\n' },
-        // { text: '\n' },
-        // { text: '\n' },
-        {
-          margin: [0, 40, 0, 0], // Espacio arriba del bloque de firmas
-          columns: [
-            // Columna izquierda (Firma tutor)
-            {
-              width: '50%',
-              stack: [
-                {
-                  text: '______________________________', // Línea para firma
-                  alignment: 'center',
-                },
-                {
-                  text: 'TUTOR(A)',
-                  bold: true,
-                  fontSize: 10,
-                  alignment: 'center',
-                  margin: [0, 5, 0, 0], // Espacio entre línea y texto
-                },
-              ],
-            },
-            // Columna derecha (Firma director)
-            {
-              width: '50%',
-              stack: [
-                {
-                  image: firmaDirectorBuff as any,
-                  width: 140,
-                  height: 40,
-                  alignment: 'center',
-                },
-                // {
-                //   text: 'DIRECTOR(A)',
-                //   alignment: 'right',
-                //   margin: [0, 5, 0, 0], // Espacio entre imagen y texto
-                // },
-              ],
-            },
-          ],
-          // columnGap: 250, // Espacio entre columnas
+        defaultStyle: {
+          fontSize: 8,
+          margin: [0, 2, 0, 2],
         },
+      };
 
-        // {
-        //   qr: 'text in QR',
-        //   fit: 80,
-        //   alignment: 'right',
-        // },
-      ],
-      styles: {
-        header: {
-          fontSize: 12,
-          bold: true,
-          alignment: 'center',
-        },
-        subheader: {
-          fontSize: 10,
-          bold: true,
-          alignment: 'center',
-        },
-        tableHeader: {
-          bold: true,
-          fontSize: 10,
-          alignment: 'center',
-        },
-        areaTitle: {
-          fontSize: 10,
-          bold: true,
-          decoration: 'underline',
-          margin: [0, 10, 0, 5],
-        },
-        commentsTitle: {
-          bold: true,
-          decoration: 'underline',
-          margin: [0, 20, 0, 5],
-        },
-      },
-      defaultStyle: {
-        fontSize: 8,
-        margin: [0, 2, 0, 2],
-      },
-    };
-
-    return new Promise<Buffer>((resolve) => {
-      const pdfDoc = pdfMake.createPdf(docDefinition);
-      pdfDoc.getBuffer((buffer) => {
-        resolve(Buffer.from(buffer)); // <-- Convertir a Buffer de Node.js
+      return new Promise<Buffer>((resolve) => {
+        const pdfDoc = pdfMake.createPdf(docDefinition);
+        pdfDoc.getBuffer((buffer) => {
+          resolve(Buffer.from(buffer)); // <-- Convertir a Buffer de Node.js
+        });
       });
-    });
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
