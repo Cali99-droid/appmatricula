@@ -333,7 +333,7 @@ export const AdminMenu = {
           id: 3,
           label: 'Reporte Calificaciones',
           icon: 'student',
-          link: '/admin/academy/assignments',
+          link: '/admin/qualification/download-qualification',
           permissions: ['reporte-calificaciones'],
           subMenu: [],
         },
