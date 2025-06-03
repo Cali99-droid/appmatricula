@@ -661,7 +661,7 @@ export class TreasuryService {
       },
     });
 
-    if (!debt.status) {
+    if (!debt) {
       throw new BadRequestException(
         'No existe deuda o estudiante ya matriculado',
       );
