@@ -8,8 +8,6 @@ import {
   // Delete,
   Query,
   Res,
-  NotFoundException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { AcademicRecordsService } from './academic_records.service';
 import { CreateAcademicRecordDto } from './dto/create-academic_record.dto';

@@ -640,6 +640,7 @@ export class AcademicRecordsService {
           competencies: area.competency.map((competencia) => ({
             id: competencia.id,
             name: competencia.name,
+            order: competencia.order,
           })),
         })),
         students: estudiantesDto,
