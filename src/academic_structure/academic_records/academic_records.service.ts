@@ -394,6 +394,9 @@ export class AcademicRecordsService {
     res: Response,
   ): Promise<void> {
     try {
+      if (isNaN(yearId)) {
+        throw new BadRequestException('yearId is required and number');
+      }
       const bimesters = await this.bimesterService.findAllAux(+yearId);
 
       if (bimesters.length === 0) {

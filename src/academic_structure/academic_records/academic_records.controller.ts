@@ -136,18 +136,12 @@ export class AcademicRecordsController {
     @Query('yearId') yearId: number,
     @Param('activityClassroomId') activityClassroomId: number,
   ) {
-    try {
-      await this.academicRecordsService.generateSchoolReport(
-        +activityClassroomId,
-        +yearId,
-        res,
-      );
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException(error.message);
-      }
-      throw new InternalServerErrorException('Error al generar boletas');
-    }
+    await this.academicRecordsService.generateSchoolReport(
+      +activityClassroomId,
+      +yearId,
+      res,
+    );
+
     // try {
     //   const pdfBuffer = await this.academicRecordsService.generateSchoolReport(
     //     activityClassroomId,
