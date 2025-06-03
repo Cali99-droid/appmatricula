@@ -661,7 +661,7 @@ export class TreasuryService {
       },
     });
 
-    if (!debt) {
+    if (!debt.status) {
       throw new BadRequestException(
         'No existe deuda o estudiante ya matriculado',
       );
@@ -811,6 +811,7 @@ export class TreasuryService {
           concept: { id: debt.concept.id },
           student: { id: debt.student.id },
           debt: { id: debt.id },
+          status: true,
         },
         relations: {
           debt: true,
@@ -827,7 +828,7 @@ export class TreasuryService {
         );
         existingPayment.receipt = receipt;
         await this.paymentRepository.save(existingPayment);
-        return bill;
+        return existingPayment;
       } else {
         console.log('crear nuevo');
         return null;
