@@ -17,6 +17,7 @@ import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AcademicRecordsResponseDto } from './dto/res-academic-record.dto';
 import { Response } from 'express';
+import { ResReportAcademicRecord } from './dto/res-report-academic-record';
 
 @ApiTags('Academic-records')
 @Controller('academic-records')
@@ -117,35 +118,91 @@ export class AcademicRecordsController {
 
   @ApiOperation({
     summary: 'Descargar boleta de notas',
-    description: 'descarga la boleta de notas con todos los bimestres',
+    description:
+      'Descarga las boletas en un archivo comprimido de notas con todos los bimestres por aula',
   })
-  @Get('/download/report-grades/:studentId')
+  @ApiResponse({
+    status: 200,
+    description: 'Archivo comprimido',
+  })
+  @Get('/download/report-grades/:activityClassroomId')
+  @Roles({
+    roles: ['cordinador-academico'],
+  })
   async generateSchoolReport(
     @Res() res: Response,
     @Query('yearId') yearId: number,
-    @Param('studentId') studentId: number,
+    @Param('activityClassroomId') activityClassroomId: number,
   ) {
-    try {
-      const pdfBuffer = await this.academicRecordsService.generateSchoolReport(
-        studentId,
-        yearId,
-      );
+    await this.academicRecordsService.generateSchoolReport(
+      +activityClassroomId,
+      +yearId,
+      res,
+    );
 
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename=informe_escolar.pdf',
-        'Content-Length': pdfBuffer.length,
-      });
+    // try {
+    //   const pdfBuffer = await this.academicRecordsService.generateSchoolReport(
+    //     activityClassroomId,
+    //     yearId,
+    //   );
 
-      res.end(pdfBuffer);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      res.status(500).send('Error al generar el PDF');
-    }
+    //   res.set({
+    //     'Content-Type': 'application/pdf',
+    //     'Content-Disposition': 'attachment; filename=informe_escolar.pdf',
+    //     'Content-Length': pdfBuffer.length,
+    //   });
+
+    //   res.end(pdfBuffer);
+    // } catch (error) {
+    //   console.error('Error generating PDF:', error);
+    //   res.status(500).send('Error al generar el PDF');
+    // }
   }
 
   // @Delete(':id')
   // remove(@Param('id') id: string) {
   //   return this.academicRecordsService.remove(+id);
   // }
+
+  @ApiOperation({
+    summary: 'Obtener reporte de notas por aula y bimestre',
+    description:
+      'Genera un reporte estructurado con las notas de todos los estudiantes de un aula específica en un bimestre determinado, agrupadas por áreas y competencias.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reporte generado exitosamente',
+    type: ResReportAcademicRecord,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Aula o bimestre no encontrado',
+  })
+  @ApiQuery({
+    name: 'bimesterId',
+    required: true,
+    type: 'number',
+    description: 'ID del bimestre académico',
+    example: 2,
+  })
+  @ApiQuery({
+    name: 'activityClassroomId',
+    required: true,
+    type: 'number',
+    description: 'ID del aula',
+    example: 1,
+  })
+  @Get('/classroom/report')
+  @Roles({
+    roles: ['cordinador-academico'],
+  })
+  getReportByClassroom(
+    @Query('bimesterId') bimesterId: number,
+    @Query('activityClassroomId') activityClassroomId: number,
+  ) {
+    return this.academicRecordsService.getReportByClassroom(
+      +activityClassroomId,
+      +bimesterId,
+    );
+  }
 }

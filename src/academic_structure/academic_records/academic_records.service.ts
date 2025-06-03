@@ -26,7 +26,13 @@ import { BimesterService } from 'src/bimester/bimester.service';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Area } from '../area/entities/area.entity';
 import { PdfService } from 'src/docs/pdf.service';
-
+import * as archiver from 'archiver';
+import { Response } from 'express';
+import {
+  ResReportAcademicRecord,
+  StundetReportDto,
+} from './dto/res-report-academic-record';
+import { Status } from 'src/enrollment/enum/status.enum';
 @Injectable()
 export class AcademicRecordsService {
   private readonly logger = new Logger('AcademicRecordsService');
@@ -382,127 +388,263 @@ export class AcademicRecordsService {
     }
   }
 
-  async generateSchoolReport(studentId: number, yearId: number) {
+  async generateSchoolReport(
+    activityClassroomId: number,
+    yearId: number,
+    res: Response,
+  ): Promise<void> {
     try {
-      const bimesters = await this.bimesterService.findAll(yearId);
-      // 3. Obtener todas las calificaciones del estudiante en el periodo
-
-      if (bimesters.length < 0) {
-        throw new NotFoundException('Bimestres no encontrados ');
+      if (isNaN(yearId)) {
+        throw new BadRequestException('yearId is required and number');
       }
+      const bimesters = await this.bimesterService.findAllAux(+yearId);
 
-      const enrollStudent = await this.enrollmentRepository.findOne({
+      if (bimesters.length === 0) {
+        throw new NotFoundException('Bimestres no encontrados');
+      }
+      const ac =
+        await this.activityClassroomService.findOne(activityClassroomId);
+
+      // Obtener todas las matrículas del aula
+      const enrollStudents = await this.enrollmentRepository.find({
         where: {
-          student: { id: studentId },
           activityClassroom: {
-            phase: {
-              year: { id: yearId },
+            id: activityClassroomId,
+          },
+          status: Status.MATRICULADO,
+        },
+        relations: [
+          'student',
+          'student.person',
+          'activityClassroom',
+          'activityClassroom.grade',
+          'activityClassroom.phase.year',
+        ],
+        order: {
+          student: {
+            person: {
+              lastname: 'ASC',
+              mLastname: 'ASC',
             },
           },
         },
       });
 
-      if (!enrollStudent) {
-        throw new NotFoundException('Matricula no encontrada');
+      if (!enrollStudents || enrollStudents.length === 0) {
+        throw new NotFoundException('Matrículas no encontradas');
       }
-      const classroom =
-        enrollStudent.activityClassroom.grade.name +
-        ' ' +
-        enrollStudent.activityClassroom.section;
-      const year = enrollStudent.activityClassroom.phase.year.name;
-      const level = enrollStudent.activityClassroom.grade.level;
-      const student = enrollStudent.student;
-      const studentName =
-        student.person.lastname +
-        ' ' +
-        student.person.mLastname +
-        ' ' +
-        student.person.name;
-      const code = enrollStudent.student.code;
+
+      // Configurar el archivo ZIP
+      const archive = archiver('zip', {
+        zlib: { level: 9 }, // Máxima compresión
+      });
+      const nameClassroom = `${ac.grade.name}_${ac.section}_${ac.grade.level.name}`;
+      // Configurar la respuesta HTTP
+      res.attachment(`BOLETAS_${nameClassroom}.zip`);
+      archive.pipe(res);
+
+      // Procesar cada estudiante en paralelo
+      await Promise.all(
+        enrollStudents.map(async (enrollStudent) => {
+          const classroom = `${enrollStudent.activityClassroom.grade.name} ${enrollStudent.activityClassroom.section}`;
+          const year = enrollStudent.activityClassroom.phase.year.name;
+          const level = enrollStudent.activityClassroom.grade.level;
+          const student = enrollStudent.student;
+          const studentName = `${student.person.lastname} ${student.person.mLastname} ${student.person.name}`;
+          const code = enrollStudent.student.code;
+
+          // Obtener áreas y competencias
+          const areas = await this.areaRepository.find({
+            where: {
+              level: { id: level.id },
+              status: true,
+            },
+            relations: {
+              competency: true,
+            },
+          });
+
+          // Obtener calificaciones del estudiante
+          const calificaciones = await this.academicRecordRepository.find({
+            where: {
+              student: { id: student.id },
+              academicAssignment: {
+                activityClassroom: {
+                  phase: {
+                    year: { id: yearId },
+                  },
+                },
+              },
+            },
+            relations: ['competency', 'academicAssignment', 'bimester'],
+          });
+
+          // Preparar datos para el reporte
+          const areasDto = areas.map((area) => {
+            const competenciasDto = area.competency.map((competencia) => {
+              const grades = Array(bimesters.length).fill('');
+
+              calificaciones
+                .filter((c) => c.competency.id === competencia.id)
+                .forEach((c) => {
+                  const bimestreIndex = bimesters.findIndex(
+                    (b) => b.id === c.bimester.id,
+                  );
+                  if (bimestreIndex >= 0) {
+                    grades[bimestreIndex] = c.value;
+                  }
+                });
+
+              return {
+                id: competencia.id,
+                name: competencia.name,
+                grades,
+              };
+            });
+
+            return {
+              id: area.id,
+              name: area.name,
+              competencies: competenciasDto,
+            };
+          });
+
+          const reportData = {
+            schoolName: 'COLEGIO ALBERT EINSTEIN',
+            year: year,
+            level: level.name.toUpperCase(),
+            studentCode: code,
+            studentPhoto: student.photo ? student.photo : 'default-user.webp',
+            studentName: studentName.toUpperCase(),
+            classroom: classroom.toUpperCase(),
+            areas: areasDto,
+            attendance: {
+              tardinessUnjustified: [0, 0, 0, 0],
+              tardinessJustified: [0, 0, 0, 0],
+              absenceUnjustified: [0, 0, 0, 0],
+              absenceJustified: [0, 0, 0, 0],
+            },
+          };
+
+          // Generar PDF y agregarlo al ZIP
+          const pdfBuffer =
+            await this.pdfService.generateSchoolReport(reportData);
+          archive.append(pdfBuffer, {
+            name: `BOLETA_${student.person.lastname}_${student.person.mLastname}_${student.person.name}_${code}.pdf`,
+          });
+        }),
+      );
+
+      // Finalizar el archivo ZIP
+      await archive.finalize();
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async getReportByClassroom(
+    activityClassroomId: number,
+    bimesterId: number,
+  ): Promise<ResReportAcademicRecord> {
+    try {
+      const bimestre = await this.bimesterService.findOne(bimesterId);
+      const ac =
+        await this.activityClassroomService.findOne(activityClassroomId);
+
+      // Obtener todas las matrículas del aula
+      const enrollStudents = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: {
+            id: activityClassroomId,
+          },
+          status: Status.MATRICULADO,
+        },
+        relations: [
+          'student',
+          'student.person',
+          'activityClassroom',
+          'activityClassroom.grade',
+          'activityClassroom.phase.year',
+        ],
+        order: {
+          student: {
+            person: {
+              lastname: 'ASC',
+              mLastname: 'ASC',
+            },
+          },
+        },
+      });
 
       const areas = await this.areaRepository.find({
         where: {
-          level: { id: level.id },
+          level: { id: ac.grade.level.id },
           status: true,
         },
-        relations: {
-          competency: true,
-        },
+        relations: ['competency'],
       });
+
       const calificaciones = await this.academicRecordRepository.find({
         where: {
-          student: { id: studentId },
+          bimester: { id: bimesterId },
           academicAssignment: {
-            activityClassroom: {
-              phase: {
-                year: { id: yearId },
-              },
-            },
+            activityClassroom: { id: activityClassroomId },
           },
         },
-        relations: ['competency', 'academicAssignment', 'bimester'],
+        relations: ['student', 'competency'],
       });
 
-      const areasDto = areas.map((area) => {
-        const competenciasDto = area.competency.map((competencia) => {
-          // Inicializar array de calificaciones por bimestre
-          const grades = Array(bimesters.length).fill('');
+      const estudiantesDto: StundetReportDto[] = enrollStudents.map(
+        (matricula) => {
+          const estudiante = matricula.student;
+          const notasDto: any[] = [];
 
-          // Llenar con calificaciones existentes
-          calificaciones
-            .filter((c) => c.competency.id === competencia.id)
-            .forEach((c) => {
-              const bimestreIndex = bimesters.findIndex(
-                (b) => b.id === c.bimester.id,
+          areas.forEach((area) => {
+            area.competency.forEach((competencia) => {
+              const calificacion = calificaciones.find(
+                (c) =>
+                  c.student.id === estudiante.id &&
+                  c.competency.id === competencia.id,
               );
-              if (bimestreIndex >= 0) {
-                grades[bimestreIndex] = c.value;
-              }
+
+              notasDto.push({
+                competenciaId: competencia.id,
+                valor: calificacion?.value || '',
+              });
             });
+          });
 
           return {
-            id: competencia.id,
-            name: competencia.name,
-            grades,
+            id: estudiante.id,
+            code: estudiante.code,
+            name: `${estudiante.person.lastname} ${estudiante.person.mLastname} ${estudiante.person.name}`,
+            photo: estudiante.photo,
+            qualifications: notasDto,
           };
-        });
+        },
+      );
 
-        return {
+      return {
+        classroom: {
+          id: ac.id,
+          name: `${ac.grade.name} ${ac.section}`,
+          level: ac.grade.level.name,
+        },
+        bimestre: {
+          id: bimestre.id,
+          name: bimestre.name,
+        },
+        areas: areas.map((area) => ({
           id: area.id,
           name: area.name,
-          competencies: competenciasDto,
-        };
-      });
-
-      // return {
-      //   periodo: {
-      //     id: studentId,
-      //     level: level.name,
-      //     bimesters,
-      //   },
-      //   areas: areasDto,
-      // };
-
-      const reportData: any = {
-        schoolName: 'COLEGIO ALBERT EINSTEIN',
-        year: year,
-        level: level.name.toUpperCase(),
-        studentCode: code,
-        studentPhoto: student.photo || '1717429805090.webp',
-        studentName: studentName.toUpperCase(),
-        classroom: classroom.toUpperCase(),
-        areas: areasDto,
-        attendance: {
-          tardinessUnjustified: [0, 0, 0, 0],
-          tardinessJustified: [0, 0, 0, 0],
-          absenceUnjustified: [0, 0, 0, 0],
-          absenceJustified: [0, 0, 0, 0],
-        },
+          competencies: area.competency.map((competencia) => ({
+            id: competencia.id,
+            name: competencia.name,
+            order: competencia.order,
+          })),
+        })),
+        students: estudiantesDto,
       };
-
-      const doc = await this.pdfService.generateSchoolReport(reportData);
-
-      return doc;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }

@@ -429,6 +429,7 @@ export class ActivityClassroomService {
             student: {
               person: {
                 lastname: 'ASC',
+                mLastname: 'ASC',
               },
             },
           },
