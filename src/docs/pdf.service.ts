@@ -458,7 +458,6 @@ export class PdfService {
 
     //para calcular el precio por nivel
     if (classRoom.grade.level.id === 1) {
-      console.log('entra lvel');
       priceYear = '3900';
       priceMounth = '390';
     }
@@ -563,7 +562,7 @@ export class PdfService {
       const imageUrl3 = `${fullUrl}contrato/inicial.jpg`;
       const imageUrl4 = `${fullUrl}contrato/sede-azul.jpg`;
       const imageUrl5 = `${fullUrl}contrato/sede-moderna.jpg`;
-      console.log(imageUrl5);
+
       const imageSignature = await this.fetchImage(imageUrlSignature);
       const image1 = await this.fetchImage(imageUrl1);
       const image2 = await this.fetchImage(imageUrl2);
@@ -735,12 +734,9 @@ export class PdfService {
   }
 
   async getCites(idDistrict: string) {
-    console.log('first');
     //OBTENER TODOS LOS DISTRITOS
     const url = this.configService.get('API_ADMISION');
     try {
-      console.log('GET CITIES');
-
       const dataDistrict = await firstValueFrom(
         this.httpService.get(`${url}/cities/district`),
       );
@@ -748,7 +744,7 @@ export class PdfService {
       const district = dataDistrict.data.data.find(
         (district: any) => district.id === idDistrict,
       );
-      console.log(district);
+
       //OBTENER TODOS LAS PROVINCIAS
       const dataProvince = await firstValueFrom(
         this.httpService.get(`${url}/cities/province`),
@@ -970,7 +966,6 @@ export class PdfService {
   }
 
   private createAreasTable(reportData: any): Content {
-    console.log(reportData.areas);
     const tableBody = [
       [
         {
