@@ -159,11 +159,6 @@ export class AcademicRecordsController {
     // }
   }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.academicRecordsService.remove(+id);
-  // }
-
   @ApiOperation({
     summary: 'Obtener reporte de notas por aula y bimestre',
     description:
