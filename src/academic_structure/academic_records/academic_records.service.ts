@@ -530,7 +530,7 @@ export class AcademicRecordsService {
           const pdfBuffer =
             await this.pdfService.generateSchoolReport(reportData);
           archive.append(pdfBuffer, {
-            name: `BOLETA_${classroom + '_' + level}${student.person.lastname}_${student.person.mLastname}_${student.person.name}.pdf`,
+            name: `BOLETA_${classroom + '_' + level.name}${student.person.lastname}_${student.person.mLastname}_${student.person.name}.pdf`,
           });
         }),
       );
