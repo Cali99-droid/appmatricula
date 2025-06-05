@@ -461,21 +461,31 @@ export class EmailsService {
     attachment: Buffer,
     filename: string,
   ): Promise<void> {
-    const mailOptions = {
-      from:
-        '"Colegio AE"' + this.configService.getOrThrow<string>('AWS_SES_FROM'),
-      to,
-      subject,
-      text: body,
-      attachments: [
-        {
-          filename,
-          content: attachment,
-        },
-      ],
-    };
+    try {
+      const mailOptions = {
+        from:
+          '"Colegio AE"' +
+          this.configService.getOrThrow<string>('AWS_SES_FROM'),
+        to: this.env === 'prod' ? to : 'carlos.orellano@ae.edu.pe',
+        subject,
+        text: 'Boleta de Notas',
+        html: body,
+        attachments: [
+          {
+            // filename,
+            filename: filename,
+            content: attachment.toString('base64'),
+            encoding: 'base64',
+            contentType: 'application/pdf',
+          },
+        ],
+      };
 
-    await this.transporter.sendMail(mailOptions);
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw new Error('Failed to send email');
+    }
   }
 
   private async saveEmailEvent(

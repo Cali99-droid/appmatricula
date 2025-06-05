@@ -12,6 +12,8 @@ import { BimesterModule } from 'src/bimester/bimester.module';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Area } from '../area/entities/area.entity';
 import { DocsModule } from 'src/docs/docs.module';
+import { EmailsModule } from 'src/emails/emails.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   controllers: [AcademicRecordsController],
@@ -30,6 +32,8 @@ import { DocsModule } from 'src/docs/docs.module';
     ActivityClassroomModule,
     BimesterModule,
     DocsModule,
+    EmailsModule,
+    ConfigModule,
   ],
 })
 export class AcademicRecordsModule {}
