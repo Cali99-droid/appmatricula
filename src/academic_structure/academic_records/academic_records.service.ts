@@ -560,16 +560,8 @@ export class AcademicRecordsService {
       // Obtener todas las matrículas del aula
       const enrollStudents = await this.enrollmentRepository.find({
         where: {
-          student: {
-            id: In([
-              524, 583, 406, 399, 393, 521, 548, 408, 531, 429, 428, 409, 466,
-              530, 458, 515, 520, 584, 613, 517, 546, 527, 456, 454, 528, 589,
-              433, 410, 608, 545, 595, 603, 617, 448, 626, 616, 606, 564, 569,
-              623, 539, 451, 579, 591, 563, 597, 543, 453, 438, 542, 468, 551,
-              522, 562, 536, 556, 550, 582, 560, 402, 532, 460, 440, 2083, 421,
-              465, 443, 423, 407, 432, 405, 467, 415, 2227, 2275, 538, 632, 459,
-              431, 554, 422, 424,
-            ]),
+          activityClassroom: {
+            id: activityClassroomId,
           },
           status: Status.MATRICULADO,
         },
@@ -750,18 +742,21 @@ export class AcademicRecordsService {
   }
 
   async sendEmailReportCard() {
-    console.log('llaamo');
     try {
       // 1. Obtener datos en paralelo
       const [enrollments, bimesters] = await Promise.all([
         this.enrollmentRepository.find({
           where: {
-            activityClassroom: {
-              grade: {
-                level: {
-                  id: 1,
-                },
-              },
+            student: {
+              id: In([
+                524, 583, 406, 399, 393, 521, 548, 408, 531, 429, 428, 409, 466,
+                530, 458, 515, 520, 584, 613, 517, 546, 527, 456, 454, 528, 589,
+                433, 410, 608, 545, 595, 603, 617, 448, 626, 616, 606, 564, 569,
+                623, 539, 451, 579, 591, 563, 597, 543, 453, 438, 542, 468, 551,
+                522, 562, 536, 556, 550, 582, 560, 402, 532, 460, 440, 2083,
+                421, 465, 443, 423, 407, 432, 405, 467, 415, 2227, 2275, 538,
+                632, 459, 431, 554, 422, 424,
+              ]),
             },
             status: Status.MATRICULADO,
           },
