@@ -749,7 +749,7 @@ export class AcademicRecordsService {
           where: {
             activityClassroom: {
               grade: {
-                id: In([6, 7, 8, 9]),
+                id: In([4, 5]),
               },
             },
             status: Status.MATRICULADO,
