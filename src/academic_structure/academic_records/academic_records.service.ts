@@ -33,6 +33,9 @@ import {
   StundetReportDto,
 } from './dto/res-report-academic-record';
 import { Status } from 'src/enrollment/enum/status.enum';
+import { EmailsService } from 'src/emails/emails.service';
+import { getBoletaEmailTemplate } from './helpers/getEmailBody';
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class AcademicRecordsService {
   private readonly logger = new Logger('AcademicRecordsService');
@@ -56,6 +59,9 @@ export class AcademicRecordsService {
     private activityClassroomService: ActivityClassroomService,
 
     private bimesterService: BimesterService,
+    private emailService: EmailsService,
+
+    private readonly configService: ConfigService,
 
     private pdfService: PdfService,
     @Inject(DataSource)
@@ -649,6 +655,182 @@ export class AcademicRecordsService {
       handleDBExceptions(error, this.logger);
     }
   }
+
+  private async generateBoletaData(enrollStudent, yearId, bimesters) {
+    const classroom = `${enrollStudent.activityClassroom.grade.name} ${enrollStudent.activityClassroom.section}`;
+    const year = enrollStudent.activityClassroom.phase.year.name;
+    const level = enrollStudent.activityClassroom.grade.level;
+    const student = enrollStudent.student;
+    const studentName = `${student.person.lastname} ${student.person.mLastname} ${student.person.name}`;
+    const code = enrollStudent.student.code;
+
+    // Obtener áreas y competencias
+    const areas = await this.areaRepository.find({
+      where: {
+        level: { id: level.id },
+        status: true,
+      },
+      relations: {
+        competency: true,
+      },
+    });
+
+    // Obtener calificaciones del estudiante
+    const calificaciones = await this.academicRecordRepository.find({
+      where: {
+        student: { id: student.id },
+        academicAssignment: {
+          activityClassroom: {
+            phase: {
+              year: { id: yearId },
+            },
+          },
+        },
+      },
+      relations: ['competency', 'academicAssignment', 'bimester'],
+    });
+
+    // Preparar datos para el reporte
+    const areasDto = areas.map((area) => {
+      const competenciasDto = area.competency.map((competencia) => {
+        const grades = Array(bimesters.length).fill('');
+
+        calificaciones
+          .filter((c) => c.competency.id === competencia.id)
+          .forEach((c) => {
+            const bimestreIndex = bimesters.findIndex(
+              (b) => b.id === c.bimester.id,
+            );
+            if (bimestreIndex >= 0) {
+              grades[bimestreIndex] = c.value;
+            }
+          });
+
+        return {
+          id: competencia.id,
+          name: competencia.name,
+          grades,
+        };
+      });
+
+      return {
+        id: area.id,
+        name: area.name,
+        competencies: competenciasDto,
+      };
+    });
+
+    const reportData = {
+      schoolName: 'COLEGIO ALBERT EINSTEIN',
+      year: year,
+      level: level.name.toUpperCase(),
+      studentCode: code,
+      studentPhoto: student.photo ? student.photo : 'default-user.webp',
+      studentName: studentName.toUpperCase(),
+      classroom: classroom.toUpperCase(),
+      areas: areasDto,
+      bimesterName: 'I Bimestre',
+      attendance: {
+        tardinessUnjustified: [0, 0, 0, 0],
+        tardinessJustified: [0, 0, 0, 0],
+        absenceUnjustified: [0, 0, 0, 0],
+        absenceJustified: [0, 0, 0, 0],
+      },
+    };
+
+    return reportData;
+  }
+
+  async sendEmailReportCard() {
+    console.log('llaamo');
+    try {
+      // 1. Obtener datos en paralelo
+      const [enrollments, bimesters] = await Promise.all([
+        this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              grade: {
+                level: {
+                  id: 1,
+                },
+              },
+            },
+            status: Status.MATRICULADO,
+          },
+          relations: {
+            student: {
+              person: true,
+              family: {
+                parentOneId: {
+                  user: true,
+                },
+                parentTwoId: {
+                  user: true,
+                },
+              },
+            },
+          },
+        }),
+        this.bimesterService.findAllAux(16),
+      ]);
+
+      console.log(`Total de estudiantes: ${enrollments.length}`);
+
+      // 2. Configuración de envío
+      const BATCH_SIZE = 5; // Emails por lote
+      const DELAY_BETWEEN_BATCHES = 1000; // 1 segundo entre lotes
+      const MAX_RETRIES = 2; // Intentos por email fallido
+
+      // 3. Procesar en lotes con rate limiting
+      const results = [];
+      for (let i = 0; i < enrollments.length; i += BATCH_SIZE) {
+        const batch = enrollments.slice(i, i + BATCH_SIZE);
+        const batchResults = await this.processBatch(
+          batch,
+          bimesters,
+          MAX_RETRIES,
+        );
+        results.push(...batchResults);
+
+        // Mostrar progreso
+        console.log(
+          `Procesado ${Math.min(i + BATCH_SIZE, enrollments.length)}/${enrollments.length}`,
+        );
+
+        // Esperar entre lotes (excepto después del último)
+        if (i + BATCH_SIZE < enrollments.length) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, DELAY_BETWEEN_BATCHES),
+          );
+        }
+      }
+
+      // 4. Resultados estadísticos
+      const sentCount = results.filter((r) => r.success).length;
+      const failedCount = results.filter((r) => !r.success).length;
+
+      console.log('Resumen:');
+      console.log(`- Enviados exitosamente: ${sentCount}`);
+      console.log(`- Fallidos: ${failedCount}`);
+
+      if (failedCount > 0) {
+        console.log(
+          'Detalles de fallos:',
+          results.filter((r) => !r.success),
+        );
+      }
+
+      return {
+        sent: sentCount,
+        failed: failedCount,
+        details: results,
+      };
+    } catch (error) {
+      console.error('Error en sendEmailReportCard:', error);
+      handleDBExceptions(error, this.logger);
+      throw error;
+    }
+  }
   private validarDuplicadosEnPayload(
     updateAcademicRecordDto: UpdateAcademicRecordDto,
   ) {
@@ -703,5 +885,97 @@ export class AcademicRecordsService {
       mapa.set(`${cal.student.id}-${cal.competency.id}`, cal);
     });
     return mapa;
+  }
+
+  /**emails */
+  private async processSingleEnrollment(
+    enrollment: Enrollment,
+    bimesters: any[],
+  ) {
+    // Generar boleta PDF
+    const reportData = await this.generateBoletaData(enrollment, 16, bimesters);
+    const pdfBuffer = await this.pdfService.generateSchoolReport(reportData);
+
+    // Obtener email
+    let email;
+    if (
+      enrollment.student.family.parentOneId &&
+      enrollment.student.family.parentOneId.user
+    ) {
+      email = enrollment.student.family.parentOneId?.user.email;
+    }
+
+    if (
+      enrollment.student.family.parentTwoId &&
+      enrollment.student.family.parentTwoId.user
+    ) {
+      email = enrollment.student.family.parentTwoId?.user.email;
+    }
+
+    if (!email) {
+      throw new Error('No email found for student');
+    }
+
+    // Enviar email
+    await this.emailService.sendEmailWithAttachment(
+      email,
+      `Boleta de Notas - ${reportData.level} - Bimestre I`,
+      getBoletaEmailTemplate(reportData),
+      pdfBuffer,
+      `boleta_${enrollment.student.code}.pdf`,
+    );
+
+    return { email };
+  }
+
+  private async processBatch(
+    enrollments: Enrollment[],
+    bimesters: any[],
+    maxRetries: number,
+  ) {
+    const batchResults = [];
+
+    // Procesar en paralelo dentro del lote
+    await Promise.all(
+      enrollments.map(async (enrollment) => {
+        let attempt = 0;
+        let success = false;
+        let error: any = null;
+
+        while (attempt <= maxRetries && !success) {
+          try {
+            const result = await this.processSingleEnrollment(
+              enrollment,
+              bimesters,
+            );
+            batchResults.push({
+              success: true,
+              enrollmentId: enrollment.student.id,
+              email: result.email,
+            });
+            success = true;
+          } catch (err) {
+            error = err;
+            attempt++;
+            if (attempt <= maxRetries) {
+              await new Promise((resolve) =>
+                setTimeout(resolve, 1000 * attempt),
+              ); // Espera exponencial
+            }
+          }
+        }
+
+        if (!success) {
+          batchResults.push({
+            success: false,
+            enrollmentId: enrollment.student.id,
+            error: error?.message || 'Unknown error',
+            attempts: attempt,
+          });
+        }
+      }),
+    );
+
+    return batchResults;
   }
 }

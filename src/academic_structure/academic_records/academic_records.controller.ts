@@ -200,4 +200,9 @@ export class AcademicRecordsController {
       +bimesterId,
     );
   }
+
+  @Get('/email/report')
+  sendEmailReportCard() {
+    return this.academicRecordsService.sendEmailReportCard();
+  }
 }
