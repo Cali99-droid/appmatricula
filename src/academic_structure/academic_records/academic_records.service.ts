@@ -897,9 +897,20 @@ export class AcademicRecordsService {
     const pdfBuffer = await this.pdfService.generateSchoolReport(reportData);
 
     // Obtener email
-    const email =
-      enrollment.student.family.parentOneId?.user.email ||
-      enrollment.student.family.parentTwoId?.user.email;
+    let email;
+    if (
+      enrollment.student.family.parentOneId &&
+      enrollment.student.family.parentOneId.user
+    ) {
+      email = enrollment.student.family.parentOneId?.user.email;
+    }
+
+    if (
+      enrollment.student.family.parentTwoId &&
+      enrollment.student.family.parentTwoId.user
+    ) {
+      email = enrollment.student.family.parentTwoId?.user.email;
+    }
 
     if (!email) {
       throw new Error('No email found for student');

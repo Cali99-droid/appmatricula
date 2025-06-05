@@ -12,7 +12,7 @@ import {
 import { AcademicRecordsService } from './academic_records.service';
 import { CreateAcademicRecordDto } from './dto/create-academic_record.dto';
 
-import { AuthenticatedUser, Public, Roles } from 'nest-keycloak-connect';
+import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AcademicRecordsResponseDto } from './dto/res-academic-record.dto';
@@ -202,7 +202,6 @@ export class AcademicRecordsController {
   }
 
   @Get('/email/report')
-  @Public()
   sendEmailReportCard() {
     return this.academicRecordsService.sendEmailReportCard();
   }
