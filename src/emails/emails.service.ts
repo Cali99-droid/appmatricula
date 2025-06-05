@@ -444,6 +444,7 @@ export class EmailsService {
       subject,
       text,
       html,
+      replyTo: 'soporte@colegioae.freshdesk.com',
     };
 
     try {
@@ -470,6 +471,7 @@ export class EmailsService {
         subject,
         text: 'Boleta de Notas',
         html: body,
+        replyTo: 'soporte@colegioae.freshdesk.com',
         attachments: [
           {
             // filename,
