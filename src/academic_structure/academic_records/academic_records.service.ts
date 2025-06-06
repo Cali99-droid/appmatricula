@@ -458,9 +458,10 @@ export class AcademicRecordsService {
           const student = enrollStudent.student;
           const studentName = `${student.person.lastname} ${student.person.mLastname} ${student.person.name}`;
           const code = enrollStudent.student.code;
-
+          let areas;
+          const grade = enrollStudent.activityClassroom.grade;
           // Obtener áreas y competencias
-          const areas = await this.areaRepository.find({
+          areas = await this.areaRepository.find({
             where: {
               level: { id: level.id },
               status: true,
@@ -469,7 +470,12 @@ export class AcademicRecordsService {
               competency: true,
             },
           });
-
+          if (grade.id === 12 || grade.id === 14 || grade.id === 13) {
+            areas = areas.filter((a) => a.id !== 22);
+          }
+          if (grade.id === 14) {
+            areas = areas.filter((a) => a.id !== 21 && a.id !== 24);
+          }
           // Obtener calificaciones del estudiante
           const calificaciones = await this.academicRecordRepository.find({
             where: {
@@ -663,9 +669,10 @@ export class AcademicRecordsService {
     const student = enrollStudent.student;
     const studentName = `${student.person.lastname} ${student.person.mLastname} ${student.person.name}`;
     const code = enrollStudent.student.code;
-
+    const grade = enrollStudent.enrollStudent.activityClassroom.grade;
     // Obtener áreas y competencias
-    const areas = await this.areaRepository.find({
+
+    let areas = await this.areaRepository.find({
       where: {
         level: { id: level.id },
         status: true,
@@ -675,6 +682,14 @@ export class AcademicRecordsService {
       },
     });
 
+    if (grade.id === 12 || grade.id === 14 || grade.id === 13) {
+      areas = areas.filter((a) => a.id !== 22);
+    }
+    if (grade.id === 14) {
+      areas = areas.filter((a) => a.id !== 21 && a.id !== 24);
+    }
+
+    // return areas;
     // Obtener calificaciones del estudiante
     const calificaciones = await this.academicRecordRepository.find({
       where: {
@@ -891,6 +906,7 @@ export class AcademicRecordsService {
   ) {
     // Generar boleta PDF
     const reportData = await this.generateBoletaData(enrollment, 16, bimesters);
+
     const pdfBuffer = await this.pdfService.generateSchoolReport(reportData);
 
     // Obtener email
@@ -945,6 +961,7 @@ export class AcademicRecordsService {
               enrollment,
               bimesters,
             );
+
             batchResults.push({
               success: true,
               enrollmentId: enrollment.student.id,

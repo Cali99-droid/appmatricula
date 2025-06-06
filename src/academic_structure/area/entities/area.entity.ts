@@ -48,6 +48,15 @@ export class Area {
   })
   status: boolean;
 
+  @ApiProperty({
+    example: 'true',
+    description: 'if this area is in the report ',
+  })
+  @Column('bool', {
+    default: true,
+  })
+  inReport: boolean;
+
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',
