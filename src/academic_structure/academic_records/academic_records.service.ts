@@ -669,7 +669,7 @@ export class AcademicRecordsService {
     const student = enrollStudent.student;
     const studentName = `${student.person.lastname} ${student.person.mLastname} ${student.person.name}`;
     const code = enrollStudent.student.code;
-    const grade = enrollStudent.enrollStudent.activityClassroom.grade;
+    const grade = enrollStudent.activityClassroom.grade;
     // Obtener áreas y competencias
 
     let areas = await this.areaRepository.find({
