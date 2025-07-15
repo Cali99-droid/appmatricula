@@ -215,7 +215,6 @@ export class AcademicRecordsController {
 
   /**EXCEL */
   @Get('report/level/:levelId/bimestre/:bimesterId/campus/:campusId/excel')
-  @Public()
   async getAcademicRecordExcelByLevel(
     @Param('levelId') levelId: number,
     @Param('bimesterId') bimesterId: number,

@@ -55,9 +55,10 @@ export class DocsService {
     areaHeaderRowValues.push(''); // Placeholder for 'Grado/Sección'
     areaHeaderRowValues.push(''); // Placeholder for 'Código'
     areaHeaderRowValues.push(''); // Placeholder for 'Estudiante'
-    competencyHeaderRowValues.push('Grado/Sección');
+
     competencyHeaderRowValues.push('Código');
     competencyHeaderRowValues.push('Estudiante');
+    competencyHeaderRowValues.push('Grado/Sección');
 
     // Construir los encabezados por área y competencia basados en el sampleReport
     sampleReport.areas
@@ -161,10 +162,10 @@ export class DocsService {
 
         report.students.forEach((student) => {
           const studentRow = [];
-          studentRow.push(`${gradeName} - ${classroomSection}`);
+
           studentRow.push(student.code);
           studentRow.push(student.name);
-
+          studentRow.push(`${gradeName} - ${classroomSection}`);
           const studentQualificationsMap = new Map(
             student.qualifications.map((q) => [q.competenciaId, q.valor]),
           );
