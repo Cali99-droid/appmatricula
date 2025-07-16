@@ -163,7 +163,11 @@ export class DocsService {
         report.students.forEach((student) => {
           const studentRow = [];
 
-          studentRow.push(student.code);
+          studentRow.push(
+            student.code?.length < 14
+              ? student.code?.padStart(14, '0').toString()
+              : student.code?.toString(),
+          );
           studentRow.push(student.name);
           studentRow.push(`${gradeName} - ${classroomSection}`);
           const studentQualificationsMap = new Map(
