@@ -25,6 +25,7 @@ import { Family } from 'src/family/entities/family.entity';
 import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { SearchByDateDto } from '../common/dto/search-by-date.dto';
+import { Student } from 'src/student/entities/student.entity';
 
 @Injectable()
 export class PersonService {
@@ -37,6 +38,8 @@ export class PersonService {
     private readonly configService: ConfigService,
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Relationship)
@@ -351,6 +354,7 @@ export class PersonService {
       id: id,
       ...updatePersonDto,
     });
+
     if (!person)
       throw new NotFoundException(`Person with studentId: ${id} not found`);
     if (updatePersonDto.birthDate) {
@@ -358,6 +362,24 @@ export class PersonService {
     }
     try {
       await this.personRepository.save(person);
+      /**ACTUALIZAR NOMBRE DE FAMILIA */
+      const student = await this.studentRepository.findOne({
+        where: {
+          person: { id: person.id },
+        },
+        relations: {
+          family: true,
+        },
+      });
+      if (student) {
+        const family = await this.familypRepository.findOne({
+          where: {
+            id: student.family.id,
+          },
+        });
+        family.nameFamily = person.lastname + ' ' + person.mLastname;
+        await this.familypRepository.save(family);
+      }
       return person;
     } catch (error) {
       handleDBExceptions(error, this.logger);
