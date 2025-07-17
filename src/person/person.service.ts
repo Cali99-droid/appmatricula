@@ -353,6 +353,9 @@ export class PersonService {
     });
     if (!person)
       throw new NotFoundException(`Person with studentId: ${id} not found`);
+    if (updatePersonDto.birthDate) {
+      person.birthDate = new Date(updatePersonDto.birthDate);
+    }
     try {
       await this.personRepository.save(person);
       return person;
