@@ -1387,11 +1387,13 @@ export class TreasuryService {
     const details = debts
       .map((d) => {
         let amount: number = d.total;
+
         if (d.discount !== null) {
           amount = d.total - (d.total * d.discount.percentage) / 100;
           amount = Math.round(amount);
         }
         total += amount;
+
         if (amount === 0) return null;
         return {
           type: '02',
@@ -1421,7 +1423,7 @@ export class TreasuryService {
       const period = detail.period <= 9 ? '0' + detail.period : detail.period;
 
       const line = `${detail.type}${name}${(detail.studentId + (description + ' ' + detail.description).padEnd(11) + ' ' + detail.code).padEnd(48, ' ')}${detail.dueDate}${'20301231'}${period}${detail.amount.padStart(15, '0')}${detail.amount.padStart(15, '0')}${cero.padEnd(32, '0')}`;
-      content += line.padEnd(360, '') + '\n'; // Asegura que la línea tenga 250 caracteres
+      content += line.padEnd(360, ' ') + '\n'; // Asegura que la línea tenga 250 caracteres
     });
 
     /**FOOTER */
