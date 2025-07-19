@@ -52,7 +52,6 @@ export class BimesterService {
           year: { id: !isNaN(+yearId) ? +yearId : undefined },
         },
         status: true,
-
       },
       order: {
         name: 'ASC',
@@ -68,7 +67,6 @@ export class BimesterService {
         phase: {
           year: { id: !isNaN(+yearId) ? +yearId : undefined },
         },
-
       },
       order: {
         name: 'ASC',
@@ -81,6 +79,15 @@ export class BimesterService {
   async findOne(id: number) {
     const bimester = await this.bimesterRepository.findOne({
       where: { id: id },
+    });
+    if (!bimester)
+      throw new NotFoundException(`Bimester with id ${id} not found`);
+    return bimester;
+  }
+
+  async findActive(id: number) {
+    const bimester = await this.bimesterRepository.findOne({
+      where: { id: id, status: true },
     });
     if (!bimester)
       throw new NotFoundException(`Bimester with id ${id} not found`);

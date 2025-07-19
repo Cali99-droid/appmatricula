@@ -91,6 +91,10 @@ export class AcademicRecordsService {
           email: payload.email,
         },
       });
+      const bimester = await this.bimesterService.findActive(bimesterId);
+      if (!bimester) {
+        throw new NotFoundException('Bimeste no habilitado para subir notas');
+      }
       const academicAssignment =
         await this.academicAssignmentRepository.findOne({
           where: {
