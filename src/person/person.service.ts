@@ -91,9 +91,9 @@ export class PersonService {
         const person = this.personRepository.create({
           typeDoc: data.typeDoc,
           docNumber: data.docNumber,
-          name: data.name,
-          lastname: data.lastName,
-          mLastname: data.mLastname,
+          name: data.name.trim(),
+          lastname: data.lastName.trim(),
+          mLastname: data.mLastname.trim(),
           gender: gender,
           familyRole: familyRole,
           birthDate: date,
@@ -212,13 +212,14 @@ export class PersonService {
   async findOne(id: number) {
     const person = await this.personRepository.findOne({
       where: { id: id },
-      relations: { user: true },
+      relations: { user: true, student: true },
     });
     if (!person) throw new NotFoundException(`person with id ${id} not found`);
-    const { user, ...rest } = person;
+    const { user, student, ...rest } = person;
     return {
       ...rest,
       email: !user ? null : user.email,
+      code: !student.studentCode ? null : student.studentCode,
     };
   }
   async findParentsByStudentCode(id: string) {

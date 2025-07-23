@@ -193,7 +193,7 @@ export class AuthService {
         if (user.resource_access['appcolegioae']) {
           roles = user.resource_access['appcolegioae'].roles;
         }
-        console.log(roles);
+
         const menu = this.generateMenu(roles);
         return menu;
         // throw new BadRequestException(
