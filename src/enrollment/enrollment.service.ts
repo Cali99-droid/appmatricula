@@ -1757,7 +1757,10 @@ export class EnrollmentService {
           creationDate: dateOfChange,
           expirationDate: reservationExpiration,
           siagie: student.siagie,
-          studentCode: student.studentCode || '',
+          studentCode:
+            student.studentCode?.length < 14
+              ? student.studentCode?.padStart(14, '0').toString()
+              : student.studentCode?.toString() || ' ',
           modularCode:
             student.modularCode === 'no information' ? '' : student.modularCode,
           schoolName: student.school,

@@ -216,10 +216,15 @@ export class PersonService {
     });
     if (!person) throw new NotFoundException(`person with id ${id} not found`);
     const { user, student, ...rest } = person;
+
     return {
       ...rest,
       email: !user ? null : user.email,
-      code: !student.studentCode ? null : student.studentCode,
+      code: !student.studentCode
+        ? null
+        : student.studentCode?.length < 14
+          ? student.studentCode?.padStart(14, '0').toString()
+          : student.studentCode?.toString(),
     };
   }
   async findParentsByStudentCode(id: string) {
