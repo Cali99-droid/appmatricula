@@ -280,7 +280,7 @@ export const AdminMenu = {
               id: 1,
               label: 'Genrar TXT',
               icon: 'userComportamiento',
-              link: 'download',
+              link: '/admin/treasury/banks',
               permissions: ['tesoreria-reporte'],
               subMenu: [],
             },
