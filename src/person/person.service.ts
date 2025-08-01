@@ -220,7 +220,7 @@ export class PersonService {
     return {
       ...rest,
       email: !user ? null : user.email,
-      code: !student.studentCode
+      code: !student?.studentCode
         ? null
         : student.studentCode?.length < 14
           ? student.studentCode?.padStart(14, '0').toString()
