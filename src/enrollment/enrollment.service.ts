@@ -45,6 +45,8 @@ import { TreasuryService } from 'src/treasury/treasury.service';
 import { SectionHistory } from './entities/section-history';
 import { ActionType } from 'src/student/enum/actionType.enum';
 import { User } from 'src/user/entities/user.entity';
+import { CreateReferDto } from './dto/create-refer.dto';
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -1916,6 +1918,7 @@ export class EnrollmentService {
       ActionType.TRASLADADO,
       destinationSchool,
       us.id,
+      studentId,
     );
 
     return hs;
@@ -2103,4 +2106,46 @@ export class EnrollmentService {
   //   }
   //   return enrollments;
   // }
+
+  /**TRASLADOS */
+  async referToTransfers(
+    createReferDto: CreateReferDto,
+    user: KeycloakTokenPayload,
+  ) {
+    const { childrenId, parentId, activityClassroomId } = createReferDto;
+    const child = await this.studentRepository.findOne({
+      where: {
+        person: { id: childrenId },
+      },
+      relations: {
+        person: true,
+      },
+    });
+    const parent = await this.personRepository.findOneBy({
+      id: parentId,
+    });
+
+    const userDB = await this.userRepository.findOneBy({
+      email: user.email,
+    });
+
+    const classroom = await this.activityClassroomRepository.findOneBy({
+      id: activityClassroomId,
+    });
+
+    console.log(child);
+    console.log(parent);
+    console.log(classroom);
+    /** CALL API TO MICRO TRANSFERS */
+
+    const destination = `${classroom.grade.name} ${classroom.section}`;
+    const obs = `SOLICITUD TRASLADO ${child.studentCode} - ${destination}`;
+    //SAVE HISTORY
+    const hist = await this.studentService.createHistory(
+      ActionType.TRAS_INTER,
+      obs,
+      userDB.id,
+      child.id,
+    );
+  }
 }

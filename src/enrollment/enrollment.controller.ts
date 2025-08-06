@@ -38,6 +38,8 @@ import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 import { UpdateExpirationDto } from './dto/update-expiration.dto';
 import { TransferStudentDto } from './dto/tranfer-student.dto';
+import { CreateReferDto } from './dto/create-refer.dto';
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -338,16 +340,36 @@ export class EnrollmentController {
     return this.enrollmentService.updateExpiration(id, updateExpirationDto);
   }
 
-  @Public()
-  @Get('script')
-  updateReservedScript() {
-    // return this.enrollmentService.updateReservations();
-    // return this.enrollmentService.updateReservedScript();
-    return this.enrollmentService.updateSchoolScript();
-  }
+  // @Public()
+  // @Get('script')
+  // updateReservedScript() {
+  //   // return this.enrollmentService.updateReservations();
+  //   // return this.enrollmentService.updateReservedScript();
+  //   return this.enrollmentService.updateSchoolScript();
+  // }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.enrollmentService.findOne(+id);
+  }
+
+  /**TRASLADOS */
+  @Post('refer-to-transfers')
+  @ApiResponse({
+    status: 200,
+    description: 'request code ',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'some error',
+  })
+  // @Roles({
+  //   roles: ['administrador-colegio', 'padre-colegio', 'secretaria'],
+  // })
+  referToTransfers(
+    @Body() createReferDto: CreateReferDto,
+    @AuthenticatedUser() user: KeycloakTokenPayload,
+  ) {
+    return this.enrollmentService.referToTransfers(createReferDto, user);
   }
 }

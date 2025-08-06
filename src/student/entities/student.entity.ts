@@ -16,6 +16,7 @@ import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { EmailDetail } from 'src/emails/entities/emailDetail.entity';
 import { Transfer } from 'src/transfer/entities/transfer.entity';
+import { Debt } from 'src/treasury/entities/debt.entity';
 
 @Entity()
 export class Student {
@@ -92,6 +93,9 @@ export class Student {
 
   @OneToMany(() => Transfer, (transfers) => transfers.student)
   transfers?: Transfer[];
+
+  @OneToMany(() => Debt, (debt) => debt.student)
+  debt?: Debt[];
 
   // @OneToMany(() => Email, (email) => email.student, {
   //   // eager: true,

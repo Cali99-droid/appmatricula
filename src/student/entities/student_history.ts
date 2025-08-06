@@ -11,6 +11,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { ActionType } from '../enum/actionType.enum';
 import { User } from 'src/user/entities/user.entity';
+import { Student } from './student.entity';
 @Entity()
 export class StudentHistory {
   @ApiProperty()
@@ -29,6 +30,13 @@ export class StudentHistory {
     unique: true,
   })
   obs: string;
+
+  @ApiProperty({
+    description: 'Id of user',
+  })
+  @ManyToOne(() => Student)
+  @JoinColumn({ name: 'studentId' })
+  student: Student;
 
   @ApiProperty({
     description: 'Id of user',

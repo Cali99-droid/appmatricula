@@ -285,7 +285,7 @@ export class FamilyService {
         respAcademic: true,
       },
     });
-    console.log(family);
+
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
 
     if (family.parentOneId?.user) {

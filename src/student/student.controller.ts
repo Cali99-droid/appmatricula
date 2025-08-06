@@ -280,4 +280,53 @@ export class StudentController {
 
     return await this.studentService.uploadPDF(file.buffer, +id);
   }
+
+  /**TRASLADOS */
+  @ApiParam({
+    name: 'searchTerm',
+    required: false,
+    description: 'termino a buscar',
+    type: String,
+  })
+  @ApiParam({
+    name: 'yearId',
+    required: false,
+    description: 'id del año a filtrar',
+    type: String,
+  })
+  @ApiParam({
+    name: 'campusId',
+    required: false,
+    description: 'id de la sede a filtrar',
+    type: String,
+  })
+  @ApiParam({
+    name: 'levelId',
+    required: false,
+    description: 'id del nivel a filtrar',
+    type: String,
+  })
+  @ApiParam({
+    name: 'page',
+    required: false,
+    description: 'parámetro de paginación',
+    type: String,
+  })
+  @ApiParam({
+    name: 'limit',
+    required: false,
+    description: 'parámetro de paginación',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'search matches',
+  })
+  @Get('/search/advanced')
+  findStudentsAdvanced(
+    @Query() searchDto: SearchEstudiantesDto,
+    @AuthenticatedUser() user: any,
+  ) {
+    return this.studentService.findStudentsAdvanced(searchDto, user);
+  }
 }
