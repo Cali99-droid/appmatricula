@@ -606,13 +606,14 @@ export class AcademicRecordsService {
         },
         relations: ['competency'],
       });
+     
 
       const calificaciones = await this.academicRecordRepository.find({
         where: {
           bimester: { id: bimesterId },
-          academicAssignment: {
-            activityClassroom: { id: activityClassroomId },
-          },
+          student: {
+              id: In(enrollStudents.map((es) => es.student.id)), // Asegurarse de que las calificaciones sean de los estudiantes matriculados
+            },
         },
         relations: ['student', 'competency'],
       });
@@ -939,9 +940,9 @@ export class AcademicRecordsService {
         const calificaciones = await this.academicRecordRepository.find({
           where: {
             bimester: { id: bimesterId },
-            academicAssignment: {
-              activityClassroom: { id: ac.id }, // Filtrar por la activityClassroom específica
-            },
+            // academicAssignment: {
+            //   activityClassroom: { id: ac.id }, // Filtrar por la activityClassroom específica
+            // },
             student: {
               id: In(enrollStudents.map((es) => es.student.id)), // Asegurarse de que las calificaciones sean de los estudiantes matriculados
             },
