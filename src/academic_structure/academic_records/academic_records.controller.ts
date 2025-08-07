@@ -209,8 +209,8 @@ export class AcademicRecordsController {
   @Get('/email/report')
   @Public()
   sendEmailReportCard() {
-    // return this.academicRecordsService.sendEmailReportCard();
-    return this.academicRecordsService.sendOneEmail();
+    return this.academicRecordsService.sendEmailReportCard();
+    //return this.academicRecordsService.sendOneEmail();
   }
 
   /**EXCEL */

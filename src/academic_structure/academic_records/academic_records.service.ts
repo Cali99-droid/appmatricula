@@ -776,7 +776,7 @@ export class AcademicRecordsService {
           where: {
             activityClassroom: {
               grade: {
-                id: In([11, 12, 13, 14, 10]),
+                id: In([1, 2, 3, 4, 5,6,7,8,9]),
               },
             },
             status: Status.MATRICULADO,
