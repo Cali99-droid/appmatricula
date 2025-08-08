@@ -89,8 +89,12 @@ export class AttendanceService {
     try {
       /**Verificar validez de matricula */
       const enrollment = await this.enrrollmentRepository.findOneOrFail({
-        where: { code: createAttendanceDto.code },
+        where: { code: createAttendanceDto.code, status: Status.MATRICULADO },
       });
+
+      if (!enrollment) {
+        throw new BadRequestException(`Estudiante no tiene matricula activa`);
+      }
 
       const { student, activityClassroom } = enrollment;
       const { phase, grade, section, schoolShift, classroom } =

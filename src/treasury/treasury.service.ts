@@ -403,6 +403,7 @@ export class TreasuryService {
       where: {
         student: { id: studentId },
         status: false,
+        isCanceled: false,
       },
       relations: {
         concept: true,
