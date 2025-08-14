@@ -33,6 +33,7 @@ import { Express } from 'express';
 import { RespProcess } from './interfaces/RespProcess.interface';
 import { numberOfRecords } from './dto/resp-process.dto';
 import { CreateDiscountDto } from './dto/create-discount.dto';
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 @ApiTags('Treasury')
 @Resource('appcolegioae')
 @Controller('treasury')
@@ -90,7 +91,10 @@ export class TreasuryController {
 
   @Get('payment')
   @ApiResponse({ status: 201, description: 'datos de boletas' })
-  getPaid(@Query() findPaidDto: FindPaidDto, @AuthenticatedUser() user: any) {
+  getPaid(
+    @Query() findPaidDto: FindPaidDto,
+    @AuthenticatedUser() user: KeycloakTokenPayload,
+  ) {
     const { startDate, endDate, userId } = findPaidDto;
     return this.treasuryService.findPaid(user, startDate, endDate, +userId);
   }

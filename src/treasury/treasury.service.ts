@@ -8,7 +8,7 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
-import { Between, In, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
+import { In, LessThan, MoreThanOrEqual, Raw, Repository } from 'typeorm';
 import { Family } from 'src/family/entities/family.entity';
 import axios from 'axios';
 import { Payment } from './entities/payment.entity';
@@ -37,6 +37,7 @@ import { CreateDiscountDto } from './dto/create-discount.dto';
 import { Discounts } from './entities/discounts.entity';
 import jsPDF from 'jspdf';
 import * as qrcode from 'qrcode';
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 
@@ -433,7 +434,7 @@ export class TreasuryService {
   }
 
   async findPaid(
-    user: any,
+    user: KeycloakTokenPayload,
     startDate: string,
     endDate: string,
     userId: number,
@@ -455,9 +456,13 @@ export class TreasuryService {
 
     const boletas = await this.billRepository.find({
       where: {
+        date: Raw((alias) => `DATE(${alias}) BETWEEN :startDate AND :endDate`, {
+          startDate: startDate, // '2025-08-14'
+          endDate: endDate, // '2025-08-16'
+        }),
         payment: {
           ...(isAuth ? whereConditionTwo : whereCondition),
-          date: Between(startDate, endDate), // Filtrar entre las fechas dadas
+          // date: Between(startDate, endDate), // Filtrar entre las fechas dadas
           student: {
             enrollment: [
               {
@@ -497,7 +502,7 @@ export class TreasuryService {
         },
       },
     });
-
+    console.log(boletas.length);
     // Formatear los datos para el frontend
     const result = this.formatDataBill(boletas);
     // Calcular el total de los pagos
