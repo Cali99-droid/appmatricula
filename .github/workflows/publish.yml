@@ -80,6 +80,7 @@ jobs:
             -e NUBEFACT_TOKEN=${{ secrets.NUBEFACT_TOKEN }} \
             -e SLACK_WEBHOOK_GENERAL=${{ secrets.SLACK_WEBHOOK_GENERA }} \
             -e SLACK_WEBHOOK_TREASURY=${{ secrets.SLACK_WEBHOOK_TREASURY }} \
+            -e API_KEY=${{ secrets.API_KEY }} \
             -e TZ=America/Lima \
             --restart always \
             ghcr.io/cali99-droid/appmatricula:latest
