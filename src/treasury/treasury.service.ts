@@ -703,7 +703,7 @@ export class TreasuryService {
 
     if (debt.discount !== null) {
       debt.total = debt.total - (debt.total * debt.discount.percentage) / 100;
-      // serie = `BB${campus.id}${level.id}`;
+      serie = `BB${campus.id}${level.id}`;
     }
     if (debt.concept.code === 'C005') {
       // Si es traslado se procede a cancelar las deudas del mes
