@@ -1802,7 +1802,7 @@ export class TreasuryService {
         payment: {
           id: boleta.payment.id,
           date: boleta.payment.date,
-          total: boleta.payment.total,
+          total: boleta.payment.total.toFixed(2),
           status: boleta.payment.status,
           concept: {
             description: boleta.payment.concept.description,
