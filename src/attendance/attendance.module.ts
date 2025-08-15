@@ -21,13 +21,13 @@ import { HttpModule } from '@nestjs/axios';
 import { Family } from 'src/family/entities/family.entity';
 import { UserModule } from 'src/user/user.module';
 import { EmailsModule } from 'src/emails/emails.module';
-import { SlackService } from 'src/enrollment/slack.service';
+
 import { EnrollmentModule } from 'src/enrollment/enrollment.module';
 
 @Module({
   controllers: [AttendanceController],
 
-  providers: [AttendanceService, AttendanceScheduler, SlackService],
+  providers: [AttendanceService, AttendanceScheduler],
   imports: [
     TypeOrmModule.forFeature([
       Student,

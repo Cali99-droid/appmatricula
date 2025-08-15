@@ -37,6 +37,9 @@ import { CreateDiscountDto } from './dto/create-discount.dto';
 import { Discounts } from './entities/discounts.entity';
 import jsPDF from 'jspdf';
 import * as qrcode from 'qrcode';
+import { SlackService } from 'src/common/slack/slack.service';
+import { SlackChannel } from 'src/common/slack/slack.constants';
+
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 
@@ -71,6 +74,7 @@ export class TreasuryService {
     private readonly creditNoteRepository: Repository<CreditNote>,
     @InjectRepository(Discounts)
     private readonly discountsRepository: Repository<Discounts>,
+    private readonly slackService: SlackService,
   ) {}
 
   async createPaid(
@@ -1446,16 +1450,40 @@ export class TreasuryService {
   }
 
   async processTxt(bank: PaymentPref, file: Express.Multer.File, user: any) {
+    if (!bank) {
+      this.slackService.sendMessage(
+        SlackChannel.TREASURY,
+        'ERROR: No se especificó el banco',
+      );
+      throw new BadRequestException('ERROR: No se especificó el banco');
+    }
+
     let results: { code: string; date: string }[] = [];
     let paymentMethod: PaymentMethod;
     let debtsPending: Debt[] = [];
     if (!file) {
+      this.slackService.sendMessage(
+        SlackChannel.TREASURY,
+        'ERROR: No se recibió ningún archivo',
+      );
       throw new BadRequestException('No se recibió ningún archivo');
     }
+    this.slackService.sendMessage(
+      SlackChannel.TREASURY,
+      'INFO: Procesando archivo txt ...',
+    );
     if (bank.toLocaleUpperCase() === PaymentPref.bcp) {
+      this.slackService.sendMessage(
+        SlackChannel.TREASURY,
+        'INFO: Archivo detectado, banco: BCP',
+      );
       results = await this.processBCP(file);
       paymentMethod = PaymentMethod.bcp;
     } else {
+      this.slackService.sendMessage(
+        SlackChannel.TREASURY,
+        'INFO: Archivo detectado, banco: BBVA',
+      );
       results = await this.processBBVA(file);
       paymentMethod = PaymentMethod.bbva;
     }
@@ -1471,19 +1499,11 @@ export class TreasuryService {
       },
     });
 
-    //**agrupar */
-    const groupedBySerie = debts.reduce(
-      (acc, debt) => {
-        const key = debt.student.id;
-        if (!acc[key]) {
-          acc[key] = [];
-        }
-        acc[key].push(debt);
-        return acc;
-      },
-      {} as Record<string, typeof debts>,
-    );
     if (debts.length === 0) {
+      this.slackService.sendMessage(
+        SlackChannel.TREASURY,
+        'ERROR: No se encontró información en el archivo, 0 deudas encontradas',
+      );
       return {
         status: false,
         message: 'No se encontró información',
@@ -1503,43 +1523,59 @@ export class TreasuryService {
     }
     const debtsPaid = debts.filter((d) => d.status === true);
     debtsPending = debts.filter((d) => d.status === false);
-    const totalDebt = debtsPaid.reduce((sum, deb) => sum + deb.total, 0);
-    const totalDebtPending = debtsPending.reduce(
-      (sum, deb) => sum + deb.total,
-      0,
-    );
-    if (debtsPaid.length > 0) {
-      return {
-        status: false,
-        message: 'Algunos pagos ya fueron registrados previamente.',
-        alreadyPaid: debtsPaid.map((d) => ({
-          code: d.code,
-          student:
-            d.student.person.lastname +
-            ' ' +
-            d.student.person.mLastname +
-            ' ' +
-            d.student.person.name,
-        })),
-        debtsPending: debtsPending.map((d) => d.code),
-        debtsStudentPending: debtsPending.map((d) => ({
-          code: d.code,
-          student:
-            d.student.person.lastname +
-            ' ' +
-            d.student.person.mLastname +
-            ' ' +
-            d.student.person.name,
-        })),
-        numberOfRecords: debts.length,
-        failedPayments: [],
-        failLength: 0,
-        successfulPayments: [],
-        total: totalDebt,
-        totalDebtPending,
-      } as RespProcess;
-    }
+    // const totalDebt = debtsPaid.reduce((sum, deb) => sum + deb.total, 0);
+    // const totalDebtPending = debtsPending.reduce(
+    //   (sum, deb) => sum + deb.total,
+    //   0,
+    // );
 
+    if (debtsPaid.length > 0) {
+      this.slackService.sendMessage(
+        SlackChannel.TREASURY,
+        `INFO: Algunos pagos ya fueron registrados previamente. ${debtsPaid.length} `,
+      );
+      // return {
+      //   status: false,
+      //   message: 'Algunos pagos ya fueron registrados previamente.',
+      //   alreadyPaid: debtsPaid.map((d) => ({
+      //     code: d.code,
+      //     student:
+      //       d.student.person.lastname +
+      //       ' ' +
+      //       d.student.person.mLastname +
+      //       ' ' +
+      //       d.student.person.name,
+      //   })),
+      //   debtsPending: debtsPending.map((d) => d.code),
+      //   debtsStudentPending: debtsPending.map((d) => ({
+      //     code: d.code,
+      //     student:
+      //       d.student.person.lastname +
+      //       ' ' +
+      //       d.student.person.mLastname +
+      //       ' ' +
+      //       d.student.person.name,
+      //   })),
+      //   numberOfRecords: debts.length,
+      //   failedPayments: [],
+      //   failLength: 0,
+      //   successfulPayments: [],
+      //   total: totalDebt,
+      //   totalDebtPending,
+      // } as RespProcess;
+    }
+    //**agrupar */
+    const groupedBySerie = debtsPending.reduce(
+      (acc, debt) => {
+        const key = debt.student.id;
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(debt);
+        return acc;
+      },
+      {} as Record<string, typeof debts>,
+    );
     // /**Procesar boletas */
     const resultsOfPay: PromiseSettledResult<any>[] = [];
 
@@ -1612,6 +1648,10 @@ export class TreasuryService {
       0,
     );
     if (failedPayments.length > 0) {
+      this.slackService.sendMessage(
+        SlackChannel.TREASURY,
+        `ERROR: Algunos pagos no pudieron procesarse. ${debtsPending.length}, BANCO: ${bank}, FILE: ${file.originalname}`,
+      );
       return {
         status: false,
         message: 'Algunos pagos no pudieron procesarse.',
@@ -1637,10 +1677,13 @@ export class TreasuryService {
         ),
       } as RespProcess;
     }
-
+    this.slackService.sendMessage(
+      SlackChannel.TREASURY,
+      `INFO: Archivos procesados correctamente: ${successfulPayments.length}`,
+    );
     return {
       status: true,
-      message: 'Todos los pagos fueron procesados correctamente.',
+      message: 'Archivos procesados correctamente',
       alreadyPaid: [],
       numberOfRecords: successfulPayments.length,
       failedPayments,

@@ -15,13 +15,13 @@ import { Debt } from 'src/treasury/entities/debt.entity';
 import { FamilyModule } from 'src/family/family.module';
 import { ConfigModule } from '@nestjs/config';
 import { EnrollmentScheduler } from './schedule/enrollment.scheduler';
-import { SlackService } from './slack.service';
+
 import { TreasuryModule } from 'src/treasury/treasury.module';
 import { SectionHistory } from './entities/section-history';
 
 @Module({
   controllers: [EnrollmentController],
-  providers: [EnrollmentService, EnrollmentScheduler, SlackService],
+  providers: [EnrollmentService, EnrollmentScheduler],
   imports: [
     TypeOrmModule.forFeature([
       Enrollment,
@@ -40,6 +40,6 @@ import { SectionHistory } from './entities/section-history';
     ConfigModule,
     TreasuryModule,
   ],
-  exports: [SlackService],
+  exports: [],
 })
 export class EnrollmentModule {}
