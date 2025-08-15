@@ -22,7 +22,7 @@ import { Attendance } from 'src/attendance/entities/attendance.entity';
       User,
       Relationship,
       Family,
-
+      Student,
       EnrollmentSchedule,
       Attendance,
     ]),

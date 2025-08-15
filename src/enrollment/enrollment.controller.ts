@@ -43,7 +43,7 @@ import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
-@Resource('client-test-appae')
+@Resource('appcolegioae')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 

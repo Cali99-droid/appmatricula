@@ -7,10 +7,6 @@ import {
   Delete,
   Query,
   Put,
-  Headers,
-  Req,
-  HttpException,
-  HttpStatus,
   Res,
 } from '@nestjs/common';
 import { EmailsService } from './emails.service';
@@ -20,7 +16,7 @@ import { FindActivityClassroomDto } from './dto/find-activity_classroom.dto';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CreateEmailByStudentDto } from './dto/create-byStudent.dto';
 import { MailParams } from './interfaces/mail-params.interface';
-import { firstValueFrom } from 'rxjs';
+
 import { HttpService } from '@nestjs/axios';
 import { Public } from 'nest-keycloak-connect';
 import { Response } from 'express';

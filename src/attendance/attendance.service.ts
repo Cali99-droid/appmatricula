@@ -76,7 +76,7 @@ export class AttendanceService {
   async create(createAttendanceDto: CreateAttendanceDto, user: any) {
     // Obtener el usuario con las relaciones necesarias
 
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     /**capturar fecha y hora actual */
     const currentTime = new Date();
@@ -91,8 +91,12 @@ export class AttendanceService {
     try {
       /**Verificar validez de matricula */
       const enrollment = await this.enrrollmentRepository.findOneOrFail({
-        where: { code: createAttendanceDto.code },
+        where: { code: createAttendanceDto.code, status: Status.MATRICULADO },
       });
+
+      if (!enrollment) {
+        throw new BadRequestException(`Estudiante no tiene matricula activa`);
+      }
 
       const { student, activityClassroom } = enrollment;
       const { phase, grade, section, schoolShift, classroom } =
@@ -457,7 +461,7 @@ export class AttendanceService {
   }
 
   async findLastFiveRecords(user: any) {
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     try {
       // Construir opciones de consulta para asistencias

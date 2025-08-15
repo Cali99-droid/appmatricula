@@ -15,7 +15,6 @@ import {
   AcademicAssignment,
   TypeAssignment,
 } from '../academic_assignment/entities/academic_assignment.entity';
-import { Student } from 'src/student/entities/student.entity';
 
 import { ActivityClassroomService } from 'src/activity_classroom/activity_classroom.service';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -32,10 +31,14 @@ import {
   ResReportAcademicRecord,
   StundetReportDto,
 } from './dto/res-report-academic-record';
+import * as ExcelJS from 'exceljs';
 import { Status } from 'src/enrollment/enum/status.enum';
 import { EmailsService } from 'src/emails/emails.service';
 import { getBoletaEmailTemplate } from './helpers/getEmailBody';
 import { ConfigService } from '@nestjs/config';
+import { Level } from 'src/level/entities/level.entity';
+import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
+import { DocsService } from 'src/docs/docs.service';
 @Injectable()
 export class AcademicRecordsService {
   private readonly logger = new Logger('AcademicRecordsService');
@@ -45,8 +48,7 @@ export class AcademicRecordsService {
 
     @InjectRepository(AcademicAssignment)
     private readonly academicAssignmentRepository: Repository<AcademicAssignment>,
-    @InjectRepository(Student)
-    private readonly studentRepository: Repository<Student>,
+
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
 
@@ -55,11 +57,16 @@ export class AcademicRecordsService {
 
     @InjectRepository(Area)
     private readonly areaRepository: Repository<Area>,
+    @InjectRepository(Level) // Inyecta el repositorio de Level
+    private readonly levelRepository: Repository<Level>,
+    @InjectRepository(ActivityClassroom) // Inyecta el repositorio de Grade si lo necesitas directamente
+    private readonly activityClassroomRepository: Repository<ActivityClassroom>,
 
     private activityClassroomService: ActivityClassroomService,
 
     private bimesterService: BimesterService,
     private emailService: EmailsService,
+    private docsService: DocsService,
 
     private readonly configService: ConfigService,
 
@@ -84,6 +91,10 @@ export class AcademicRecordsService {
           email: payload.email,
         },
       });
+      const bimester = await this.bimesterService.findActive(bimesterId);
+      if (!bimester) {
+        throw new NotFoundException('Bimeste no habilitado para subir notas');
+      }
       const academicAssignment =
         await this.academicAssignmentRepository.findOne({
           where: {
@@ -458,9 +469,10 @@ export class AcademicRecordsService {
           const student = enrollStudent.student;
           const studentName = `${student.person.lastname} ${student.person.mLastname} ${student.person.name}`;
           const code = enrollStudent.student.code;
-
+          let areas;
+          const grade = enrollStudent.activityClassroom.grade;
           // Obtener áreas y competencias
-          const areas = await this.areaRepository.find({
+          areas = await this.areaRepository.find({
             where: {
               level: { id: level.id },
               status: true,
@@ -469,7 +481,12 @@ export class AcademicRecordsService {
               competency: true,
             },
           });
-
+          if (grade.id === 12 || grade.id === 14 || grade.id === 13) {
+            areas = areas.filter((a) => a.id !== 22);
+          }
+          if (grade.id === 14) {
+            areas = areas.filter((a) => a.id !== 21 && a.id !== 24);
+          }
           // Obtener calificaciones del estudiante
           const calificaciones = await this.academicRecordRepository.find({
             where: {
@@ -561,7 +578,7 @@ export class AcademicRecordsService {
       const enrollStudents = await this.enrollmentRepository.find({
         where: {
           activityClassroom: {
-            id: activityClassroomId,
+            id: activityClassroomId, //cambio clave aqui, {grade: {level: {id:1}}}
           },
           status: Status.MATRICULADO,
         },
@@ -593,8 +610,8 @@ export class AcademicRecordsService {
       const calificaciones = await this.academicRecordRepository.find({
         where: {
           bimester: { id: bimesterId },
-          academicAssignment: {
-            activityClassroom: { id: activityClassroomId },
+          student: {
+            id: In(enrollStudents.map((es) => es.student.id)), // Asegurarse de que las calificaciones sean de los estudiantes matriculados
           },
         },
         relations: ['student', 'competency'],
@@ -663,9 +680,10 @@ export class AcademicRecordsService {
     const student = enrollStudent.student;
     const studentName = `${student.person.lastname} ${student.person.mLastname} ${student.person.name}`;
     const code = enrollStudent.student.code;
-
+    const grade = enrollStudent.activityClassroom.grade;
     // Obtener áreas y competencias
-    const areas = await this.areaRepository.find({
+
+    let areas = await this.areaRepository.find({
       where: {
         level: { id: level.id },
         status: true,
@@ -675,6 +693,14 @@ export class AcademicRecordsService {
       },
     });
 
+    if (grade.id === 12 || grade.id === 14 || grade.id === 13) {
+      areas = areas.filter((a) => a.id !== 22);
+    }
+    if (grade.id === 14) {
+      areas = areas.filter((a) => a.id !== 21 && a.id !== 24);
+    }
+
+    // return areas;
     // Obtener calificaciones del estudiante
     const calificaciones = await this.academicRecordRepository.find({
       where: {
@@ -742,7 +768,6 @@ export class AcademicRecordsService {
   }
 
   async sendEmailReportCard() {
-    console.log('llaamo');
     try {
       // 1. Obtener datos en paralelo
       const [enrollments, bimesters] = await Promise.all([
@@ -750,9 +775,7 @@ export class AcademicRecordsService {
           where: {
             activityClassroom: {
               grade: {
-                level: {
-                  id: 1,
-                },
+                id: In([10, 11, 12, 13, 14]),
               },
             },
             status: Status.MATRICULADO,
@@ -831,6 +854,168 @@ export class AcademicRecordsService {
       throw error;
     }
   }
+
+  async getReportByLevelAndSection(
+    levelId: number,
+    bimesterId: number,
+    campusId: number,
+  ): Promise<ExcelJS.Buffer> {
+    try {
+      const bimestre = await this.bimesterService.findOne(bimesterId);
+      const level = await this.levelRepository.findOne({
+        where: { id: levelId },
+      });
+
+      if (!level) {
+        throw new Error(`Nivel con ID ${levelId} no encontrado.`);
+      }
+
+      // Obtener todas las activityClassroom asociadas a este nivel
+      const activityClassrooms = await this.activityClassroomRepository.find({
+        where: {
+          grade: { level: { id: levelId } },
+          classroom: {
+            campusDetail: !isNaN(+campusId) ? { id: +campusId } : {},
+          },
+        },
+        relations: ['grade', 'grade.level', 'phase', 'phase.year'],
+        order: {
+          grade: { name: 'ASC' }, // Ordenar por nombre de grado
+          section: 'ASC', // Y luego por sección
+        },
+      });
+
+      const allReports: ResReportAcademicRecord[] = [];
+
+      // Iterar por cada activityClassroom (aula con su sección)
+      for (const ac of activityClassrooms) {
+        // Obtener todas las matrículas del aula específica
+        const enrollStudents = await this.enrollmentRepository.find({
+          where: {
+            activityClassroom: {
+              id: ac.id,
+            },
+            status: Status.MATRICULADO,
+          },
+          relations: [
+            'student',
+            'student.person',
+            'activityClassroom',
+            'activityClassroom.grade',
+            'activityClassroom.phase.year',
+          ],
+          order: {
+            student: {
+              person: {
+                lastname: 'ASC',
+                mLastname: 'ASC',
+              },
+            },
+          },
+        });
+
+        // Si no hay estudiantes matriculados en esta aula, se puede omitir o incluir un reporte vacío
+        if (enrollStudents.length === 0) {
+          continue; // O manejarlo como prefieras
+        }
+
+        // Obtener las áreas y competencias para el nivel
+        // Esto se mantiene por nivel, ya que las competencias no cambian por sección o aula individual.
+        const areas = await this.areaRepository.find({
+          where: {
+            level: { id: levelId },
+            status: true,
+          },
+          relations: ['competency'],
+          order: {
+            name: 'ASC',
+            competency: {
+              order: 'ASC',
+            },
+          },
+        });
+
+        // Obtener todas las calificaciones para el bimestre y los estudiantes de esta aula
+        const calificaciones = await this.academicRecordRepository.find({
+          where: {
+            bimester: { id: bimesterId },
+            // academicAssignment: {
+            //   activityClassroom: { id: ac.id }, // Filtrar por la activityClassroom específica
+            // },
+            student: {
+              id: In(enrollStudents.map((es) => es.student.id)), // Asegurarse de que las calificaciones sean de los estudiantes matriculados
+            },
+          },
+          relations: ['student', 'competency'],
+        });
+
+        const studentsInClassroom: StundetReportDto[] = [];
+
+        // Mapear estudiantes y sus calificaciones para el aula actual
+        for (const matricula of enrollStudents) {
+          const estudiante = matricula.student;
+          const notasDto: any[] = [];
+
+          // Filtrar las calificaciones relevantes para el estudiante actual
+          const studentQualifications = calificaciones.filter(
+            (c) => c.student.id === estudiante.id,
+          );
+
+          areas.forEach((area) => {
+            area.competency.forEach((competencia) => {
+              const calificacion = studentQualifications.find(
+                (c) => c.competency.id === competencia.id,
+              );
+
+              notasDto.push({
+                competenciaId: competencia.id,
+                valor: calificacion?.value || '',
+              });
+            });
+          });
+
+          studentsInClassroom.push({
+            id: estudiante.id,
+            code: estudiante.studentCode,
+            name: `${estudiante.person.lastname} ${estudiante.person.mLastname}, ${estudiante.person.name}`,
+            photo: estudiante.photo,
+            qualifications: notasDto,
+          });
+        }
+
+        // Construir el objeto de reporte para el aula actual (activityClassroom)
+        allReports.push({
+          classroom: {
+            id: ac.id,
+            name: `${ac.grade.name} ${ac.section}`, // Aquí se mantiene la sección
+            level: ac.grade.level.name,
+          },
+          bimestre: {
+            id: bimestre.id,
+            name: bimestre.name,
+          },
+          areas: areas.map((area) => ({
+            id: area.id,
+            name: area.name,
+            competencies: area.competency.map((competencia) => ({
+              id: competencia.id,
+              name: competencia.name,
+              order: competencia.order,
+            })),
+          })),
+          students: studentsInClassroom,
+        });
+      }
+      const buff =
+        await this.docsService.generateAcademicRecordExcelByLevelAndSection(
+          allReports,
+        );
+      return buff;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
   private validarDuplicadosEnPayload(
     updateAcademicRecordDto: UpdateAcademicRecordDto,
   ) {
@@ -887,6 +1072,32 @@ export class AcademicRecordsService {
     return mapa;
   }
 
+  async sendOneEmail() {
+    const enroll = await this.enrollmentRepository.findOne({
+      where: {
+        id: 7521,
+        status: Status.MATRICULADO,
+      },
+      relations: {
+        student: {
+          person: true,
+          family: {
+            parentOneId: {
+              user: true,
+            },
+            parentTwoId: {
+              user: true,
+            },
+          },
+        },
+      },
+    });
+    const bimesters = await this.bimesterService.findAllAux(16);
+    const result = await this.processSingleEnrollment(enroll, bimesters);
+
+    return result;
+  }
+
   /**emails */
   private async processSingleEnrollment(
     enrollment: Enrollment,
@@ -894,6 +1105,7 @@ export class AcademicRecordsService {
   ) {
     // Generar boleta PDF
     const reportData = await this.generateBoletaData(enrollment, 16, bimesters);
+
     const pdfBuffer = await this.pdfService.generateSchoolReport(reportData);
 
     // Obtener email
@@ -907,7 +1119,8 @@ export class AcademicRecordsService {
 
     if (
       enrollment.student.family.parentTwoId &&
-      enrollment.student.family.parentTwoId.user
+      enrollment.student.family.parentTwoId.user &&
+      !email
     ) {
       email = enrollment.student.family.parentTwoId?.user.email;
     }
@@ -948,6 +1161,7 @@ export class AcademicRecordsService {
               enrollment,
               bimesters,
             );
+
             batchResults.push({
               success: true,
               enrollmentId: enrollment.student.id,

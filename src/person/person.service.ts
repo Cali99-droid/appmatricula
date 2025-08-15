@@ -25,6 +25,7 @@ import { Family } from 'src/family/entities/family.entity';
 import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { SearchByDateDto } from '../common/dto/search-by-date.dto';
+import { Student } from 'src/student/entities/student.entity';
 
 @Injectable()
 export class PersonService {
@@ -37,6 +38,8 @@ export class PersonService {
     private readonly configService: ConfigService,
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Relationship)
@@ -88,9 +91,9 @@ export class PersonService {
         const person = this.personRepository.create({
           typeDoc: data.typeDoc,
           docNumber: data.docNumber,
-          name: data.name,
-          lastname: data.lastName,
-          mLastname: data.mLastname,
+          name: data.name.trim(),
+          lastname: data.lastName.trim(),
+          mLastname: data.mLastname.trim(),
           gender: gender,
           familyRole: familyRole,
           birthDate: date,
@@ -209,13 +212,19 @@ export class PersonService {
   async findOne(id: number) {
     const person = await this.personRepository.findOne({
       where: { id: id },
-      relations: { user: true },
+      relations: { user: true, student: true },
     });
     if (!person) throw new NotFoundException(`person with id ${id} not found`);
-    const { user, ...rest } = person;
+    const { user, student, ...rest } = person;
+
     return {
       ...rest,
       email: !user ? null : user.email,
+      code: !student?.studentCode
+        ? null
+        : student.studentCode?.length < 14
+          ? student.studentCode?.padStart(14, '0').toString()
+          : student.studentCode?.toString(),
     };
   }
   async findParentsByStudentCode(id: string) {
@@ -351,10 +360,32 @@ export class PersonService {
       id: id,
       ...updatePersonDto,
     });
+
     if (!person)
       throw new NotFoundException(`Person with studentId: ${id} not found`);
+    if (updatePersonDto.birthDate) {
+      person.birthDate = new Date(updatePersonDto.birthDate);
+    }
     try {
       await this.personRepository.save(person);
+      /**ACTUALIZAR NOMBRE DE FAMILIA */
+      const student = await this.studentRepository.findOne({
+        where: {
+          person: { id: person.id },
+        },
+        relations: {
+          family: true,
+        },
+      });
+      if (student) {
+        const family = await this.familypRepository.findOne({
+          where: {
+            id: student.family.id,
+          },
+        });
+        family.nameFamily = person.lastname + ' ' + person.mLastname;
+        await this.familypRepository.save(family);
+      }
       return person;
     } catch (error) {
       handleDBExceptions(error, this.logger);

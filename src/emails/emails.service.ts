@@ -437,13 +437,12 @@ export class EmailsService {
     const { to, subject, text, html } = params;
 
     const mailOptions = {
-      from:
-        '"Asistencia Colegio AE"' +
-        this.configService.getOrThrow<string>('AWS_SES_FROM'),
-      to: this.env === 'prod' ? to : 'orellano428@gmail.com',
+      from: `"Asistencia Colegio AE" <${this.configService.getOrThrow<string>('AWS_SES_FROM')}>`,
+      to: this.env === 'prod' ? to : 'carlos.orellano@ae.edu.pe',
       subject,
       text,
       html,
+      replyTo: 'soporte@colegioae.freshdesk.com',
     };
 
     try {
@@ -463,13 +462,12 @@ export class EmailsService {
   ): Promise<void> {
     try {
       const mailOptions = {
-        from:
-          '"Colegio AE"' +
-          this.configService.getOrThrow<string>('AWS_SES_FROM'),
+        from: `"Colegio AE" <${this.configService.getOrThrow<string>('AWS_SES_FROM')}>`,
         to: this.env === 'prod' ? to : 'carlos.orellano@ae.edu.pe',
         subject,
         text: 'Boleta de Notas',
         html: body,
+        replyTo: 'soporte@colegioae.freshdesk.com',
         attachments: [
           {
             // filename,

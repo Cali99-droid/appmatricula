@@ -8,11 +8,12 @@ import {
   // Delete,
   Query,
   Res,
+  HttpStatus,
 } from '@nestjs/common';
 import { AcademicRecordsService } from './academic_records.service';
 import { CreateAcademicRecordDto } from './dto/create-academic_record.dto';
 
-import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
+import { AuthenticatedUser, Public, Roles } from 'nest-keycloak-connect';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AcademicRecordsResponseDto } from './dto/res-academic-record.dto';
@@ -195,6 +196,10 @@ export class AcademicRecordsController {
     @Query('bimesterId') bimesterId: number,
     @Query('activityClassroomId') activityClassroomId: number,
   ) {
+    // return this.academicRecordsService.getReportByLevelAndSection(
+    //   +activityClassroomId,
+    //   +bimesterId,
+    // );
     return this.academicRecordsService.getReportByClassroom(
       +activityClassroomId,
       +bimesterId,
@@ -202,7 +207,42 @@ export class AcademicRecordsController {
   }
 
   @Get('/email/report')
+  @Public()
   sendEmailReportCard() {
     return this.academicRecordsService.sendEmailReportCard();
+    //return this.academicRecordsService.sendOneEmail();
+  }
+
+  /**EXCEL */
+  @Get('report/level/:levelId/bimestre/:bimesterId/campus/:campusId/excel')
+  async getAcademicRecordExcelByLevel(
+    @Param('levelId') levelId: number,
+    @Param('bimesterId') bimesterId: number,
+    @Param('campusId') campusId: number,
+    @Res() res: Response,
+  ) {
+    try {
+      const buffer =
+        await this.academicRecordsService.getReportByLevelAndSection(
+          +levelId,
+          +bimesterId,
+          +campusId,
+        );
+
+      const fileName = `ReporteAcademico_Nivel_${levelId}_Bimestre_${bimesterId}_Sede_${campusId}.xlsx`;
+
+      res.set({
+        'Content-Type':
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+      });
+
+      res.status(HttpStatus.OK).send(buffer);
+    } catch (error) {
+      // Manejo de errores
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: 'Error al generar el reporte', error: error.message });
+    }
   }
 }

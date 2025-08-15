@@ -14,6 +14,8 @@ import { Area } from '../area/entities/area.entity';
 import { DocsModule } from 'src/docs/docs.module';
 import { EmailsModule } from 'src/emails/emails.module';
 import { ConfigModule } from '@nestjs/config';
+import { Level } from 'src/level/entities/level.entity';
+import { Grade } from 'src/grade/entities/grade.entity';
 
 @Module({
   controllers: [AcademicRecordsController],
@@ -27,6 +29,8 @@ import { ConfigModule } from '@nestjs/config';
       Bimester,
       Enrollment,
       Area,
+      Level,
+      Grade,
     ]),
 
     ActivityClassroomModule,
@@ -34,6 +38,7 @@ import { ConfigModule } from '@nestjs/config';
     DocsModule,
     EmailsModule,
     ConfigModule,
+    DocsModule,
   ],
 })
 export class AcademicRecordsModule {}

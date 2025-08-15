@@ -726,11 +726,12 @@ export class PdfService {
       .resize({ width: 200, height: 250 })
       .toBuffer();
 
-    // Convertir Buffer (Node.js) a ArrayBuffer
-    return pngBuffer.buffer.slice(
-      pngBuffer.byteOffset,
-      pngBuffer.byteOffset + pngBuffer.byteLength,
-    );
+    // Crear una nueva instancia de ArrayBuffer a partir del Buffer de Node.js
+    const arrayBuffer = new ArrayBuffer(pngBuffer.length);
+    const view = new Uint8Array(arrayBuffer);
+    view.set(pngBuffer);
+
+    return arrayBuffer;
   }
 
   async getCites(idDistrict: string) {

@@ -8,7 +8,7 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
-import { Between, In, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
+import { In, LessThan, MoreThanOrEqual, Raw, Repository } from 'typeorm';
 import { Family } from 'src/family/entities/family.entity';
 import axios from 'axios';
 import { Payment } from './entities/payment.entity';
@@ -40,6 +40,7 @@ import * as qrcode from 'qrcode';
 import { SlackService } from 'src/common/slack/slack.service';
 import { SlackChannel } from 'src/common/slack/slack.constants';
 
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 
@@ -407,6 +408,7 @@ export class TreasuryService {
       where: {
         student: { id: studentId },
         status: false,
+        isCanceled: false,
       },
       relations: {
         concept: true,
@@ -436,12 +438,12 @@ export class TreasuryService {
   }
 
   async findPaid(
-    user: any,
+    user: KeycloakTokenPayload,
     startDate: string,
     endDate: string,
     userId: number,
   ) {
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),
@@ -458,9 +460,13 @@ export class TreasuryService {
 
     const boletas = await this.billRepository.find({
       where: {
+        date: Raw((alias) => `DATE(${alias}) BETWEEN :startDate AND :endDate`, {
+          startDate: startDate, // '2025-08-14'
+          endDate: endDate, // '2025-08-16'
+        }),
         payment: {
           ...(isAuth ? whereConditionTwo : whereCondition),
-          date: Between(startDate, endDate), // Filtrar entre las fechas dadas
+          // date: Between(startDate, endDate), // Filtrar entre las fechas dadas
           student: {
             enrollment: [
               {
@@ -500,7 +506,7 @@ export class TreasuryService {
         },
       },
     });
-
+    console.log(boletas.length);
     // Formatear los datos para el frontend
     const result = this.formatDataBill(boletas);
     // Calcular el total de los pagos
@@ -701,7 +707,9 @@ export class TreasuryService {
 
     if (debt.discount !== null) {
       debt.total = debt.total - (debt.total * debt.discount.percentage) / 100;
-      // serie = `BB${campus.id}${level.id}`;
+      if (debt.total <= 0) {
+        serie = `BB${campus.id}${level.id}`;
+      }
     }
     if (debt.concept.code === 'C005') {
       // Si es traslado se procede a cancelar las deudas del mes
@@ -1391,11 +1399,13 @@ export class TreasuryService {
     const details = debts
       .map((d) => {
         let amount: number = d.total;
+
         if (d.discount !== null) {
           amount = d.total - (d.total * d.discount.percentage) / 100;
           amount = Math.round(amount);
         }
         total += amount;
+
         if (amount === 0) return null;
         return {
           type: '02',
@@ -1425,7 +1435,7 @@ export class TreasuryService {
       const period = detail.period <= 9 ? '0' + detail.period : detail.period;
 
       const line = `${detail.type}${name}${(detail.studentId + (description + ' ' + detail.description).padEnd(11) + ' ' + detail.code).padEnd(48, ' ')}${detail.dueDate}${'20301231'}${period}${detail.amount.padStart(15, '0')}${detail.amount.padStart(15, '0')}${cero.padEnd(32, '0')}`;
-      content += line.padEnd(360, '') + '\n'; // Asegura que la línea tenga 250 caracteres
+      content += line.padEnd(360, ' ') + '\n'; // Asegura que la línea tenga 250 caracteres
     });
 
     /**FOOTER */
@@ -1837,7 +1847,7 @@ export class TreasuryService {
         payment: {
           id: boleta.payment.id,
           date: boleta.payment.date,
-          total: boleta.payment.total,
+          total: boleta.payment.total.toFixed(2),
           status: boleta.payment.status,
           concept: {
             description: boleta.payment.concept.description,
