@@ -1463,7 +1463,7 @@ export class TreasuryService {
     if (!bank) {
       this.slackService.sendMessage(
         SlackChannel.TREASURY,
-        'ERROR: No se especificó el banco',
+        `🔴 *ERROR: No se especificó el banco.*`,
       );
       throw new BadRequestException('ERROR: No se especificó el banco');
     }
@@ -1474,25 +1474,25 @@ export class TreasuryService {
     if (!file) {
       this.slackService.sendMessage(
         SlackChannel.TREASURY,
-        'ERROR: No se recibió ningún archivo',
+        `🔴 *ERROR: No se recibió ningún archivo.*`,
       );
       throw new BadRequestException('No se recibió ningún archivo');
     }
-    this.slackService.sendMessage(
+    await this.slackService.sendMessage(
       SlackChannel.TREASURY,
-      'INFO: Procesando archivo txt ...',
+      `⚙️ *Iniciando procesamiento de pagos...*\n*Archivo:* \`${file.originalname}\``,
     );
     if (bank.toLocaleUpperCase() === PaymentPref.bcp) {
       this.slackService.sendMessage(
         SlackChannel.TREASURY,
-        'INFO: Archivo detectado, banco: BCP',
+        `🟡 *Aviso: Procesando Banco BCP*`,
       );
       results = await this.processBCP(file);
       paymentMethod = PaymentMethod.bcp;
     } else {
       this.slackService.sendMessage(
         SlackChannel.TREASURY,
-        'INFO: Archivo detectado, banco: BBVA',
+        `🟡 *Aviso: Procesando Banco: BBVA*`,
       );
       results = await this.processBBVA(file);
       paymentMethod = PaymentMethod.bbva;
@@ -1512,7 +1512,7 @@ export class TreasuryService {
     if (debts.length === 0) {
       this.slackService.sendMessage(
         SlackChannel.TREASURY,
-        'ERROR: No se encontró información en el archivo, 0 deudas encontradas',
+        `🔴 *ERROR:  No se encontró información en el archivo, 0 deudas encontradas*`,
       );
       return {
         status: false,
@@ -1542,7 +1542,7 @@ export class TreasuryService {
     if (debtsPaid.length > 0) {
       this.slackService.sendMessage(
         SlackChannel.TREASURY,
-        `INFO: Algunos pagos ya fueron registrados previamente. ${debtsPaid.length} `,
+        `🟡 *Aviso: Se Omitieron Pagos Duplicados*\n\nDurante el proceso, se encontraron pagos que ya estaban registrados y fueron ignorados.\n\n*∙ Pagos omitidos (ya existían):* ${debtsPaid.length}`,
       );
       // return {
       //   status: false,
@@ -1619,6 +1619,9 @@ export class TreasuryService {
         code: In(results.map((res) => res.code)),
         status: false,
       },
+      relations: {
+        student: true,
+      },
     });
 
     const successfulPayments = resultsOfPay
@@ -1660,7 +1663,13 @@ export class TreasuryService {
     if (failedPayments.length > 0) {
       this.slackService.sendMessage(
         SlackChannel.TREASURY,
-        `ERROR: Algunos pagos no pudieron procesarse. ${debtsPending.length}, BANCO: ${bank}, FILE: ${file.originalname}`,
+        `🔴 *ERROR: Algunos pagos no pudieron procesarse.*\n\n` +
+          `*∙ Registros Procesados:* ${debts.length}\n` +
+          `*∙ Registros Procesados Exitosamente:* ${successfulPayments.length}\n` +
+          `*∙ Registros Fallidos:* ${failedPayments.length}\n` +
+          `*∙ Deudas Pendientes:* ${debtsPending.length}\n` +
+          `*∙ Banco:* ${bank}\n` +
+          `*∙ Archivo:* ${file.originalname}`,
       );
       return {
         status: false,
@@ -1687,9 +1696,16 @@ export class TreasuryService {
         ),
       } as RespProcess;
     }
+
     this.slackService.sendMessage(
       SlackChannel.TREASURY,
-      `INFO: Archivos procesados correctamente: ${successfulPayments.length}`,
+      `✅ *Proceso de Pagos Completado*\n\n` +
+        `*∙ Registros Procesados:* ${debts.length}\n` +
+        `*∙ Registros Procesados Exitosamente:* ${successfulPayments.length}\n` +
+        `*∙ Registros Fallidos:* ${failedPayments.length}\n` +
+        `*∙ Deudas Pendientes:* ${debtsPending.length}\n` +
+        `*∙ Banco:* ${bank}\n` +
+        `*∙ Archivo:* ${file.originalname}`,
     );
     return {
       status: true,
