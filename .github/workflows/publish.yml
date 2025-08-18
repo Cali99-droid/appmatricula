@@ -78,7 +78,7 @@ jobs:
             -e CLIENT_SECRET_KEYCLOAK=${{ secrets.CLIENT_SECRET_KEYCLOAK }} \
             -e NUBEFACT_API_URL=${{ secrets.NUBEFACT_API_URL }} \
             -e NUBEFACT_TOKEN=${{ secrets.NUBEFACT_TOKEN }} \
-            -e SLACK_WEBHOOK_GENERAL=${{ secrets.SLACK_WEBHOOK_GENERA }} \
+            -e SLACK_WEBHOOK_GENERAL=${{ secrets.SLACK_WEBHOOK_GENERAL }} \
             -e SLACK_WEBHOOK_TREASURY=${{ secrets.SLACK_WEBHOOK_TREASURY }} \
             -e API_KEY=${{ secrets.API_KEY }} \
             -e TZ=America/Lima \

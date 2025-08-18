@@ -1674,7 +1674,15 @@ export class TreasuryService {
       return {
         status: false,
         message: 'Algunos pagos no pudieron procesarse.',
-        alreadyPaid: [],
+        alreadyPaid: debtsPaid.map((d) => ({
+          code: d.code,
+          student:
+            d.student.person.lastname +
+            ' ' +
+            d.student.person.mLastname +
+            ' ' +
+            d.student.person.name,
+        })),
         debtsPending: debtsPending.map((d) => d.code),
         debtsStudentPending: debtsPending.map((d) => ({
           code: d.code,
