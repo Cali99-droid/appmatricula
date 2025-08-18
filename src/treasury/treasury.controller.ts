@@ -37,7 +37,7 @@ import { CreateDiscountDto } from './dto/create-discount.dto';
 import { ApiKeyGuard } from './guard/api-key.guard';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 @ApiTags('Treasury')
-@Resource('client-test-appae')
+@Resource('appcolegioae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}

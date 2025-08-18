@@ -76,7 +76,7 @@ export class AttendanceService {
   async create(createAttendanceDto: CreateAttendanceDto, user: any) {
     // Obtener el usuario con las relaciones necesarias
 
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     /**capturar fecha y hora actual */
     const currentTime = new Date();
@@ -461,7 +461,7 @@ export class AttendanceService {
   }
 
   async findLastFiveRecords(user: any) {
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     try {
       // Construir opciones de consulta para asistencias
