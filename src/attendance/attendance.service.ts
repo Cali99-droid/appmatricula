@@ -33,9 +33,11 @@ import { EmailsService } from 'src/emails/emails.service';
 import { MailParams } from 'src/emails/interfaces/mail-params.interface';
 
 import { getBodyEmail, getText } from './helpers/bodyEmail';
-import { SlackService } from 'src/enrollment/slack.service';
+
 import { Status } from 'src/enrollment/enum/status.enum';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
+import { SlackService } from 'src/common/slack/slack.service';
+import { SlackChannel } from 'src/common/slack/slack.constants';
 // import { AttendanceGateway } from './attendance.gateway';
 
 @Injectable()
@@ -74,7 +76,7 @@ export class AttendanceService {
   async create(createAttendanceDto: CreateAttendanceDto, user: any) {
     // Obtener el usuario con las relaciones necesarias
 
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     /**capturar fecha y hora actual */
     const currentTime = new Date();
@@ -459,7 +461,7 @@ export class AttendanceService {
   }
 
   async findLastFiveRecords(user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     try {
       // Construir opciones de consulta para asistencias
@@ -779,6 +781,7 @@ export class AttendanceService {
       `Cron jobs for ${shift} general shift completed succesfully`,
     );
     await this.slackService.sendMessage(
+      SlackChannel.GENERAL,
       `[ASISTENCIA] Number of students absent for today (${currentDate}) in the shift ${shift}: ${absentStudents.length}`,
     );
     return;
@@ -915,6 +918,7 @@ export class AttendanceService {
       });
     }
     await this.slackService.sendMessage(
+      SlackChannel.GENERAL,
       `[ASISTENCIA] Number of students absent for today (${currentDate}) in the individual schedule: ${absentStudents.length}`,
     );
     this.logger.log(

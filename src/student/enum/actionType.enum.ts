@@ -5,5 +5,6 @@ export enum ActionType {
   MATRICULADO = 'registered',
   TRAS_INTER = 'internalTransfer',
   PROMOVIDO = 'promoted',
+  EN_SOLICITUD = 'on-request',
   OTRO = 'other',
 }

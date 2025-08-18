@@ -10,10 +10,11 @@ import {
   UploadedFile,
   ParseIntPipe,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
 import { TreasuryService } from './treasury.service';
 
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   AuthenticatedUser,
   Public,
@@ -33,9 +34,10 @@ import { Express } from 'express';
 import { RespProcess } from './interfaces/RespProcess.interface';
 import { numberOfRecords } from './dto/resp-process.dto';
 import { CreateDiscountDto } from './dto/create-discount.dto';
+import { ApiKeyGuard } from './guard/api-key.guard';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 @ApiTags('Treasury')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
@@ -138,6 +140,34 @@ export class TreasuryController {
   async processTxt(
     @UploadedFile() file: Express.Multer.File,
     @Param('bank') bank: PaymentPref,
+    @AuthenticatedUser() user: any,
+  ) {
+    return (await this.treasuryService.processTxt(
+      bank,
+      file,
+      user,
+    )) as RespProcess;
+  }
+
+  /**webhook */
+  @Post('process-txt-hook')
+  @ApiQuery({
+    name: 'bank',
+    required: false,
+    type: String,
+    description: 'bank',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'information of operation',
+    type: numberOfRecords,
+  })
+  @Public()
+  @UseGuards(ApiKeyGuard) // <-- ¡Aquí aplicas la seguridad!
+  @UseInterceptors(FileInterceptor('file'))
+  async processTxtHook(
+    @UploadedFile() file: Express.Multer.File,
+    @Query('bank') bank: PaymentPref,
     @AuthenticatedUser() user: any,
   ) {
     return (await this.treasuryService.processTxt(

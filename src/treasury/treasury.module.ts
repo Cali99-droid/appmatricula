@@ -15,6 +15,7 @@ import { ConfigModule } from '@nestjs/config';
 import { CreditNote } from './entities/creditNote.entity';
 import { MulterModule } from '@nestjs/platform-express';
 import { Discounts } from './entities/discounts.entity';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
   controllers: [TreasuryController],
@@ -35,6 +36,7 @@ import { Discounts } from './entities/discounts.entity';
       Discounts,
     ]),
     ConfigModule,
+    UserModule,
     MulterModule.register({
       dest: './uploads', // Carpeta temporal donde se guardan los archivos
     }),

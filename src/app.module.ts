@@ -48,6 +48,7 @@ import { CourseModule } from './academic_structure/course/course.module';
 import { AcademicAssignmentModule } from './academic_structure/academic_assignment/academic_assignment.module';
 
 import { AcademicRecordsModule } from './academic_structure/academic_records/academic_records.module';
+import { SlackModule } from './common/slack/slack.module';
 
 @Module({
   imports: [
@@ -90,20 +91,15 @@ import { AcademicRecordsModule } from './academic_structure/academic_records/aca
     AreaModule,
     CompetencyModule,
     CourseModule,
-
     EnrollmentScheduleModule,
     EmailsModule,
     TransfersModule,
-
     DebtorsHelperModule,
-
     KeycloakModule,
-
     TreasuryModule,
-
     AcademicAssignmentModule,
-
     AcademicRecordsModule,
+    SlackModule,
   ],
   providers: [ExistIdConstraint, AuthService],
 })

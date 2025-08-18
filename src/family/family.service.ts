@@ -25,7 +25,9 @@ import { User } from 'src/user/entities/user.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Status } from 'src/enrollment/enum/status.enum';
 import { TypePhase } from 'src/phase/enum/type-phase.enum';
-import { SlackService } from 'src/enrollment/slack.service';
+import { SlackService } from 'src/common/slack/slack.service';
+import { SlackChannel } from 'src/common/slack/slack.constants';
+
 @Injectable()
 export class FamilyService {
   private readonly logger = new Logger('FamilyService');
@@ -230,7 +232,7 @@ export class FamilyService {
     }
   }
   async findOne(id: number, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -285,7 +287,7 @@ export class FamilyService {
         respAcademic: true,
       },
     });
-    console.log(family);
+
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
 
     if (family.parentOneId?.user) {
@@ -628,6 +630,7 @@ export class FamilyService {
       }
 
       await this.slackService.sendMessage(
+        SlackChannel.GENERAL,
         `Student ${child.name}  ${child.lastname} ${child.mLastname} was received`,
       );
       return {

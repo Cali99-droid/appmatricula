@@ -39,12 +39,16 @@ import { DataAdmision } from 'src/family/interfaces/data-admision';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 import { UpdateExpirationDto } from './dto/update-expiration.dto';
 import { FamilyService } from 'src/family/family.service';
-import { SlackService } from './slack.service';
+
 import { UpdateManyEnrollmentDto } from './dto/update-many-enrollment.dto';
 import { TreasuryService } from 'src/treasury/treasury.service';
 import { SectionHistory } from './entities/section-history';
 import { ActionType } from 'src/student/enum/actionType.enum';
 import { User } from 'src/user/entities/user.entity';
+import { CreateReferDto } from './dto/create-refer.dto';
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
+import { SlackService } from 'src/common/slack/slack.service';
+import { SlackChannel } from 'src/common/slack/slack.constants';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -80,7 +84,7 @@ export class EnrollmentService {
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -1556,7 +1560,7 @@ export class EnrollmentService {
       }
       /**CREAR LA DATA */
 
-      const created = await this.familyService.createFamilyFromAdmision(
+      await this.familyService.createFamilyFromAdmision(
         data,
         availableClassrooms[0],
       );
@@ -1919,6 +1923,7 @@ export class EnrollmentService {
       ActionType.TRASLADADO,
       destinationSchool,
       us.id,
+      studentId,
     );
 
     return hs;
@@ -1926,7 +1931,10 @@ export class EnrollmentService {
   /**CRON JOBS RESERVARDOS */
   async updateReservedScript() {
     try {
-      await this.slackService.sendMessage('¡Hola desde producción !');
+      await this.slackService.sendMessage(
+        SlackChannel.GENERAL,
+        '¡Hola desde producción !',
+      );
       // const expiredRegistrations = await this.enrollmentRepository.find({
       //   where: [
       //     {
@@ -2009,6 +2017,7 @@ export class EnrollmentService {
         `Successfully updated, affected: ${expiredRegistrations.length}`,
       );
       await this.slackService.sendMessage(
+        SlackChannel.GENERAL,
         `Today ${expiredRegistrations.length} registrations that are in process will be affected`,
       );
       this.logger.log(`cron jobs completed succesfully`);
@@ -2106,4 +2115,46 @@ export class EnrollmentService {
   //   }
   //   return enrollments;
   // }
+
+  /**TRASLADOS */
+  async referToTransfers(
+    createReferDto: CreateReferDto,
+    user: KeycloakTokenPayload,
+  ) {
+    const { childrenId, parentId, activityClassroomId } = createReferDto;
+    const child = await this.studentRepository.findOne({
+      where: {
+        person: { id: childrenId },
+      },
+      relations: {
+        person: true,
+      },
+    });
+    const parent = await this.personRepository.findOneBy({
+      id: parentId,
+    });
+
+    const userDB = await this.userRepository.findOneBy({
+      email: user.email,
+    });
+
+    const classroom = await this.activityClassroomRepository.findOneBy({
+      id: activityClassroomId,
+    });
+
+    console.log(child);
+    console.log(parent);
+    console.log(classroom);
+    /** CALL API TO MICRO TRANSFERS */
+
+    const destination = `${classroom.grade.name} ${classroom.section}`;
+    const obs = `SOLICITUD TRASLADO ${child.studentCode} - ${destination}`;
+    //SAVE HISTORY
+    await this.studentService.createHistory(
+      ActionType.TRAS_INTER,
+      obs,
+      userDB.id,
+      child.id,
+    );
+  }
 }

@@ -154,6 +154,7 @@ export class UserService {
       return {
         id: user.id,
         email,
+        sub: user.sub,
         // roles: roles.map((rol) => {
         //   return rol.id;
         // }),

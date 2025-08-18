@@ -161,7 +161,6 @@ export class StudentService {
       tieneMatriculaActiva: estudiante.enrollment.length > 0,
     }));
     data = data.filter((d) => d.tieneMatriculaActiva);
-
     return {
       data,
       total,
@@ -612,13 +611,96 @@ export class StudentService {
   }
 
   /**history */
-  async createHistory(acType: ActionType, obs: string, userId: number) {
+  async createHistory(
+    acType: ActionType,
+    obs: string,
+    userId: number,
+    studentId: number,
+  ) {
     const created = this.studentHistoryRepository.create({
       user: { id: userId },
       actionType: acType,
       obs: obs,
+      student: { id: studentId },
     });
 
     return await this.studentHistoryRepository.save(created);
+  }
+
+  /**TRASLADOS */
+  async findStudentsAdvanced(searchDto: SearchEstudiantesDto, user: any) {
+    const {
+      searchTerm,
+      page = 1,
+      limit = 10,
+      yearId,
+      campusId,
+      levelId,
+    } = searchDto;
+
+    /**AULAS */
+    const classrooms = await this.activityClassroomService.searchParams(
+      { levelId, yearId, campusId },
+      user,
+    );
+    let classroomsIds = [0];
+    classroomsIds =
+      classrooms.map((a) => a.id).length === 0
+        ? classroomsIds
+        : classrooms.map((a) => a.id);
+
+    const query = this.studentRepository
+      .createQueryBuilder('student')
+      .leftJoinAndSelect('student.person', 'person')
+      .leftJoinAndSelect('student.family', 'family')
+      .leftJoinAndSelect('student.debt', 'debt', 'debt.status=false')
+      .leftJoinAndSelect(
+        'student.enrollment',
+        'enrollment',
+        // 'enrollment.status = :statusRe AND enrollment.activityClassroomId IN (:...ids)',
+        // {
+        //   statusRe: 'registered',
+        //   ids: classroomsIds,
+        // },
+      )
+      .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
+      .leftJoinAndSelect('activityClassroom.grade', 'grade');
+    query.andWhere(
+      'enrollment.status = :statusRe AND enrollment.activityClassroomId IN (:...ids)',
+      {
+        statusRe: 'registered',
+        ids: classroomsIds,
+      },
+    );
+    if (searchTerm) {
+      const searchTerms = searchTerm
+        .split(' ')
+        .map((term) => term.trim())
+        .filter((term) => term.length > 0);
+
+      searchTerms.forEach((term, index) => {
+        query.andWhere(
+          `(LOWER(person.name) LIKE LOWER(:term${index}) OR LOWER(person.lastname) LIKE LOWER(:term${index}) OR LOWER(person.mLastname) LIKE LOWER(:term${index}) OR LOWER(person.docNumber) LIKE LOWER(:term${index}) )`,
+          { [`term${index}`]: `%${term}%` },
+        );
+      });
+    }
+
+    query.orderBy('person.lastname', 'ASC');
+    query.skip((page - 1) * limit).take(limit);
+
+    const [results, total] = await query.getManyAndCount();
+    let data = results.map((estudiante) => ({
+      ...estudiante,
+      grade: `${estudiante.enrollment[0]?.activityClassroom.grade.name} ${estudiante.enrollment[0]?.activityClassroom.section}`,
+      tieneMatriculaActiva: estudiante.enrollment.length > 0,
+    }));
+    data = data.filter((d) => d.tieneMatriculaActiva);
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
   }
 }
