@@ -355,9 +355,7 @@ export class EnrollmentService {
           gender: student.person.gender,
           docNumber: student.person.docNumber,
           studentCode:
-            student.studentCode === null
-              ? student.person.studentCode
-              : student.studentCode,
+            student.studentCode === null ? 'none' : student.studentCode,
         },
         activityClassroom: {
           id: activityClassroom.id,

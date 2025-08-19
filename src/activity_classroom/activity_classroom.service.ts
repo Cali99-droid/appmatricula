@@ -442,9 +442,7 @@ export class ActivityClassroomService {
         mLastname: e.student.person.mLastname,
         docNumber: e.student.person.docNumber,
         studentCode:
-          e.student.studentCode === null
-            ? e.student.person.studentCode
-            : e.student.studentCode,
+          e.student.studentCode === null ? 'none' : e.student.studentCode,
         photo: e.student.photo
           ? `${urlPhoto}/${e.student.photo}`
           : `${urlPhoto}/${defaultAvatar}`,

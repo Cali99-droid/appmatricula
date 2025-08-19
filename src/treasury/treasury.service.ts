@@ -1726,10 +1726,10 @@ export class TreasuryService {
     } = summary;
 
     const statusIcon = failedCount > 0 ? '🔴' : '✅';
-    const title =
-      failedCount > 0
-        ? `*Proceso de Pagos con Errores*`
-        : `*Proceso de Pagos Completado*`;
+    // const title =
+    //   failedCount > 0
+    //     ? `*Proceso de Pagos con Errores*`
+    //     : `*Proceso de Pagos Completado*`;
 
     // Construcción del mensaje con Block Kit
     const blocks: SlackBlock[] = [

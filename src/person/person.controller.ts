@@ -16,25 +16,81 @@ import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { fileFilter } from './helpers';
-import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreatePersonCrmDto } from './dto/create-person-crm.dto';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { SearchByDateDto } from 'src/common/dto/search-by-date.dto';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
+import { AdvancedSearchDto, SearchableRole } from './dto/advanced-search.dto';
+import { Person } from './entities/person.entity';
 @ApiTags('Person')
 @Controller('person')
 export class PersonController {
   constructor(private readonly personService: PersonService) {}
 
-  @Post()
-  create(@Body() createPersonDto: CreatePersonDto) {
-    return this.personService.create(createPersonDto);
-  }
-
   @Get()
   findAll() {
     return this.personService.findAll();
+  }
+
+  @Get('advanced-search') // <--- MOVIDO AQUÍ, ANTES DE :id
+  @ApiOperation({
+    summary: 'Realizar una búsqueda avanzada de personas',
+    description:
+      'Busca estudiantes o padres de familia por un término que puede ser DNI, email, nombre completo o teléfono.',
+  })
+  @ApiQuery({
+    name: 'term',
+    required: true,
+    description: 'Término de búsqueda (DNI, email, nombre, etc.).',
+    type: String,
+    example: 'Ana García',
+  })
+  @ApiQuery({
+    name: 'role',
+    required: true,
+    description: 'El rol de la persona a buscar.',
+    enum: SearchableRole,
+    example: SearchableRole.STUDENT,
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Búsqueda exitosa. Retorna un arreglo de personas que coinciden.',
+    type: [Person],
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Error de validación. El término o el rol no cumplen con los requisitos.',
+  })
+  advancedSearch(@Query() advancedSearchDto: AdvancedSearchDto) {
+    return this.personService.advancedSearch(advancedSearchDto);
+  }
+
+  @Get('crm/created')
+  findToCreateInCRM() {
+    return this.personService.findToCreateInCRM();
+  }
+
+  @Get('crm/updated')
+  findTUpdateInCRM() {
+    return this.personService.findToUpdateInCRM();
+  }
+
+  @Get('parents/get-sons')
+  searchSons(@AuthenticatedUser() user: any) {
+    return this.personService.findStudentsByParents(user);
+  }
+
+  @Get('parents/profile')
+  getProfileUser(@GetUser() user: User) {
+    return this.personService.findProfileUser(user);
+  }
+  @Post()
+  create(@Body() createPersonDto: CreatePersonDto) {
+    return this.personService.create(createPersonDto);
   }
 
   @Get(':id')
@@ -86,19 +142,7 @@ export class PersonController {
   createByCrm(@Body() createPersonCrmDto: CreatePersonCrmDto) {
     return this.personService.createParentCRM(createPersonCrmDto);
   }
-  @Get('crm/created')
-  findToCreateInCRM() {
-    return this.personService.findToCreateInCRM();
-  }
-  @Get('crm/updated')
-  findTUpdateInCRM() {
-    return this.personService.findToUpdateInCRM();
-  }
-  //MODULO DE PADRES
-  @Get('parents/get-sons')
-  searchSons(@AuthenticatedUser() user: any) {
-    return this.personService.findStudentsByParents(user);
-  }
+
   @Get('parents/attendance-student/:id')
   @ApiQuery({
     name: 'startDate',
@@ -117,9 +161,5 @@ export class PersonController {
     @Query() searchByDateDto: SearchByDateDto,
   ) {
     return this.personService.findAttendanceByStudent(+id, searchByDateDto);
-  }
-  @Get('parents/profile')
-  getProfileUser(@GetUser() user: User) {
-    return this.personService.findProfileUser(user);
   }
 }
