@@ -27,7 +27,7 @@ import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { SearchByDateDto } from '../common/dto/search-by-date.dto';
 import { Student } from 'src/student/entities/student.entity';
-import { AdvancedSearchDto, SearchableRole } from './dto/advanced-search.dto';
+import { AdvancedSearchDto } from './dto/advanced-search.dto';
 
 @Injectable()
 export class PersonService {

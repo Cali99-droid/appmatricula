@@ -42,6 +42,7 @@ import { SlackChannel } from 'src/common/slack/slack.constants';
 
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 import { SlackBlock } from 'src/common/slack/types/slack.types';
+import { TypeOfDebt } from './enum/TypeOfDebt.enum';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 // Interfaz para mayor claridad en los tipos de datos
@@ -401,7 +402,7 @@ export class TreasuryService {
     }
   }
 
-  async findDebts(studentId: number) {
+  async findDebts(studentId: number, type: TypeOfDebt = TypeOfDebt.PENDIENTE) {
     const family = await this.familyRepository.findOne({
       where: {
         student: { id: studentId },
@@ -414,18 +415,35 @@ export class TreasuryService {
     if (!family) {
       throw new NotFoundException('Don´t exist family for this student');
     }
+    let debts;
+    if (type === TypeOfDebt.VENCIDA) {
+      console.log('entro');
+      debts = await this.debtRepository.find({
+        where: {
+          student: { id: studentId },
+          dateEnd: LessThan(new Date()),
+          status: false,
+          isCanceled: false,
+        },
+        relations: {
+          concept: true,
+          discount: true,
+        },
+      });
+    } else {
+      debts = await this.debtRepository.find({
+        where: {
+          student: { id: studentId },
+          status: false,
+          isCanceled: false,
+        },
+        relations: {
+          concept: true,
+          discount: true,
+        },
+      });
+    }
 
-    const debts = await this.debtRepository.find({
-      where: {
-        student: { id: studentId },
-        status: false,
-        isCanceled: false,
-      },
-      relations: {
-        concept: true,
-        discount: true,
-      },
-    });
     const data = {
       debts: debts,
       resp: family.respEconomic || 'No hay reponsable matrícula ',

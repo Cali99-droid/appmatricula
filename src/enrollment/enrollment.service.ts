@@ -2119,40 +2119,44 @@ export class EnrollmentService {
     createReferDto: CreateReferDto,
     user: KeycloakTokenPayload,
   ) {
-    const { childrenId, parentId, activityClassroomId } = createReferDto;
-    const child = await this.studentRepository.findOne({
-      where: {
-        person: { id: childrenId },
-      },
-      relations: {
-        person: true,
-      },
-    });
-    const parent = await this.personRepository.findOneBy({
-      id: parentId,
-    });
+    try {
+      const { childrenId, parentId, activityClassroomId } = createReferDto;
+      const child = await this.studentRepository.findOne({
+        where: {
+          person: { id: childrenId },
+        },
+        relations: {
+          person: true,
+        },
+      });
+      const parent = await this.personRepository.findOneBy({
+        id: parentId,
+      });
 
-    const userDB = await this.userRepository.findOneBy({
-      email: user.email,
-    });
+      const userDB = await this.userRepository.findOneBy({
+        email: user.email,
+      });
 
-    const classroom = await this.activityClassroomRepository.findOneBy({
-      id: activityClassroomId,
-    });
+      const classroom = await this.activityClassroomRepository.findOneBy({
+        id: activityClassroomId,
+      });
 
-    console.log(child);
-    console.log(parent);
-    console.log(classroom);
-    /** CALL API TO MICRO TRANSFERS */
+      console.log(child);
+      console.log(parent);
+      console.log(classroom);
+      /** CALL API TO MICRO TRANSFERS */
 
-    const destination = `${classroom.grade.name} ${classroom.section}`;
-    const obs = `SOLICITUD TRASLADO ${child.studentCode} - ${destination}`;
-    //SAVE HISTORY
-    await this.studentService.createHistory(
-      ActionType.TRAS_INTER,
-      obs,
-      userDB.id,
-      child.id,
-    );
+      const destination = `${classroom.grade.name} ${classroom.section}`;
+      const obs = `SOLICITUD TRASLADO ${child.studentCode} - ${destination}`;
+      //SAVE HISTORY
+      return await this.studentService.createHistory(
+        ActionType.TRAS_INTER,
+        obs,
+        userDB.id,
+        child.id,
+      );
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 }

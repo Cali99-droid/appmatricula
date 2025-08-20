@@ -36,6 +36,7 @@ import { numberOfRecords } from './dto/resp-process.dto';
 import { CreateDiscountDto } from './dto/create-discount.dto';
 import { ApiKeyGuard } from './guard/api-key.guard';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
+import { TypeOfDebt } from './enum/TypeOfDebt.enum';
 @ApiTags('Treasury')
 @Resource('client-test-appae')
 @Controller('treasury')
@@ -83,12 +84,22 @@ export class TreasuryController {
   }
 
   @Get('debts/:studentId')
+  @ApiQuery({
+    name: 'type',
+    required: true,
+    description: 'Type of debt',
+    type: String,
+  })
   @ApiResponse({ status: 201, description: 'deudas del alumno' })
   @Roles({
     roles: ['administrador-colegio', 'secretaria', 'padre-colegio'],
   })
-  findDebts(@Param('studentId') studentId: number) {
-    return this.treasuryService.findDebts(+studentId);
+  findDebts(
+    @Param('studentId') studentId: number,
+    @Query('type') type: TypeOfDebt,
+  ) {
+    console.log(type);
+    return this.treasuryService.findDebts(+studentId, type);
   }
 
   @Get('payment')
