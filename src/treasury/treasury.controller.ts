@@ -98,7 +98,6 @@ export class TreasuryController {
     @Param('studentId') studentId: number,
     @Query('type') type: TypeOfDebt,
   ) {
-    console.log(type);
     return this.treasuryService.findDebts(+studentId, type);
   }
 

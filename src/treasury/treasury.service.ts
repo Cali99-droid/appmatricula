@@ -417,7 +417,6 @@ export class TreasuryService {
     }
     let debts;
     if (type === TypeOfDebt.VENCIDA) {
-      console.log('entro');
       debts = await this.debtRepository.find({
         where: {
           student: { id: studentId },
@@ -1548,6 +1547,10 @@ export class TreasuryService {
     }
 
     if (debtsPending.length === 0) {
+      await this.slackService.sendMessage(
+        SlackChannel.TREASURY,
+        `:large_blue_circle: *Proceso finalizado. Todas las deudas encontradas ya estaban pagadas.*`,
+      );
       return this.buildResponse({
         status: true,
         message:
@@ -1601,7 +1604,7 @@ export class TreasuryService {
       successfulCount: successfulPayments.length,
       failedCount: failedPayments.length,
       duplicatesCount: debtsPaid.length,
-      detailDuplicates: this.formatDebtList(debtsPaid),
+      // detailDuplicates: this.formatDebtList(debtsPaid),
     });
 
     // 7. Construir la respuesta final de forma centralizada
@@ -1731,7 +1734,6 @@ export class TreasuryService {
     successfulCount: number;
     failedCount: number;
     duplicatesCount: number;
-    detailDuplicates?: FormattedDebt[];
   }) {
     const {
       fileName,
@@ -1740,7 +1742,6 @@ export class TreasuryService {
       successfulCount,
       failedCount,
       duplicatesCount,
-      detailDuplicates,
     } = summary;
 
     const statusIcon = failedCount > 0 ? '🔴' : '✅';
@@ -1783,19 +1784,8 @@ export class TreasuryService {
       {
         type: 'divider', // <-- AQUÍ ESTÁ EL SEPARADOR VISUAL
       },
-      {
-        type: 'section',
-        fields: detailDuplicates.map((d) => {
-          return {
-            type: 'mrkdwn',
-            text: `*Code:*\n${d.code}\n *Student:${d.student}`,
-          };
-        }),
-      },
     ];
 
-    // NOTA: Tu `slackService.sendMessage` debe ser capaz de aceptar un objeto con la propiedad `blocks`.
-    // La API de Slack lo espera así: { channel: '...', blocks: [...] }
     await this.slackService.sendMessage(SlackChannel.TREASURY, { blocks });
   }
 

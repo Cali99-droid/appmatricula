@@ -24,6 +24,7 @@ import { SearchByDateDto } from 'src/common/dto/search-by-date.dto';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 import { AdvancedSearchDto } from './dto/advanced-search.dto';
 import { Person } from './entities/person.entity';
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 @ApiTags('Person')
 @Controller('person')
 export class PersonController {
@@ -65,8 +66,11 @@ export class PersonController {
     description:
       'Error de validación. El término o el rol no cumplen con los requisitos.',
   })
-  advancedSearch(@Query() advancedSearchDto: AdvancedSearchDto) {
-    return this.personService.advancedSearch(advancedSearchDto);
+  advancedSearch(
+    @Query() advancedSearchDto: AdvancedSearchDto,
+    @AuthenticatedUser() user: KeycloakTokenPayload,
+  ) {
+    return this.personService.advancedSearch(advancedSearchDto, user);
   }
 
   @Get('crm/created')

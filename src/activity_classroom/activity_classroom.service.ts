@@ -486,4 +486,22 @@ export class ActivityClassroomService {
       handleDBExceptions(error, this.logger);
     }
   }
+
+  async getIdsByCampus(codes: string[]) {
+    try {
+      const ac = await this.activityClassroomRepository.find({
+        where: {
+          classroom: {
+            campusDetail: {
+              code: In(codes),
+            },
+          },
+        },
+      });
+
+      return ac.map((a) => a.id);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
 }

@@ -27,7 +27,9 @@ import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { SearchByDateDto } from '../common/dto/search-by-date.dto';
 import { Student } from 'src/student/entities/student.entity';
-import { AdvancedSearchDto } from './dto/advanced-search.dto';
+import { AdvancedSearchDto, SearchableScope } from './dto/advanced-search.dto';
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
+import { ActivityClassroomService } from 'src/activity_classroom/activity_classroom.service';
 
 @Injectable()
 export class PersonService {
@@ -53,6 +55,8 @@ export class PersonService {
     private readonly enrollmentScheduleRepository: Repository<EnrollmentSchedule>,
     @InjectRepository(Attendance)
     private readonly attendanceRepository: Repository<Attendance>,
+
+    private readonly activityClassroomService: ActivityClassroomService,
   ) {}
   create(createPersonDto: CreatePersonDto) {
     return createPersonDto;
@@ -410,10 +414,44 @@ export class PersonService {
     );
   }
 
-  async advancedSearch(advancedSearchDto: AdvancedSearchDto) {
-    const { term } = advancedSearchDto;
+  async advancedSearch(
+    advancedSearchDto: AdvancedSearchDto,
+    user: KeycloakTokenPayload,
+  ) {
+    try {
+      const { term, scope = SearchableScope.STUDENT } = advancedSearchDto;
+      const roles = user.resource_access['client-test-appae'].roles;
+      const resultsOfSearch = await this.searchPerson(term);
+      if (scope === SearchableScope.STUDENT) {
+        const idsActivityClassrooms =
+          await this.activityClassroomService.getIdsByCampus(roles);
+        // const resultsOfSearch = await this.searchPerson(term);
+        // console.log(resultsOfSearch);
+        const resp = resultsOfSearch.filter((res) =>
+          idsActivityClassrooms.includes(
+            res.student?.enrollment[0]?.activityClassroom.id,
+          ),
+        );
 
-    return this.searchPerson(term);
+        // console.log(resp);
+        return resp;
+      }
+
+      if (scope === SearchableScope.PARENT) {
+        const resp = resultsOfSearch.filter(
+          (res) =>
+            res.student === null || res.student?.enrollment?.length === 0,
+        );
+
+        // console.log(resp);
+        return resp;
+      }
+
+      return [];
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+
     // switch (role) {
     //   case SearchableRole.STUDENT:
     //     return this.searchStudents(term);
@@ -434,6 +472,15 @@ export class PersonService {
         .createQueryBuilder('person')
         .leftJoinAndSelect('person.user', 'user')
         .leftJoinAndSelect('person.student', 'student')
+        .leftJoinAndSelect(
+          'student.enrollment',
+          'enrollment',
+          'enrollment.status = :statusRe',
+          {
+            statusRe: 'registered',
+          },
+        )
+        .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
         .where(
           new Brackets((qb) => {
             qb.orWhere('person.docNumber LIKE :term', { term: searchTerm })
@@ -457,7 +504,6 @@ export class PersonService {
                 `LOWER(CONCAT(person.lastname, ' ', person.mLastname)) LIKE LOWER(:fullName)`,
                 { fullName: searchTerm }, // <-- CORRECCIÓN
               )
-              // Busca por: Nombre ApellidoPaterno
               .orWhere(
                 `LOWER(CONCAT(person.name, ' ', person.lastname)) LIKE LOWER(:fullName)`,
                 { fullName: searchTerm }, // <-- CORRECCIÓN
