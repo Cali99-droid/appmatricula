@@ -1,5 +1,5 @@
 // src/search/dto/advanced-search.dto.ts
-import { IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export enum SearchableRole {
   STUDENT = 'student',
@@ -13,7 +13,7 @@ export class AdvancedSearchDto {
   @MinLength(3)
   term: string;
 
-  @IsEnum(SearchableRole)
-  @IsNotEmpty()
-  role: SearchableRole;
+  //   @IsEnum(SearchableRole)
+  //   @IsNotEmpty()
+  //   role: SearchableRole;
 }

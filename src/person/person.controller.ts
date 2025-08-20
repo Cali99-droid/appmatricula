@@ -22,7 +22,7 @@ import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { SearchByDateDto } from 'src/common/dto/search-by-date.dto';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
-import { AdvancedSearchDto, SearchableRole } from './dto/advanced-search.dto';
+import { AdvancedSearchDto } from './dto/advanced-search.dto';
 import { Person } from './entities/person.entity';
 @ApiTags('Person')
 @Controller('person')
@@ -47,13 +47,13 @@ export class PersonController {
     type: String,
     example: 'Ana García',
   })
-  @ApiQuery({
-    name: 'role',
-    required: true,
-    description: 'El rol de la persona a buscar.',
-    enum: SearchableRole,
-    example: SearchableRole.STUDENT,
-  })
+  // @ApiQuery({
+  //   name: 'role',
+  //   required: true,
+  //   description: 'El rol de la persona a buscar.',
+  //   enum: SearchableRole,
+  //   example: SearchableRole.STUDENT,
+  // })
   @ApiResponse({
     status: 200,
     description:

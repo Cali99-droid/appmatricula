@@ -411,103 +411,60 @@ export class PersonService {
   }
 
   async advancedSearch(advancedSearchDto: AdvancedSearchDto) {
-    const { term, role } = advancedSearchDto;
+    const { term } = advancedSearchDto;
 
-    switch (role) {
-      case SearchableRole.STUDENT:
-        return this.searchStudents(term);
-      case SearchableRole.PARENT:
-        return this.searchParents(term);
-      default:
-        return []; // O lanzar un error
-    }
+    return this.searchPerson(term);
+    // switch (role) {
+    //   case SearchableRole.STUDENT:
+    //     return this.searchStudents(term);
+    //   case SearchableRole.PARENT:
+    //     return this.searchParents(term);
+    //   default:
+    //     return []; // O lanzar un error
+    // }
   }
 
-  private async searchStudents(term: string) {
-    // Parámetros para la búsqueda LIKE.
+  // En tu SearchService
+  private async searchPerson(term: string) {
+    // ✅ Crea una única variable con los comodines
     const searchTerm = `%${term}%`;
 
-    return this.studentRepository
-      .createQueryBuilder('student')
-      .leftJoinAndSelect('student.person', 'person')
-      .leftJoinAndSelect('person.user', 'user')
-      .where(
-        new Brackets((qb) => {
-          qb.orWhere('person.docNumber LIKE :term', { term: searchTerm })
-            .orWhere('person.cellPhone LIKE :term', { term: searchTerm })
-            // Búsqueda de email también insensible a mayúsculas
-            .orWhere('LOWER(user.email) LIKE LOWER(:term)', {
-              term: searchTerm,
-            })
-
-            // --- Búsquedas por nombre corregidas para MySQL ---
-
-            // Busca por: Nombre ApellidoPaterno ApellidoMaterno
-            .orWhere(
-              `LOWER(CONCAT(person.name, ' ', person.lastname, ' ', person.mLastname)) LIKE LOWER(:fullName)`,
-              { fullName: searchTerm },
-            )
-            // Busca por: ApellidoPaterno ApellidoMaterno Nombre
-            .orWhere(
-              `LOWER(CONCAT(person.lastname, ' ', person.mLastname, ' ', person.name)) LIKE LOWER(:fullName)`,
-              { fullName: searchTerm },
-            )
-            // Busca por: ApellidoPaterno ApellidoMaterno
-            .orWhere(
-              `LOWER(CONCAT(person.lastname, ' ', person.mLastname)) LIKE LOWER(:fullName)`,
-              { fullName: searchTerm },
-            )
-            // Busca por: Nombre ApellidoPaterno
-            .orWhere(
-              `LOWER(CONCAT(person.name, ' ', person.lastname)) LIKE LOWER(:fullName)`,
-              { fullName: searchTerm },
-            );
-        }),
-      )
-      .getMany();
-  }
-  // En tu SearchService
-  private async searchParents(term: string) {
     return (
       this.personRepository
         .createQueryBuilder('person')
-        // .innerJoin(
-        //   'family',
-        //   'family',
-        //   'family.parentOneId = person.id OR family.parentTwoId = person.id',
-        // )
         .leftJoinAndSelect('person.user', 'user')
         .leftJoinAndSelect('person.student', 'student')
-
         .where(
           new Brackets((qb) => {
-            // Las mismas condiciones de búsqueda que para estudiantes
-            qb.orWhere('person.docNumber LIKE :term', { term: `%${term}%` })
-              .orWhere('person.cellPhone LIKE :term', { term: `%${term}%` })
-              .orWhere('user.email LIKE :term', { term: `%${term}%` })
+            qb.orWhere('person.docNumber LIKE :term', { term: searchTerm })
+              .orWhere('person.cellPhone LIKE :term', { term: searchTerm })
+              .orWhere('LOWER(user.email) LIKE LOWER(:term)', {
+                term: searchTerm,
+              })
+
+              // Busca por: Nombre ApellidoPaterno ApellidoMaterno
               .orWhere(
                 `LOWER(CONCAT(person.name, ' ', person.lastname, ' ', person.mLastname)) LIKE LOWER(:fullName)`,
-                { fullName: term },
+                { fullName: searchTerm }, // <-- CORRECCIÓN
               )
               // Busca por: ApellidoPaterno ApellidoMaterno Nombre
               .orWhere(
                 `LOWER(CONCAT(person.lastname, ' ', person.mLastname, ' ', person.name)) LIKE LOWER(:fullName)`,
-                { fullName: term },
+                { fullName: searchTerm }, // <-- CORRECCIÓN
               )
               // Busca por: ApellidoPaterno ApellidoMaterno
               .orWhere(
                 `LOWER(CONCAT(person.lastname, ' ', person.mLastname)) LIKE LOWER(:fullName)`,
-                { fullName: term },
+                { fullName: searchTerm }, // <-- CORRECCIÓN
               )
-
               // Busca por: Nombre ApellidoPaterno
               .orWhere(
                 `LOWER(CONCAT(person.name, ' ', person.lastname)) LIKE LOWER(:fullName)`,
-                { fullName: term },
+                { fullName: searchTerm }, // <-- CORRECCIÓN
               );
-            // .andWhere('student.id IS NULL');
           }),
         )
+        // .andWhere('student.id IS NULL') // <-- No olvides filtrar para que solo devuelva padres
         .getMany()
     );
   }
