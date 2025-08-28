@@ -40,6 +40,7 @@ export class StudentService {
     private activityClassroomService: ActivityClassroomService,
   ) {}
   create(createStudentDto: CreateStudentDto) {
+    console.log(createStudentDto);
     return 'This action adds a new student';
   }
 

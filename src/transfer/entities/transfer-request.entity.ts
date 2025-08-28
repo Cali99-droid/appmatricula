@@ -49,6 +49,9 @@ export class TransferRequest {
   @Column({ type: 'enum', enum: TransferType })
   type: TransferType;
 
+  @Column({ type: 'text', nullable: true })
+  reason: string;
+
   @Column({ type: 'enum', enum: MainStatus, default: MainStatus.OPEN })
   mainStatus: MainStatus;
 

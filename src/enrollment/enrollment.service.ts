@@ -1804,7 +1804,7 @@ export class EnrollmentService {
     activityClassroomId: number,
     user: any,
   ) {
-    // /**Validar deudas */
+    /**Validar deudas */
     const data = await this.treasuryService.searchDebtsByDate(studentId);
 
     if (data.length > 0) {

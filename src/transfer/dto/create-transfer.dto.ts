@@ -103,4 +103,13 @@ export class CreateTransferDto {
   @IsString()
   @IsOptional()
   destinationSchoolName?: string;
+
+  @ApiProperty({
+    example: 'una observación',
+    description: 'observacion y/o motivo del traslado',
+    nullable: false,
+  })
+  @IsString()
+  @IsOptional()
+  reason: string;
 }
