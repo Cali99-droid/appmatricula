@@ -15,7 +15,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { Family } from 'src/family/entities/family.entity';
 import { EmailDetail } from 'src/emails/entities/emailDetail.entity';
-import { Transfer } from 'src/transfer/entities/transfer.entity';
 import { Debt } from 'src/treasury/entities/debt.entity';
 
 @Entity()
@@ -90,9 +89,6 @@ export class Student {
 
   @OneToMany(() => EmailDetail, (emailDetail) => emailDetail.student)
   emailsDetails?: EmailDetail[];
-
-  @OneToMany(() => Transfer, (transfers) => transfers.student)
-  transfers?: Transfer[];
 
   @OneToMany(() => Debt, (debt) => debt.student)
   debt?: Debt[];

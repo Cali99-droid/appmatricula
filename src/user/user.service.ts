@@ -175,6 +175,22 @@ export class UserService {
     }
   }
 
+  async findByEmail(email: string) {
+    try {
+      const user = await this.userRepository.findOneOrFail({
+        where: { email },
+      });
+
+      return {
+        id: user.id,
+        email,
+        sub: user.sub,
+      };
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }
+
   async searchUser(searchDto: SearchUserDto, user: any) {
     const { searchTerm, page = 1, limit = 10 } = searchDto;
     const query = this.userRepository
@@ -211,78 +227,6 @@ export class UserService {
       throw new InternalServerErrorException('Hubo un error');
     }
   }
-  //   const userToUpdate = await this.userRepository.findOne({
-  //     where: {
-  //       id,
-  //     },
-  //     relations: {
-  //       roles: true,
-  //     },
-  //   });
-  //   const {
-  //     campusDetailsIds,
-  //     rolesIds,
-  //     email,
-  //     password,
-  //     isActive,
-  //     activityClassroomIds,
-  //   } = updateUserDto;
-  //   userToUpdate.roles = [];
-  //   userToUpdate.isActive = isActive;
-  //   if (email) {
-  //     userToUpdate.email = email;
-  //   }
-
-  //   if (password) {
-  //     userToUpdate.password = bcrypt.hashSync(password, 10);
-  //   }
-  //   if (rolesIds) {
-  //     for (const roleId of rolesIds) {
-  //       const role = await this.roleRepository.findOneBy({ id: roleId });
-  //       if (role) {
-  //         userToUpdate.roles.push(role);
-  //       } else {
-  //         throw new Error(`Role with ID ${roleId} not found`);
-  //       }
-  //     }
-  //   }
-
-  //   const userUpdated = await this.userRepository.save(userToUpdate);
-
-  //   const assignmentToUpdate = await this.assignmentRepository.findBy({
-  //     user: { id: userUpdated.id },
-  //   });
-  //   await this.assignmentRepository.remove(assignmentToUpdate);
-  //   if (campusDetailsIds) {
-  //     for (const campusId of campusDetailsIds) {
-  //       // const campus = await this.campusDetailRepository.findOneBy({
-  //       //   id: campusId,
-  //       // });
-  //       // console.log(campus)
-
-  //       await this.assignmentRepository.save({
-  //         user: userUpdated,
-  //         campusDetail: { id: campusId },
-  //       });
-  //     }
-  //   }
-  //   const assignmentClassToUpdate =
-  //     await this.assignmentClassroomRepository.findBy({
-  //       user: { id: userUpdated.id },
-  //     });
-
-  //   await this.assignmentClassroomRepository.remove(assignmentClassToUpdate);
-  //   if (activityClassroomIds) {
-  //     for (const acId of activityClassroomIds) {
-  //       await this.assignmentClassroomRepository.save({
-  //         user: userUpdated,
-  //         activityClassroom: { id: acId },
-  //       });
-  //     }
-  //   }
-
-  //   return userUpdated;
-  // }
 
   remove(id: number) {
     return `This action removes a #${id} user`;

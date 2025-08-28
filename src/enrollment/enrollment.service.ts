@@ -1804,7 +1804,7 @@ export class EnrollmentService {
     activityClassroomId: number,
     user: any,
   ) {
-    /**Validar deudas */
+    // /**Validar deudas */
     const data = await this.treasuryService.searchDebtsByDate(studentId);
 
     if (data.length > 0) {
@@ -2120,7 +2120,7 @@ export class EnrollmentService {
     user: KeycloakTokenPayload,
   ) {
     try {
-      const { childrenId, parentId, activityClassroomId } = createReferDto;
+      const { childrenId, parentId, activityClassroomId, obs } = createReferDto;
       const child = await this.studentRepository.findOne({
         where: {
           person: { id: childrenId },
@@ -2147,11 +2147,11 @@ export class EnrollmentService {
       /** CALL API TO MICRO TRANSFERS */
 
       const destination = `${classroom.grade.name} ${classroom.section}`;
-      const obs = `SOLICITUD TRASLADO ${child.studentCode} - ${destination}`;
+      const observations = `SOLICITUD TRASLADO ${child.studentCode} - ${destination}, ${obs}`;
       //SAVE HISTORY
       return await this.studentService.createHistory(
         ActionType.TRAS_INTER,
-        obs,
+        observations,
         userDB.id,
         child.id,
       );
@@ -2159,4 +2159,17 @@ export class EnrollmentService {
       handleDBExceptions(error, this.logger);
     }
   }
+
+  // async changeSection(acId: number, studentId: number) {
+  //   const enrrollment = this.enrollmentRepository.findOne({
+  //     where: {
+  //       student: { id: studentId },
+  //       status: Status.MATRICULADO,
+  //     },
+  //   });
+
+  //   if (!enrrollment) {
+  //     throw new BadRequestException('No tiene Matricula activa el estudiante');
+  //   }
+  // }
 }

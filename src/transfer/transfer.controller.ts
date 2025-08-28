@@ -1,100 +1,196 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
-  Patch,
+  Get,
   Param,
+  Query,
+  ParseIntPipe,
   Delete,
+  Patch,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { TransferService } from './transfer.service';
 import { CreateTransferDto } from './dto/create-transfer.dto';
-import { UpdateTransferDto } from './dto/update-transfer.dto';
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
-import { Transfer } from './entities/transfer.entity';
-import { Resource } from 'nest-keycloak-connect';
-@ApiTags('Transfer')
+import { TransfersService } from './transfer.service';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthenticatedUser } from 'nest-keycloak-connect';
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
+import { MainStatus } from './entities/transfer-request.entity';
+import { UpdateTransferMeetingDto } from './dto/update-transfer-meeting.dto';
+import { CreateTransferMeetingDto } from './dto/create-transfer-meeting.dto';
+import { UpdateTransferReportDto } from './dto/update-transfer-report.dto';
+import { CreateTransferReportDto } from './dto/create-transfer-report.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+
+@ApiTags('Transfers')
 @Controller('transfers')
-@Resource(Transfer.name)
-export class TransferController {
-  constructor(private readonly service: TransferService) {}
+export class TransfersController {
+  constructor(private readonly transfersService: TransfersService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Crear una nueva solicitud' })
   @ApiResponse({
     status: 201,
-    description: 'Transfer was created',
-    type: CreateTransferDto,
+    description: 'Solicitud creada exitosamente.',
   })
-  create(@Body() createTransferDto: CreateTransferDto) {
-    return this.service.create(createTransferDto);
+  @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
+  create(
+    @Body() createTransferDto: CreateTransferDto,
+    @AuthenticatedUser() user: KeycloakTokenPayload,
+  ) {
+    return this.transfersService.create(createTransferDto, user);
   }
 
-  @Get('by-classroom/:activityClassroomId')
-  @ApiOkResponse({
-    status: 200,
-    description: 'Transfer of classroom',
-    type: Transfer,
-  })
-  findAll(@Param('activityClassroomId') activityClassroomId: string) {
-    return this.service.findAllByActivityClassroom(+activityClassroomId);
-  }
-
-  // TODO revisar utilidad
-  @Get(':id')
+  @Get()
   @ApiOperation({
-    summary: 'Detail of Transfer',
+    summary: 'Obtener todos las solicitudes de traslado',
   })
-  @ApiParam({
-    name: 'id',
+  @ApiResponse({ status: 200, description: 'Lista de Solicitudes.' })
+  @ApiQuery({
+    name: 'status',
     required: true,
-    description:
-      'El término de búsqueda utilizado para encontrar el años específico, puedes enviar el id del año ',
-    type: String,
+    description: 'Status of the request',
+    // type: string,
   })
-  @ApiResponse({ status: 200, description: 'Detail Transfer', type: Transfer })
-  @ApiResponse({
-    status: 404,
-    description: 'transfers  not found ',
-  })
-  async findAllByTransfer(@Param('id') id: string) {
-    return this.service.findAllByTransfer(+id);
+  getAllRequests(@Query('status') status: MainStatus) {
+    return this.transfersService.getAllRequests(status);
   }
 
-  @Patch(':id')
-  @ApiResponse({
-    status: 200,
-    description: 'Transfer was updated',
-    type: Transfer,
+  @Get('/:id')
+  @ApiOperation({
+    summary: 'Obtener detallet de una  solicitud de traslado',
   })
+  @ApiResponse({ status: 200, description: 'Lista de Solicitudes.' })
+  @ApiQuery({
+    name: 'status',
+    required: true,
+    description: 'Status of the request',
+    // type: string,
+  })
+  getOneRequests(@Param('id') id: number) {
+    return this.transfersService.getOneRequest(+id);
+  }
+
+  @Get('/status/:requestCode')
+  @ApiOperation({ summary: 'Obtener una solicitud por su código' })
+  getStatusByCode(@Param('requestCode') requestCode: string) {
+    return this.transfersService.getStatusByCode(requestCode);
+  }
+
+  /**MEETING */
+  @Post('meetings')
+  @ApiOperation({ summary: 'Crear un nuevo agendamiento de reunión' })
+  @ApiResponse({
+    status: 201,
+    description: 'Agendamiento creado exitosamente.',
+  })
+  @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
+  createTransferMeeting(
+    @Body() createDto: CreateTransferMeetingDto,
+    @AuthenticatedUser() user: KeycloakTokenPayload,
+  ) {
+    return this.transfersService.createTransferMeeting(createDto, user);
+  }
+
+  @Get('meetings/request/:requestId')
+  @ApiOperation({
+    summary: 'Obtener todos los agendamientos de una solicitud de traslado',
+  })
+  @ApiResponse({ status: 200, description: 'Lista de agendamientos.' })
+  findAllTransferMeetingByRequest(
+    @Param('requestId', ParseIntPipe) requestId: number,
+  ) {
+    return this.transfersService.findAllTransferMeetingByRequest(requestId);
+  }
+
+  @Get('meetings/:id')
+  @ApiOperation({ summary: 'Obtener un agendamiento por su ID' })
+  @ApiResponse({ status: 200, description: 'Detalles del agendamiento.' })
+  @ApiResponse({ status: 404, description: 'Agendamiento no encontrado.' })
+  findOneTransferMeeting(@Param('id', ParseIntPipe) id: number) {
+    return this.transfersService.findOneTransferMeeting(id);
+  }
+
+  @Patch('meetings/:id')
+  @ApiOperation({ summary: 'Actualizar un agendamiento existente' })
+  @ApiResponse({ status: 200, description: 'Agendamiento actualizado.' })
+  @ApiResponse({ status: 404, description: 'Agendamiento no encontrado.' })
+  updateTransferMeeting(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateDto: UpdateTransferMeetingDto,
+  ) {
+    return this.transfersService.updateTransferMeeting(id, updateDto);
+  }
+
+  @Delete('/meetings:id')
+  @ApiOperation({ summary: 'Eliminar un agendamiento' })
+  @ApiResponse({ status: 200, description: 'Agendamiento eliminado.' })
+  @ApiResponse({ status: 404, description: 'Agendamiento no encontrado.' })
+  removeTransferMeeting(@Param('id', ParseIntPipe) id: number) {
+    return this.transfersService.removeTransferMeeting(id);
+  }
+
+  /**REPORTS */
+  @Post('report')
+  @ApiOperation({ summary: 'Crear y subir un nuevo informe de traslado' })
+  @ApiResponse({ status: 201, description: 'Informe creado exitosamente.' })
   @ApiResponse({
     status: 400,
-    description:
-      'endDate must be after startDate or Duplicate name for transfer ',
+    description: 'Datos inválidos o pre-condición no cumplida.',
   })
-  @ApiResponse({
-    status: 404,
-    description: 'transfer  not found ',
-  })
-  update(
-    @Param('id') id: string,
-    @Body() updateTransferDto: UpdateTransferDto,
+  createTransferReport(
+    @Body() createDto: CreateTransferReportDto,
+    @AuthenticatedUser() user: KeycloakTokenPayload,
   ) {
-    return this.service.update(+id, updateTransferDto);
+    return this.transfersService.createTransferReport(createDto, user);
   }
 
-  @ApiResponse({ status: 200, description: 'Transfer was deleted' })
-  @ApiResponse({
-    status: 404,
-    description: 'transfer  not found ',
+  @Get('report/request/:requestId')
+  @ApiOperation({
+    summary: 'Obtener todos los informes de una solicitud de traslado',
   })
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(+id);
+  findAllByRequestTransferReport(
+    @Param('requestId', ParseIntPipe) requestId: number,
+  ) {
+    return this.transfersService.findAllByRequestTransferReport(requestId);
+  }
+
+  @Get('report/:id')
+  @ApiOperation({ summary: 'Obtener un informe por su ID' })
+  @ApiResponse({ status: 404, description: 'Informe no encontrado.' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.transfersService.findOneTransferReport(id);
+  }
+
+  @Patch('report/:id')
+  @ApiOperation({ summary: 'Actualizar un informe existente' })
+  @ApiResponse({ status: 404, description: 'Informe no encontrado.' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateDto: UpdateTransferReportDto,
+  ) {
+    return this.transfersService.updateTransferReport(id, updateDto);
+  }
+
+  @Delete('report/:id')
+  @ApiOperation({ summary: 'Eliminar un informe' })
+  @ApiResponse({ status: 404, description: 'Informe no encontrado.' })
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.transfersService.removeTransferReport(id);
+  }
+
+  /**ACTA UPLOAD */
+  @Post(':id/upload-agreement-act')
+  @ApiOperation({
+    summary: 'Sube el acta de conformidad y finaliza el traslado',
+  })
+  @UseInterceptors(FileInterceptor('file')) // Para manejar la subida de archivos
+  finalizeTransfer(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+    @AuthenticatedUser() user: KeycloakTokenPayload,
+  ) {
+    return this.transfersService.finalizeWithAct(id, file.buffer, user);
   }
 }
