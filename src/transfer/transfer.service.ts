@@ -29,6 +29,19 @@ import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as sharp from 'sharp';
 import { EnrollmentService } from 'src/enrollment/enrollment.service';
+import { TreasuryService } from 'src/treasury/treasury.service';
+import { TypeOfDebt } from 'src/treasury/enum/TypeOfDebt.enum';
+import { EmailsService } from 'src/emails/emails.service';
+import {
+  EmailTemplateParams,
+  generateRegistrationEmail,
+} from './helpers/email-request';
+
+import { PersonService } from 'src/person/person.service';
+import {
+  DecisionEmailParams,
+  generateDecisionEmail,
+} from './helpers/email-final';
 
 // import { customAlphabet } from 'nanoid';
 
@@ -52,6 +65,10 @@ export class TransfersService {
 
     private readonly userService: UserService,
     private readonly enrollmentService: EnrollmentService,
+    private readonly treasuryService: TreasuryService,
+    private readonly emailsService: EmailsService,
+
+    private readonly personService: PersonService,
   ) {}
 
   // private generateRequestCode(): string {
@@ -81,8 +98,41 @@ export class TransfersService {
         requestCode: `TR-${code.toString().padStart(4, '0')}`,
         personId: createTransferDto.parentId,
       });
+      const request = await this.transferRequestRepository.save(newRequest);
+      /**VERIFY DEBTS */
+      const resDebt = await this.treasuryService.findDebts(
+        createTransferDto.studentId,
+        TypeOfDebt.VENCIDA,
+      );
 
-      return this.transferRequestRepository.save(newRequest);
+      const parent = await this.personService.findOne(
+        createTransferDto.parentId,
+      );
+      if (parent.email) {
+        const student = await this.personService.findOneStudent(
+          createTransferDto.studentId,
+        );
+        const templateParams: EmailTemplateParams = {
+          parentName: `${parent.name} ${parent.lastname}`,
+          studentName: `${student.name} ${student.lastname}`,
+          requestCode: newRequest.requestCode,
+          statusCheckUrl: 'https://colegioae.edu.pe/traslados/consulta', // URL real de tu app
+          hasDebts: resDebt.debts.length > 0,
+        };
+
+        // 3. Generas el contenido del email
+        const { subject, html } = generateRegistrationEmail(templateParams);
+
+        // 4. Envías el correo usando tu servicio existente
+        await this.emailsService.sendEmailWithSES({
+          to: parent.email,
+          subject,
+          html,
+          text: `Su solicitud de traslado ha sido registrada con el código: ${newRequest.requestCode}`, // Versión de texto plano
+        });
+        /**SEND EMAIL */
+      }
+      return request;
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
@@ -204,6 +254,17 @@ export class TransfersService {
     const us = await this.userService.findByEmail(user.email);
     const { type, transferRequestId } = createDto;
 
+    const exist = await this.transferMeetingRepository.findOne({
+      where: {
+        transferRequestId,
+      },
+    });
+    if (exist) {
+      throw new BadRequestException(
+        `Ya existe un agendamiento para la solicitud #${createDto.transferRequestId}.`,
+      );
+    }
+
     const transferRequest = await this.transferRequestRepository.findOne({
       where: {
         id: transferRequestId,
@@ -290,6 +351,17 @@ export class TransfersService {
     createDto: CreateTransferReportDto,
     user: KeycloakTokenPayload,
   ): Promise<TransferReport> {
+    const { transferRequestId } = createDto;
+    const exist = await this.transferReportRepository.findOne({
+      where: {
+        transferRequestId,
+      },
+    });
+    if (exist) {
+      throw new BadRequestException(
+        `Ya existe un informe para la solicitud #${createDto.transferRequestId}.`,
+      );
+    }
     const transferRequest = await this.transferRequestRepository.findOneBy({
       id: createDto.transferRequestId,
     });
@@ -325,9 +397,46 @@ export class TransfersService {
         ? MainStatus.PENDING_AGREEMENT
         : MainStatus.CLOSED;
     }
+    /**send email */
 
     await this.transferRequestRepository.save(transferRequest);
-    return this.transferReportRepository.save(newReport);
+    const report = await this.transferReportRepository.save(newReport);
+
+    if (createDto.authorRole === AuthorRole.ADMINISTRATOR) {
+      /**SEND EMAIL */
+      const resDebt = await this.treasuryService.findDebts(
+        transferRequest.studentId,
+        TypeOfDebt.VENCIDA,
+      );
+
+      const parent = await this.personService.findOne(transferRequest.personId);
+      if (parent.email) {
+        const student = await this.personService.findOneStudent(
+          transferRequest.studentId,
+        );
+        // 1. Preparas los parámetros para la plantilla
+        const emailParams: DecisionEmailParams = {
+          parentName: `${parent.name} ${parent.lastname}`,
+          studentName: `${student.name} ${student.lastname}`,
+          requestCode: transferRequest.requestCode,
+          approved: transferRequest.finalDecision === FinalDecision.APPROVED,
+          reason: transferRequest.decisionReason,
+          hasDebts: resDebt.debts.length > 0,
+        };
+
+        // 3. Generas el contenido del email
+        const { subject, html, text } = generateDecisionEmail(emailParams);
+
+        await this.emailsService.sendEmailWithSES({
+          to: parent.email,
+          subject,
+          html,
+          text,
+        });
+      }
+    }
+
+    return report;
   }
 
   // READ ALL FOR A REQUEST

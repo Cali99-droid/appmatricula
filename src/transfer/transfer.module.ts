@@ -12,6 +12,9 @@ import { UserModule } from 'src/user/user.module';
 import { TransferReport } from './entities/transfer-report.entity';
 import { TransferMeeting } from './entities/transfer-meeting.entity';
 import { EnrollmentModule } from 'src/enrollment/enrollment.module';
+import { TreasuryModule } from 'src/treasury/treasury.module';
+import { EmailsModule } from 'src/emails/emails.module';
+import { PersonModule } from 'src/person/person.module';
 
 @Module({
   controllers: [TransfersController],
@@ -27,6 +30,9 @@ import { EnrollmentModule } from 'src/enrollment/enrollment.module';
     ConfigModule,
     UserModule,
     EnrollmentModule,
+    TreasuryModule,
+    EmailsModule,
+    PersonModule,
   ],
   exports: [TypeOrmModule],
 })

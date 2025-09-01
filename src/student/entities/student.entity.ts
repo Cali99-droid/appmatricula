@@ -81,6 +81,9 @@ export class Student {
   @JoinColumn({ name: 'familyId' })
   family?: Family;
 
+  @Column({ nullable: true })
+  familyId: number;
+
   @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
   enrollment?: Enrollment[];
 

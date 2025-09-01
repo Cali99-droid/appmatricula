@@ -480,6 +480,7 @@ export class PersonService {
             statusRe: 'registered',
           },
         )
+        // .leftJoinAndSelect('student.family', 'family')
         .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
         .where(
           new Brackets((qb) => {
