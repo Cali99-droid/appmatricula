@@ -352,10 +352,11 @@ export class TransfersService {
     createDto: CreateTransferReportDto,
     user: KeycloakTokenPayload,
   ): Promise<TransferReport> {
-    const { transferRequestId } = createDto;
+    const { transferRequestId, authorRole } = createDto;
     const exist = await this.transferReportRepository.findOne({
       where: {
         transferRequestId,
+        authorRole,
       },
     });
     if (exist) {
