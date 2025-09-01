@@ -257,6 +257,7 @@ export class TransfersService {
     const exist = await this.transferMeetingRepository.findOne({
       where: {
         transferRequestId,
+        type,
       },
     });
     if (exist) {
