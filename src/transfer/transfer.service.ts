@@ -42,6 +42,7 @@ import {
   DecisionEmailParams,
   generateDecisionEmail,
 } from './helpers/email-final';
+import { Status } from 'src/enrollment/enum/status.enum';
 
 // import { customAlphabet } from 'nanoid';
 
@@ -88,6 +89,26 @@ export class TransfersService {
     user: KeycloakTokenPayload,
   ): Promise<TransferRequest> {
     try {
+      const actualEnroll =
+        await this.enrollmentService.findEnrollmentByStudentAndStatus(
+          createTransferDto.studentId,
+          Status.MATRICULADO,
+        );
+      if (!actualEnroll) {
+        throw new NotFoundException('Estudiante no tiene Matricula Activa');
+      }
+      const availableClassroomsIds = await (
+        await this.enrollmentService.getAvailableClassrooms(
+          createTransferDto.studentId,
+        )
+      ).map((ava) => ava.id);
+      if (
+        !availableClassroomsIds.includes(
+          createTransferDto.destinationClassroomId,
+        )
+      ) {
+        throw new BadRequestException('NO hay vacantes para eta solicitud');
+      }
       const us = await this.userService.findByEmail(user.email);
       const id = await this.generateRequestCode();
 
@@ -99,6 +120,13 @@ export class TransfersService {
         personId: createTransferDto.parentId,
       });
       const request = await this.transferRequestRepository.save(newRequest);
+
+      await this.enrollmentService.createEnrollmentWithStatus(
+        createTransferDto.studentId,
+        createTransferDto.destinationClassroomId,
+        Status.EN_PROCESO,
+        `${actualEnroll.code}TR${code}`,
+      );
       /**VERIFY DEBTS */
       const resDebt = await this.treasuryService.findDebts(
         createTransferDto.studentId,
@@ -500,34 +528,38 @@ export class TransfersService {
 
   /**UPLOAD ACTA */
   async finalizeWithAct(id: number, file: Buffer, user: KeycloakTokenPayload) {
-    if (!file) {
-      throw new BadRequestException('Need a file');
+    try {
+      if (!file) {
+        throw new BadRequestException('Need a file');
+      }
+
+      const webpImage = await sharp(file).webp().toBuffer();
+      const nameAct = `${Date.now()}.webp`;
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: 'caebucket',
+          Key: `colegio/actas/${nameAct}`,
+          Body: webpImage,
+          ACL: 'public-read',
+        }),
+      );
+
+      const urlS3 = this.configService.getOrThrow('AWS_URL_BUCKET');
+      const urlPDF = `${urlS3}colegio/actas/${nameAct}`;
+      const request = await this.transferRequestRepository.findOne({
+        where: { id },
+      });
+
+      request.agreementActUrl = urlPDF;
+      request.mainStatus = MainStatus.CLOSED;
+      await this.enrollmentService.changeSection(
+        request.studentId,
+        request.destinationClassroomId,
+        user,
+      );
+      return await this.transferRequestRepository.save(request);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
     }
-
-    const webpImage = await sharp(file).webp().toBuffer();
-    const nameAct = `${Date.now()}.webp`;
-    await this.s3Client.send(
-      new PutObjectCommand({
-        Bucket: 'caebucket',
-        Key: `colegio/actas/${nameAct}`,
-        Body: webpImage,
-        ACL: 'public-read',
-      }),
-    );
-
-    const urlS3 = this.configService.getOrThrow('AWS_URL_BUCKET');
-    const urlPDF = `${urlS3}colegio/actas/${nameAct}`;
-    const request = await this.transferRequestRepository.findOne({
-      where: { id },
-    });
-
-    request.agreementActUrl = urlPDF;
-    request.mainStatus = MainStatus.CLOSED;
-    await this.enrollmentService.changeSection(
-      request.studentId,
-      request.destinationClassroomId,
-      user,
-    );
-    return await this.transferRequestRepository.save(request);
   }
 }

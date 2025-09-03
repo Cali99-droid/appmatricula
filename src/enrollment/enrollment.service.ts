@@ -45,8 +45,7 @@ import { TreasuryService } from 'src/treasury/treasury.service';
 import { SectionHistory } from './entities/section-history';
 import { ActionType } from 'src/student/enum/actionType.enum';
 import { User } from 'src/user/entities/user.entity';
-import { CreateReferDto } from './dto/create-refer.dto';
-import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
+
 import { SlackService } from 'src/common/slack/slack.service';
 import { SlackChannel } from 'src/common/slack/slack.constants';
 @Injectable()
@@ -261,11 +260,31 @@ export class EnrollmentService {
     }
   }
 
+  /**PONER MATRICULA EN PROCESO CUANDO SE TRASLADA */
+  async createEnrollmentWithStatus(
+    studentId: number,
+    activityClassroomId: number,
+    status: Status,
+    code: string,
+  ) {
+    try {
+      const newEnrroll = this.enrollmentRepository.create({
+        student: { id: studentId },
+        activityClassroom: { id: activityClassroomId },
+
+        status,
+        code,
+      });
+      return await this.enrollmentRepository.save(newEnrroll);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
   async createMany(createManyEnrollmentDto: UpdateManyEnrollmentDto) {
     const { persons, activityClassroomId } = createManyEnrollmentDto;
     let existingStudentCount = 0;
     let noexistingStudentCount = 0;
-    console.log(persons);
     try {
       for (const person of persons) {
         const existStudent = await this.enrollmentRepository.findOne({
@@ -304,6 +323,19 @@ export class EnrollmentService {
   async findAll() {
     const enrollments = await this.enrollmentRepository.find();
     return enrollments;
+  }
+  async findEnrollmentByStudentAndStatus(studentId: number, status: Status) {
+    try {
+      const enroll = await this.enrollmentRepository.findOne({
+        where: {
+          student: { id: studentId },
+          status: status,
+        },
+      });
+      return enroll;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
   // ** matriculados por aula
@@ -1817,56 +1849,41 @@ export class EnrollmentService {
         'Insufficient vacancies or the student is enrolled here',
       );
     }
-    const enrroll = await this.enrollmentRepository.findOne({
-      where: {
-        status: In([Status.PREMATRICULADO, Status.MATRICULADO]),
-        student: { id: studentId },
-      },
-      order: {
-        id: 'DESC',
-      },
-    });
 
-    if (!enrroll) {
-      throw new NotFoundException('Enrollment not found');
+    const actualEnroll = await this.findEnrollmentByStudentAndStatus(
+      studentId,
+      Status.MATRICULADO,
+    );
+    if (!actualEnroll) {
+      throw new NotFoundException('Enrollment actual not found');
     }
-    const previousClassroomId = enrroll.activityClassroom.id;
+
+    const destinationEnroll = await this.findEnrollmentByStudentAndStatus(
+      studentId,
+      Status.EN_PROCESO,
+    );
+    if (!destinationEnroll) {
+      throw new NotFoundException('Destination Enroll  not found');
+    }
+
+    actualEnroll.status = Status.TRASLADADO;
+    destinationEnroll.status = Status.MATRICULADO;
+
+    await this.enrollmentRepository.save(actualEnroll);
+    await this.enrollmentRepository.save(destinationEnroll);
 
     try {
-      if (enrroll.status === Status.PREMATRICULADO) {
-        /**TODO agregar validaciones pertinentes  */
-        enrroll.activityClassroom = {
-          id: activityClassroomId,
-        } as ActivityClassroom;
-        await this.enrollmentRepository.save(enrroll);
-        /** buscar y agregar al historial */
-        const history = this.sectionHistoryRepository.create({
-          currentClassroom: { id: activityClassroomId },
-          previousClassroom: { id: previousClassroomId },
-          student: { id: enrroll.student.id },
-          sub: user.sub,
-        });
-        return await this.sectionHistoryRepository.save(history);
-      }
+      const history = this.sectionHistoryRepository.create({
+        currentClassroom: { id: actualEnroll.activityClassroom.id },
+        previousClassroom: { id: destinationEnroll.activityClassroom.id },
+        student: { id: actualEnroll.student.id },
+        sub: user.sub,
+      });
 
-      if (enrroll.status === Status.MATRICULADO) {
-        /**TODO agregar validaciones pertinentes aprobacion de admin y psicologia  */
-        /**agrear al historial */
-        enrroll.activityClassroom = {
-          id: activityClassroomId,
-        } as ActivityClassroom;
-        await this.enrollmentRepository.save(enrroll);
-        /** buscar y agregar al historial */
-        const history = this.sectionHistoryRepository.create({
-          currentClassroom: { id: activityClassroomId },
-          previousClassroom: { id: previousClassroomId },
-          student: { id: enrroll.student.id },
-          sub: user.sub,
-        });
-
-        return await this.sectionHistoryRepository.save(history);
-      }
+      return await this.sectionHistoryRepository.save(history);
     } catch (error) {
+      console.log('ertor');
+      console.log(error);
       handleDBExceptions(error, this.logger);
     }
   }
@@ -2115,50 +2132,6 @@ export class EnrollmentService {
   // }
 
   /**TRASLADOS */
-  async referToTransfers(
-    createReferDto: CreateReferDto,
-    user: KeycloakTokenPayload,
-  ) {
-    try {
-      const { childrenId, parentId, activityClassroomId, obs } = createReferDto;
-      const child = await this.studentRepository.findOne({
-        where: {
-          person: { id: childrenId },
-        },
-        relations: {
-          person: true,
-        },
-      });
-      const parent = await this.personRepository.findOneBy({
-        id: parentId,
-      });
-
-      const userDB = await this.userRepository.findOneBy({
-        email: user.email,
-      });
-
-      const classroom = await this.activityClassroomRepository.findOneBy({
-        id: activityClassroomId,
-      });
-
-      console.log(child);
-      console.log(parent);
-      console.log(classroom);
-      /** CALL API TO MICRO TRANSFERS */
-
-      const destination = `${classroom.grade.name} ${classroom.section}`;
-      const observations = `SOLICITUD TRASLADO ${child.studentCode} - ${destination}, ${obs}`;
-      //SAVE HISTORY
-      return await this.studentService.createHistory(
-        ActionType.TRAS_INTER,
-        observations,
-        userDB.id,
-        child.id,
-      );
-    } catch (error) {
-      handleDBExceptions(error, this.logger);
-    }
-  }
 
   // async changeSection(acId: number, studentId: number) {
   //   const enrrollment = this.enrollmentRepository.findOne({

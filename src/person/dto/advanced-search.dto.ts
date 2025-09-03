@@ -1,4 +1,5 @@
 // src/search/dto/advanced-search.dto.ts
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEnum,
   IsNotEmpty,
@@ -23,4 +24,8 @@ export class AdvancedSearchDto {
   @IsEnum(SearchableScope)
   @IsOptional()
   scope: SearchableScope;
+
+  @ApiProperty({ example: 1 })
+  @IsOptional()
+  campusId: number;
 }

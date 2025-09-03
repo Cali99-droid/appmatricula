@@ -487,12 +487,30 @@ export class ActivityClassroomService {
     }
   }
 
-  async getIdsByCampus(codes: string[]) {
+  async getIdsByCampuCode(codes: string[]) {
     try {
       const ac = await this.activityClassroomRepository.find({
         where: {
           classroom: {
             campusDetail: {
+              code: In(codes),
+            },
+          },
+        },
+      });
+
+      return ac.map((a) => a.id);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+  async getIdsByCampusIdAndCodes(campusId: number, codes: string[]) {
+    try {
+      const ac = await this.activityClassroomRepository.find({
+        where: {
+          classroom: {
+            campusDetail: {
+              id: campusId,
               code: In(codes),
             },
           },

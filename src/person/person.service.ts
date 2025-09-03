@@ -419,18 +419,50 @@ export class PersonService {
     user: KeycloakTokenPayload,
   ) {
     try {
-      const { term, scope = SearchableScope.STUDENT } = advancedSearchDto;
+      const {
+        term,
+        scope = SearchableScope.STUDENT,
+        campusId,
+      } = advancedSearchDto;
       const roles = user.resource_access['client-test-appae'].roles;
+
       const resultsOfSearch = await this.searchPerson(term);
+      let enrolllmentAct = [];
+      let responseStudent = {};
+      const format = resultsOfSearch.map((result) => {
+        const { student, ...resto } = result;
+
+        if (student !== null && student?.enrollment.length > 0) {
+          const { enrollment, ...res } = student;
+          enrolllmentAct = enrollment;
+          responseStudent = res;
+        } else {
+          enrolllmentAct = [];
+          responseStudent = {};
+        }
+
+        return {
+          ...resto,
+          student: responseStudent,
+          classroom: `${enrolllmentAct[0]?.activityClassroom.grade.name} ${enrolllmentAct[0]?.activityClassroom.section}`,
+          activityClassroomId: enrolllmentAct[0]?.activityClassroom.id,
+          statusEnrollment: enrolllmentAct[0]?.status,
+        };
+      });
       if (scope === SearchableScope.STUDENT) {
-        const idsActivityClassrooms =
-          await this.activityClassroomService.getIdsByCampus(roles);
         // const resultsOfSearch = await this.searchPerson(term);
         // console.log(resultsOfSearch);
-        const resp = resultsOfSearch.filter((res) =>
-          idsActivityClassrooms.includes(
-            res.student?.enrollment[0]?.activityClassroom.id,
-          ),
+        const idsActivityClassrooms =
+          await this.activityClassroomService.getIdsByCampusIdAndCodes(
+            campusId,
+            roles,
+          );
+        // if (!r.includes(campusId)) {
+        //   return [];
+        // }
+
+        const resp = format.filter((res) =>
+          idsActivityClassrooms.includes(res.activityClassroomId),
         );
 
         // console.log(resp);
@@ -482,6 +514,7 @@ export class PersonService {
         )
         // .leftJoinAndSelect('student.family', 'family')
         .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
+        .leftJoinAndSelect('activityClassroom.grade', 'grade')
         .where(
           new Brackets((qb) => {
             qb.orWhere('person.docNumber LIKE :term', { term: searchTerm })
