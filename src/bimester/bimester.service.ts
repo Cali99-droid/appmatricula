@@ -50,7 +50,7 @@ export class BimesterService {
       where: {
         phase: {
           year: { id: !isNaN(+yearId) ? +yearId : undefined },
-        }
+        },
       },
       order: {
         name: 'ASC',

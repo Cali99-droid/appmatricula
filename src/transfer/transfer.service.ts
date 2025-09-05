@@ -196,11 +196,13 @@ export class TransfersService {
     }
   }
 
-  async getAllRequests(status: MainStatus) {
+  async getAllRequests(status: MainStatus, user: KeycloakTokenPayload) {
+    const us = await this.userService.findByEmail(user.email);
     try {
       const requests = await this.transferRequestRepository.find({
         where: {
           mainStatus: status,
+          user: { id: us.id },
         },
         relations: {
           student: {
@@ -317,9 +319,11 @@ export class TransfersService {
   // READ ALL FOR A SPECIFIC TRANSFER REQUEST
   async findAllTransferMeetingByRequest(
     transferRequestId: number,
+    user: KeycloakTokenPayload,
   ): Promise<TransferMeeting[]> {
+    const us = await this.userService.findByEmail(user.email);
     return this.transferMeetingRepository.find({
-      where: { transferRequestId },
+      where: { transferRequestId, user: { id: us.id } },
       relations: ['user'], // Opcional: para traer info del usuario que agendó
     });
   }
@@ -472,9 +476,11 @@ export class TransfersService {
   // READ ALL FOR A REQUEST
   async findAllByRequestTransferReport(
     transferRequestId: number,
+    user: KeycloakTokenPayload,
   ): Promise<TransferReport[]> {
+    const us = await this.userService.findByEmail(user.email);
     return this.transferReportRepository.find({
-      where: { transferRequestId },
+      where: { transferRequestId, user: { id: us.id } },
       relations: ['user'],
     });
   }

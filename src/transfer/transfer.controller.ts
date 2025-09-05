@@ -53,8 +53,11 @@ export class TransfersController {
     description: 'Status of the request',
     // type: string,
   })
-  getAllRequests(@Query('status') status: MainStatus) {
-    return this.transfersService.getAllRequests(status);
+  getAllRequests(
+    @Query('status') status: MainStatus,
+    @AuthenticatedUser() user: KeycloakTokenPayload,
+  ) {
+    return this.transfersService.getAllRequests(status, user);
   }
 
   @Get('/:id')
@@ -100,8 +103,12 @@ export class TransfersController {
   @ApiResponse({ status: 200, description: 'Lista de agendamientos.' })
   findAllTransferMeetingByRequest(
     @Param('requestId', ParseIntPipe) requestId: number,
+    @AuthenticatedUser() user: KeycloakTokenPayload,
   ) {
-    return this.transfersService.findAllTransferMeetingByRequest(requestId);
+    return this.transfersService.findAllTransferMeetingByRequest(
+      requestId,
+      user,
+    );
   }
 
   @Get('meetings/:id')
@@ -152,8 +159,12 @@ export class TransfersController {
   })
   findAllByRequestTransferReport(
     @Param('requestId', ParseIntPipe) requestId: number,
+    @AuthenticatedUser() user: KeycloakTokenPayload,
   ) {
-    return this.transfersService.findAllByRequestTransferReport(requestId);
+    return this.transfersService.findAllByRequestTransferReport(
+      requestId,
+      user,
+    );
   }
 
   @Get('report/:id')
