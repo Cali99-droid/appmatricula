@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import {
   FinalDecision,
   MainStatus,
@@ -43,6 +43,8 @@ import {
   generateDecisionEmail,
 } from './helpers/email-final';
 import { Status } from 'src/enrollment/enum/status.enum';
+import { SearchTranfersDto } from './dto/search-tranfer.dto';
+import { ActivityClassroomService } from 'src/activity_classroom/activity_classroom.service';
 
 // import { customAlphabet } from 'nanoid';
 
@@ -68,6 +70,7 @@ export class TransfersService {
     private readonly enrollmentService: EnrollmentService,
     private readonly treasuryService: TreasuryService,
     private readonly emailsService: EmailsService,
+    private readonly activityClassroomService: ActivityClassroomService,
 
     private readonly personService: PersonService,
   ) {}
@@ -196,14 +199,41 @@ export class TransfersService {
     }
   }
 
-  async getAllRequests(status: MainStatus, user: KeycloakTokenPayload) {
-    const us = await this.userService.findByEmail(user.email);
+  async getAllRequests(query: SearchTranfersDto, user: KeycloakTokenPayload) {
+    const { status, campusId, levelId } = query;
+
+    const idsAc =
+      await this.activityClassroomService.getIdsByLevelIdCampusIdAndCodes(
+        campusId,
+        levelId,
+        user.resource_access['client-test-appae'].roles,
+      );
+    const resquestsOptions: any = {
+      where: {
+        mainStatus: status,
+        // user: { id: us.id },
+        originClassroom: {
+          id: In(idsAc),
+        },
+      },
+    };
+
+    if (
+      user.resource_access['client-test-appae'].roles.includes('secretaria')
+    ) {
+      const us = await this.userService.findByEmail(user.email);
+      resquestsOptions.where = {
+        user: { id: us.id },
+        mainStatus: status,
+        originClassroom: {
+          id: In(idsAc),
+        },
+      };
+    }
+
     try {
       const requests = await this.transferRequestRepository.find({
-        where: {
-          mainStatus: status,
-          // user: { id: us.id },
-        },
+        where: resquestsOptions.where,
         relations: {
           student: {
             person: true,
@@ -213,7 +243,7 @@ export class TransfersService {
           id: 'DESC',
         },
       });
-
+      console.log(requests.length);
       return requests.map((r) => {
         // 1. Desestructura 'r': saca 'student' y guarda el resto en 'rest'
         const { student, ...rest } = r;
@@ -478,6 +508,16 @@ export class TransfersService {
     transferRequestId: number,
     user: KeycloakTokenPayload,
   ): Promise<TransferReport[]> {
+    if (
+      user.resource_access['client-test-appae'].roles.includes(
+        'cordinador-academico',
+      )
+    ) {
+      return this.transferReportRepository.find({
+        where: { transferRequestId },
+        relations: ['user'],
+      });
+    }
     const us = await this.userService.findByEmail(user.email);
     return this.transferReportRepository.find({
       where: { transferRequestId, user: { id: us.id } },

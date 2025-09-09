@@ -14,14 +14,15 @@ import {
 import { CreateTransferDto } from './dto/create-transfer.dto';
 import { TransfersService } from './transfer.service';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AuthenticatedUser } from 'nest-keycloak-connect';
+import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
-import { MainStatus } from './entities/transfer-request.entity';
+
 import { UpdateTransferMeetingDto } from './dto/update-transfer-meeting.dto';
 import { CreateTransferMeetingDto } from './dto/create-transfer-meeting.dto';
 import { UpdateTransferReportDto } from './dto/update-transfer-report.dto';
 import { CreateTransferReportDto } from './dto/create-transfer-report.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { SearchTranfersDto } from './dto/search-tranfer.dto';
 
 @ApiTags('Transfers')
 @Controller('transfers')
@@ -53,11 +54,26 @@ export class TransfersController {
     description: 'Status of the request',
     // type: string,
   })
+  @ApiQuery({
+    name: 'campusId',
+    required: false,
+    description: 'Id of the campus',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'levelId',
+    required: false,
+    description: 'Id of the level',
+    type: Number,
+  })
+  @Roles({
+    roles: ['list-transfer-request'],
+  })
   getAllRequests(
-    @Query('status') status: MainStatus,
+    @Query() query: SearchTranfersDto,
     @AuthenticatedUser() user: KeycloakTokenPayload,
   ) {
-    return this.transfersService.getAllRequests(status, user);
+    return this.transfersService.getAllRequests(query, user);
   }
 
   @Get('/:id')
@@ -65,12 +81,6 @@ export class TransfersController {
     summary: 'Obtener detallet de una  solicitud de traslado',
   })
   @ApiResponse({ status: 200, description: 'Lista de Solicitudes.' })
-  @ApiQuery({
-    name: 'status',
-    required: true,
-    description: 'Status of the request',
-    // type: string,
-  })
   getOneRequests(@Param('id') id: number) {
     return this.transfersService.getOneRequest(+id);
   }

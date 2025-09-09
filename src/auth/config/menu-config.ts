@@ -80,14 +80,14 @@ export const AdminMenu = {
           label: 'Traslados',
           icon: 'reportSearch',
           link: '',
-          permissions: ['matricula-reports'],
+          permissions: ['transfers'],
           subMenu: [
             {
               id: 1,
               label: 'Cambio de sección',
               icon: 'work',
               link: '/admin/school/applications',
-              permissions: ['estudiantes-seccion'],
+              permissions: ['generate-transfer-request'],
               subMenu: [],
             },
             {
@@ -95,7 +95,7 @@ export const AdminMenu = {
               label: 'Seguimiento',
               icon: 'comunication',
               link: '/admin/school/transfer-request',
-              permissions: ['estudiantes-seccion'],
+              permissions: ['list-transfer-request'],
               subMenu: [],
             },
           ],

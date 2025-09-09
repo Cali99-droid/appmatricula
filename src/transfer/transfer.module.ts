@@ -15,6 +15,7 @@ import { EnrollmentModule } from 'src/enrollment/enrollment.module';
 import { TreasuryModule } from 'src/treasury/treasury.module';
 import { EmailsModule } from 'src/emails/emails.module';
 import { PersonModule } from 'src/person/person.module';
+import { ActivityClassroomModule } from 'src/activity_classroom/activity_classroom.module';
 
 @Module({
   controllers: [TransfersController],
@@ -33,6 +34,7 @@ import { PersonModule } from 'src/person/person.module';
     TreasuryModule,
     EmailsModule,
     PersonModule,
+    ActivityClassroomModule,
   ],
   exports: [TypeOrmModule],
 })

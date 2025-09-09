@@ -18,7 +18,7 @@ export class TransferMeeting {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'datetime', nullable: true })
   meetingDate: Date;
 
   @Column({ type: 'text', nullable: true })

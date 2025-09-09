@@ -522,4 +522,32 @@ export class ActivityClassroomService {
       handleDBExceptions(error, this.logger);
     }
   }
+
+  async getIdsByLevelIdCampusIdAndCodes(
+    campusId: number,
+    levelId: number,
+    codes: string[],
+  ) {
+    try {
+      const ac = await this.activityClassroomRepository.find({
+        where: {
+          classroom: {
+            campusDetail: {
+              id: campusId,
+              code: In(codes),
+            },
+          },
+          grade: {
+            level: {
+              id: levelId,
+            },
+          },
+        },
+      });
+
+      return ac.map((a) => a.id);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
 }

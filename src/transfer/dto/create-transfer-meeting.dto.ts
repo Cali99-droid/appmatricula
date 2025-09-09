@@ -2,7 +2,6 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsDateString,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -17,7 +16,7 @@ export class CreateTransferMeetingDto {
     description: 'Fecha del agendamiento en formato ISO 8601 (YYYY-MM-DD).',
     example: '2025-09-15',
   })
-  @IsDateString({}, { message: 'La fecha debe estar en formato YYYY-MM-DD.' })
+  // @IsDateString({}, { message: 'La fecha debe estar en formato YYYY-MM-DD.' })
   @IsNotEmpty({ message: 'La fecha del agendamiento es obligatoria.' })
   meetingDate: Date;
 
