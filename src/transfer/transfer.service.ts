@@ -202,7 +202,7 @@ export class TransfersService {
       const requests = await this.transferRequestRepository.find({
         where: {
           mainStatus: status,
-          user: { id: us.id },
+          // user: { id: us.id },
         },
         relations: {
           student: {
