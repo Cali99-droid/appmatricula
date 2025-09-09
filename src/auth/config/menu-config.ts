@@ -75,6 +75,31 @@ export const AdminMenu = {
             },
           ],
         },
+        {
+          id: 4,
+          label: 'Traslados',
+          icon: 'reportSearch',
+          link: '',
+          permissions: ['matricula-reports'],
+          subMenu: [
+            {
+              id: 1,
+              label: 'Cambio de sección',
+              icon: 'work',
+              link: '/admin/school/applications',
+              permissions: ['estudiantes-seccion'],
+              subMenu: [],
+            },
+            {
+              id: 2,
+              label: 'Seguimiento',
+              icon: 'comunication',
+              link: '/admin/school/transfer-request',
+              permissions: ['estudiantes-seccion'],
+              subMenu: [],
+            },
+          ],
+        },
       ],
     },
     {
