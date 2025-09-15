@@ -76,7 +76,7 @@ export const AdminMenu = {
           ],
         },
         {
-          id: 4,
+          id: 5,
           label: 'Traslados',
           icon: 'reportSearch',
           link: '',

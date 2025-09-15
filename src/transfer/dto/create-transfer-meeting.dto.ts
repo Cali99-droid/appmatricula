@@ -2,6 +2,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsDate,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -10,15 +11,37 @@ import {
 } from 'class-validator';
 import { TransferMeetingType } from '../entities/transfer-meeting.entity';
 import { ExistId } from 'src/common/validation/exist-id';
+import { BadRequestException } from '@nestjs/common';
+import { Transform } from 'class-transformer';
+import { IsFutureDate } from '../helpers/is-future-date.validator';
 
 export class CreateTransferMeetingDto {
   @ApiProperty({
     description: 'Fecha del agendamiento en formato ISO 8601 (YYYY-MM-DD).',
     example: '2025-09-15',
   })
-  // @IsDateString({}, { message: 'La fecha debe estar en formato YYYY-MM-DD.' })
-  @IsNotEmpty({ message: 'La fecha del agendamiento es obligatoria.' })
-  meetingDate: Date;
+  @IsNotEmpty({ message: 'La fecha y hora de agendamiento es obligatoria.' })
+  // @IsDateString(
+  //   { strict: true },
+  //   { message: 'El formato de la fecha y hora debe ser válido (ISO 8601).' },
+  // )
+  @Transform(({ value }) => {
+    // Transformamos el string a un objeto Date y lo validamos
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      throw new BadRequestException(
+        'El valor de la fecha y hora no es válido.',
+      );
+    }
+    return date;
+  })
+  @IsDate({
+    message: 'La fecha proporcionada no es un objeto de tipo Date válido.',
+  })
+  @IsFutureDate({
+    message: 'La fecha y hora de agendamiento no puede ser en el pasado.',
+  })
+  public readonly meetingDate: Date;
 
   @ApiPropertyOptional({
     description: 'Notas o comentarios adicionales sobre la reunión.',
