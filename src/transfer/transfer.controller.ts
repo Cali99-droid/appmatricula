@@ -14,7 +14,7 @@ import {
 import { CreateTransferDto } from './dto/create-transfer.dto';
 import { TransfersService } from './transfer.service';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
+import { AuthenticatedUser, Public, Roles } from 'nest-keycloak-connect';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 
 import { UpdateTransferMeetingDto } from './dto/update-transfer-meeting.dto';
@@ -23,6 +23,7 @@ import { UpdateTransferReportDto } from './dto/update-transfer-report.dto';
 import { CreateTransferReportDto } from './dto/create-transfer-report.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SearchTranfersDto } from './dto/search-tranfer.dto';
+import { CreateRequestTrackingDto } from './dto/create-request-tracking.dto';
 
 @ApiTags('Transfers')
 @Controller('transfers')
@@ -84,9 +85,15 @@ export class TransfersController {
   getOneRequests(@Param('id') id: number) {
     return this.transfersService.getOneRequest(+id);
   }
-
+  /**CONBSULTAR STATUS */
   @Get('/status/:requestCode')
   @ApiOperation({ summary: 'Obtener una solicitud por su código' })
+  @ApiResponse({
+    status: 200,
+    description: 'Ruta de la solicitud',
+    type: [CreateRequestTrackingDto],
+  })
+  @Public()
   getStatusByCode(@Param('requestCode') requestCode: string) {
     return this.transfersService.getStatusByCode(requestCode);
   }
@@ -99,6 +106,9 @@ export class TransfersController {
     description: 'Agendamiento creado exitosamente.',
   })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
+  @Roles({
+    roles: ['psicologia-traslados', 'cordinador-academico'],
+  })
   createTransferMeeting(
     @Body() createDto: CreateTransferMeetingDto,
     @AuthenticatedUser() user: KeycloakTokenPayload,
@@ -155,6 +165,9 @@ export class TransfersController {
   @ApiResponse({
     status: 400,
     description: 'Datos inválidos o pre-condición no cumplida.',
+  })
+  @Roles({
+    roles: ['psicologia-traslados', 'cordinador-academico'],
   })
   createTransferReport(
     @Body() createDto: CreateTransferReportDto,

@@ -1835,6 +1835,7 @@ export class EnrollmentService {
     studentId: number,
     activityClassroomId: number,
     user: any,
+    enrollCode: string,
   ) {
     /**Validar deudas */
     const data = await this.treasuryService.searchDebtsByDate(studentId);
@@ -1864,6 +1865,9 @@ export class EnrollmentService {
     );
     if (!destinationEnroll) {
       throw new NotFoundException('Destination Enroll  not found');
+    }
+    if (destinationEnroll.code !== enrollCode) {
+      throw new NotFoundException('Destination Enroll is not correct');
     }
 
     actualEnroll.status = Status.TRASLADADO;

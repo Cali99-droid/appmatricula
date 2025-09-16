@@ -261,23 +261,23 @@ export class EnrollmentController {
     // return this.enrollmentService.getVacantsTest();
     return this.enrollmentService.getVacantsGeneral(gradeId, yearId, campusId);
   }
-  @Put('change-section/:studentId/classroom/:activityClassroomId')
-  @ApiOkResponse({
-    status: 200,
-    description: 'updating section',
-    //  type: [AvailableClassroom],
-  })
-  changeSection(
-    @Param('studentId', ParseIntPipe) studentId: number,
-    @Param('activityClassroomId', ParseIntPipe) activityClassroomId: number,
-    @AuthenticatedUser() user: any,
-  ) {
-    return this.enrollmentService.changeSection(
-      studentId,
-      activityClassroomId,
-      user,
-    );
-  }
+  // @Put('change-section/:studentId/classroom/:activityClassroomId')
+  // @ApiOkResponse({
+  //   status: 200,
+  //   description: 'updating section',
+  //   //  type: [AvailableClassroom],
+  // })
+  // changeSection(
+  //   @Param('studentId', ParseIntPipe) studentId: number,
+  //   @Param('activityClassroomId', ParseIntPipe) activityClassroomId: number,
+  //   @AuthenticatedUser() user: any,
+  // ) {
+  //   return this.enrollmentService.changeSection(
+  //     studentId,
+  //     activityClassroomId,
+  //     user,
+  //   );
+  // }
 
   @Put('transfer-student/:studentId')
   @ApiOkResponse({

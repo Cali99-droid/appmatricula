@@ -16,6 +16,7 @@ import { TreasuryModule } from 'src/treasury/treasury.module';
 import { EmailsModule } from 'src/emails/emails.module';
 import { PersonModule } from 'src/person/person.module';
 import { ActivityClassroomModule } from 'src/activity_classroom/activity_classroom.module';
+import { TransferRequestTracking } from './entities/transfer-resquest-tracking.entity';
 
 @Module({
   controllers: [TransfersController],
@@ -26,6 +27,7 @@ import { ActivityClassroomModule } from 'src/activity_classroom/activity_classro
       TransferRequest,
       TransferReport,
       TransferMeeting,
+      TransferRequestTracking,
     ]),
     HttpModule,
     ConfigModule,

@@ -45,6 +45,12 @@ import {
 import { Status } from 'src/enrollment/enum/status.enum';
 import { SearchTranfersDto } from './dto/search-tranfer.dto';
 import { ActivityClassroomService } from 'src/activity_classroom/activity_classroom.service';
+import {
+  ProcessStateTracking,
+  RequestTrackingArea,
+  TransferRequestTracking,
+} from './entities/transfer-resquest-tracking.entity';
+import { CreateRequestTrackingDto } from './dto/create-request-tracking.dto';
 
 // import { customAlphabet } from 'nanoid';
 
@@ -66,6 +72,9 @@ export class TransfersService {
     @InjectRepository(TransferReport)
     private readonly transferReportRepository: Repository<TransferReport>,
 
+    @InjectRepository(TransferRequestTracking)
+    private readonly requestTrackingRepository: Repository<TransferRequestTracking>,
+
     private readonly userService: UserService,
     private readonly enrollmentService: EnrollmentService,
     private readonly treasuryService: TreasuryService,
@@ -85,6 +94,15 @@ export class TransfersService {
     return this.transferRequestRepository.query(
       `SELECT MAX(id) as id FROM transfer_request WHERE id IS NOT NULL`,
     );
+  }
+
+  async createRequestTracking(
+    createRequestTrackingDto: CreateRequestTrackingDto,
+  ): Promise<TransferRequestTracking> {
+    const requestTracking = this.requestTrackingRepository.create(
+      createRequestTrackingDto,
+    );
+    return await this.requestTrackingRepository.save(requestTracking);
   }
 
   async create(
@@ -110,7 +128,7 @@ export class TransfersService {
           createTransferDto.destinationClassroomId,
         )
       ) {
-        throw new BadRequestException('NO hay vacantes para eta solicitud');
+        throw new BadRequestException('No hay vacantes para eta solicitud');
       }
       const us = await this.userService.findByEmail(user.email);
       const id = await this.generateRequestCode();
@@ -121,6 +139,7 @@ export class TransfersService {
         user: { id: us.id },
         requestCode: `TR-${code.toString().padStart(4, '0')}`,
         personId: createTransferDto.parentId,
+        enrollCode: `${actualEnroll.code}TR${code}`,
       });
       const request = await this.transferRequestRepository.save(newRequest);
 
@@ -163,6 +182,16 @@ export class TransfersService {
         });
         /**SEND EMAIL */
       }
+
+      const trackingData = {
+        area: RequestTrackingArea.SECRETARY,
+        transferRequestId: request.id,
+        userId: us.id,
+        notes: 'Solicitud de transferencia creada',
+        status: ProcessStateTracking.REGISTERED,
+        arrivalDate: new Date(),
+      };
+      await this.createRequestTracking(trackingData);
       return request;
     } catch (error) {
       handleDBExceptions(error, this.logger);
@@ -265,44 +294,63 @@ export class TransfersService {
     });
 
     if (!request) {
-      throw new NotFoundException('Código no válido');
+      throw new NotFoundException('Solicitud no encontrada');
     }
 
-    // Si está cerrada, la respuesta es directa
-    if (request.mainStatus === MainStatus.CLOSED) {
+    const route = await this.requestTrackingRepository.find({
+      where: {
+        transferRequestId: request.id,
+      },
+      relations: {
+        user: {
+          person: true,
+        },
+      },
+    });
+
+    return route.map((r) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { user, createdAt, updatedAt, ...res } = r;
       return {
-        status: `Finalizado - ${request.finalDecision}`,
-        message: `El proceso de traslado ha concluido. Razón: ${request.decisionReason}`,
+        ...res,
+        responsible: `${user.person.lastname} ${user.person.mLastname} ${user.person.name}`,
       };
-    }
-    if (request.mainStatus === MainStatus.PENDING_AGREEMENT) {
-      return {
-        status: `En Proceso - ${request.finalDecision}`,
-        message: `En espera de acta de trasalado`,
-      };
-    }
+    });
+    // // Si está cerrada, la respuesta es directa
+    // if (request.mainStatus === MainStatus.CLOSED) {
+    //   return {
+    //     status: `Finalizado - ${request.finalDecision}`,
+    //     message: `El proceso de traslado ha concluido. Razón: ${request.decisionReason}`,
+    //   };
+    // }
+    // if (request.mainStatus === MainStatus.PENDING_AGREEMENT) {
+    //   return {
+    //     status: `En Proceso - ${request.finalDecision}`,
+    //     message: `En espera de acta de trasalado`,
+    //   };
+    // }
 
-    // Si está abierta, construimos un mensaje descriptivo
-    let psychMessage = 'Evaluación psicológica pendiente.';
-    if (request.psychologistState === ProcessState.MEETING_SCHEDULED) {
-      psychMessage = 'Entrevista psicológica agendada.';
-    } else if (request.psychologistState === ProcessState.REPORT_UPLOADED) {
-      psychMessage = 'Evaluación psicológica completada.';
-    }
+    // // Si está abierta, construimos un mensaje descriptivo
+    // let psychMessage = 'Evaluación psicológica pendiente.';
+    // if (request.psychologistState === ProcessState.MEETING_SCHEDULED) {
+    //   psychMessage = 'Entrevista psicológica agendada.';
+    // } else if (request.psychologistState === ProcessState.REPORT_UPLOADED) {
+    //   psychMessage = 'Evaluación psicológica completada.';
+    // }
 
-    let adminMessage = 'Evaluación con coordinación de sede pendiente.';
-    if (request.administratorState === ProcessState.MEETING_SCHEDULED) {
-      adminMessage = 'Entrevista con coordinación de sede agendada.';
-    }
+    // let adminMessage = 'Evaluación con coordinación de sede pendiente.';
+    // if (request.administratorState === ProcessState.MEETING_SCHEDULED) {
+    //   adminMessage = 'Entrevista con coordinación de sede agendada.';
+    // }
 
-    if (request.administratorState === ProcessState.REPORT_UPLOADED) {
-      adminMessage = 'Entrevista con coordinación de sede completada.';
-    }
+    // if (request.administratorState === ProcessState.REPORT_UPLOADED) {
+    //   adminMessage = 'Entrevista con coordinación de sede completada.';
+    // }
 
-    return {
-      status: 'En Proceso',
-      message: `${psychMessage} ${adminMessage} Estamos trabajando en su solicitud.`,
-    };
+    // return {
+    //   status: 'En Proceso',
+    //   message: `${psychMessage} ${adminMessage} Estamos trabajando en su solicitud.`,
+    // };
   }
 
   /**MEETINGS */
@@ -313,7 +361,7 @@ export class TransfersService {
   ): Promise<TransferMeeting> {
     const us = await this.userService.findByEmail(user.email);
     const { type, transferRequestId } = createDto;
-
+    let area: RequestTrackingArea;
     const exist = await this.transferMeetingRepository.findOne({
       where: {
         transferRequestId,
@@ -338,11 +386,23 @@ export class TransfersService {
 
     if (type === TransferMeetingType.ADMINISTRATOR) {
       transferRequest.administratorState = ProcessState.MEETING_SCHEDULED;
+      area = RequestTrackingArea.CORDINATOR;
     }
     if (type === TransferMeetingType.PSYCHOLOGIST) {
       transferRequest.psychologistState = ProcessState.MEETING_SCHEDULED;
+      area = RequestTrackingArea.PSYCHOLOGY;
     }
+
     await this.transferRequestRepository.save(transferRequest);
+    const trackingData = {
+      area: area,
+      transferRequestId: transferRequest.id,
+      userId: us.id,
+      notes: 'Reunión Agendada',
+      status: ProcessStateTracking.MEETING_SCHEDULED,
+      arrivalDate: new Date(),
+    };
+    await this.createRequestTracking(trackingData);
     return this.transferMeetingRepository.save(newMeeting);
   }
 
@@ -415,6 +475,8 @@ export class TransfersService {
     user: KeycloakTokenPayload,
   ): Promise<TransferReport> {
     const { transferRequestId, authorRole } = createDto;
+    let area: RequestTrackingArea;
+    let status: ProcessStateTracking;
     const exist = await this.transferReportRepository.findOne({
       where: {
         transferRequestId,
@@ -444,6 +506,8 @@ export class TransfersService {
     // Lógica para actualizar el estado de la solicitud principal
     if (createDto.authorRole === AuthorRole.PSYCHOLOGIST) {
       transferRequest.psychologistState = ProcessState.REPORT_UPLOADED;
+      area = RequestTrackingArea.PSYCHOLOGY;
+      status = ProcessStateTracking.REPORT_UPLOADED;
     } else if (createDto.authorRole === AuthorRole.ADMINISTRATOR) {
       // Valida que el informe psicológico exista antes de continuar
       if (transferRequest.psychologistState !== ProcessState.REPORT_UPLOADED) {
@@ -460,6 +524,10 @@ export class TransfersService {
       transferRequest.mainStatus = createDto.conclusion
         ? MainStatus.PENDING_AGREEMENT
         : MainStatus.CLOSED;
+      status = createDto.conclusion
+        ? ProcessStateTracking.REPORT_UPLOADED
+        : ProcessStateTracking.FINALIZED;
+      area = RequestTrackingArea.CORDINATOR;
     }
     /**send email */
 
@@ -499,6 +567,19 @@ export class TransfersService {
         });
       }
     }
+    const msg =
+      createDto.authorRole === AuthorRole.ADMINISTRATOR
+        ? 'Solicitud Aceptada, a la espera de Acta de cambio de sección'
+        : 'Reporte Finalizado';
+    const trackingData = {
+      area: area,
+      transferRequestId: transferRequest.id,
+      userId: us.id,
+      notes: createDto.conclusion ? msg : 'Reporte Finalizado',
+      status: status,
+      arrivalDate: new Date(),
+    };
+    await this.createRequestTracking(trackingData);
 
     return report;
   }
@@ -578,7 +659,7 @@ export class TransfersService {
       if (!file) {
         throw new BadRequestException('Need a file');
       }
-
+      const us = await this.userService.findByEmail(user.email);
       const webpImage = await sharp(file).webp().toBuffer();
       const nameAct = `${Date.now()}.webp`;
       await this.s3Client.send(
@@ -602,7 +683,17 @@ export class TransfersService {
         request.studentId,
         request.destinationClassroomId,
         user,
+        request.enrollCode,
       );
+      const trackingData = {
+        area: RequestTrackingArea.SECRETARY,
+        transferRequestId: request.id,
+        userId: us.id,
+        notes: 'Acta Subida y cambio efectuado',
+        status: ProcessStateTracking.FINALIZED,
+        arrivalDate: new Date(),
+      };
+      await this.createRequestTracking(trackingData);
       return await this.transferRequestRepository.save(request);
     } catch (error) {
       handleDBExceptions(error, this.logger);

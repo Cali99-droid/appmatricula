@@ -46,6 +46,9 @@ export class TransferRequest {
   @Column()
   requestCode: string; // Ej: TR-8XF7K2
 
+  @Column()
+  enrollCode: string; // Ej: TR-8XF7K2
+
   @Column({ type: 'enum', enum: TransferType })
   type: TransferType;
 
