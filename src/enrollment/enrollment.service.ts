@@ -713,6 +713,7 @@ export class EnrollmentService {
   /**obtener grado y seccion permitido para el usario */
   async getAvailableClassrooms(studentId: number) {
     //TODO  validar pertenecia del hijo s */
+    //TODO agregar parametro para ver disponibloes segun modalidad, cambio o matricula
     const availables: AvailableClassroom[] = [];
     const currentEnrrollment = await this.enrollmentRepository
       .createQueryBuilder('enrollment')
@@ -884,7 +885,7 @@ export class EnrollmentService {
           },
         },
       });
-
+      console.log(classrooms);
       for (const ac of classrooms) {
         const dest = await this.vacancyCalculation(ac.id);
         console.log(dest);
@@ -924,6 +925,72 @@ export class EnrollmentService {
       // };
       // availables.push(classroom);
       console.log('normal dest');
+      return availables;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  /**FUNCION PARA TRASLADOS */
+  async getAvailableClassroomsToTransfers(studentId: number) {
+    const availables: AvailableClassroom[] = [];
+    const currentEnrrollment = await this.enrollmentRepository
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.activityClassroom', 'ac')
+      .leftJoinAndSelect('ac.grade', 'grade')
+      .leftJoinAndSelect('ac.phase', 'phase')
+      .leftJoinAndSelect('phase.year', 'year')
+      .leftJoinAndSelect('ac.classroom', 'classroom')
+      .leftJoinAndSelect('classroom.campusDetail', 'campusDetail')
+      .where('enrollment.studentId = :id', { id: studentId })
+      .orderBy('enrollment.id', 'DESC')
+      .getOne();
+
+    if (!currentEnrrollment) {
+      throw new NotFoundException('Dont exists this data');
+    }
+
+    const yearId = currentEnrrollment.activityClassroom.phase.year.id;
+
+    try {
+      const campusId =
+        currentEnrrollment.activityClassroom.classroom.campusDetail.id;
+      const classrooms = await this.activityClassroomRepository.find({
+        where: {
+          // section: currentEnrrollment.activityClassroom.section,
+          grade: {
+            position: currentEnrrollment.activityClassroom.grade.position,
+          },
+          phase: {
+            year: {
+              id: yearId,
+            },
+          },
+          classroom: {
+            campusDetail: { id: campusId },
+          },
+        },
+      });
+
+      for (const ac of classrooms) {
+        const dest = await this.vacancyCalculation(ac.id);
+
+        if (dest.hasVacant) {
+          const classroom: AvailableClassroom = {
+            id: ac.id,
+            name: ac.grade.name + ' ' + ac.section,
+            vacants: dest.vacant,
+            suggested:
+              dest.section === currentEnrrollment.activityClassroom.section
+                ? true
+                : false,
+            campus: ac.classroom.campusDetail.name,
+            level: ac.grade.level.name,
+          };
+          availables.push(classroom);
+        }
+      }
+
       return availables;
     } catch (error) {
       handleDBExceptions(error, this.logger);

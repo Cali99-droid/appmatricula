@@ -219,6 +219,21 @@ export class EnrollmentController {
     return this.enrollmentService.getAvailableClassrooms(studentId);
   }
 
+  /**Proceso de matricula */
+  @Get('available-transfer/:studentId')
+  @ApiOperation({
+    summary: 'get availables classroom for enrroll',
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: 'Array of availables classrooms',
+    //  type: [AvailableClassroom],
+  })
+  getAvailableClassroomsToTransfers(
+    @Param('studentId', ParseIntPipe) studentId: number,
+  ) {
+    return this.enrollmentService.getAvailableClassroomsToTransfers(studentId);
+  }
   @Get('vacants/:yearId')
   @ApiQuery({
     name: 'campusId',
