@@ -119,7 +119,7 @@ export class TransfersService {
         throw new NotFoundException('Estudiante no tiene Matricula Activa');
       }
       const availableClassroomsIds = await (
-        await this.enrollmentService.getAvailableClassrooms(
+        await this.enrollmentService.getAvailableClassroomsToTransfers(
           createTransferDto.studentId,
         )
       ).map((ava) => ava.id);
@@ -128,7 +128,7 @@ export class TransfersService {
           createTransferDto.destinationClassroomId,
         )
       ) {
-        throw new BadRequestException('No hay vacantes para eta solicitud');
+        throw new BadRequestException('No hay vacantes para esta solicitud');
       }
       const us = await this.userService.findByEmail(user.email);
       const id = await this.generateRequestCode();
