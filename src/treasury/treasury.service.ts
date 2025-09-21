@@ -43,6 +43,7 @@ import { SlackChannel } from 'src/common/slack/slack.constants';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 import { SlackBlock } from 'src/common/slack/types/slack.types';
 import { TypeOfDebt } from './enum/TypeOfDebt.enum';
+import { PersonService } from 'src/person/person.service';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 // Interfaz para mayor claridad en los tipos de datos
@@ -87,6 +88,8 @@ export class TreasuryService {
     private readonly creditNoteRepository: Repository<CreditNote>,
     @InjectRepository(Discounts)
     private readonly discountsRepository: Repository<Discounts>,
+
+    private readonly personService: PersonService,
     private readonly slackService: SlackService,
   ) {}
 
@@ -410,6 +413,8 @@ export class TreasuryService {
       relations: {
         respEconomic: true,
         respEnrollment: true,
+        parentOneId: true,
+        parentTwoId: true,
       },
     });
     if (!family) {
@@ -442,10 +447,13 @@ export class TreasuryService {
         },
       });
     }
-
+    const parents = [];
+    parents.push(family.parentOneId);
+    parents.push(family.parentTwoId);
     const data = {
       debts: debts,
       resp: family.respEconomic || 'No hay reponsable matrícula ',
+      parents,
     };
     return data;
   }
@@ -666,6 +674,7 @@ export class TreasuryService {
   /**PRIVATE FUNCTIONS */
   /** Validar Deuda */
   private async validateDebt(createPaidDto: CreatePaidDto, debtId: number) {
+    console.log(createPaidDto);
     let serie: string;
     const debt = await this.debtRepository.findOne({
       where: {
@@ -725,8 +734,9 @@ export class TreasuryService {
         respEnrollment: { user: true },
       },
     });
+    let client = family.respEconomic;
 
-    if (!family?.respEnrollment) {
+    if (!family?.respEnrollment && createPaidDto.parentId == null) {
       throw new NotFoundException('No existe responsable de matrícula');
     }
 
@@ -757,8 +767,15 @@ export class TreasuryService {
 
       await this.debtRepository.save(debts);
     }
+
+    if (createPaidDto.parentId) {
+      client = await this.personService.findOne(createPaidDto.parentId);
+
+      console.log(client);
+    }
+
     if (debt.concept.code === 'C002') {
-      return { debt, serie, family, client: family.respEconomic, enrroll };
+      return { debt, serie, family, client, enrroll };
     } else {
       return { debt, serie, family, client: family.respEnrollment, enrroll };
     }

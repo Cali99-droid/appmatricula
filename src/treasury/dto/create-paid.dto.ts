@@ -1,6 +1,7 @@
-import { IsEnum } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { PaymentMethod } from '../enum/PaymentMethod.enum';
 import { ApiProperty } from '@nestjs/swagger';
+import { ExistId } from 'src/common/validation/exist-id';
 
 export class CreatePaidDto {
   @ApiProperty({
@@ -13,4 +14,13 @@ export class CreatePaidDto {
   })
   //   @IsOptional()
   paymentMethod?: PaymentMethod;
+
+  @ApiProperty({
+    description: 'client id',
+    nullable: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  @ExistId({ tableName: 'person' })
+  parentId?: number;
 }
