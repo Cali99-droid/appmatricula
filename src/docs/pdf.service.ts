@@ -100,9 +100,7 @@ export class PdfService {
       level: activityClassroom.grade.level.name,
       section: activityClassroom.section,
       studentCode:
-        a.student.studentCode === null
-          ? a.student.person.studentCode
-          : a.student.studentCode,
+        a.student.studentCode === null ? 'none' : a.student.studentCode,
       photo: a.student.photo
         ? `${urlPhoto}/${a.student.photo}`
         : `${urlPhoto}/${defaultAvatar}`,

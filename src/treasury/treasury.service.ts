@@ -41,8 +41,21 @@ import { SlackService } from 'src/common/slack/slack.service';
 import { SlackChannel } from 'src/common/slack/slack.constants';
 
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
+import { SlackBlock } from 'src/common/slack/types/slack.types';
+import { TypeOfDebt } from './enum/TypeOfDebt.enum';
+import { PersonService } from 'src/person/person.service';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
+// Interfaz para mayor claridad en los tipos de datos
+interface ProcessResults {
+  code: string;
+  date: string;
+}
+
+interface FormattedDebt {
+  code: string;
+  student: string;
+}
 
 @Injectable()
 export class TreasuryService {
@@ -75,6 +88,8 @@ export class TreasuryService {
     private readonly creditNoteRepository: Repository<CreditNote>,
     @InjectRepository(Discounts)
     private readonly discountsRepository: Repository<Discounts>,
+
+    private readonly personService: PersonService,
     private readonly slackService: SlackService,
   ) {}
 
@@ -390,7 +405,7 @@ export class TreasuryService {
     }
   }
 
-  async findDebts(studentId: number) {
+  async findDebts(studentId: number, type: TypeOfDebt = TypeOfDebt.PENDIENTE) {
     const family = await this.familyRepository.findOne({
       where: {
         student: { id: studentId },
@@ -398,26 +413,47 @@ export class TreasuryService {
       relations: {
         respEconomic: true,
         respEnrollment: true,
+        parentOneId: true,
+        parentTwoId: true,
       },
     });
     if (!family) {
       throw new NotFoundException('Don´t exist family for this student');
     }
-
-    const debts = await this.debtRepository.find({
-      where: {
-        student: { id: studentId },
-        status: false,
-        isCanceled: false,
-      },
-      relations: {
-        concept: true,
-        discount: true,
-      },
-    });
+    let debts;
+    if (type === TypeOfDebt.VENCIDA) {
+      debts = await this.debtRepository.find({
+        where: {
+          student: { id: studentId },
+          dateEnd: LessThan(new Date()),
+          status: false,
+          isCanceled: false,
+        },
+        relations: {
+          concept: true,
+          discount: true,
+        },
+      });
+    } else {
+      debts = await this.debtRepository.find({
+        where: {
+          student: { id: studentId },
+          status: false,
+          isCanceled: false,
+        },
+        relations: {
+          concept: true,
+          discount: true,
+        },
+      });
+    }
+    const parents = [];
+    parents.push(family.parentOneId);
+    parents.push(family.parentTwoId);
     const data = {
       debts: debts,
       resp: family.respEconomic || 'No hay reponsable matrícula ',
+      parents,
     };
     return data;
   }
@@ -638,6 +674,7 @@ export class TreasuryService {
   /**PRIVATE FUNCTIONS */
   /** Validar Deuda */
   private async validateDebt(createPaidDto: CreatePaidDto, debtId: number) {
+    console.log(createPaidDto);
     let serie: string;
     const debt = await this.debtRepository.findOne({
       where: {
@@ -697,8 +734,9 @@ export class TreasuryService {
         respEnrollment: { user: true },
       },
     });
+    let client = family.respEconomic;
 
-    if (!family?.respEnrollment) {
+    if (!family?.respEnrollment && createPaidDto.parentId == null) {
       throw new NotFoundException('No existe responsable de matrícula');
     }
 
@@ -729,8 +767,15 @@ export class TreasuryService {
 
       await this.debtRepository.save(debts);
     }
+
+    if (createPaidDto.parentId) {
+      client = await this.personService.findOne(createPaidDto.parentId);
+
+      console.log(client);
+    }
+
     if (debt.concept.code === 'C002') {
-      return { debt, serie, family, client: family.respEconomic, enrroll };
+      return { debt, serie, family, client, enrroll };
     } else {
       return { debt, serie, family, client: family.respEnrollment, enrroll };
     }
@@ -1459,193 +1504,188 @@ export class TreasuryService {
     return filePath;
   }
 
-  async processTxt(bank: PaymentPref, file: Express.Multer.File, user: any) {
-    if (!bank) {
+  async processTxt(
+    bank: PaymentPref,
+    file: Express.Multer.File,
+    user: any,
+  ): Promise<RespProcess> {
+    // 1. Validaciones iniciales agrupadas (Fail-Fast)
+    if (!bank || !file) {
+      const errorMessage = !bank
+        ? 'No se especificó el banco.'
+        : 'No se recibió ningún archivo.';
       this.slackService.sendMessage(
         SlackChannel.TREASURY,
-        `🔴 *ERROR: No se especificó el banco.*`,
+        `🔴 *ERROR: ${errorMessage}*`,
       );
-      throw new BadRequestException('ERROR: No se especificó el banco');
+      throw new BadRequestException(errorMessage);
     }
 
-    let results: { code: string; date: string }[] = [];
-    let paymentMethod: PaymentMethod;
-    let debtsPending: Debt[] = [];
-    if (!file) {
-      this.slackService.sendMessage(
-        SlackChannel.TREASURY,
-        `🔴 *ERROR: No se recibió ningún archivo.*`,
-      );
-      throw new BadRequestException('No se recibió ningún archivo');
-    }
     await this.slackService.sendMessage(
       SlackChannel.TREASURY,
-      `⚙️ *Iniciando procesamiento de pagos...*\n*Archivo:* \`${file.originalname}\``,
+      `⚙️ *Iniciando procesamiento de pagos...*\n*Archivo:* \`${file.originalname}\`\n*Banco:* ${bank.toUpperCase()}`,
     );
-    if (bank.toLocaleUpperCase() === PaymentPref.bcp) {
+
+    // 2. Selección de procesador más limpia y escalable
+    const { processor, paymentMethod } = this.getBankProcessor(bank);
+    const results: ProcessResults[] = await processor(file);
+
+    if (results.length === 0) {
       this.slackService.sendMessage(
         SlackChannel.TREASURY,
-        `🟡 *Aviso: Procesando Banco BCP*`,
+        `🟡 *AVISO: El archivo \`${file.originalname}\` no contiene registros de pago válidos.*`,
       );
-      results = await this.processBCP(file);
-      paymentMethod = PaymentMethod.bcp;
-    } else {
-      this.slackService.sendMessage(
-        SlackChannel.TREASURY,
-        `🟡 *Aviso: Procesando Banco: BBVA*`,
-      );
-      results = await this.processBBVA(file);
-      paymentMethod = PaymentMethod.bbva;
+      return this.buildResponse({
+        status: false,
+        message: 'No se encontró información en el archivo.',
+      });
     }
 
+    const resultCodes = results.map((res) => res.code);
     const debts = await this.debtRepository.find({
-      where: {
-        code: In(results.map((res) => res.code)),
-      },
-      relations: {
-        student: {
-          person: true,
-        },
-      },
+      where: { code: In(resultCodes) },
+      relations: { student: { person: true } },
     });
 
-    if (debts.length === 0) {
-      this.slackService.sendMessage(
-        SlackChannel.TREASURY,
-        `🔴 *ERROR:  No se encontró información en el archivo, 0 deudas encontradas*`,
-      );
-      return {
-        status: false,
-        message: 'No se encontró información',
-        alreadyPaid: debts.map((d) => ({
-          code: d.code,
-          student:
-            d.student.person.lastname +
-            ' ' +
-            d.student.person.mLastname +
-            ' ' +
-            d.student.person.name,
-        })),
-        numberOfRecords: debts.length,
-        failedPayments: [],
-        successfulPayments: [],
-      } as RespProcess;
-    }
-    const debtsPaid = debts.filter((d) => d.status === true);
-    debtsPending = debts.filter((d) => d.status === false);
-    // const totalDebt = debtsPaid.reduce((sum, deb) => sum + deb.total, 0);
-    // const totalDebtPending = debtsPending.reduce(
-    //   (sum, deb) => sum + deb.total,
-    //   0,
-    // );
-
-    if (debtsPaid.length > 0) {
-      this.slackService.sendMessage(
-        SlackChannel.TREASURY,
-        `🟡 *Aviso: Se Omitieron Pagos Duplicados*\n\nDurante el proceso, se encontraron pagos que ya estaban registrados y fueron ignorados.\n\n*∙ Pagos omitidos (ya existían):* ${debtsPaid.length}`,
-      );
-      // return {
-      //   status: false,
-      //   message: 'Algunos pagos ya fueron registrados previamente.',
-      //   alreadyPaid: debtsPaid.map((d) => ({
-      //     code: d.code,
-      //     student:
-      //       d.student.person.lastname +
-      //       ' ' +
-      //       d.student.person.mLastname +
-      //       ' ' +
-      //       d.student.person.name,
-      //   })),
-      //   debtsPending: debtsPending.map((d) => d.code),
-      //   debtsStudentPending: debtsPending.map((d) => ({
-      //     code: d.code,
-      //     student:
-      //       d.student.person.lastname +
-      //       ' ' +
-      //       d.student.person.mLastname +
-      //       ' ' +
-      //       d.student.person.name,
-      //   })),
-      //   numberOfRecords: debts.length,
-      //   failedPayments: [],
-      //   failLength: 0,
-      //   successfulPayments: [],
-      //   total: totalDebt,
-      //   totalDebtPending,
-      // } as RespProcess;
-    }
-    //**agrupar */
-    const groupedBySerie = debtsPending.reduce(
+    // 3. Particionar las deudas en una sola pasada con reduce
+    const { debtsPaid, debtsPending } = debts.reduce(
       (acc, debt) => {
-        const key = debt.student.id;
-        if (!acc[key]) {
-          acc[key] = [];
-        }
-        acc[key].push(debt);
+        debt.status ? acc.debtsPaid.push(debt) : acc.debtsPending.push(debt);
         return acc;
       },
-      {} as Record<string, typeof debts>,
+      { debtsPaid: [] as Debt[], debtsPending: [] as Debt[] },
     );
-    // /**Procesar boletas */
-    const resultsOfPay: PromiseSettledResult<any>[] = [];
 
-    for (const [studentId, studentDebts] of Object.entries(groupedBySerie)) {
-      // Obtener fechas para cada deuda de este estudiante
-      console.log(studentId);
-      const obDebts = studentDebts.map((d) => {
-        const date = results.find((res) => res.code === d.code);
-        return {
-          id: d.id,
-          datePay: date?.date ?? new Date().toISOString(), // fallback por si no encuentra
-        };
-      });
-
-      const settledResults = await Promise.allSettled(
-        obDebts.map((oD) => {
-          return this.createPaid(
-            { paymentMethod },
-            oD.id,
-            user,
-            new Date(oD.datePay),
-          );
-        }),
+    if (debtsPaid.length > 0) {
+      await this.sendSlackWarningForDuplicates(
+        debtsPaid.length,
+        this.formatDebtList(debtsPaid),
       );
-
-      resultsOfPay.push(...settledResults);
     }
 
-    debtsPending = await this.debtRepository.find({
-      where: {
-        code: In(results.map((res) => res.code)),
-        status: false,
-      },
-      relations: {
-        student: true,
-      },
+    if (debtsPending.length === 0) {
+      await this.slackService.sendMessage(
+        SlackChannel.TREASURY,
+        `:large_blue_circle: *Proceso finalizado. Todas las deudas encontradas ya estaban pagadas.*`,
+      );
+      return this.buildResponse({
+        status: true,
+        message:
+          'Proceso finalizado. Todas las deudas encontradas ya estaban pagadas.',
+        alreadyPaid: this.formatDebtList(debtsPaid),
+        numberOfRecords: debts.length,
+      });
+    }
+
+    // 4. Optimización de búsqueda de fechas con un Map (O(1) en lugar de O(n))
+    const dateMap = new Map(results.map((r) => [r.code, r.date]));
+
+    const paymentPromises = debtsPending.map((debt) => {
+      const datePay = dateMap.get(debt.code) ?? new Date().toISOString();
+      return this.createPaid(
+        { paymentMethod },
+        debt.id,
+        user,
+        new Date(datePay),
+      );
     });
 
-    const successfulPayments = resultsOfPay
-      .filter((res) => res.status === 'fulfilled')
-      .map((res) => (res as PromiseFulfilledResult<any>).value);
+    const settledResults = await Promise.allSettled(paymentPromises);
 
-    const failedPayments = resultsOfPay
-      .filter((res) => res.status === 'rejected')
-      .map((res) => (res as PromiseRejectedResult).reason);
+    // 5. Procesar resultados de forma centralizada
+    const successfulPayments = settledResults
+      .filter(
+        (res): res is PromiseFulfilledResult<any> => res.status === 'fulfilled',
+      )
+      .map((res) => res.value);
 
+    const failedPayments = settledResults
+      .filter((res): res is PromiseRejectedResult => res.status === 'rejected')
+      .map((res) => res.reason);
+
+    const boletas =
+      successfulPayments.length > 0
+        ? await this.getFormattedBills(successfulPayments.map((s) => s.id))
+        : [];
+
+    const total = boletas.reduce(
+      (sum, boleta) => sum + parseInt(boleta.payment.total),
+      0,
+    );
+
+    // 6. Enviar un único resumen a Slack usando bloques
+    await this.sendSlackSummary({
+      fileName: file.originalname,
+      bank,
+      totalProcessed: debts.length,
+      successfulCount: successfulPayments.length,
+      failedCount: failedPayments.length,
+      duplicatesCount: debtsPaid.length,
+      // detailDuplicates: this.formatDebtList(debtsPaid),
+    });
+
+    // 7. Construir la respuesta final de forma centralizada
+    return this.buildResponse({
+      status: failedPayments.length === 0,
+      message:
+        failedPayments.length > 0
+          ? 'Algunos pagos no pudieron procesarse.'
+          : 'Archivos procesados correctamente.',
+      alreadyPaid: this.formatDebtList(debtsPaid),
+      successfulPayments: boletas,
+      failedPayments,
+      total,
+      numberOfRecords: debts.length,
+    });
+  }
+
+  // --- MÉTODOS AUXILIARES PARA MAYOR CLARIDAD ---
+
+  private getBankProcessor(bank: PaymentPref) {
+    const upperBank = bank.toLocaleUpperCase();
+    if (upperBank === PaymentPref.bcp) {
+      return {
+        processor: this.processBCP.bind(this),
+        paymentMethod: PaymentMethod.bcp,
+      };
+    }
+    if (upperBank === PaymentPref.bbva) {
+      return {
+        processor: this.processBBVA.bind(this),
+        paymentMethod: PaymentMethod.bbva,
+      };
+    }
+    // Añadir más bancos aquí si es necesario
+    throw new BadRequestException(`Banco '${bank}' no soportado.`);
+  }
+
+  private formatStudentName(person: Person): string {
+    return `${person.lastname} ${person.mLastname}, ${person.name}`;
+  }
+
+  private formatDebtList(debts: Debt[]): FormattedDebt[] {
+    return debts.map((d) => ({
+      code: d.code,
+      student: this.formatStudentName(d.student.person),
+    }));
+  }
+
+  private async getFormattedBills(billIds: string[]) {
     const boletas = await this.billRepository.find({
-      where: {
-        id: In(successfulPayments.map((s) => s.id)),
-      },
+      where: { id: In(billIds) },
       relations: {
         payment: {
           concept: true,
+
           student: {
             person: true,
+
             enrollment: {
               activityClassroom: {
                 grade: {
                   level: true,
                 },
+
                 classroom: true,
               },
             },
@@ -1653,80 +1693,117 @@ export class TreasuryService {
         },
       },
     });
-    // Formatear los datos para el frontend
-    const result = this.formatDataBill(boletas);
-    // Calcular el total de los pagos
-    const total = boletas.reduce(
-      (sum, boleta) => sum + boleta.payment.total,
-      0,
-    );
-    if (failedPayments.length > 0) {
-      this.slackService.sendMessage(
-        SlackChannel.TREASURY,
-        `🔴 *ERROR: Algunos pagos no pudieron procesarse.*\n\n` +
-          `*∙ Registros Procesados:* ${debts.length}\n` +
-          `*∙ Registros Procesados Exitosamente:* ${successfulPayments.length}\n` +
-          `*∙ Registros Fallidos:* ${failedPayments.length}\n` +
-          `*∙ Deudas Pendientes:* ${debtsPending.length}\n` +
-          `*∙ Banco:* ${bank}\n` +
-          `*∙ Archivo:* ${file.originalname}`,
-      );
-      return {
-        status: false,
-        message: 'Algunos pagos no pudieron procesarse.',
-        alreadyPaid: debtsPaid.map((d) => ({
-          code: d.code,
-          student:
-            d.student.person.lastname +
-            ' ' +
-            d.student.person.mLastname +
-            ' ' +
-            d.student.person.name,
-        })),
-        debtsPending: debtsPending.map((d) => d.code),
-        debtsStudentPending: debtsPending.map((d) => ({
-          code: d.code,
-          student:
-            d.student.person.lastname +
-            ' ' +
-            d.student.person.mLastname +
-            ' ' +
-            d.student.person.name,
-        })),
-        numberOfRecords: failedPayments.length,
-        failedPayments,
-        failLength: failedPayments.length,
-        successfulPayments: result,
-        total,
-        totalDebtPending: debtsPending.reduce(
-          (sum, boleta) => sum + boleta.total,
-          0,
-        ),
-      } as RespProcess;
-    }
+    return this.formatDataBill(boletas);
+  }
 
-    this.slackService.sendMessage(
-      SlackChannel.TREASURY,
-      `✅ *Proceso de Pagos Completado*\n\n` +
-        `*∙ Registros Procesados:* ${debts.length}\n` +
-        `*∙ Registros Procesados Exitosamente:* ${successfulPayments.length}\n` +
-        `*∙ Registros Fallidos:* ${failedPayments.length}\n` +
-        `*∙ Deudas Pendientes:* ${debtsPending.length}\n` +
-        `*∙ Banco:* ${bank}\n` +
-        `*∙ Archivo:* ${file.originalname}`,
-    );
-    return {
+  // Método para construir la respuesta final y evitar duplicación de código
+  private buildResponse(data: Partial<RespProcess>): RespProcess {
+    const defaults = {
       status: true,
-      message: 'Archivos procesados correctamente',
+      message: '',
       alreadyPaid: [],
-      numberOfRecords: successfulPayments.length,
-      failedPayments,
-      failLength: failedPayments.length,
       debtsPending: [],
-      successfulPayments: result,
-      total,
-      totalDebtPending: 0,
-    } as RespProcess;
+      successfulPayments: [],
+      failedPayments: [],
+      total: 0,
+      numberOfRecords: 0,
+    };
+    return { ...defaults, ...data } as RespProcess;
+  }
+
+  private async sendSlackWarningForDuplicates(
+    count: number,
+    detailDuplicates: FormattedDebt[],
+  ) {
+    const blocks: SlackBlock[] = [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `🟡 *Aviso: Se Omitieron ${count} Pagos Duplicados*\nDurante el proceso, se encontraron pagos que ya estaban registrados en el sistema y fueron ignorados.`,
+        },
+      },
+    ];
+    if (detailDuplicates && detailDuplicates.length > 0) {
+      // Se añade un divisor para separar las secciones.
+      blocks.push({ type: 'divider' });
+
+      // Se formatea la lista de duplicados en un solo bloque para mejor legibilidad.
+      const duplicateListText = detailDuplicates
+        .map((d) => `• Código: \`${d.code}\` - Estudiante: ${d.student}`)
+        .join('\n'); // Une cada elemento con un salto de línea.
+
+      blocks.push({
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*Detalle de Pagos Duplicados Omitidos:*\n${duplicateListText}`,
+        },
+      });
+    }
+    await this.slackService.sendMessage(SlackChannel.TREASURY, { blocks });
+  }
+
+  private async sendSlackSummary(summary: {
+    fileName: string;
+    bank: string;
+    totalProcessed: number;
+    successfulCount: number;
+    failedCount: number;
+    duplicatesCount: number;
+  }) {
+    const {
+      fileName,
+      bank,
+      totalProcessed,
+      successfulCount,
+      failedCount,
+      duplicatesCount,
+    } = summary;
+
+    const statusIcon = failedCount > 0 ? '🔴' : '✅';
+    // const title =
+    //   failedCount > 0
+    //     ? `*Proceso de Pagos con Errores*`
+    //     : `*Proceso de Pagos Completado*`;
+
+    // Construcción del mensaje con Block Kit
+    const blocks: SlackBlock[] = [
+      {
+        type: 'header',
+        text: {
+          type: 'plain_text',
+          text: `${statusIcon} Resumen de Procesamiento`,
+        },
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `Se ha completado el procesamiento del archivo \`${fileName}\` para el banco *${bank.toUpperCase()}*.`,
+        },
+      },
+      {
+        type: 'divider', // <-- AQUÍ ESTÁ EL SEPARADOR VISUAL
+      },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*Registros Totales:*\n${totalProcessed}` },
+          { type: 'mrkdwn', text: `*✅ Pagos Exitosos:*\n${successfulCount}` },
+          { type: 'mrkdwn', text: `*🔴 Pagos Fallidos:*\n${failedCount}` },
+          {
+            type: 'mrkdwn',
+            text: `*🟡 Duplicados Omitidos:*\n${duplicatesCount}`,
+          },
+        ],
+      },
+      {
+        type: 'divider', // <-- AQUÍ ESTÁ EL SEPARADOR VISUAL
+      },
+    ];
+
+    await this.slackService.sendMessage(SlackChannel.TREASURY, { blocks });
   }
 
   private async processBCP(file: Express.Multer.File) {

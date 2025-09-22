@@ -75,6 +75,31 @@ export const AdminMenu = {
             },
           ],
         },
+        {
+          id: 5,
+          label: 'Traslados',
+          icon: 'reportSearch',
+          link: '',
+          permissions: ['transfers'],
+          subMenu: [
+            {
+              id: 1,
+              label: 'Cambio de sección',
+              icon: 'work',
+              link: '/admin/school/applications',
+              permissions: ['generate-transfer-request'],
+              subMenu: [],
+            },
+            {
+              id: 2,
+              label: 'Seguimiento',
+              icon: 'comunication',
+              link: '/admin/school/transfer-request',
+              permissions: ['list-transfer-request'],
+              subMenu: [],
+            },
+          ],
+        },
       ],
     },
     {

@@ -435,9 +435,9 @@ export class EmailsService {
 
   async sendEmailWithSES(params: MailParams): Promise<void> {
     const { to, subject, text, html } = params;
-
+    console.log('enviando email');
     const mailOptions = {
-      from: `"Asistencia Colegio AE" <${this.configService.getOrThrow<string>('AWS_SES_FROM')}>`,
+      from: `"Colegio AE" <${this.configService.getOrThrow<string>('AWS_SES_FROM')}>`,
       to: this.env === 'prod' ? to : 'carlos.orellano@ae.edu.pe',
       subject,
       text,

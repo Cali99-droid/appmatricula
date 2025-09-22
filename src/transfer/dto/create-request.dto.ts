@@ -1,16 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { ExistId } from 'src/common/validation/exist-id';
 
-export class CreateReferDto {
+export class CreateInternalResquestDto {
   @ApiProperty({
     example: 1,
     description: 'id of the children',
     nullable: false,
   })
   @IsNumber()
-  @ExistId({ tableName: 'person' })
-  childrenId: number;
+  @ExistId({ tableName: 'student' })
+  studentId: number;
 
   @ApiProperty({
     example: 1,
@@ -37,5 +38,5 @@ export class CreateReferDto {
   })
   @IsString()
   @IsOptional()
-  obs: string;
+  reason: string;
 }

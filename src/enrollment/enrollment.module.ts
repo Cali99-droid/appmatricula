@@ -40,6 +40,6 @@ import { SectionHistory } from './entities/section-history';
     ConfigModule,
     TreasuryModule,
   ],
-  exports: [],
+  exports: [EnrollmentService],
 })
 export class EnrollmentModule {}

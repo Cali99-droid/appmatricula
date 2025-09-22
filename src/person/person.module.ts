@@ -11,6 +11,7 @@ import { Family } from 'src/family/entities/family.entity';
 
 import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_schedule.entity';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
+import { ActivityClassroomModule } from 'src/activity_classroom/activity_classroom.module';
 
 @Module({
   controllers: [PersonController],
@@ -27,6 +28,7 @@ import { Attendance } from 'src/attendance/entities/attendance.entity';
       Attendance,
     ]),
     ConfigModule,
+    ActivityClassroomModule,
   ],
   exports: [PersonService, PersonModule],
 })

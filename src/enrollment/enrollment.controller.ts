@@ -38,8 +38,6 @@ import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 import { UpdateExpirationDto } from './dto/update-expiration.dto';
 import { TransferStudentDto } from './dto/tranfer-student.dto';
-import { CreateReferDto } from './dto/create-refer.dto';
-import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
@@ -221,6 +219,21 @@ export class EnrollmentController {
     return this.enrollmentService.getAvailableClassrooms(studentId);
   }
 
+  /**Proceso de matricula */
+  @Get('available-transfer/:studentId')
+  @ApiOperation({
+    summary: 'get availables classroom for enrroll',
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: 'Array of availables classrooms',
+    //  type: [AvailableClassroom],
+  })
+  getAvailableClassroomsToTransfers(
+    @Param('studentId', ParseIntPipe) studentId: number,
+  ) {
+    return this.enrollmentService.getAvailableClassroomsToTransfers(studentId);
+  }
   @Get('vacants/:yearId')
   @ApiQuery({
     name: 'campusId',
@@ -263,23 +276,23 @@ export class EnrollmentController {
     // return this.enrollmentService.getVacantsTest();
     return this.enrollmentService.getVacantsGeneral(gradeId, yearId, campusId);
   }
-  @Put('change-section/:studentId/classroom/:activityClassroomId')
-  @ApiOkResponse({
-    status: 200,
-    description: 'updating section',
-    //  type: [AvailableClassroom],
-  })
-  changeSection(
-    @Param('studentId', ParseIntPipe) studentId: number,
-    @Param('activityClassroomId', ParseIntPipe) activityClassroomId: number,
-    @AuthenticatedUser() user: any,
-  ) {
-    return this.enrollmentService.changeSection(
-      studentId,
-      activityClassroomId,
-      user,
-    );
-  }
+  // @Put('change-section/:studentId/classroom/:activityClassroomId')
+  // @ApiOkResponse({
+  //   status: 200,
+  //   description: 'updating section',
+  //   //  type: [AvailableClassroom],
+  // })
+  // changeSection(
+  //   @Param('studentId', ParseIntPipe) studentId: number,
+  //   @Param('activityClassroomId', ParseIntPipe) activityClassroomId: number,
+  //   @AuthenticatedUser() user: any,
+  // ) {
+  //   return this.enrollmentService.changeSection(
+  //     studentId,
+  //     activityClassroomId,
+  //     user,
+  //   );
+  // }
 
   @Put('transfer-student/:studentId')
   @ApiOkResponse({
@@ -351,25 +364,5 @@ export class EnrollmentController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.enrollmentService.findOne(+id);
-  }
-
-  /**TRASLADOS */
-  @Post('refer-to-transfers')
-  @ApiResponse({
-    status: 200,
-    description: 'request code ',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'some error',
-  })
-  // @Roles({
-  //   roles: ['administrador-colegio', 'padre-colegio', 'secretaria'],
-  // })
-  referToTransfers(
-    @Body() createReferDto: CreateReferDto,
-    @AuthenticatedUser() user: KeycloakTokenPayload,
-  ) {
-    return this.enrollmentService.referToTransfers(createReferDto, user);
   }
 }

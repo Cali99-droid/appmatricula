@@ -442,9 +442,7 @@ export class ActivityClassroomService {
         mLastname: e.student.person.mLastname,
         docNumber: e.student.person.docNumber,
         studentCode:
-          e.student.studentCode === null
-            ? e.student.person.studentCode
-            : e.student.studentCode,
+          e.student.studentCode === null ? 'none' : e.student.studentCode,
         photo: e.student.photo
           ? `${urlPhoto}/${e.student.photo}`
           : `${urlPhoto}/${defaultAvatar}`,
@@ -484,6 +482,70 @@ export class ActivityClassroomService {
         };
       });
       return format;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async getIdsByCampuCode(codes: string[]) {
+    try {
+      const ac = await this.activityClassroomRepository.find({
+        where: {
+          classroom: {
+            campusDetail: {
+              code: In(codes),
+            },
+          },
+        },
+      });
+
+      return ac.map((a) => a.id);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+  async getIdsByCampusIdAndCodes(campusId: number, codes: string[]) {
+    try {
+      const ac = await this.activityClassroomRepository.find({
+        where: {
+          classroom: {
+            campusDetail: {
+              id: campusId,
+              code: In(codes),
+            },
+          },
+        },
+      });
+
+      return ac.map((a) => a.id);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async getIdsByLevelIdCampusIdAndCodes(
+    campusId: number,
+    levelId: number,
+    codes: string[],
+  ) {
+    try {
+      const ac = await this.activityClassroomRepository.find({
+        where: {
+          classroom: {
+            campusDetail: {
+              id: campusId,
+              code: In(codes),
+            },
+          },
+          grade: {
+            level: {
+              id: levelId,
+            },
+          },
+        },
+      });
+
+      return ac.map((a) => a.id);
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }

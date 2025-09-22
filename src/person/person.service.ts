@@ -7,6 +7,7 @@ import * as sharp from 'sharp';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import {
   Between,
+  Brackets,
   In,
   IsNull,
   LessThanOrEqual,
@@ -26,6 +27,9 @@ import { EnrollmentSchedule } from 'src/enrollment_schedule/entities/enrollment_
 import { Attendance } from 'src/attendance/entities/attendance.entity';
 import { SearchByDateDto } from '../common/dto/search-by-date.dto';
 import { Student } from 'src/student/entities/student.entity';
+import { AdvancedSearchDto, SearchableScope } from './dto/advanced-search.dto';
+import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
+import { ActivityClassroomService } from 'src/activity_classroom/activity_classroom.service';
 
 @Injectable()
 export class PersonService {
@@ -51,6 +55,8 @@ export class PersonService {
     private readonly enrollmentScheduleRepository: Repository<EnrollmentSchedule>,
     @InjectRepository(Attendance)
     private readonly attendanceRepository: Repository<Attendance>,
+
+    private readonly activityClassroomService: ActivityClassroomService,
   ) {}
   create(createPersonDto: CreatePersonDto) {
     return createPersonDto;
@@ -405,6 +411,141 @@ export class PersonService {
         Key: `colegio/${Date.now()}.webp`,
         Body: webpImage,
       }),
+    );
+  }
+
+  async advancedSearch(
+    advancedSearchDto: AdvancedSearchDto,
+    user: KeycloakTokenPayload,
+  ) {
+    try {
+      const {
+        term,
+        scope = SearchableScope.STUDENT,
+        campusId,
+      } = advancedSearchDto;
+      const roles = user.resource_access['client-test-appae'].roles;
+
+      const resultsOfSearch = await this.searchPerson(term);
+      let enrolllmentAct = [];
+      let responseStudent = {};
+      const format = resultsOfSearch.map((result) => {
+        const { student, ...resto } = result;
+
+        if (student !== null && student?.enrollment.length > 0) {
+          const { enrollment, ...res } = student;
+          enrolllmentAct = enrollment;
+          responseStudent = res;
+        } else {
+          enrolllmentAct = [];
+          responseStudent = {};
+        }
+
+        return {
+          ...resto,
+          student: responseStudent,
+          classroom: `${enrolllmentAct[0]?.activityClassroom.grade.name} ${enrolllmentAct[0]?.activityClassroom.section}`,
+          activityClassroomId: enrolllmentAct[0]?.activityClassroom.id,
+          statusEnrollment: enrolllmentAct[0]?.status,
+        };
+      });
+      if (scope === SearchableScope.STUDENT) {
+        // const resultsOfSearch = await this.searchPerson(term);
+        // console.log(resultsOfSearch);
+        const idsActivityClassrooms =
+          await this.activityClassroomService.getIdsByCampusIdAndCodes(
+            campusId,
+            roles,
+          );
+        // if (!r.includes(campusId)) {
+        //   return [];
+        // }
+
+        const resp = format.filter((res) =>
+          idsActivityClassrooms.includes(res.activityClassroomId),
+        );
+
+        // console.log(resp);
+        return resp;
+      }
+
+      if (scope === SearchableScope.PARENT) {
+        const resp = resultsOfSearch.filter(
+          (res) =>
+            res.student === null || res.student?.enrollment?.length === 0,
+        );
+
+        // console.log(resp);
+        return resp;
+      }
+
+      return [];
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+
+    // switch (role) {
+    //   case SearchableRole.STUDENT:
+    //     return this.searchStudents(term);
+    //   case SearchableRole.PARENT:
+    //     return this.searchParents(term);
+    //   default:
+    //     return []; // O lanzar un error
+    // }
+  }
+
+  // En tu SearchService
+  private async searchPerson(term: string) {
+    // ✅ Crea una única variable con los comodines
+    const searchTerm = `%${term}%`;
+
+    return (
+      this.personRepository
+        .createQueryBuilder('person')
+        .leftJoinAndSelect('person.user', 'user')
+        .leftJoinAndSelect('person.student', 'student')
+        .leftJoinAndSelect(
+          'student.enrollment',
+          'enrollment',
+          'enrollment.status = :statusRe',
+          {
+            statusRe: 'registered',
+          },
+        )
+        // .leftJoinAndSelect('student.family', 'family')
+        .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
+        .leftJoinAndSelect('activityClassroom.grade', 'grade')
+        .where(
+          new Brackets((qb) => {
+            qb.orWhere('person.docNumber LIKE :term', { term: searchTerm })
+              .orWhere('person.cellPhone LIKE :term', { term: searchTerm })
+              .orWhere('LOWER(user.email) LIKE LOWER(:term)', {
+                term: searchTerm,
+              })
+
+              // Busca por: Nombre ApellidoPaterno ApellidoMaterno
+              .orWhere(
+                `LOWER(CONCAT(person.name, ' ', person.lastname, ' ', person.mLastname)) LIKE LOWER(:fullName)`,
+                { fullName: searchTerm }, // <-- CORRECCIÓN
+              )
+              // Busca por: ApellidoPaterno ApellidoMaterno Nombre
+              .orWhere(
+                `LOWER(CONCAT(person.lastname, ' ', person.mLastname, ' ', person.name)) LIKE LOWER(:fullName)`,
+                { fullName: searchTerm }, // <-- CORRECCIÓN
+              )
+              // Busca por: ApellidoPaterno ApellidoMaterno
+              .orWhere(
+                `LOWER(CONCAT(person.lastname, ' ', person.mLastname)) LIKE LOWER(:fullName)`,
+                { fullName: searchTerm }, // <-- CORRECCIÓN
+              )
+              .orWhere(
+                `LOWER(CONCAT(person.name, ' ', person.lastname)) LIKE LOWER(:fullName)`,
+                { fullName: searchTerm }, // <-- CORRECCIÓN
+              );
+          }),
+        )
+        // .andWhere('student.id IS NULL') // <-- No olvides filtrar para que solo devuelva padres
+        .getMany()
     );
   }
 }

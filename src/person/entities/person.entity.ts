@@ -79,14 +79,14 @@ export class Person {
 
   @Column({ type: 'enum', enum: FamilyRole })
   familyRole: FamilyRole;
-  //**TODO:  atributo de uso temporal, para la subida en bloque de estudiantes */
-  @ApiProperty({
-    description: 'studentCode',
-  })
-  @Column('varchar', {
-    nullable: true,
-  })
-  studentCode: string;
+  // //**TODO:  atributo de uso temporal, para la subida en bloque de estudiantes */
+  // @ApiProperty({
+  //   description: 'studentCode',
+  // })
+  // @Column('varchar', {
+  //   nullable: true,
+  // })
+  // studentCode: string;
 
   @ApiProperty({
     description: 'Cell phone ',
