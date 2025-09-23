@@ -1908,7 +1908,7 @@ export class EnrollmentService {
     const data = await this.treasuryService.searchDebtsByDate(studentId);
 
     if (data.length > 0) {
-      throw new BadRequestException('The student has overdue debts');
+      throw new BadRequestException('La familia tiene deudas vencidas');
     }
 
     // const vacant = await this.vacancyCalculation(activityClassroomId);

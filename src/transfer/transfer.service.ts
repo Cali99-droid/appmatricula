@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   BadRequestException,
   Injectable,
@@ -27,7 +28,6 @@ import { UpdateTransferReportDto } from './dto/update-transfer-report.dto';
 import { CreateTransferReportDto } from './dto/create-transfer-report.dto';
 import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import * as sharp from 'sharp';
 import { EnrollmentService } from 'src/enrollment/enrollment.service';
 import { TreasuryService } from 'src/treasury/treasury.service';
 import { TypeOfDebt } from 'src/treasury/enum/TypeOfDebt.enum';
@@ -187,7 +187,7 @@ export class TransfersService {
         area: RequestTrackingArea.SECRETARY,
         transferRequestId: request.id,
         userId: us.id,
-        notes: 'Solicitud de transferencia creada',
+        notes: 'Solicitud creada',
         status: ProcessStateTracking.REGISTERED,
         arrivalDate: new Date(),
       };
@@ -412,10 +412,51 @@ export class TransfersService {
     user: KeycloakTokenPayload,
   ): Promise<TransferMeeting[]> {
     const us = await this.userService.findByEmail(user.email);
+
     return this.transferMeetingRepository.find({
       where: { transferRequestId, user: { id: us.id } },
       relations: ['user'], // Opcional: para traer info del usuario que agendó
     });
+  }
+
+  async findMeetingsByUser(user: KeycloakTokenPayload): Promise<any[]> {
+    const us = await this.userService.findByEmail(user.email);
+    const roles = user.resource_access['client-test-appae'].roles;
+    let status;
+
+    const data = await this.transferMeetingRepository.find({
+      where: { user: { id: us.id } },
+      relations: {
+        transferRequest: true,
+      }, // Opcional: para traer info del usuario que agendó
+    });
+    const format = data.map((t) => {
+      const {
+        updatedAt,
+        createdAt,
+        transferRequestId,
+        transferRequest,
+        ...rest
+      } = t;
+      const { administratorState, psychologistState, requestCode } =
+        transferRequest;
+
+      if (roles.includes('psicologia-traslados')) {
+        status = psychologistState;
+      }
+      if (roles.includes('cordinador-academico')) {
+        status = administratorState;
+      }
+      return {
+        ...rest,
+        transferRequest: {
+          id: transferRequest.id,
+          requestCode,
+          status,
+        },
+      };
+    });
+    return format;
   }
 
   // READ ONE
@@ -660,13 +701,13 @@ export class TransfersService {
         throw new BadRequestException('Need a file');
       }
       const us = await this.userService.findByEmail(user.email);
-      const webpImage = await sharp(file).webp().toBuffer();
-      const nameAct = `${Date.now()}.webp`;
+      // const webpImage = await sharp(file).webp().toBuffer();
+      const nameAct = `${Date.now()}.pdf`;
       await this.s3Client.send(
         new PutObjectCommand({
           Bucket: 'caebucket',
           Key: `colegio/actas/${nameAct}`,
-          Body: webpImage,
+          Body: file,
           ACL: 'public-read',
         }),
       );
