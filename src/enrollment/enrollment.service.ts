@@ -1911,12 +1911,12 @@ export class EnrollmentService {
       throw new BadRequestException('The student has overdue debts');
     }
 
-    const vacant = await this.vacancyCalculation(activityClassroomId);
-    if (!vacant.hasVacant) {
-      throw new BadRequestException(
-        'Insufficient vacancies or the student is enrolled here',
-      );
-    }
+    // const vacant = await this.vacancyCalculation(activityClassroomId);
+    // if (!vacant.hasVacant) {
+    //   throw new BadRequestException(
+    //     'Insufficient vacancies or the student is enrolled here',
+    //   );
+    // }
 
     const actualEnroll = await this.findEnrollmentByStudentAndStatus(
       studentId,
