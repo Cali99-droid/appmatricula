@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Payment } from './payment.entity';
 import { TypeOfVoucher } from '../enum/TypeOfVoucher.enum';
+import { ProcessingStatusInterface } from '../interfaces/ProcessingStatus.interface';
 
 @Entity()
 export class Bill {
@@ -50,6 +51,13 @@ export class Bill {
     default: TypeOfVoucher.BOLETA,
   })
   typeOfVoucher: TypeOfVoucher;
+
+  @Column({
+    type: 'enum',
+    enum: ProcessingStatusInterface,
+    default: ProcessingStatusInterface.default,
+  })
+  processingStatus: ProcessingStatusInterface;
 
   /**TIMESTAMPS */
   @CreateDateColumn({
