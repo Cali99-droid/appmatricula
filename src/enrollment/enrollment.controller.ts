@@ -240,7 +240,7 @@ export class EnrollmentController {
     @Query('campusIdParam') campusIdParam: number,
 
   ) {
-    return this.enrollmentService.getAvailableClassroomsToTransfers(studentId,campusIdParam);
+    return this.enrollmentService.getAvailableClassroomsToTransfers(studentId, campusIdParam);
   }
   @Get('vacants/:yearId')
   @ApiQuery({
