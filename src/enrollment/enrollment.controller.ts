@@ -224,6 +224,12 @@ export class EnrollmentController {
   @ApiOperation({
     summary: 'get availables classroom for enrroll',
   })
+  @ApiQuery({
+    name: 'campusIdParam',
+    required: true,
+    description: 'campusIdParam of the year',
+    type: Number,
+  })
   @ApiOkResponse({
     status: 200,
     description: 'Array of availables classrooms',
@@ -231,8 +237,10 @@ export class EnrollmentController {
   })
   getAvailableClassroomsToTransfers(
     @Param('studentId', ParseIntPipe) studentId: number,
+    @Query('campusIdParam') campusIdParam: number,
+
   ) {
-    return this.enrollmentService.getAvailableClassroomsToTransfers(studentId);
+    return this.enrollmentService.getAvailableClassroomsToTransfers(studentId,campusIdParam);
   }
   @Get('vacants/:yearId')
   @ApiQuery({

@@ -932,7 +932,7 @@ export class EnrollmentService {
   }
 
   /**FUNCION PARA TRASLADOS */
-  async getAvailableClassroomsToTransfers(studentId: number) {
+  async getAvailableClassroomsToTransfers(studentId: number,campusIdParam:number) {
     const availables: AvailableClassroom[] = [];
     const currentEnrrollment = await this.enrollmentRepository
       .createQueryBuilder('enrollment')
@@ -953,7 +953,7 @@ export class EnrollmentService {
     const yearId = currentEnrrollment.activityClassroom.phase.year.id;
 
     try {
-      const campusId =
+        const campusId = campusIdParam ? campusIdParam:
         currentEnrrollment.activityClassroom.classroom.campusDetail.id;
       const classrooms = await this.activityClassroomRepository.find({
         where: {
