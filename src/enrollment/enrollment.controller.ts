@@ -238,9 +238,11 @@ export class EnrollmentController {
   getAvailableClassroomsToTransfers(
     @Param('studentId', ParseIntPipe) studentId: number,
     @Query('campusIdParam') campusIdParam: number,
-
   ) {
-    return this.enrollmentService.getAvailableClassroomsToTransfers(studentId, campusIdParam);
+    return this.enrollmentService.getAvailableClassroomsToTransfers(
+      studentId,
+      campusIdParam,
+    );
   }
   @Get('vacants/:yearId')
   @ApiQuery({

@@ -118,7 +118,7 @@ export class TransfersService {
       if (!actualEnroll) {
         throw new NotFoundException('Estudiante no tiene Matricula Activa');
       }
-      const availableClassroomsIds = await (
+      const availableClassroomsIds = (
         await this.enrollmentService.getAvailableClassroomsToTransfers(
           createTransferDto.studentId,
         )
@@ -248,7 +248,10 @@ export class TransfersService {
     };
 
     if (
-      user.resource_access['client-test-appae'].roles.includes('secretaria')
+      user.resource_access['client-test-appae'].roles.includes('secretaria') &&
+      !user.resource_access['client-test-appae'].roles.includes(
+        'administrador-colegio',
+      )
     ) {
       const us = await this.userService.findByEmail(user.email);
       resquestsOptions.where = {
@@ -267,12 +270,13 @@ export class TransfersService {
           student: {
             person: true,
           },
+          transferMeeting: true,
         },
         order: {
           id: 'DESC',
         },
       });
-      console.log(requests.length);
+
       return requests.map((r) => {
         // 1. Desestructura 'r': saca 'student' y guarda el resto en 'rest'
         const { student, ...rest } = r;
@@ -305,15 +309,48 @@ export class TransfersService {
         user: {
           person: true,
         },
+        transferRequest: {
+          transferMeeting: true,
+          destinationClassroom: true,
+        },
       },
     });
 
     return route.map((r) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { user, createdAt, updatedAt, ...res } = r;
+      const { user, createdAt, updatedAt, transferRequest, ...res } = r;
+      const { transferMeeting, destinationClassroom } = transferRequest;
+      let meeting = [];
+
+      if (
+        res.area === RequestTrackingArea.PSYCHOLOGY &&
+        res.status === ProcessStateTracking.MEETING_SCHEDULED
+      ) {
+        meeting =
+          res.area === RequestTrackingArea.PSYCHOLOGY
+            ? transferMeeting.filter(
+                (tm) => tm.type == TransferMeetingType.PSYCHOLOGIST,
+              )
+            : [];
+      }
+      if (
+        res.area === RequestTrackingArea.CORDINATOR &&
+        res.status === ProcessStateTracking.MEETING_SCHEDULED
+      ) {
+        meeting =
+          res.area === RequestTrackingArea.CORDINATOR
+            ? transferMeeting.filter(
+                (tm) => tm.type == TransferMeetingType.ADMINISTRATOR,
+              )
+            : [];
+      }
+
       return {
         ...res,
         responsible: `${user.person.lastname} ${user.person.mLastname} ${user.person.name}`,
+        meetingDate: meeting[0]?.meetingDate,
+        destinationClassroom: `${destinationClassroom.grade.name} ${destinationClassroom.section}`,
+        codeClassroom: `${destinationClassroom.classroom.code}`,
       };
     });
     // // Si está cerrada, la respuesta es directa
