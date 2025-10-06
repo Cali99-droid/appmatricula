@@ -270,7 +270,6 @@ export class TransfersService {
           student: {
             person: true,
           },
-          transferMeeting: true,
         },
         order: {
           id: 'DESC',
