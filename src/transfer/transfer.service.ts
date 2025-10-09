@@ -398,12 +398,13 @@ export class TransfersService {
     user: KeycloakTokenPayload,
   ): Promise<TransferMeeting> {
     const us = await this.userService.findByEmail(user.email);
-    const { type, transferRequestId } = createDto;
+    const { type, transferRequestId, meetingDate } = createDto;
     let area: RequestTrackingArea;
     const exist = await this.transferMeetingRepository.findOne({
       where: {
         transferRequestId,
         type,
+        meetingDate,
       },
     });
     if (exist) {
