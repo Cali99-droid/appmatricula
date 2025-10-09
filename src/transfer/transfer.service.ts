@@ -118,6 +118,7 @@ export class TransfersService {
       if (!actualEnroll) {
         throw new NotFoundException('Estudiante no tiene Matricula Activa');
       }
+
       const availableClassroomsIds = (
         await this.enrollmentService.getAvailableClassroomsToTransfers(
           createTransferDto.studentId,

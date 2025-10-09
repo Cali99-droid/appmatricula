@@ -1943,6 +1943,8 @@ export class EnrollmentService {
 
     actualEnroll.status = Status.TRASLADADO;
     destinationEnroll.status = Status.MATRICULADO;
+    actualEnroll.isActive = false;
+    destinationEnroll.isActive = true;
 
     await this.enrollmentRepository.save(actualEnroll);
     await this.enrollmentRepository.save(destinationEnroll);

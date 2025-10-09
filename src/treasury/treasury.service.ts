@@ -464,6 +464,7 @@ export class TreasuryService {
         dateEnd: LessThan(date),
         student: { id: studentId },
         status: false,
+        isCanceled: false,
       },
       relations: {
         concept: true,
