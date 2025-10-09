@@ -121,6 +121,7 @@ export class TransfersService {
       const availableClassroomsIds = (
         await this.enrollmentService.getAvailableClassroomsToTransfers(
           createTransferDto.studentId,
+          createTransferDto.destinationCampusId,
         )
       ).map((ava) => ava.id);
       if (
