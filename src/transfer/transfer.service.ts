@@ -401,11 +401,10 @@ export class TransfersService {
     const { type, transferRequestId, meetingDate } = createDto;
     let area: RequestTrackingArea;
     const exist = await this.transferMeetingRepository.findOne({
-      where: {
-        transferRequestId,
-        type,
-        meetingDate,
-      },
+      where: [
+        { transferRequestId, type },
+        { type, meetingDate },
+      ],
     });
     if (exist) {
       throw new BadRequestException(
