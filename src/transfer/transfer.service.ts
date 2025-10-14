@@ -408,7 +408,7 @@ export class TransfersService {
     });
     if (exist) {
       throw new BadRequestException(
-        `Ya existe un agendamiento para la solicitud #${createDto.transferRequestId}.`,
+        `Ya existe un agendamiento para la solicitud #${createDto.transferRequestId}, fecha y hora: ${createDto.meetingDate}`,
       );
     }
 
