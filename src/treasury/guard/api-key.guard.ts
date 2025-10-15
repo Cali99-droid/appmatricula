@@ -12,7 +12,7 @@ import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
-  private readonly SYSTEM_USER_ID = 1;
+  private readonly SYSTEM_USER_ID = 912;
   constructor(
     private readonly configService: ConfigService,
 

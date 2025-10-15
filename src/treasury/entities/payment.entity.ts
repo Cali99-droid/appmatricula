@@ -12,6 +12,7 @@ import {
 import { Concept } from './concept.entity';
 import { PaymentMethod } from '../enum/PaymentMethod.enum';
 import { Debt } from './debt.entity';
+import { ProcessingStatusInterface } from '../interfaces/ProcessingStatus.interface';
 
 @Entity()
 export class Payment {
@@ -39,6 +40,17 @@ export class Payment {
   })
   @Column('boolean')
   status: boolean;
+
+  @ApiProperty({
+    example: 'true',
+    description: 'status of payment',
+  })
+  @Column({
+    type: 'enum',
+    enum: ProcessingStatusInterface,
+    default: ProcessingStatusInterface.default,
+  })
+  processingStatus: ProcessingStatusInterface;
 
   @ApiProperty({
     description: 'Id of concept',

@@ -26,7 +26,7 @@ import { AuthenticatedUser, Resource, Roles } from 'nest-keycloak-connect';
 
 @ApiTags('Attendance')
 @Controller('attendance')
-@Resource('client-test-appae')
+@Resource('appcolegioae')
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 

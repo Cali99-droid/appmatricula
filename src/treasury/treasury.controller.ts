@@ -38,7 +38,7 @@ import { ApiKeyGuard } from './guard/api-key.guard';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 import { TypeOfDebt } from './enum/TypeOfDebt.enum';
 @ApiTags('Treasury')
-@Resource('client-test-appae')
+@Resource('appcolegioae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
@@ -109,6 +109,16 @@ export class TreasuryController {
   ) {
     const { startDate, endDate, userId } = findPaidDto;
     return this.treasuryService.findPaid(user, startDate, endDate, +userId);
+  }
+
+  @Get(':studentId/report-payments')
+  @Public()
+  @ApiResponse({ status: 201, description: 'datos de boletas' })
+  getStudentPayments(
+    @Param('studentId') studentId: number,
+    // @AuthenticatedUser() user: KeycloakTokenPayload,
+  ) {
+    return this.treasuryService.getStudentPayments(+studentId);
   }
 
   @Get('statistics')
