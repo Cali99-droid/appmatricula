@@ -111,6 +111,16 @@ export class TreasuryController {
     return this.treasuryService.findPaid(user, startDate, endDate, +userId);
   }
 
+  @Get(':studentId/report-payments')
+  @Public()
+  @ApiResponse({ status: 201, description: 'datos de boletas' })
+  getStudentPayments(
+    @Param('studentId') studentId: number,
+    // @AuthenticatedUser() user: KeycloakTokenPayload,
+  ) {
+    return this.treasuryService.getStudentPayments(+studentId);
+  }
+
   @Get('statistics')
   @ApiResponse({ status: 201, description: 'Statistics' })
   getStatistics() {

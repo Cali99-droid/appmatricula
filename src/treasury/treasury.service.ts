@@ -45,6 +45,7 @@ import { SlackBlock } from 'src/common/slack/types/slack.types';
 import { TypeOfDebt } from './enum/TypeOfDebt.enum';
 import { PersonService } from 'src/person/person.service';
 import { ProcessingStatusInterface } from './interfaces/ProcessingStatus.interface';
+import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 // Interfaz para mayor claridad en los tipos de datos
@@ -1272,6 +1273,49 @@ export class TreasuryService {
     return pay;
   }
 
+  /**GET REPORT OF PAYMENTS BY STUDENT */
+
+  async getStudentPayments(studentId: number) {
+    try {
+      const payments = await this.billRepository.find({
+        where: {
+          payment: { student: { id: studentId } },
+        },
+        relations: {
+          payment: {
+            debt: true,
+            concept: true,
+            student: {
+              person: true,
+              enrollment: {
+                activityClassroom: {
+                  grade: {
+                    level: true,
+                  },
+                  classroom: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const result = this.formatDataBill(payments);
+      // Calcular el total de los pagos
+      const total = payments.reduce(
+        (sum, boleta) => sum + boleta.payment.total,
+        0,
+      );
+
+      return {
+        data: result,
+        total,
+      };
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
   async getCreditNoteByBill(billId: number) {
     const cn = await this.creditNoteRepository.findOne({
       where: {
@@ -2009,7 +2053,7 @@ export class TreasuryService {
         cod: `${boleta.serie}-${boleta.numero}`,
         isAccepted: boleta.accepted,
         url: boleta.url,
-        description: `${boleta.payment.concept.description.toUpperCase()} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
+        description: `${boleta.payment.concept.description.toUpperCase()} ${boleta.payment.debt?.description !== undefined ? boleta.payment.debt?.description : ''} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} - ${level.name} - ${campus.name}`,
         user: this.getUser(boleta.payment.user),
         payment: {
           id: boleta.payment.id,
