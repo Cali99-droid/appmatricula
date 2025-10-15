@@ -587,6 +587,7 @@ export class TreasuryService {
       },
       relations: {
         payment: {
+          debt: true,
           concept: true,
           student: {
             person: true,
