@@ -1523,7 +1523,7 @@ export class TreasuryService {
 
     await this.slackService.sendMessage(
       SlackChannel.TREASURY,
-      `⚙️ *Iniciando procesamiento de pagos...*\n*Archivo:* \`${file.originalname}\`\n*Banco:* ${bank.toUpperCase()}`,
+      `⚙️${new Date()} *Iniciando procesamiento de pagos...*\n*Archivo:* \`${file.originalname}\`\n*Banco:* ${bank.toUpperCase()}`,
     );
 
     // 2. Selección de procesador más limpia y escalable
