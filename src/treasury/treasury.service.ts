@@ -46,6 +46,7 @@ import { TypeOfDebt } from './enum/TypeOfDebt.enum';
 import { PersonService } from 'src/person/person.service';
 import { ProcessingStatusInterface } from './interfaces/ProcessingStatus.interface';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
+import { GetDebtorsReport } from './dto/get-debtors-report.dto';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 // Interfaz para mayor claridad en los tipos de datos
@@ -1318,6 +1319,121 @@ export class TreasuryService {
     }
   }
 
+  /**GET DEBTORS REPORT  */
+  async getDebtorsReport(getDebtorsReport: GetDebtorsReport) {
+    const { activityClassroomId, levelId } = getDebtorsReport;
+    try {
+      const qbDebts = this.debtRepository.createQueryBuilder('debt');
+      qbDebts
+        .leftJoinAndSelect('debt.discount', 'discount')
+        .leftJoinAndSelect('debt.student', 'student')
+        .leftJoinAndSelect('student.person', 'person')
+        .leftJoinAndSelect('student.family', 'family')
+        .leftJoinAndSelect('family.respEnrollment', 'respEnrollment')
+        .leftJoinAndSelect('respEnrollment.user', 'user')
+        .leftJoinAndSelect(
+          'student.enrollment',
+          'enrollment',
+          'enrollment.isActive = :isActive', // Usa parámetros para seguridad
+          { isActive: true },
+        )
+        .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
+        .leftJoinAndSelect('activityClassroom.grade', 'grade')
+        .leftJoinAndSelect('grade.level', 'level')
+        .leftJoinAndSelect('debt.concept', 'concept')
+        // .where('debt.status = false')
+        .andWhere('concept.id = :conceptId', { conceptId: 2 })
+
+        // .take(50)
+        .orderBy('debt.id', 'DESC');
+
+      if (activityClassroomId) {
+        qbDebts.andWhere('activityClassroom.id= :activityClassroomId', {
+          activityClassroomId,
+        });
+      }
+
+      if (levelId) {
+        qbDebts.andWhere('level.id= :levelId', {
+          levelId,
+        });
+      }
+
+      const debts = await qbDebts.getMany();
+
+      // Objeto para almacenar los totales por mes.
+      const monthlyTotals = {};
+
+      const groupedByStudent = debts.reduce((acc, debt) => {
+        const { student, concept } = debt;
+        const { person, family, enrollment } = student;
+        const { respEnrollment } = family;
+        const studentDNI = person.docNumber;
+
+        // ---- Cálculo de totales por mes ----
+        const monthDescription = debt.description.toUpperCase(); // Estandarizamos a mayúsculas.
+        if (!monthlyTotals[monthDescription]) {
+          monthlyTotals[monthDescription] = 0;
+        }
+        monthlyTotals[monthDescription] += debt.status
+          ? 0
+          : debt.discount
+            ? debt.total - (debt.total * debt.discount.percentage) / 100
+            : debt.total;
+        // ------------------------------------
+
+        if (!acc[studentDNI]) {
+          const enrollmentActual =
+            enrollment && enrollment.length > 0 ? enrollment[0] : null;
+          if (!enrollmentActual) return acc;
+
+          acc[studentDNI] = {
+            student: `${person.lastname} ${person.mLastname} ${person.name}`,
+            dni: studentDNI,
+            responsible: `${respEnrollment.lastname} ${respEnrollment.mLastname} ${respEnrollment.name}`,
+            phone: respEnrollment.cellPhone,
+            email: respEnrollment.user.email,
+            classroom: `${enrollmentActual.activityClassroom.grade.name} - ${enrollmentActual.activityClassroom.section}`,
+            debts: [],
+            // Añadimos el total para este estudiante
+            totalDebt: 0,
+          };
+        }
+
+        acc[studentDNI].debts.push({
+          id: debt.id,
+          status: debt.status,
+          concept: concept.description,
+          description: debt.description, // ej. "MARZO", "ABRIL"
+          total: debt.status
+            ? 0
+            : debt.discount
+              ? debt.total - (debt.total * debt.discount.percentage) / 100
+              : debt.total,
+        });
+
+        // Sumamos al total del estudiante.
+        acc[studentDNI].totalDebt += debt.status
+          ? 0
+          : debt.discount
+            ? debt.total - (debt.total * debt.discount.percentage) / 100
+            : debt.total;
+
+        return acc;
+      }, {});
+
+      const studentDebts = Object.values(groupedByStudent);
+
+      // Devolvemos un objeto con toda la información.
+      return {
+        studentDebts, // La lista de estudiantes con sus deudas detalladas y su total.
+        monthlyTotals, // El resumen de totales por cada mes.
+      };
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
   async getCreditNoteByBill(billId: number) {
     const cn = await this.creditNoteRepository.findOne({
       where: {
@@ -1767,7 +1883,7 @@ export class TreasuryService {
         paymentMethod: PaymentMethod.bbva,
       };
     }
-    // Añadir más bancos aquí si es necesario
+
     throw new BadRequestException(`Banco '${bank}' no soportado.`);
   }
 

@@ -37,6 +37,7 @@ import { CreateDiscountDto } from './dto/create-discount.dto';
 import { ApiKeyGuard } from './guard/api-key.guard';
 import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload .interface';
 import { TypeOfDebt } from './enum/TypeOfDebt.enum';
+import { GetDebtorsReport } from './dto/get-debtors-report.dto';
 @ApiTags('Treasury')
 @Resource('client-test-appae')
 @Controller('treasury')
@@ -112,7 +113,6 @@ export class TreasuryController {
   }
 
   @Get(':studentId/report-payments')
-  @Public()
   @ApiResponse({ status: 201, description: 'datos de boletas' })
   getStudentPayments(
     @Param('studentId') studentId: number,
@@ -213,6 +213,12 @@ export class TreasuryController {
     });
 
     res.send(pdfBuffer);
+  }
+  @Get('debtors-report-by-month')
+  @Public()
+  @ApiResponse({ status: 201, description: 'reporte de deudores' })
+  getDebtorsReport(@Query() getDebtorsReport: GetDebtorsReport) {
+    return this.treasuryService.getDebtorsReport(getDebtorsReport);
   }
 
   // @Get('migrate')

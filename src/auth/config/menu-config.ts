@@ -286,6 +286,14 @@ export const AdminMenu = {
         },
         {
           id: 4,
+          label: 'Pagos por estudiante',
+          icon: 'reportPayment',
+          link: '/admin/treasury/report-student',
+          permissions: ['tesoreria-reporte'],
+          subMenu: [],
+        },
+        {
+          id: 5,
           label: 'Bancos',
           link: '/admin/treasury',
           icon: 'bank',
