@@ -12,7 +12,9 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { TransferMeeting } from './transfer-meeting.entity';
 
 // Enums para claridad y consistencia
 export enum TransferType {
@@ -118,6 +120,9 @@ export class TransferRequest {
   // Relaciones
   @ManyToOne(() => User)
   user: User;
+
+  @OneToMany(() => TransferMeeting, (tm) => tm.transferRequest)
+  transferMeeting: TransferMeeting[];
 
   @CreateDateColumn({
     type: 'timestamp',

@@ -232,7 +232,7 @@ export class FamilyService {
     }
   }
   async findOne(id: number, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -316,13 +316,9 @@ export class FamilyService {
         if (item.enrollment.length === 0) {
           return undefined; // O manejar de otra manera según tu lógica
         }
-        const { student, activityClassroom, ...enrroll } =
-          item.enrollment.reduce((previous, current) => {
-            return current.activityClassroom.grade.position >
-              previous.activityClassroom.grade.position
-              ? current
-              : previous;
-          });
+        const { student, activityClassroom, ...enrroll } = item.enrollment.find(
+          (e) => e.isActive === true,
+        );
 
         if (
           (activityClassroom.grade.position !== 14 &&
