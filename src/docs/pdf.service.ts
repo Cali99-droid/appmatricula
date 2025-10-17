@@ -30,7 +30,7 @@ import { Person } from 'src/person/entities/person.entity';
 import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
-import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
+import { TDocumentDefinitions, Content, TableCell } from 'pdfmake/interfaces';
 (<any>pdfMake).addVirtualFileSystem(pdfFonts);
 
 @Injectable()
@@ -965,7 +965,7 @@ export class PdfService {
   }
 
   private createAreasTable(reportData: any): Content {
-    const tableBody = [
+    const tableBody: TableCell[][] = [
       [
         {
           text: '\nÁREA',
@@ -1020,7 +1020,7 @@ export class PdfService {
     // Filas de datos
     reportData.areas.forEach((area) => {
       area.competencies.forEach((competency, index) => {
-        const row = [
+        const row: TableCell[] = [
           index === 0
             ? { text: area.name, rowSpan: area.competencies.length }
             : {},
