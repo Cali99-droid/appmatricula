@@ -235,7 +235,7 @@ export class TransfersService {
       await this.activityClassroomService.getIdsByLevelIdCampusIdAndCodes(
         campusId,
         levelId,
-        user.resource_access['client-test-appae'].roles,
+        user.resource_access['appcolegioae'].roles,
       );
     const resquestsOptions: any = {
       where: {
@@ -247,9 +247,7 @@ export class TransfersService {
       },
     };
 
-    if (
-      user.resource_access['client-test-appae'].roles.includes('secretaria')
-    ) {
+    if (user.resource_access['appcolegioae'].roles.includes('secretaria')) {
       const us = await this.userService.findByEmail(user.email);
       resquestsOptions.where = {
         user: { id: us.id },
@@ -590,7 +588,7 @@ export class TransfersService {
     user: KeycloakTokenPayload,
   ): Promise<TransferReport[]> {
     if (
-      user.resource_access['client-test-appae'].roles.includes(
+      user.resource_access['appcolegioae'].roles.includes(
         'cordinador-academico',
       )
     ) {
