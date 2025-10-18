@@ -932,7 +932,10 @@ export class EnrollmentService {
   }
 
   /**FUNCION PARA TRASLADOS */
-  async getAvailableClassroomsToTransfers(studentId: number) {
+  async getAvailableClassroomsToTransfers(
+    studentId: number,
+    campusIdParam?: number,
+  ) {
     const availables: AvailableClassroom[] = [];
     const currentEnrrollment = await this.enrollmentRepository
       .createQueryBuilder('enrollment')
@@ -953,8 +956,9 @@ export class EnrollmentService {
     const yearId = currentEnrrollment.activityClassroom.phase.year.id;
 
     try {
-      const campusId =
-        currentEnrrollment.activityClassroom.classroom.campusDetail.id;
+      const campusId = campusIdParam
+        ? campusIdParam
+        : currentEnrrollment.activityClassroom.classroom.campusDetail.id;
       const classrooms = await this.activityClassroomRepository.find({
         where: {
           // section: currentEnrrollment.activityClassroom.section,
@@ -1908,15 +1912,15 @@ export class EnrollmentService {
     const data = await this.treasuryService.searchDebtsByDate(studentId);
 
     if (data.length > 0) {
-      throw new BadRequestException('The student has overdue debts');
+      throw new BadRequestException('La familia tiene deudas vencidas');
     }
 
-    const vacant = await this.vacancyCalculation(activityClassroomId);
-    if (!vacant.hasVacant) {
-      throw new BadRequestException(
-        'Insufficient vacancies or the student is enrolled here',
-      );
-    }
+    // const vacant = await this.vacancyCalculation(activityClassroomId);
+    // if (!vacant.hasVacant) {
+    //   throw new BadRequestException(
+    //     'Insufficient vacancies or the student is enrolled here',
+    //   );
+    // }
 
     const actualEnroll = await this.findEnrollmentByStudentAndStatus(
       studentId,
@@ -1939,6 +1943,8 @@ export class EnrollmentService {
 
     actualEnroll.status = Status.TRASLADADO;
     destinationEnroll.status = Status.MATRICULADO;
+    actualEnroll.isActive = false;
+    destinationEnroll.isActive = true;
 
     await this.enrollmentRepository.save(actualEnroll);
     await this.enrollmentRepository.save(destinationEnroll);

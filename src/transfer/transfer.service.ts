@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   BadRequestException,
   Injectable,
@@ -27,7 +28,6 @@ import { UpdateTransferReportDto } from './dto/update-transfer-report.dto';
 import { CreateTransferReportDto } from './dto/create-transfer-report.dto';
 import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import * as sharp from 'sharp';
 import { EnrollmentService } from 'src/enrollment/enrollment.service';
 import { TreasuryService } from 'src/treasury/treasury.service';
 import { TypeOfDebt } from 'src/treasury/enum/TypeOfDebt.enum';
@@ -118,9 +118,11 @@ export class TransfersService {
       if (!actualEnroll) {
         throw new NotFoundException('Estudiante no tiene Matricula Activa');
       }
-      const availableClassroomsIds = await (
+
+      const availableClassroomsIds = (
         await this.enrollmentService.getAvailableClassroomsToTransfers(
           createTransferDto.studentId,
+          createTransferDto.destinationCampusId,
         )
       ).map((ava) => ava.id);
       if (
@@ -187,7 +189,7 @@ export class TransfersService {
         area: RequestTrackingArea.SECRETARY,
         transferRequestId: request.id,
         userId: us.id,
-        notes: 'Solicitud de transferencia creada',
+        notes: 'Solicitud creada',
         status: ProcessStateTracking.REGISTERED,
         arrivalDate: new Date(),
       };
@@ -247,7 +249,16 @@ export class TransfersService {
       },
     };
 
+<<<<<<< HEAD
     if (user.resource_access['appcolegioae'].roles.includes('secretaria')) {
+=======
+    if (
+      user.resource_access['appcolegioae'].roles.includes('secretaria') &&
+      !user.resource_access['appcolegioae'].roles.includes(
+        'administrador-colegio',
+      )
+    ) {
+>>>>>>> 90faf058b5fe1f617ed53ffe274b9f8c9af6b35d
       const us = await this.userService.findByEmail(user.email);
       resquestsOptions.where = {
         user: { id: us.id },
@@ -270,7 +281,7 @@ export class TransfersService {
           id: 'DESC',
         },
       });
-      console.log(requests.length);
+
       return requests.map((r) => {
         // 1. Desestructura 'r': saca 'student' y guarda el resto en 'rest'
         const { student, ...rest } = r;
@@ -303,15 +314,48 @@ export class TransfersService {
         user: {
           person: true,
         },
+        transferRequest: {
+          transferMeeting: true,
+          destinationClassroom: true,
+        },
       },
     });
 
     return route.map((r) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { user, createdAt, updatedAt, ...res } = r;
+      const { user, createdAt, updatedAt, transferRequest, ...res } = r;
+      const { transferMeeting, destinationClassroom } = transferRequest;
+      let meeting = [];
+
+      if (
+        res.area === RequestTrackingArea.PSYCHOLOGY &&
+        res.status === ProcessStateTracking.MEETING_SCHEDULED
+      ) {
+        meeting =
+          res.area === RequestTrackingArea.PSYCHOLOGY
+            ? transferMeeting.filter(
+                (tm) => tm.type == TransferMeetingType.PSYCHOLOGIST,
+              )
+            : [];
+      }
+      if (
+        res.area === RequestTrackingArea.CORDINATOR &&
+        res.status === ProcessStateTracking.MEETING_SCHEDULED
+      ) {
+        meeting =
+          res.area === RequestTrackingArea.CORDINATOR
+            ? transferMeeting.filter(
+                (tm) => tm.type == TransferMeetingType.ADMINISTRATOR,
+              )
+            : [];
+      }
+
       return {
         ...res,
         responsible: `${user.person.lastname} ${user.person.mLastname} ${user.person.name}`,
+        meetingDate: meeting[0]?.meetingDate,
+        destinationClassroom: `${destinationClassroom.grade.name} ${destinationClassroom.section}`,
+        codeClassroom: `${destinationClassroom.classroom.code}`,
       };
     });
     // // Si está cerrada, la respuesta es directa
@@ -358,17 +402,17 @@ export class TransfersService {
     user: KeycloakTokenPayload,
   ): Promise<TransferMeeting> {
     const us = await this.userService.findByEmail(user.email);
-    const { type, transferRequestId } = createDto;
+    const { type, transferRequestId, meetingDate } = createDto;
     let area: RequestTrackingArea;
     const exist = await this.transferMeetingRepository.findOne({
-      where: {
-        transferRequestId,
-        type,
-      },
+      where: [
+        { transferRequestId, type },
+        { type, meetingDate },
+      ],
     });
     if (exist) {
       throw new BadRequestException(
-        `Ya existe un agendamiento para la solicitud #${createDto.transferRequestId}.`,
+        `Ya existe un agendamiento para la solicitud #${createDto.transferRequestId}, fecha y hora: ${createDto.meetingDate}`,
       );
     }
 
@@ -410,10 +454,51 @@ export class TransfersService {
     user: KeycloakTokenPayload,
   ): Promise<TransferMeeting[]> {
     const us = await this.userService.findByEmail(user.email);
+
     return this.transferMeetingRepository.find({
       where: { transferRequestId, user: { id: us.id } },
       relations: ['user'], // Opcional: para traer info del usuario que agendó
     });
+  }
+
+  async findMeetingsByUser(user: KeycloakTokenPayload): Promise<any[]> {
+    const us = await this.userService.findByEmail(user.email);
+    const roles = user.resource_access['appcolegioae'].roles;
+    let status;
+
+    const data = await this.transferMeetingRepository.find({
+      where: { user: { id: us.id } },
+      relations: {
+        transferRequest: true,
+      }, // Opcional: para traer info del usuario que agendó
+    });
+    const format = data.map((t) => {
+      const {
+        updatedAt,
+        createdAt,
+        transferRequestId,
+        transferRequest,
+        ...rest
+      } = t;
+      const { administratorState, psychologistState, requestCode } =
+        transferRequest;
+
+      if (roles.includes('psicologia-traslados')) {
+        status = psychologistState;
+      }
+      if (roles.includes('cordinador-academico')) {
+        status = administratorState;
+      }
+      return {
+        ...rest,
+        transferRequest: {
+          id: transferRequest.id,
+          requestCode,
+          status,
+        },
+      };
+    });
+    return format;
   }
 
   // READ ONE
@@ -658,13 +743,13 @@ export class TransfersService {
         throw new BadRequestException('Need a file');
       }
       const us = await this.userService.findByEmail(user.email);
-      const webpImage = await sharp(file).webp().toBuffer();
-      const nameAct = `${Date.now()}.webp`;
+      // const webpImage = await sharp(file).webp().toBuffer();
+      const nameAct = `${Date.now()}.pdf`;
       await this.s3Client.send(
         new PutObjectCommand({
           Bucket: 'caebucket',
           Key: `colegio/actas/${nameAct}`,
-          Body: webpImage,
+          Body: file,
           ACL: 'public-read',
         }),
       );

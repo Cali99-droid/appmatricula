@@ -316,13 +316,9 @@ export class FamilyService {
         if (item.enrollment.length === 0) {
           return undefined; // O manejar de otra manera según tu lógica
         }
-        const { student, activityClassroom, ...enrroll } =
-          item.enrollment.reduce((previous, current) => {
-            return current.activityClassroom.grade.position >
-              previous.activityClassroom.grade.position
-              ? current
-              : previous;
-          });
+        const { student, activityClassroom, ...enrroll } = item.enrollment.find(
+          (e) => e.isActive === true,
+        );
 
         if (
           (activityClassroom.grade.position !== 14 &&

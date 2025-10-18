@@ -24,6 +24,7 @@ import { CreateTransferReportDto } from './dto/create-transfer-report.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SearchTranfersDto } from './dto/search-tranfer.dto';
 import { CreateRequestTrackingDto } from './dto/create-request-tracking.dto';
+import { MeetingDto } from './dto/res-all-meeting.dto';
 
 @ApiTags('Transfers')
 @Controller('transfers')
@@ -139,6 +140,17 @@ export class TransfersController {
     return this.transfersService.findOneTransferMeeting(id);
   }
 
+  @Get('all/my-meetings')
+  @ApiOperation({ summary: 'Obtener todos los agendamientos' })
+  @ApiResponse({
+    status: 200,
+    description: 'Detalles del agendamiento.',
+    type: MeetingDto,
+  })
+  @ApiResponse({ status: 404, description: 'Agendamiento no encontrado.' })
+  findMeetingsByUser(@AuthenticatedUser() user: KeycloakTokenPayload) {
+    return this.transfersService.findMeetingsByUser(user);
+  }
   @Patch('meetings/:id')
   @ApiOperation({ summary: 'Actualizar un agendamiento existente' })
   @ApiResponse({ status: 200, description: 'Agendamiento actualizado.' })

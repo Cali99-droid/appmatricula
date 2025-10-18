@@ -27,15 +27,6 @@ export const AdminMenu = {
         },
         {
           id: 2,
-          label: 'Cambio seccion',
-
-          icon: 'family',
-          link: '/admin/school/changeStudent',
-          permissions: ['matricula-cambio-seccion'],
-          subMenu: [],
-        },
-        {
-          id: 3,
           label: 'Reportes',
           icon: 'reportSearch',
           link: '/admin/school/families',
@@ -76,7 +67,7 @@ export const AdminMenu = {
           ],
         },
         {
-          id: 5,
+          id: 3,
           label: 'Traslados',
           icon: 'reportSearch',
           link: '',
@@ -295,6 +286,14 @@ export const AdminMenu = {
         },
         {
           id: 4,
+          label: 'Pagos por estudiante',
+          icon: 'reportPayment',
+          link: '/admin/treasury/report-student',
+          permissions: ['tesoreria-reporte'],
+          subMenu: [],
+        },
+        {
+          id: 5,
           label: 'Bancos',
           link: '/admin/treasury',
           icon: 'bank',
