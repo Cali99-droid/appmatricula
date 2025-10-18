@@ -249,16 +249,12 @@ export class TransfersService {
       },
     };
 
-<<<<<<< HEAD
-    if (user.resource_access['appcolegioae'].roles.includes('secretaria')) {
-=======
     if (
       user.resource_access['appcolegioae'].roles.includes('secretaria') &&
       !user.resource_access['appcolegioae'].roles.includes(
         'administrador-colegio',
       )
     ) {
->>>>>>> 90faf058b5fe1f617ed53ffe274b9f8c9af6b35d
       const us = await this.userService.findByEmail(user.email);
       resquestsOptions.where = {
         user: { id: us.id },
