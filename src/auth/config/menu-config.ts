@@ -286,12 +286,31 @@ export const AdminMenu = {
         },
         {
           id: 4,
-          label: 'Pagos por estudiante',
-          icon: 'reportPayment',
-          link: '/admin/treasury/report-student',
+          label: 'Reportes',
+          link: '/admin/treasury',
+          icon: 'bank',
+          tagSubMenu: true,
           permissions: ['tesoreria-reporte'],
-          subMenu: [],
+          subMenu: [
+            {
+              id: 1,
+              label: 'Pagos por estudiante',
+              icon: 'reportPayment',
+              link: '/admin/treasury/report-student',
+              permissions: ['tesoreria-reporte'],
+              subMenu: [],
+            },
+            {
+              id: 2,
+              label: 'Deudas',
+              icon: 'reportPayment',
+              link: 'tesoreria-reporte',
+              permissions: ['tesoreria-reporte'],
+              subMenu: [],
+            },
+          ],
         },
+
         {
           id: 5,
           label: 'Bancos',
