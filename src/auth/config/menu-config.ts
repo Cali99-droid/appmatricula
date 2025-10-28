@@ -83,6 +83,14 @@ export const AdminMenu = {
             },
             {
               id: 2,
+              label: 'Cambio de Sede',
+              icon: 'work',
+              link: '/admin/school/change-sede',
+              permissions: ['generate-transfer-request'],
+              subMenu: [],
+            },
+            {
+              id: 3,
               label: 'Seguimiento',
               icon: 'comunication',
               link: '/admin/school/transfer-request',
@@ -304,7 +312,7 @@ export const AdminMenu = {
               id: 2,
               label: 'Deudas',
               icon: 'reportPayment',
-              link: 'tesoreria-reporte',
+              link: '/admin/reports/debots-reports',
               permissions: ['tesoreria-reporte'],
               subMenu: [],
             },
