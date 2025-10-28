@@ -108,7 +108,7 @@ export class TransfersController {
   })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
   @Roles({
-    roles: ['psicologia-traslados', 'cordinador-academico'],
+    roles: ['psicologia', 'cordinador-academico'],
   })
   createTransferMeeting(
     @Body() createDto: CreateTransferMeetingDto,
@@ -179,7 +179,7 @@ export class TransfersController {
     description: 'Datos inválidos o pre-condición no cumplida.',
   })
   @Roles({
-    roles: ['psicologia-traslados', 'cordinador-academico'],
+    roles: ['psicologia', 'cordinador-academico'],
   })
   createTransferReport(
     @Body() createDto: CreateTransferReportDto,

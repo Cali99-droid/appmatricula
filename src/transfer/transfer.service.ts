@@ -480,7 +480,7 @@ export class TransfersService {
       const { administratorState, psychologistState, requestCode } =
         transferRequest;
 
-      if (roles.includes('psicologia-traslados')) {
+      if (roles.includes('psicologia')) {
         status = psychologistState;
       }
       if (roles.includes('cordinador-academico')) {
