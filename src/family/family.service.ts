@@ -317,7 +317,7 @@ export class FamilyService {
           return undefined; // O manejar de otra manera según tu lógica
         }
         const { student, activityClassroom, ...enrroll } = item.enrollment.find(
-          (e) => e.isActive === true,
+          (e) => e.isActive === true || e.activityClassroom.grade.id == 14,
         );
 
         if (
