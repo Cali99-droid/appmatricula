@@ -74,6 +74,9 @@ export class Debt {
   @JoinColumn({ name: 'studentId' })
   student?: Student;
 
+  @Column()
+  studentId: number;
+
   @ApiProperty({
     description: 'Id of concept',
   })

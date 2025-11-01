@@ -49,6 +49,7 @@ import { AcademicAssignmentModule } from './academic_structure/academic_assignme
 
 import { AcademicRecordsModule } from './academic_structure/academic_records/academic_records.module';
 import { SlackModule } from './common/slack/slack.module';
+import { SchoolRequestModule } from './school_request/school_request.module';
 
 @Module({
   imports: [
@@ -100,6 +101,7 @@ import { SlackModule } from './common/slack/slack.module';
     AcademicAssignmentModule,
     AcademicRecordsModule,
     SlackModule,
+    SchoolRequestModule,
   ],
   providers: [ExistIdConstraint, AuthService],
 })

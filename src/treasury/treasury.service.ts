@@ -1321,7 +1321,26 @@ export class TreasuryService {
 
   /**GET DEBTORS REPORT  */
   async getDebtorsReport(getDebtorsReport: GetDebtorsReport) {
-    const { activityClassroomId, levelId } = getDebtorsReport;
+    const { activityClassroomId, levelId, month } = getDebtorsReport;
+
+    // ---- INICIO MODIFICACIÓN 1: Definir orden de meses ----
+    // Usamos un Map para asignar un valor numérico a cada mes.
+    const monthOrderMap = new Map([
+      ['ENERO', 1],
+      ['FEBRERO', 2],
+      ['MARZO', 3],
+      ['ABRIL', 4],
+      ['MAYO', 5],
+      ['JUNIO', 6],
+      ['JULIO', 7],
+      ['AGOSTO', 8],
+      ['SEPTIEMBRE', 9],
+      ['OCTUBRE', 10],
+      ['NOVIEMBRE', 11],
+      ['DICIEMBRE', 12],
+    ]);
+    // ---- FIN MODIFICACIÓN 1 ----
+
     try {
       const qbDebts = this.debtRepository.createQueryBuilder('debt');
       qbDebts
@@ -1334,18 +1353,15 @@ export class TreasuryService {
         .leftJoinAndSelect(
           'student.enrollment',
           'enrollment',
-          'enrollment.isActive = :isActive', // Usa parámetros para seguridad
+          'enrollment.isActive = :isActive',
           { isActive: true },
         )
         .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
         .leftJoinAndSelect('activityClassroom.grade', 'grade')
         .leftJoinAndSelect('grade.level', 'level')
         .leftJoinAndSelect('debt.concept', 'concept')
-        // .where('debt.status = false')
         .andWhere('concept.id = :conceptId', { conceptId: 2 })
-
-        // .take(50)
-        .orderBy('debt.id', 'DESC');
+        .orderBy('debt.id', 'ASC');
 
       if (activityClassroomId) {
         qbDebts.andWhere('activityClassroom.id= :activityClassroomId', {
@@ -1361,6 +1377,13 @@ export class TreasuryService {
 
       const debts = await qbDebts.getMany();
 
+      // ---- INICIO MODIFICACIÓN 2: Obtener el índice del mes tope ----
+      // Si 'month' no es nulo, obtenemos su valor numérico. Si es nulo, targetMonthIndex será null.
+      const targetMonthIndex = month
+        ? monthOrderMap.get(month.toUpperCase())
+        : null;
+      // ---- FIN MODIFICACIÓN 2 ----
+
       // Objeto para almacenar los totales por mes.
       const monthlyTotals = {};
 
@@ -1370,8 +1393,27 @@ export class TreasuryService {
         const { respEnrollment } = family;
         const studentDNI = person.docNumber;
 
+        // ---- INICIO MODIFICACIÓN 3: Lógica de filtrado por mes ----
+        const monthDescription = debt.description.toUpperCase();
+        const currentMonthIndex = monthOrderMap.get(monthDescription);
+
+        // Verificamos si debemos procesar esta deuda:
+        // 1. Si no se pasó un 'month' (targetMonthIndex es null), SÍ procesamos.
+        // 2. Si se pasó un 'month', SÍ procesamos SOLO SI el mes de la deuda
+        //    es válido (currentMonthIndex no es undefined) Y es <= al mes tope.
+        const shouldProcessMonth =
+          !targetMonthIndex ||
+          (currentMonthIndex && currentMonthIndex <= targetMonthIndex);
+
+        // Si no debemos procesar este mes, simplemente retornamos el acumulador
+        // sin agregar esta deuda.
+        if (!shouldProcessMonth) {
+          return acc;
+        }
+        // ---- FIN MODIFICACIÓN 3 ----
+
         // ---- Cálculo de totales por mes ----
-        const monthDescription = debt.description.toUpperCase(); // Estandarizamos a mayúsculas.
+        // (Esta lógica ahora solo se ejecuta para los meses filtrados)
         if (!monthlyTotals[monthDescription]) {
           monthlyTotals[monthDescription] = 0;
         }
@@ -1395,7 +1437,6 @@ export class TreasuryService {
             email: respEnrollment.user.email,
             classroom: `${enrollmentActual.activityClassroom.grade.name} - ${enrollmentActual.activityClassroom.section}`,
             debts: [],
-            // Añadimos el total para este estudiante
             totalDebt: 0,
           };
         }
@@ -1426,8 +1467,8 @@ export class TreasuryService {
 
       // Devolvemos un objeto con toda la información.
       return {
-        studentDebts, // La lista de estudiantes con sus deudas detalladas y su total.
-        monthlyTotals, // El resumen de totales por cada mes.
+        studentDebts, // Lista de estudiantes con deudas (solo hasta el mes filtrado)
+        monthlyTotals, // Resumen de totales (solo hasta el mes filtrado)
       };
     } catch (error) {
       handleDBExceptions(error, this.logger);
@@ -2232,6 +2273,38 @@ export class TreasuryService {
     const discountUpdated = await this.discountsRepository.save(discount);
 
     return discountUpdated;
+  }
+
+  async generateDebt(concept: Concept, studentId: number, code: string) {
+    try {
+      // const concept = await this.conceptRepository.findOne({
+      //   where: { id: conceptId },
+      // });
+      const debt: Debt = this.debtRepository.create({
+        dateEnd: new Date(),
+        total: concept.total,
+        status: false,
+        studentId: studentId,
+        concept: concept,
+        description: concept.description,
+        code: code,
+      });
+
+      return await this.debtRepository.save(debt);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async getConcept(conceptId: number) {
+    try {
+      const concept = await this.conceptRepository.findOne({
+        where: { id: conceptId },
+      });
+      return concept;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
 
   async generatePdf() {
