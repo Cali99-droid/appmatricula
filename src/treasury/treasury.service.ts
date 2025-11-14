@@ -14,7 +14,7 @@ import axios from 'axios';
 import { Payment } from './entities/payment.entity';
 import { Bill } from './entities/bill.entity';
 import { Correlative } from './entities/correlative.entity';
-
+import { v4 as uuidv4 } from 'uuid';
 import { Status } from 'src/enrollment/enum/status.enum';
 import { CreatePaidDto } from './dto/create-paid.dto';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
@@ -47,6 +47,10 @@ import { PersonService } from 'src/person/person.service';
 import { ProcessingStatusInterface } from './interfaces/ProcessingStatus.interface';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { GetDebtorsReport } from './dto/get-debtors-report.dto';
+import { PdfService } from 'src/docs/pdf.service';
+import { EmailsService } from 'src/emails/emails.service';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 // Interfaz para mayor claridad en los tipos de datos
@@ -94,6 +98,10 @@ export class TreasuryService {
 
     private readonly personService: PersonService,
     private readonly slackService: SlackService,
+    private pdfService: PdfService,
+    private readonly emailService: EmailsService,
+
+    @InjectQueue('cobranza') private cobranzaQueue: Queue,
   ) {}
 
   async createPaid(
@@ -1323,8 +1331,6 @@ export class TreasuryService {
   async getDebtorsReport(getDebtorsReport: GetDebtorsReport) {
     const { activityClassroomId, levelId, month } = getDebtorsReport;
 
-    // ---- INICIO MODIFICACIÓN 1: Definir orden de meses ----
-    // Usamos un Map para asignar un valor numérico a cada mes.
     const monthOrderMap = new Map([
       ['ENERO', 1],
       ['FEBRERO', 2],
@@ -1464,7 +1470,7 @@ export class TreasuryService {
       }, {});
 
       const studentDebts = Object.values(groupedByStudent);
-
+      console.log(studentDebts.length);
       // Devolvemos un objeto con toda la información.
       return {
         studentDebts, // Lista de estudiantes con deudas (solo hasta el mes filtrado)
@@ -2517,4 +2523,212 @@ export class TreasuryService {
     const pdfArray = doc.output('arraybuffer');
     return Buffer.from(pdfArray);
   }
+
+  async generarCartasCobranza(): Promise<any> {
+    const data = await this.debtRepository.query(
+      `SELECT d.id, st.code, concat(per.lastname, ' ', per.mLastname, ' ', per.name) student,CONCAT( g.name, ' ',ac.section, ' ', l.name) grade,
+      concat(p.lastname, ' ', p.mLastname, ' ', p.name) parent, us.email, 
+      (select CAST(sum(total) AS DECIMAL(10, 2)) from debt where studentId=st.id and conceptId=2 and description!='NOVIEMBRE' and description!='DICIEMBRE' ) total FROM debt d
+      inner join student st on st.id=d.studentId
+      inner join person per on per.id = st.personId
+      inner join family f on f.id=st.familyId
+      inner join person p on p.id=f.respEnrollment
+      inner join enrollment en on en.studentId =st.id
+      inner join activity_classroom ac on ac.id=en.activityClassroomId
+      inner join grade g on g.id=ac.gradeId
+      inner join level l on l.id=g.levelId
+      inner join user us on us.personId = p.id
+      where d.status=0 and isCanceled=0 and ( description="ABRIL" ) and conceptId=2 and en.status="registered"
+      order by student asc limit 5;`,
+    );
+
+    this.logger.log(`Iniciando generación  cartas de cobranza`);
+
+    const resultados: any[] = [];
+
+    for (const estudiante of data) {
+      try {
+        const resultado = await this.generarCartaIndividual(estudiante, true);
+        resultados.push(resultado);
+      } catch (error) {
+        this.logger.error(
+          `Error al procesar estudiante ${estudiante}: ${error.message}`,
+        );
+        resultados.push({
+          estudiante,
+          nombreEstudiante: 'Desconocido',
+          nombreApoderado: 'Desconocido',
+          pdfPath: '',
+          codigoDocumento: '',
+          emailEnviado: false,
+          error: error.message,
+        });
+      }
+    }
+
+    this.logger.log(
+      `Proceso completado: ${resultados.length} cartas procesadas`,
+    );
+    return resultados;
+  }
+  private async generarCartaIndividual(
+    studentData: any,
+    enviarEmail: boolean,
+  ): Promise<any> {
+    // Obtener datos del estudiante
+
+    // Generar código único para el documento
+    const codigoDocumento = this.generarCodigoDocumento(studentData.code);
+
+    // Preparar datos para el PDF
+    const dataPdf = {
+      fecha: new Date(),
+      apoderado: studentData.parent,
+      estudiante: studentData.student,
+      grado: studentData.grade,
+      montoDeuda: Number(studentData.total),
+      detalleDeuda: 'Monto total adeudado hasta la fecha ',
+      codigoDocumento,
+      debts: [],
+      contract: studentData.contract,
+    };
+
+    // Generar PDF
+    const pdfPath = await this.pdfService.generarCartaCobranza(dataPdf);
+
+    // Enviar email si se solicita
+    let emailEnviado = false;
+    if (enviarEmail && studentData.email) {
+      emailEnviado = await this.emailService.enviarCartaCobranza(
+        studentData.email,
+        studentData.parent,
+        studentData.student,
+        Number(studentData.total),
+        pdfPath,
+      );
+    }
+
+    return {
+      estudianteId: studentData.id,
+      nombreEstudiante: studentData.student,
+      nombreApoderado: studentData.parent,
+      pdfPath,
+      codigoDocumento,
+      emailEnviado,
+    };
+  }
+
+  /**HELPERS */
+
+  private generarCodigoDocumento(estudianteId: string): string {
+    const fecha = new Date();
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const day = String(fecha.getDate()).padStart(2, '0');
+    const shortUuid = uuidv4().split('-')[0].toUpperCase();
+
+    return `COBR-${year}${month}${day}-${estudianteId}`;
+  }
+
+  async generarCartasCobranzaAsync(): Promise<{
+    jobId: string;
+    message: string;
+  }> {
+    const jobId = uuidv4();
+
+    const data = await this.debtRepository.query(
+      `SELECT d.id,st.id studentId, st.code, concat(per.lastname, ' ', per.mLastname, ' ', per.name) student,CONCAT( g.name, ' ',ac.section, ' ', l.name) grade,
+      concat(p.lastname, ' ', p.mLastname, ' ', p.name) parent, us.email, 
+      (select CAST(sum(total) AS DECIMAL(10, 2)) from debt where studentId=st.id and conceptId=2 and description!='NOVIEMBRE' and description!='DICIEMBRE' ) total
+      , upper(concat(cd.name,'-',l.name,'-',g.name,'-',ac.section,'-',f.nameFamily,'-',  SUBSTRING(per.docNumber, -2),'-','2025')) contract
+      FROM debt d
+      inner join student st on st.id=d.studentId
+      inner join person per on per.id = st.personId
+      inner join family f on f.id=st.familyId
+      inner join person p on p.id=f.respEnrollment
+      inner join enrollment en on en.studentId =st.id
+      inner join activity_classroom ac on ac.id=en.activityClassroomId
+      inner join classroom cl on cl.id=ac.classroomId
+      inner join campus_detail cd on cd.id=cl.campusDetailId
+      inner join grade g on g.id=ac.gradeId
+      inner join level l on l.id=g.levelId
+      inner join user us on us.personId = p.id
+      where d.status=0 and isCanceled=0 and ( description="ABRIL" ) and conceptId=2 and en.status="registered"
+      order by student asc limit 4;`,
+    );
+
+    // Agregar job a la cola
+    const job = await this.cobranzaQueue.add(
+      'generar-cartas',
+      {
+        estudianteData: data,
+        enviarEmail: true,
+        jobId,
+      },
+      {
+        attempts: 3, // Reintentar hasta 3 veces si falla
+        backoff: {
+          type: 'exponential',
+          delay: 5000, // Esperar 5s, 10s, 20s entre reintentos
+        },
+        removeOnComplete: false, // Mantener jobs completados para consulta
+        removeOnFail: false, // Mantener jobs fallidos para análisis
+      },
+    );
+
+    // Notificar a Slack que el proceso comenzó
+    await this.slackService.enviarInicioProcesoCobranza(
+      data.length,
+      jobId,
+      SlackChannel.TREASURY,
+    );
+
+    return {
+      jobId,
+      message: `Proceso de cobranza iniciado. Job ID: ${jobId}. Se procesarán ${data.length} estudiantes en segundo plano.`,
+    };
+  }
+
+  async consultarEstadoJob(jobId: string): Promise<any | null> {
+    try {
+      const jobs = await this.cobranzaQueue.getJobs([
+        'waiting',
+        'active',
+        'completed',
+        'failed',
+      ]);
+
+      const job = jobs.find((j) => j.data.jobId === jobId);
+
+      if (!job) {
+        return null;
+      }
+
+      const state = await job.getState();
+      const progress = job.progress();
+
+      return {
+        jobId,
+        status: state as any,
+        progress: typeof progress === 'number' ? progress : 0,
+        totalEstudiantes: job.data.estudianteData.length,
+        createdAt: new Date(job.timestamp),
+      };
+    } catch (error) {
+      this.logger.error(`Error al consultar job ${jobId}: ${error.message}`);
+      return null;
+    }
+  }
+
+  async limpiarJobsAntiguos(): Promise<void> {
+    try {
+      await this.cobranzaQueue.clean(7 * 24 * 60 * 60 * 1000, 'completed'); // 7 días
+      await this.cobranzaQueue.clean(30 * 24 * 60 * 60 * 1000, 'failed'); // 30 días
+      this.logger.log('Jobs antiguos limpiados');
+    } catch (error) {
+      this.logger.error(`Error al limpiar jobs: ${error.message}`);
+    }
+  }
+
+  private getDE;
 }

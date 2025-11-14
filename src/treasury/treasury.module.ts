@@ -17,6 +17,9 @@ import { MulterModule } from '@nestjs/platform-express';
 import { Discounts } from './entities/discounts.entity';
 import { UserModule } from 'src/user/user.module';
 import { PersonModule } from 'src/person/person.module';
+import { DocsModule } from 'src/docs/docs.module';
+import { EmailsModule } from 'src/emails/emails.module';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
   controllers: [TreasuryController],
@@ -41,7 +44,21 @@ import { PersonModule } from 'src/person/person.module';
     MulterModule.register({
       dest: './uploads', // Carpeta temporal donde se guardan los archivos
     }),
+    DocsModule,
+    EmailsModule,
     PersonModule,
+    BullModule.registerQueue({
+      name: 'cobranza',
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: 100, // Mantener últimos 100 jobs completados
+        removeOnFail: 50, // Mantener últimos 50 jobs fallidos
+      },
+    }),
   ],
   exports: [TreasuryService],
 })

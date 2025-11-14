@@ -1,7 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-
+import * as fs from 'fs';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 // import PDFDocument from 'pdfkit';
 import * as PDFDocument from 'pdfkit';
 // import 'pdfkit-table';
@@ -31,10 +33,33 @@ import { DownloadConstancyQueryDto } from './dto/downloadConstancyQuery.dto';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import { TDocumentDefinitions, Content, TableCell } from 'pdfmake/interfaces';
+import * as path from 'path';
 (<any>pdfMake).addVirtualFileSystem(pdfFonts);
-
+export interface CartaCobranzaData {
+  fecha: Date;
+  apoderado: string;
+  estudiante: string;
+  grado: string;
+  montoDeuda: number;
+  detalleDeuda?: string;
+  codigoDocumento: string;
+  debts: any[];
+  contract: string;
+}
+export interface CartaFinalData {
+  fecha: Date;
+  numeroCartaSecuencial: string; // Ej: "025-2024"
+  apoderado: string;
+  estudiante: string;
+  grado: string;
+  nivel: string; // PRIMARIA, SECUNDARIA
+  numeroContrato: string; // Ej: "2024-00707"
+  codigoDocumento: string;
+}
 @Injectable()
 export class PdfService {
+  private readonly logger = new Logger(PdfService.name);
+  private readonly outputDir = path.join(process.cwd(), 'pdfs', 'cobranzas');
   constructor(
     @InjectRepository(ActivityClassroom)
     private readonly activityClassroomRepository: Repository<ActivityClassroom>,
@@ -54,7 +79,11 @@ export class PdfService {
     private readonly httpService: HttpService,
 
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    if (!fs.existsSync(this.outputDir)) {
+      fs.mkdirSync(this.outputDir, { recursive: true });
+    }
+  }
   async generatePdfWithQRCodes(id: number): Promise<Buffer> {
     const activityClassroom = await this.activityClassroomRepository.findOne({
       relations: {
@@ -138,7 +167,9 @@ export class PdfService {
           reject(error);
         }
         const name = student.name.split(' ')[0].toUpperCase();
-        const fullName = `${student.lastname.toUpperCase()} ${student.mLastname.charAt(0).toUpperCase()}.`;
+        const fullName = `${student.lastname.toUpperCase()} ${student.mLastname
+          .charAt(0)
+          .toUpperCase()}.`;
         // doc.fontSize(12).text(`ID: ${student.id}`, 80, 50);
         doc.fontSize(10).fillColor('white').text(`${name}`, 0, 162, {
           width: 153,
@@ -224,7 +255,11 @@ export class PdfService {
           );
         const code = student.codeEnroll
           ? student.codeEnroll
-          : `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`;
+          : `${enroll.activityClassroom.phase.year.name}${
+              enroll.activityClassroom.phase.type === TypePhase.Regular
+                ? '1'
+                : '2'
+            }S${student.id}`;
 
         const qr = await QRCode.toDataURL(code);
         doc.image(qr, 6, 186, { width: 50, height: 50 });
@@ -282,7 +317,9 @@ export class PdfService {
         reject(error);
       }
       const name = student.person.name.split(' ')[0].toUpperCase();
-      const fullName = `${student.person.lastname.toUpperCase()} ${student.person.mLastname.charAt(0).toUpperCase()}.`;
+      const fullName = `${student.person.lastname.toUpperCase()} ${student.person.mLastname
+        .charAt(0)
+        .toUpperCase()}.`;
       // doc.fontSize(12).text(`ID: ${student.id}`, 80, 50);
       doc.fontSize(10).fillColor('white').text(`${name}`, 0, 162, {
         width: 153,
@@ -365,7 +402,11 @@ export class PdfService {
 
       const code = enroll.code
         ? enroll.code
-        : `${enroll.activityClassroom.phase.year.name}${enroll.activityClassroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}`;
+        : `${enroll.activityClassroom.phase.year.name}${
+            enroll.activityClassroom.phase.type === TypePhase.Regular
+              ? '1'
+              : '2'
+          }S${student.id}`;
       //${classroom.phase.year.name}${classroom.phase.type === TypePhase.Regular ? '1' : '2'}S${student.id}
       const qr = await QRCode.toDataURL(code);
       doc.image(qr, 6, 186, { width: 50, height: 50 });
@@ -430,7 +471,9 @@ export class PdfService {
     });
     if (!year) throw new NotFoundException(`There is no active year`);
 
-    const numContra = `${classRoom.classroom.campusDetail.name.toUpperCase()} - ${classRoom.grade.level.name.toUpperCase()} - ${classRoom.grade.name.toUpperCase()} - ${classRoom.section} - ${student.family.nameFamily} - ${student.person.docNumber.slice(-2)}`;
+    const numContra = `${classRoom.classroom.campusDetail.name.toUpperCase()} - ${classRoom.grade.level.name.toUpperCase()} - ${classRoom.grade.name.toUpperCase()} - ${
+      classRoom.section
+    } - ${student.family.nameFamily} - ${student.person.docNumber.slice(-2)}`;
     const name = `${student.family.respEnrollment.name} ${student.family.respEnrollment.lastname} ${student.family.respEnrollment.mLastname} `;
     const typeDoc = student.family.respEnrollment.typeDoc;
     const docNumber = student.family.respEnrollment.docNumber;
@@ -665,7 +708,13 @@ export class PdfService {
 
     const level = enrollment.activityClassroom.grade.level.name.toUpperCase();
     const grade = enrollment.activityClassroom.grade.name.toUpperCase();
-    const endVacant = `${String(futureDate.getDate()).padStart(2, '0')}-${String(futureDate.getMonth() + 1).padStart(2, '0')}-${futureDate.getFullYear()}`;
+    const endVacant = `${String(futureDate.getDate()).padStart(
+      2,
+      '0',
+    )}-${String(futureDate.getMonth() + 1).padStart(
+      2,
+      '0',
+    )}-${futureDate.getFullYear()}`;
     //para calcular el precio por nivel
     return new Promise(async (resolve) => {
       const doc = new PDFDocument({
@@ -1324,6 +1373,523 @@ export class PdfService {
       });
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  /**
+   * Genera una carta de cobranza en PDF
+   */
+
+  async generarCartaCobranza(data: CartaCobranzaData): Promise<string> {
+    try {
+      const fileName = `CARTA_COBRANZA_${data.codigoDocumento}.pdf`;
+      const filePath = path.join(this.outputDir, fileName);
+
+      return new Promise(async (resolve, reject) => {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margins: { top: 72, bottom: 72, left: 72, right: 72 },
+        });
+
+        const stream = fs.createWriteStream(filePath);
+        doc.pipe(stream);
+
+        await this.crearContenidoCarta(doc, data);
+
+        doc.end();
+
+        stream.on('finish', () => {
+          this.logger.log(`PDF generado exitosamente: ${fileName}`);
+          resolve(filePath);
+        });
+
+        stream.on('error', (error) => {
+          this.logger.error(`Error al generar PDF: ${error.message}`);
+          reject(error);
+        });
+      });
+    } catch (error) {
+      this.logger.error(`Error en generarCartaCobranza: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Crea el contenido de la carta de cobranza
+   */
+  private async crearContenidoCarta(
+    doc: typeof PDFDocument,
+    data: CartaCobranzaData,
+  ) {
+    const url = this.configService.getOrThrow('AWS_URL_BUCKET');
+    const firmaDirectorURL = `${url}recursos/firma-director.png`;
+    const fondoURL = `${url}recursos/fondo-documento-ae.jpg`;
+
+    const firmaDirectorBuff = await this.fetchImage(firmaDirectorURL);
+    const fondo = await this.fetchImage(fondoURL);
+    const fechaFormateada = format(data.fecha, "d 'de' MMMM 'de' yyyy", {
+      locale: es,
+    });
+    const montoFormateado = `S/.${data.montoDeuda.toFixed(2)}`;
+
+    // Encabezado - Año temático
+    doc.image(fondo, 0, 0, { width: 580, height: 840 });
+    doc.moveDown(3);
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .text('"Año de la Recuperación y Consolidación de la Economía Peruana"', {
+        align: 'center',
+      });
+
+    doc.moveDown(1);
+
+    // Fecha y lugar
+    doc
+      .fontSize(11)
+      .font('Helvetica')
+      .text(`Huaraz, ${fechaFormateada}.`, { align: 'left' });
+
+    doc.moveDown(1.5);
+
+    // Título
+    doc
+      .fontSize(14)
+      .font('Helvetica-Bold')
+      .text('CARTA DE COBRANZA', { align: 'center' });
+
+    doc.moveDown(1.5);
+
+    // Destinatario
+    doc
+      .fontSize(11)
+      .font('Helvetica-Bold')
+      .text(`Señor(a): ${data.apoderado.toUpperCase()}`, { align: 'left' });
+    doc.moveDown(0.5);
+    doc
+      .font('Helvetica')
+      .text(`${data.estudiante.toUpperCase()} - ${data.grado.toUpperCase()}.`, {
+        align: 'left',
+      });
+
+    doc.moveDown(0.5);
+
+    doc.text('Presente. –', { align: 'left' });
+
+    doc.moveDown(1);
+
+    // Asunto
+    doc
+      .font('Helvetica-Bold')
+      .text('Asunto: ', { continued: true })
+      .font('Helvetica')
+      .text(
+        'Carta de Cobranza - Pensión de Enseñanza 2025 pendientes de pago al 31/10/2025.',
+      );
+
+    doc.moveDown(1);
+
+    // Cuerpo del documento
+    const parrafos = [
+      `Me dirijo a usted, en mi calidad de Director del Colegio ALBERT EINSTEIN de la ciudad de Huaraz, en virtud a la deuda que su persona mantiene vigente con nuestra Institución Educativa, los cuales corresponden a los servicios educativos prestados en favor de su menor hijo/a, deuda que asciende a ${montoFormateado}, monto que se detalla en el anexo adjunto al presente documento.`,
+
+      'Sobre el particular, nuestra área de cobranzas nos ha informado que, pese a las comunicaciones realizadas con su persona, no se ha podido concretar el correspondiente pago, circunstancia que perjudica económicamente a nuestra Institución e indirectamente, al servicio educativo brindado.',
+
+      'Cabe precisar que todos los cobros que nuestro Colegio realiza, se encuentran justificados en los servicios educativos que se brindan, siendo que dichos montos son publicados y puestos en conocimiento de todos los padres y madres de familia, así como de los apoderados, de manera previa al proceso de matrícula, quienes manifiestan su conformidad al momento de la matrícula y suscriben el correspondiente compromiso de pago mediante la suscripción del contrato de servicios educativos.',
+
+      'Por otro lado, la falta de pago de los montos adeudados hasta la fecha, impide que el Colegio cumpla con diversos compromisos suscritos con nuestros Docentes y personal administrativo, poniendo en riesgo la continuidad del servicio educativo brindado, así como los intereses de nuestros educandos.',
+
+      'En tal sentido, se le apercibe mediante la presente carta, a realizar el pago de la totalidad del monto adeudado hasta la fecha, a través de cualquiera de los siguientes canales de pago:',
+    ];
+
+    doc.font('Helvetica').fontSize(11);
+
+    parrafos.forEach((parrafo) => {
+      doc.text(parrafo, { align: 'justify' });
+      doc.moveDown(0.8);
+    });
+
+    // Canales de pago
+    const canalesPago = [
+      'Agente BBVA Banco Continental',
+      'Agente BCP Banco de Crédito del Perú',
+      'Oficinas del Colegio – Jr. Huaylas N° 245 – Independencia (atención: de lunes a viernes de 7.30am a 2.00pm y 4.00pm a 6.30pm sábados de 8.00am a 11.00am)',
+    ];
+
+    doc.moveDown(0.5);
+    canalesPago.forEach((canal) => {
+      doc.text(`• ${canal}`, { indent: 20 });
+      doc.moveDown(0.3);
+    });
+    doc.addPage();
+    // doc.moveDown(0.8);
+
+    doc.image(fondo, 0, 0, { width: 565, height: 840 });
+
+    doc.moveDown(5);
+    doc
+      .text(
+        'Asimismo, se precisa que, sobre el envío de la Carta de Cobranza, solicitamos el pago de las pensiones vencidas dentro de las 24 horas. En caso de no concretar el pago en su totalidad, el Colegio informa a Ud. y familia, la posible ',
+        { continued: true, align: 'justify' },
+      )
+      .font('Helvetica-Bold')
+      .text(
+        'PERDIDA DE VACANTE DE SU MENOR HIJO(A) PARA EL AÑO ACADÉMICO 2026.',
+        { continued: false },
+      );
+
+    doc.moveDown(0.8);
+
+    doc
+      .font('Helvetica')
+      .text(
+        'Cabe añadir que las acciones antes descritas, no enervan el derecho del Colegio de solicitar la inscripción de su persona en las centrales de riesgo crediticio, así como de interponer las acciones civiles ante la vía Judicial, con la finalidad de efectivizar coactivamente el pago de los montos adeudados, sumando a dichos montos los intereses legales correspondientes, costos y costas del proceso, así como del pago de indemnizaciones por los perjuicios causados.',
+        { align: 'justify' },
+      );
+
+    doc.moveDown(0.8);
+
+    doc.text('Es todo cuanto se comunica, para los fines correspondientes.', {
+      align: 'justify',
+    });
+
+    doc.moveDown(1);
+
+    doc.text('Atentamente,', { align: 'left' });
+
+    doc.moveDown(3);
+
+    // // Firma
+    // doc
+    //   .fontSize(10)
+    //   .text('_______________________________', { align: 'center' });
+    // doc.text('Director', { align: 'center' });
+    // doc.text('Colegio ALBERT EINSTEIN', { align: 'center' });
+
+    doc.image(firmaDirectorBuff, 200, 330, { width: 200, height: 80 });
+    // Nueva página para el anexo
+    doc.addPage();
+    doc.image(fondo, 0, 0, { width: 565, height: 840 });
+    doc.moveDown(5);
+    // Anexo
+    doc
+      .fontSize(12)
+      .font('Helvetica-Bold')
+      .text('ANEXO - DETALLE DE DEUDA', { align: 'center' });
+
+    doc.moveDown(1.5);
+
+    doc
+      .fontSize(11)
+      .font('Helvetica-Bold')
+      .text('Titular de la deuda: ', { continued: true })
+      .font('Helvetica')
+      .text(data.apoderado.toUpperCase());
+
+    doc.moveDown(0.5);
+
+    doc
+      .font('Helvetica-Bold')
+      .text('Estudiante: ', { continued: true })
+      .font('Helvetica')
+      .text(`${data.estudiante.toUpperCase()} - ${data.grado.toUpperCase()}`);
+
+    doc.moveDown(0.5);
+
+    doc
+      .font('Helvetica-Bold')
+      .text('Monto total de la deuda: ', { continued: true })
+      .font('Helvetica')
+      .text(montoFormateado);
+
+    doc.moveDown(1);
+
+    doc.font('Helvetica-Bold').text('Detalle de la deuda:');
+
+    doc.moveDown(0.5);
+
+    // Si hay detalle personalizado, usarlo; sino, un detalle genérico
+    if (data.detalleDeuda) {
+      data.debts.forEach((debt) => {
+        doc
+          .font('Helvetica-Bold')
+          .text(`Mes: ${debt.description}`) // Sin "continued"
+          .font('Helvetica')
+          .text(`  Vencimiento: ${debt.dateEnd}`) // Agrega indentación
+          .text(`  Total: S/ ${debt.total.toFixed(2)}`) // Formato de moneda
+          .moveDown(1); // Espacio de 1 línea entre cada deuda
+      });
+      doc.moveDown(1);
+      doc
+        .font('Helvetica')
+        .text(
+          'Pensiones de enseñanza pendientes correspondientes al año académico 2025.',
+        );
+    } else {
+      doc
+        .font('Helvetica')
+        .text(
+          'Pensiones de enseñanza pendientes correspondientes al año académico 2025.',
+        );
+    }
+
+    doc.moveDown(1);
+
+    // Código de documento al pie
+    doc
+      .fontSize(8)
+      .font('Helvetica-Oblique')
+      .text(`Código de documento: ${data.codigoDocumento}`, { align: 'right' });
+  }
+
+  async generarCartaFinalBuffer(data: CartaCobranzaData): Promise<Buffer> {
+    try {
+      return new Promise(async (resolve, reject) => {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margins: { top: 72, bottom: 72, left: 72, right: 72 },
+        });
+
+        const chunks: Buffer[] = [];
+
+        doc.on('data', (chunk) => chunks.push(chunk));
+
+        doc.on('end', async () => {
+          const pdfBuffer = Buffer.concat(chunks);
+          this.logger.log(
+            `Carta Final generada en memoria: ${data.codigoDocumento} (${pdfBuffer.length} bytes)`,
+          );
+          resolve(pdfBuffer);
+        });
+
+        doc.on('error', (error) => {
+          this.logger.error(`Error al generar Carta Final: ${error.message}`);
+          reject(error);
+        });
+
+        // Crear contenido de la carta final
+        await this.crearContenidoCartaFinal(doc, data);
+
+        doc.end();
+      });
+    } catch (error) {
+      this.logger.error(`Error en generarCartaFinalBuffer: ${error.message}`);
+      throw error;
+    }
+  }
+  private async crearContenidoCartaFinal(
+    doc: typeof PDFDocument,
+    data: CartaCobranzaData,
+  ) {
+    const url = this.configService.getOrThrow('AWS_URL_BUCKET');
+    const firmaDirectorURL = `${url}recursos/firma-director.png`;
+    const fondoURL = `${url}recursos/fondo-dos.jpg`;
+    const firmaDirectorBuff = await this.fetchImage(firmaDirectorURL);
+    const fondo = await this.fetchImage(fondoURL);
+    const fechaFormateada = format(data.fecha, "d 'de' MMMM 'de' yyyy", {
+      locale: es,
+    });
+
+    doc.image(fondo, 0, 0, { width: 580, height: 840 });
+    doc.moveDown(4);
+    doc
+      .fontSize(11)
+      .font('Helvetica-Bold')
+      .text(`CARTA N°${data.codigoDocumento}-DE-AE`, { align: 'left' });
+
+    doc.moveDown(1.5);
+
+    // Sección DE
+    doc
+      .fontSize(11)
+      .font('Helvetica-Bold')
+      .text('DE', { continued: true, indent: 0 })
+      .font('Helvetica')
+      .text('                         :  Jorge Pineda Fernández');
+
+    doc.moveDown(0.3);
+
+    doc
+      .font('Helvetica')
+      .text('Director del COLEGIO ALBERT EINSTEIN', { indent: 100 });
+
+    doc.moveDown(1);
+
+    // Sección PARA
+    doc
+      .font('Helvetica-Bold')
+      .text('PARA', { continued: true, indent: 0 })
+      .font('Helvetica')
+      .text(`                    :  ${data.apoderado.toUpperCase()}`);
+
+    doc.moveDown(0.3);
+
+    doc
+      .font('Helvetica')
+      .text(
+        `Madre/Padre de familia de ${data.estudiante.toUpperCase()} (${data.grado}) `,
+        {
+          indent: 100,
+        },
+      );
+
+    doc.moveDown(1);
+
+    // Sección ASUNTO
+    doc
+      .font('Helvetica-Bold')
+      .text('ASUNTO', { continued: true, indent: 0 })
+      .font('Helvetica')
+      .text(
+        '               :  Se comunica pérdida de vacante por incumplimiento de obligaciones.',
+      );
+
+    doc.moveDown(1);
+
+    // Sección REFERENCIA
+    doc
+      .font('Helvetica-Bold')
+      .text('REFERENCIA', { continued: true, indent: 0 })
+      .font('Helvetica')
+      .text(
+        `      : a) Contrato de Prestación de Servicios Educativos N° ${data.contract}`,
+      );
+
+    doc.moveDown(1);
+
+    // Sección FECHA
+    doc
+      .font('Helvetica-Bold')
+      .text('FECHA', { continued: true, indent: 0 })
+      .font('Helvetica')
+      .text(`                  :  Huaraz, ${fechaFormateada}`);
+
+    doc.moveDown(1);
+
+    // Línea separadora
+    doc
+      .moveTo(doc.x, doc.y)
+      .lineTo(doc.page.width - 72, doc.y)
+      .stroke();
+
+    doc.moveDown(1.5);
+
+    // Cuerpo del documento - Párrafo 1
+    doc
+      .fontSize(11)
+      .font('Helvetica')
+      .text(
+        `Me dirijo a usted en atención del documento de la referencia a), mediante el cual su persona se comprometió a cumplir con el pago de pensiones al Colegio, respecto de su menor hijo: ${data.estudiante.toUpperCase()}.`,
+        { align: 'justify' },
+      );
+
+    doc.moveDown(1);
+
+    // Cuerpo del documento - Párrafo 2
+    doc
+      .text(
+        `Sin embargo, tal como se comprueba mediante el documento de la referencia b), en virtud a la deuda que su persona mantiene con nuestra institución, en estricta aplicación del Reglamento Interno del Colegio Albert Einstein, debemos comunicar la `,
+        { continued: true, align: 'justify' },
+      )
+      .font('Helvetica-Bold')
+      .text('pérdida de vacante ', { continued: true })
+      .font('Helvetica')
+      .text(
+        `del menor ${data.estudiante.toUpperCase()}, para el periodo escolar 2026, toda vez que los incumplimientos antes señalados vienen afectando directamente la prestación del servicio educativo que brindamos a toda nuestra comunidad educativa.`,
+        { continued: false, align: 'justify' },
+      );
+
+    doc.moveDown(1);
+
+    // Cuerpo del documento - Párrafo 3
+    doc
+      .font('Helvetica')
+      .text(
+        `En base a lo mencionado, teniendo en cuenta que nos encontramos dentro del plazo de ley para comunicar la pérdida de vacante señalada en el párrafo anterior, se le exhorta a que su persona se apersone en el plazo más breve posible a las oficinas administrativas del Colegio, con la finalidad de cancelar el monto pendiente de la deuda que mantiene con nosotros y pueda retirar los documentos necesarios para realizar el traslado correspondiente de su menor hijo: ${data.estudiante.toUpperCase()}, a otra institución educativa.`,
+        { align: 'justify' },
+      );
+
+    doc.moveDown(1);
+
+    // Cierre
+    doc.text('Es todo cuanto se comunica para conocimiento y fines.', {
+      align: 'justify',
+    });
+
+    doc.moveDown(1.5);
+
+    doc.text('Atentamente,', { align: 'left' });
+
+    doc.moveDown(3);
+
+    // // Firma
+    // doc
+    //   .fontSize(10)
+    //   .text('_______________________________', { align: 'center' });
+    // doc.text('Jorge Pineda Fernández', { align: 'center' });
+    // doc.text('Director', { align: 'center' });
+    // doc.text('Colegio ALBERT EINSTEIN', { align: 'center' });
+    doc.image(firmaDirectorBuff, 200, 700, { width: 200, height: 80 });
+    // Código de documento al pie
+    doc.moveDown(0.5);
+    // doc
+    //   .fontSize(8)
+    //   .font('Helvetica-Oblique')
+    //   .text(`Código de documento: ${data.codigoDocumento}`, { align: 'right' });
+  }
+  /**
+   * Elimina un archivo PDF
+   */
+  async eliminarPdf(filePath: string): Promise<void> {
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`PDF eliminado: ${filePath}`);
+      }
+    } catch (error) {
+      console.error(`Error al eliminar PDF: ${error.message}`);
+    }
+  }
+
+  async generarCartaCobranzaBuffer(data: CartaCobranzaData): Promise<Buffer> {
+    try {
+      return new Promise(async (resolve, reject) => {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margins: { top: 72, bottom: 72, left: 72, right: 72 },
+        });
+
+        const chunks: Buffer[] = [];
+
+        // Recolectar los chunks del PDF en memoria
+        doc.on('data', (chunk) => chunks.push(chunk));
+
+        doc.on('end', async () => {
+          const pdfBuffer = Buffer.concat(chunks);
+          this.logger.log(
+            `PDF generado en memoria: ${data.codigoDocumento} (${pdfBuffer.length} bytes)`,
+          );
+          resolve(pdfBuffer);
+        });
+
+        doc.on('error', (error) => {
+          this.logger.error(
+            `Error al generar PDF en memoria: ${error.message}`,
+          );
+          reject(error);
+        });
+
+        // Crear contenido del PDF
+        await this.crearContenidoCarta(doc, data);
+
+        // Finalizar el documento
+        doc.end();
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error en generarCartaCobranzaBuffer: ${error.message}`,
+      );
+      throw error;
     }
   }
 }
