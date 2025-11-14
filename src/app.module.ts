@@ -111,7 +111,7 @@ import { CobranzaProcessor } from './treasury/treasury.processor';
         redis: {
           host: configService.get('REDIS_HOST', 'localhost'),
           port: configService.get('REDIS_PORT', 6379),
-          password: configService.get('REDIS_PASSWORD', undefined),
+          // password: configService.get('REDIS_PASSWORD', undefined),
         },
       }),
     }),

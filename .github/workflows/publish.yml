@@ -84,7 +84,6 @@ jobs:
             -e SLACK_WEBHOOK_TREASURY=${{ secrets.SLACK_WEBHOOK_TREASURY }} \
             -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
             -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
-            -e REDIS_PASSWORD='' \
             -e TZ=America/Lima \
             --restart always \
             ghcr.io/cali99-droid/appmatricula:latest
