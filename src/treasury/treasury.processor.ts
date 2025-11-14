@@ -13,6 +13,7 @@ import { SlackBlock } from 'src/common/slack/types/slack.types';
 import { PdfService } from 'src/docs/pdf.service';
 import { EmailsService } from 'src/emails/emails.service';
 import { TreasuryService } from './treasury.service';
+import { StudentService } from 'src/student/student.service';
 
 export interface CobranzaJobData {
   estudianteData: any;
@@ -41,6 +42,7 @@ export class CobranzaProcessor {
 
     private readonly slackService: SlackService,
     private readonly treasuryService: TreasuryService,
+    private readonly studentService: StudentService,
   ) {}
 
   /**
@@ -68,6 +70,7 @@ export class CobranzaProcessor {
         const debtsStudent = await this.treasuryService.searchDebtsByDate(
           student.studentId,
         );
+        //    const studentService = await this.studentService.updateBehavior(id, updateBehaviorDto)
         const resultado = await this.procesarEstudiante(
           student,
           enviarEmail,

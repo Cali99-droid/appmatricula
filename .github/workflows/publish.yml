@@ -45,6 +45,8 @@ jobs:
           docker pull ghcr.io/cali99-droid/appmatricula:latest
           docker run -d \
             --name appmatricula \
+            --network red-admin \
+            --name appmatricula \
             -p 4000:3000 \
             -v /home/ubuntu/matdocker/api_vol:/app/api-vol \
             -w /app \
