@@ -594,7 +594,7 @@ export class EmailsService {
     pdfBuffer: Buffer,
     codigoDocumento: string,
   ): Promise<boolean> {
-    const subject = '🚨 URGENTE - Pérdida de Vacante - Colegio Albert Einstein';
+    const subject = `Comunicado sobre vacante de ${nombreEstudiante}`;
 
     const html = this.crearHtmlCartaFinal(nombreApoderado, nombreEstudiante);
 
