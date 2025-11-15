@@ -45,6 +45,8 @@ jobs:
           docker pull ghcr.io/cali99-droid/appmatricula:latest
           docker run -d \
             --name appmatricula \
+            --network red-admin \
+            --name appmatricula \
             -p 4000:3000 \
             -v /home/ubuntu/matdocker/api_vol:/app/api-vol \
             -w /app \
@@ -80,7 +82,8 @@ jobs:
             -e NUBEFACT_TOKEN=${{ secrets.NUBEFACT_TOKEN }} \
             -e SLACK_WEBHOOK_GENERAL=${{ secrets.SLACK_WEBHOOK_GENERAL }} \
             -e SLACK_WEBHOOK_TREASURY=${{ secrets.SLACK_WEBHOOK_TREASURY }} \
-            -e API_KEY=${{ secrets.API_KEY }} \
+            -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
+            -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
             -e TZ=America/Lima \
             --restart always \
             ghcr.io/cali99-droid/appmatricula:latest

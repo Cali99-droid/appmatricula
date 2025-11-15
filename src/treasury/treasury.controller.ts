@@ -11,6 +11,8 @@ import {
   ParseIntPipe,
   Patch,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { TreasuryService } from './treasury.service';
 
@@ -221,6 +223,83 @@ export class TreasuryController {
     return this.treasuryService.getDebtorsReport(getDebtorsReport);
   }
 
+  @Get('generar-cartas')
+  @Public()
+  @ApiResponse({ status: 201, description: 'reporte de deudores' })
+  async generarCartasCobranza() {
+    console.log(`Solicitud de generación de cartas para estudiantes`);
+    const result = await this.treasuryService.generarCartasCobranzaAsync();
+    return {
+      success: true,
+      message: result.message,
+      jobId: result.jobId,
+      statusUrl: `/cobranza/status/${result.jobId}`,
+      polling: {
+        message: 'Consulta el estado del proceso periódicamente',
+        intervalSeconds: 5,
+      },
+    };
+  }
+
+  /**
+   * GET /cobranza/status/:jobId
+   * Consulta el estado de un job en progreso
+   */
+  @Get('status/:jobId')
+  @Public()
+  async consultarEstado(@Param('jobId') jobId: string) {
+    console.log(`Consultando estado del job: ${jobId}`);
+
+    const status = await this.treasuryService.consultarEstadoJob(jobId);
+
+    if (!status) {
+      return {
+        success: false,
+        message: 'Job no encontrado',
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        jobId: status.jobId,
+        status: status.status,
+        progress: status.progress,
+        totalEstudiantes: status.totalEstudiantes,
+        createdAt: status.createdAt,
+        message: this.getStatusMessage(status.status, status.progress),
+      },
+    };
+  }
+
+  private getStatusMessage(status: string, progress: number): string {
+    switch (status) {
+      case 'waiting':
+        return 'El proceso está en cola, esperando para comenzar';
+      case 'active':
+        return `Procesando... ${progress}% completado`;
+      case 'completed':
+        return 'Proceso completado exitosamente. Consulta /resultado/:jobId para ver los detalles';
+      case 'failed':
+        return 'El proceso falló. Revisa los logs o intenta nuevamente';
+      default:
+        return 'Estado desconocido';
+    }
+  }
+
+  @Post('cola/limpiar')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async limpiarCola() {
+    console.log('Limpiando jobs antiguos de la cola');
+
+    await this.treasuryService.limpiarJobsAntiguos();
+
+    return {
+      success: true,
+      message: 'Jobs antiguos limpiados exitosamente',
+    };
+  }
   // @Get('migrate')
   // @ApiResponse({ status: 201, description: 'datos de boletas' })
   // migrateToNubeFact() {

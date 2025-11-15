@@ -14,7 +14,7 @@ import axios from 'axios';
 import { Payment } from './entities/payment.entity';
 import { Bill } from './entities/bill.entity';
 import { Correlative } from './entities/correlative.entity';
-
+import { v4 as uuidv4 } from 'uuid';
 import { Status } from 'src/enrollment/enum/status.enum';
 import { CreatePaidDto } from './dto/create-paid.dto';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
@@ -47,6 +47,10 @@ import { PersonService } from 'src/person/person.service';
 import { ProcessingStatusInterface } from './interfaces/ProcessingStatus.interface';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
 import { GetDebtorsReport } from './dto/get-debtors-report.dto';
+import { PdfService } from 'src/docs/pdf.service';
+import { EmailsService } from 'src/emails/emails.service';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 // import { PDFDocument, rgb } from 'pdf-lib';
 // import { Response } from 'express';
 // Interfaz para mayor claridad en los tipos de datos
@@ -94,6 +98,10 @@ export class TreasuryService {
 
     private readonly personService: PersonService,
     private readonly slackService: SlackService,
+    private pdfService: PdfService,
+    private readonly emailService: EmailsService,
+
+    @InjectQueue('cobranza') private cobranzaQueue: Queue,
   ) {}
 
   async createPaid(
@@ -1321,7 +1329,24 @@ export class TreasuryService {
 
   /**GET DEBTORS REPORT  */
   async getDebtorsReport(getDebtorsReport: GetDebtorsReport) {
-    const { activityClassroomId, levelId } = getDebtorsReport;
+    const { activityClassroomId, levelId, month } = getDebtorsReport;
+
+    const monthOrderMap = new Map([
+      ['ENERO', 1],
+      ['FEBRERO', 2],
+      ['MARZO', 3],
+      ['ABRIL', 4],
+      ['MAYO', 5],
+      ['JUNIO', 6],
+      ['JULIO', 7],
+      ['AGOSTO', 8],
+      ['SEPTIEMBRE', 9],
+      ['OCTUBRE', 10],
+      ['NOVIEMBRE', 11],
+      ['DICIEMBRE', 12],
+    ]);
+    // ---- FIN MODIFICACIÓN 1 ----
+
     try {
       const qbDebts = this.debtRepository.createQueryBuilder('debt');
       qbDebts
@@ -1334,18 +1359,15 @@ export class TreasuryService {
         .leftJoinAndSelect(
           'student.enrollment',
           'enrollment',
-          'enrollment.isActive = :isActive', // Usa parámetros para seguridad
+          'enrollment.isActive = :isActive',
           { isActive: true },
         )
         .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
         .leftJoinAndSelect('activityClassroom.grade', 'grade')
         .leftJoinAndSelect('grade.level', 'level')
         .leftJoinAndSelect('debt.concept', 'concept')
-        // .where('debt.status = false')
         .andWhere('concept.id = :conceptId', { conceptId: 2 })
-
-        // .take(50)
-        .orderBy('debt.id', 'DESC');
+        .orderBy('debt.id', 'ASC');
 
       if (activityClassroomId) {
         qbDebts.andWhere('activityClassroom.id= :activityClassroomId', {
@@ -1361,6 +1383,13 @@ export class TreasuryService {
 
       const debts = await qbDebts.getMany();
 
+      // ---- INICIO MODIFICACIÓN 2: Obtener el índice del mes tope ----
+      // Si 'month' no es nulo, obtenemos su valor numérico. Si es nulo, targetMonthIndex será null.
+      const targetMonthIndex = month
+        ? monthOrderMap.get(month.toUpperCase())
+        : null;
+      // ---- FIN MODIFICACIÓN 2 ----
+
       // Objeto para almacenar los totales por mes.
       const monthlyTotals = {};
 
@@ -1370,8 +1399,27 @@ export class TreasuryService {
         const { respEnrollment } = family;
         const studentDNI = person.docNumber;
 
+        // ---- INICIO MODIFICACIÓN 3: Lógica de filtrado por mes ----
+        const monthDescription = debt.description.toUpperCase();
+        const currentMonthIndex = monthOrderMap.get(monthDescription);
+
+        // Verificamos si debemos procesar esta deuda:
+        // 1. Si no se pasó un 'month' (targetMonthIndex es null), SÍ procesamos.
+        // 2. Si se pasó un 'month', SÍ procesamos SOLO SI el mes de la deuda
+        //    es válido (currentMonthIndex no es undefined) Y es <= al mes tope.
+        const shouldProcessMonth =
+          !targetMonthIndex ||
+          (currentMonthIndex && currentMonthIndex <= targetMonthIndex);
+
+        // Si no debemos procesar este mes, simplemente retornamos el acumulador
+        // sin agregar esta deuda.
+        if (!shouldProcessMonth) {
+          return acc;
+        }
+        // ---- FIN MODIFICACIÓN 3 ----
+
         // ---- Cálculo de totales por mes ----
-        const monthDescription = debt.description.toUpperCase(); // Estandarizamos a mayúsculas.
+        // (Esta lógica ahora solo se ejecuta para los meses filtrados)
         if (!monthlyTotals[monthDescription]) {
           monthlyTotals[monthDescription] = 0;
         }
@@ -1395,7 +1443,6 @@ export class TreasuryService {
             email: respEnrollment.user.email,
             classroom: `${enrollmentActual.activityClassroom.grade.name} - ${enrollmentActual.activityClassroom.section}`,
             debts: [],
-            // Añadimos el total para este estudiante
             totalDebt: 0,
           };
         }
@@ -1423,11 +1470,11 @@ export class TreasuryService {
       }, {});
 
       const studentDebts = Object.values(groupedByStudent);
-
+      console.log(studentDebts.length);
       // Devolvemos un objeto con toda la información.
       return {
-        studentDebts, // La lista de estudiantes con sus deudas detalladas y su total.
-        monthlyTotals, // El resumen de totales por cada mes.
+        studentDebts, // Lista de estudiantes con deudas (solo hasta el mes filtrado)
+        monthlyTotals, // Resumen de totales (solo hasta el mes filtrado)
       };
     } catch (error) {
       handleDBExceptions(error, this.logger);
@@ -2234,6 +2281,38 @@ export class TreasuryService {
     return discountUpdated;
   }
 
+  async generateDebt(concept: Concept, studentId: number, code: string) {
+    try {
+      // const concept = await this.conceptRepository.findOne({
+      //   where: { id: conceptId },
+      // });
+      const debt: Debt = this.debtRepository.create({
+        dateEnd: new Date(),
+        total: concept.total,
+        status: false,
+        studentId: studentId,
+        concept: concept,
+        description: concept.description,
+        code: code,
+      });
+
+      return await this.debtRepository.save(debt);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async getConcept(conceptId: number) {
+    try {
+      const concept = await this.conceptRepository.findOne({
+        where: { id: conceptId },
+      });
+      return concept;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
   async generatePdf() {
     const width = 7;
     const height = 25;
@@ -2444,4 +2523,213 @@ export class TreasuryService {
     const pdfArray = doc.output('arraybuffer');
     return Buffer.from(pdfArray);
   }
+
+  async generarCartasCobranza(): Promise<any> {
+    const data = await this.debtRepository.query(
+      `SELECT d.id, st.code, concat(per.lastname, ' ', per.mLastname, ' ', per.name) student,CONCAT( g.name, ' ',ac.section, ' ', l.name) grade,
+      concat(p.lastname, ' ', p.mLastname, ' ', p.name) parent, us.email, 
+      (select CAST(sum(total) AS DECIMAL(10, 2)) from debt where studentId=st.id and conceptId=2 and description!='NOVIEMBRE' and description!='DICIEMBRE' ) total FROM debt d
+      inner join student st on st.id=d.studentId
+      inner join person per on per.id = st.personId
+      inner join family f on f.id=st.familyId
+      inner join person p on p.id=f.respEnrollment
+      inner join enrollment en on en.studentId =st.id
+      inner join activity_classroom ac on ac.id=en.activityClassroomId
+      inner join grade g on g.id=ac.gradeId
+      inner join level l on l.id=g.levelId
+      inner join user us on us.personId = p.id
+      where d.status=0 and isCanceled=0 and ( description="ABRIL" ) and conceptId=2 and en.status="registered"
+      order by student asc limit 5;`,
+    );
+
+    this.logger.log(`Iniciando generación  cartas de cobranza`);
+
+    const resultados: any[] = [];
+
+    for (const estudiante of data) {
+      try {
+        const resultado = await this.generarCartaIndividual(estudiante, true);
+        resultados.push(resultado);
+      } catch (error) {
+        this.logger.error(
+          `Error al procesar estudiante ${estudiante}: ${error.message}`,
+        );
+        resultados.push({
+          estudiante,
+          nombreEstudiante: 'Desconocido',
+          nombreApoderado: 'Desconocido',
+          pdfPath: '',
+          codigoDocumento: '',
+          emailEnviado: false,
+          error: error.message,
+        });
+      }
+    }
+
+    this.logger.log(
+      `Proceso completado: ${resultados.length} cartas procesadas`,
+    );
+    return resultados;
+  }
+  private async generarCartaIndividual(
+    studentData: any,
+    enviarEmail: boolean,
+  ): Promise<any> {
+    // Obtener datos del estudiante
+
+    // Generar código único para el documento
+    const codigoDocumento = this.generarCodigoDocumento(studentData.code);
+
+    // Preparar datos para el PDF
+    const dataPdf = {
+      fecha: new Date(),
+      apoderado: studentData.parent,
+      estudiante: studentData.student,
+      grado: studentData.grade,
+      montoDeuda: Number(studentData.total),
+      detalleDeuda: 'Monto total adeudado hasta la fecha ',
+      codigoDocumento,
+      debts: [],
+      contract: studentData.contract,
+    };
+
+    // Generar PDF
+    const pdfPath = await this.pdfService.generarCartaCobranza(dataPdf);
+
+    // Enviar email si se solicita
+    let emailEnviado = false;
+    if (enviarEmail && studentData.email) {
+      emailEnviado = await this.emailService.enviarCartaCobranza(
+        studentData.email,
+        studentData.parent,
+        studentData.student,
+        Number(studentData.total),
+        pdfPath,
+      );
+    }
+
+    return {
+      estudianteId: studentData.id,
+      nombreEstudiante: studentData.student,
+      nombreApoderado: studentData.parent,
+      pdfPath,
+      codigoDocumento,
+      emailEnviado,
+    };
+  }
+
+  /**HELPERS */
+
+  private generarCodigoDocumento(estudianteId: string): string {
+    const fecha = new Date();
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const day = String(fecha.getDate()).padStart(2, '0');
+    const shortUuid = uuidv4().split('-')[0].toUpperCase();
+
+    return `COBR-${year}${month}${day}-${estudianteId}`;
+  }
+
+  async generarCartasCobranzaAsync(): Promise<{
+    jobId: string;
+    message: string;
+  }> {
+    const jobId = uuidv4();
+
+    const data = await this.debtRepository.query(
+      `SELECT d.id,st.id studentId, st.code, concat(per.lastname, ' ', per.mLastname, ' ', per.name) student,CONCAT( g.name, ' ',ac.section, ' ', l.name) grade,
+      concat(p.lastname, ' ', p.mLastname, ' ', p.name) parent, us.email, 
+      (select CAST(sum(total) AS DECIMAL(10, 2)) from debt where studentId=st.id and conceptId=2 and description!='NOVIEMBRE' and description!='DICIEMBRE' ) total
+      , upper(concat(cd.name,'-',l.name,'-',g.name,'-',ac.section,'-',f.nameFamily,'-',  SUBSTRING(per.docNumber, -2),'-','2025')) contract
+      FROM debt d
+      inner join student st on st.id=d.studentId
+      inner join person per on per.id = st.personId
+      inner join family f on f.id=st.familyId
+      inner join person p on p.id=f.respEnrollment
+      inner join enrollment en on en.studentId =st.id
+      inner join activity_classroom ac on ac.id=en.activityClassroomId
+      inner join classroom cl on cl.id=ac.classroomId
+      inner join campus_detail cd on cd.id=cl.campusDetailId
+      inner join grade g on g.id=ac.gradeId
+      inner join level l on l.id=g.levelId
+      inner join user us on us.personId = p.id
+      where d.status=0 and isCanceled=0 and ( description="ABRIL" ) and conceptId=2 and en.status="registered"
+      order by student asc;`,
+    );
+
+    // Agregar job a la cola
+    const job = await this.cobranzaQueue.add(
+      'generar-cartas',
+      {
+        estudianteData: data,
+        enviarEmail: true,
+        jobId,
+      },
+      {
+        attempts: 3, // Reintentar hasta 3 veces si falla
+        backoff: {
+          type: 'exponential',
+          delay: 5000, // Esperar 5s, 10s, 20s entre reintentos
+        },
+        removeOnComplete: false, // Mantener jobs completados para consulta
+        removeOnFail: false, // Mantener jobs fallidos para análisis
+      },
+    );
+
+    // Notificar a Slack que el proceso comenzó
+    await this.slackService.enviarInicioProcesoCobranza(
+      data.length,
+      jobId,
+      SlackChannel.TREASURY,
+    );
+
+    return {
+      jobId,
+      message: `Proceso de cobranza iniciado. Job ID: ${jobId}. Se procesarán ${data.length} estudiantes en segundo plano.`,
+    };
+  }
+
+  async consultarEstadoJob(jobId: string): Promise<any | null> {
+    try {
+      const jobs = await this.cobranzaQueue.getJobs([
+        'waiting',
+        'active',
+        'completed',
+        'failed',
+      ]);
+
+      const job = jobs.find((j) => j.data.jobId === jobId);
+
+      if (!job) {
+        return null;
+      }
+
+      const state = await job.getState();
+      const progress = job.progress();
+
+      return {
+        jobId,
+        status: state as any,
+        progress: typeof progress === 'number' ? progress : 0,
+        totalEstudiantes: job.data.estudianteData.length,
+        createdAt: new Date(job.timestamp),
+      };
+    } catch (error) {
+      this.logger.error(`Error al consultar job ${jobId}: ${error.message}`);
+      return null;
+    }
+  }
+
+  async limpiarJobsAntiguos(): Promise<void> {
+    try {
+      await this.cobranzaQueue.clean(7 * 24 * 60 * 60 * 1000, 'completed'); // 7 días
+      await this.cobranzaQueue.clean(30 * 24 * 60 * 60 * 1000, 'failed'); // 30 días
+      this.logger.log('Jobs antiguos limpiados');
+    } catch (error) {
+      this.logger.error(`Error al limpiar jobs: ${error.message}`);
+    }
+  }
+
+  private getDE;
 }
+

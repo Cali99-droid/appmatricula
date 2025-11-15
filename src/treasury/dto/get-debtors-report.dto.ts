@@ -18,4 +18,11 @@ export class GetDebtorsReport {
   @IsOptional()
   @ExistId({ tableName: 'level' })
   levelId: number;
+
+  @ApiProperty({
+    description: 'month name',
+    nullable: true,
+  })
+  @IsOptional()
+  month: string;
 }

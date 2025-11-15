@@ -41,6 +41,18 @@ interface EmailEventPayload {
     recipients: string[];
   };
 }
+export interface EmailOptions {
+  to: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  attachments?: Array<{
+    filename: string;
+    content?: Buffer; // NUEVO: Soporte para Buffer
+    path?: string; // Mantener soporte para archivos
+  }>;
+}
+
 @Injectable()
 export class EmailsService {
   private readonly logger = new Logger('EmailsService');
@@ -486,6 +498,119 @@ export class EmailsService {
     }
   }
 
+  /**
+   * Envía un email
+   */
+  async enviarEmail(options: EmailOptions): Promise<boolean> {
+    try {
+      const mailOptions = {
+        from: `"Colegio AE" <${this.configService.getOrThrow<string>('AWS_SES_FROM')}>`,
+        to:
+          this.env === 'prod'
+            ? options.to //options.to
+            : 'carlos.orellano@ae.edu.pe',
+        subject: options.subject,
+        cc: 'informes@mail.colegioae.com',
+        text: options.text,
+        html: options.html,
+        attachments: options.attachments,
+        replyTo: 'soporte@colegioae.freshdesk.com',
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      this.logger.log(
+        `Email enviado exitosamente a ${options.to}: ${info.messageId}`,
+      );
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `Error al enviar email a ${options.to}: ${error.message}`,
+      );
+      return false;
+    }
+  }
+  async enviarCartaCobranza(
+    emailDestino: string,
+    nombreApoderado: string,
+    nombreEstudiante: string,
+    montoDeuda: number,
+    pdfPath: string,
+  ): Promise<boolean> {
+    const subject = 'Carta de Cobranza - Colegio Albert Einstein';
+
+    const html = this.crearHtmlCartaCobranza(
+      nombreApoderado,
+      nombreEstudiante,
+      montoDeuda,
+    );
+
+    return this.enviarEmail({
+      to: emailDestino,
+      subject,
+      html,
+      attachments: [
+        {
+          filename: `Carta_Cobranza_${nombreEstudiante.replace(/\s+/g, '_')}.pdf`,
+          path: pdfPath,
+        },
+      ],
+    });
+  }
+
+  async enviarCartaCobranzaConBuffer(
+    emailDestino: string,
+    nombreApoderado: string,
+    nombreEstudiante: string,
+    montoDeuda: number,
+    pdfBuffer: Buffer,
+    codigoDocumento: string,
+  ): Promise<boolean> {
+    const subject = 'Carta de Cobranza - Colegio Albert Einstein';
+
+    const html = this.crearHtmlCartaCobranza(
+      nombreApoderado,
+      nombreEstudiante,
+      montoDeuda,
+    );
+
+    return this.enviarEmail({
+      to: emailDestino,
+      subject,
+      html,
+      attachments: [
+        {
+          filename: `Carta_Cobranza_${codigoDocumento}.pdf`,
+          content: pdfBuffer, // Enviar el Buffer directamente
+        },
+      ],
+    });
+  }
+
+  async enviarCartaFinalConBuffer(
+    emailDestino: string,
+    nombreApoderado: string,
+    nombreEstudiante: string,
+
+    pdfBuffer: Buffer,
+    codigoDocumento: string,
+  ): Promise<boolean> {
+    const subject = `Comunicado sobre vacante de ${nombreEstudiante}`;
+
+    const html = this.crearHtmlCartaFinal(nombreApoderado, nombreEstudiante);
+
+    return this.enviarEmail({
+      to: emailDestino,
+      subject,
+      html,
+      attachments: [
+        {
+          filename: `Carta_Perdida_Vacante_${codigoDocumento}.pdf`,
+          content: pdfBuffer,
+        },
+      ],
+    });
+  }
+
   private async saveEmailEvent(
     email: string,
     eventType: 'Bounce' | 'Complaint' | 'Delivery',
@@ -567,5 +692,275 @@ export class EmailsService {
         this.saveEmailEvent(recipient, 'Delivery'),
       ),
     );
+  }
+
+  /**
+   * Crea el contenido HTML para el email de cobranza
+   */
+  private crearHtmlCartaCobranza(
+    nombreApoderado: string,
+    nombreEstudiante: string,
+    montoDeuda: number,
+  ): string {
+    return `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .header {
+            background-color: #003366;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+          }
+          .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+          }
+          .highlight {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+          }
+          .footer {
+            background-color: #003366;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 0 0 5px 5px;
+            font-size: 12px;
+          }
+          .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+          }
+          .amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d9534f;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Colegio Albert Einstein</h1>
+          <p>Comunicación Importante</p>
+        </div>
+        
+        <div class="content">
+          <p>Estimado(a) <strong>${nombreApoderado}</strong>,</p>
+          
+          <p>Reciba un cordial saludo de parte de la Dirección del Colegio Albert Einstein.</p>
+          
+          <p>Le escribimos para informarle sobre una situación importante relacionada con las pensiones de enseñanza correspondientes al estudiante <strong>${nombreEstudiante}</strong>.</p>
+          
+          <div class="highlight">
+            <p><strong>Monto pendiente de pago:</strong></p>
+            <p class="amount">S/. ${montoDeuda.toFixed(2)}</p>
+          </div>
+          
+          <p>Adjunto a este correo encontrará la <strong>Carta de Cobranza oficial</strong> con todos los detalles sobre:</p>
+          <ul>
+            <li>El monto exacto de la deuda</li>
+            <li>Los canales de pago disponibles</li>
+            <li>Los plazos para regularizar su situación</li>
+            <li>Las consecuencias del impago</li>
+          </ul>
+          
+          <p><strong>Canales de pago disponibles:</strong></p>
+          <ul>
+            <li>Agente BBVA Banco Continental</li>
+            <li>Agente BCP Banco de Crédito del Perú</li>
+            <li>Oficinas del Colegio: Jr. Huaylas N° 245 – Independencia</li>
+          </ul>
+          
+          <div class="highlight">
+            <p><strong>⚠️ IMPORTANTE:</strong> Le solicitamos regularizar el pago dentro de las próximas <strong>24 horas</strong> para evitar inconvenientes con la matrícula del próximo año académico.</p>
+          </div>
+          
+          <p>Para cualquier consulta o coordinación de pago, no dude en comunicarse con nosotros:</p>
+          <ul>
+            <li>📞 Teléfono: [Número de contacto]</li>
+            <li>📧 Email: [Email del colegio]</li>
+            <li>🕐 Horario: Lunes a viernes de 7:30am a 6:30pm</li>
+          </ul>
+          
+          <p>Agradecemos su pronta atención a la presente comunicación.</p>
+          
+          <p>Atentamente,</p>
+          <p><strong>Dirección<br>Colegio Albert Einstein</strong></p>
+        </div>
+        
+        <div class="footer">
+          <p>Este es un correo automático, por favor no responder a esta dirección.</p>
+          <p>Colegio Albert Einstein - Jr. Huaylas N° 245 – Independencia, Huaraz</p>
+          <p>&copy; ${new Date().getFullYear()} Todos los derechos reservados</p>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private crearHtmlCartaFinal(
+    nombreApoderado: string,
+    nombreEstudiante: string,
+  ): string {
+    return `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+          }
+          .header {
+            background-color: #d32f2f;
+            color: white;
+            padding: 25px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+          }
+          .header h1 {
+            margin: 0;
+            font-size: 24px;
+          }
+          .alert-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+          }
+          .content {
+            background-color: white;
+            padding: 30px;
+            border-left: 5px solid #d32f2f;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+          }
+          .urgent-box {
+            background-color: #ffebee;
+            padding: 20px;
+            border-left: 4px solid #d32f2f;
+            margin: 25px 0;
+            border-radius: 4px;
+          }
+          .urgent-box h3 {
+            color: #d32f2f;
+            margin-top: 0;
+            font-size: 18px;
+          }
+          .info-box {
+            background-color: #fff3e0;
+            padding: 15px;
+            border-left: 4px solid #ff9800;
+            margin: 20px 0;
+          }
+          .footer {
+            background-color: #d32f2f;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 0 0 5px 5px;
+            font-size: 12px;
+          }
+          .student-info {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+          }
+          .contact-info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+          }
+          .important-text {
+            color: #d32f2f;
+            font-weight: bold;
+          }
+          ul {
+            padding-left: 20px;
+          }
+          li {
+            margin: 10px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="alert-icon">⚠️</div>
+          <h1>Comunicación Urgente</h1>
+          <p style="margin: 0;">Colegio Albert Einstein</p>
+        </div>
+        
+        <div class="content">
+          <p>Estimado(a) <strong>${nombreApoderado}</strong>,</p>
+          
+          <div class="urgent-box">
+            <h3>🚨 PÉRDIDA DE VACANTE COMUNICADA</h3>
+            <p>Lamentamos informarle que debido al <strong>incumplimiento en el pago de las pensiones escolares</strong>, hemos procedido a comunicar la <span class="important-text">pérdida de vacante</span> para el estudiante:</p>
+          </div>
+
+          <div class="student-info">
+            <p style="margin: 5px 0;"><strong>Estudiante:</strong> ${nombreEstudiante}</p>
+          
+            <p style="margin: 5px 0;"><strong>Periodo afectado:</strong> Año Académico 2026</p>
+          </div>
+
+          <p>Esta medida se toma en <strong>estricta aplicación del Reglamento Interno</strong> del Colegio Albert Einstein, toda vez que los incumplimientos vienen afectando directamente la prestación del servicio educativo que brindamos a toda nuestra comunidad.</p>
+
+          <div class="info-box">
+            <p><strong>📄 Documento adjunto:</strong></p>
+            <p>Encontrará adjunta la carta oficial de comunicación de pérdida de vacante.</p>
+          </div>
+
+        
+
+          <div class="contact-info">
+            <h4 style="margin-top: 0; color: #1976d2;">📍 Información de Contacto:</h4>
+            <p style="margin: 5px 0;"><strong>Dirección:</strong> Jr. Huaylas N° 245 – Independencia, Huaraz</p>
+            <p style="margin: 5px 0;"><strong>Horario:</strong> Lunes a viernes de 7:30am a 6:30pm</p>
+            <p style="margin: 5px 0;"><strong>Sábados:</strong> 8:00am a 11:00am</p>
+            <p style="margin: 5px 0;"><strong>Teléfono:</strong> 943 861 219</p>
+          </div>
+
+          <p style="margin-top: 25px;">Lamentamos profundamente haber llegado a esta situación. Quedamos a su disposición para cualquier consulta o aclaración que requiera.</p>
+
+          <p style="margin-top: 20px;">Atentamente,</p>
+          <p style="margin-top: 5px;"><strong>Jorge Pineda Fernández<br>Director<br>Colegio Albert Einstein</strong></p>
+        </div>
+        
+        <div class="footer">
+          <p style="margin: 5px 0;">⚠️ Este es un documento oficial y requiere su atención inmediata</p>
+          <p style="margin: 5px 0;">Colegio Albert Einstein - Jr. Huaylas N° 245 – Independencia, Huaraz</p>
+          <p style="margin: 5px 0;">&copy; ${new Date().getFullYear()} Todos los derechos reservados</p>
+        </div>
+      </body>
+      </html>
+    `;
   }
 }

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { SlackChannel } from './slack.constants';
+import { SlackBlock } from './types/slack.types';
 
 // 1. Tipos para mayor claridad y autocompletado.
 // Esto permite payloads complejos, no solo texto.
@@ -78,6 +79,170 @@ export class SlackService {
       );
       // 4. Mejor manejo de errores: retorna `false` en caso de fallo.
       return false; // Fracaso
+    }
+  }
+
+  async enviarResumenCobranza(
+    resumen: any,
+    channel: SlackChannel,
+  ): Promise<boolean> {
+    if (!this.isSlackEnabled) {
+      // Si está deshabilitado, no hagas nada y retorna éxito para no romper el flujo.
+      return true;
+    }
+
+    const webhookUrl = this.webhookUrls.get(channel);
+    if (!webhookUrl) {
+      this.logger.error(
+        `Attempted to send a message to an unconfigured channel: "${channel}"`,
+      );
+      return false; // Indica que falló.
+    }
+    try {
+      const tasaExito =
+        resumen.totalProcesados > 0
+          ? ((resumen.exitosos / resumen.totalProcesados) * 100).toFixed(1)
+          : '0';
+
+      const color =
+        resumen.fallidos === 0
+          ? 'good'
+          : resumen.fallidos > 5
+            ? 'danger'
+            : 'warning';
+
+      const blocks: SlackBlock[] = [
+        {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: '📧 Proceso de Cobranza Completado',
+          },
+        },
+        {
+          type: 'section',
+          fields: [
+            {
+              type: 'mrkdwn',
+              text: `*Total procesados:*\n${resumen.totalProcesados}`,
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Exitosos:*\n✅ ${resumen.exitosos}`,
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Fallidos:*\n❌ ${resumen.fallidos}`,
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Emails enviados:*\n📨 ${resumen.emailsEnviados}`,
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Tasa de éxito:*\n${tasaExito}%`,
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Duración:*\n⏱️ ${resumen.duracionSegundos}s`,
+            },
+          ],
+        },
+      ];
+
+      // Agregar sección de errores si hay
+      if (resumen.errores.length > 0) {
+        const erroresTexto = resumen.errores
+          .slice(0, 10) // Máximo 10 errores
+          .map((e) => `• *${e.estudiante}*: ${e.error}`)
+          .join('\n');
+
+        blocks.push({
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*❗ Errores encontrados (${resumen.errores.length}):*\n${erroresTexto}${
+              resumen.errores.length > 10 ? '\n_...y más_' : ''
+            }`,
+          },
+        });
+      }
+
+      // Agregar divider y footer
+      blocks.push(
+        {
+          type: 'divider',
+        },
+        {
+          type: 'section',
+          fields: [
+            {
+              type: 'mrkdwn',
+              text: `🏫 Colegio Albert Einstein | ${new Date().toLocaleString(
+                'es-PE',
+                {
+                  timeZone: 'America/Lima',
+                },
+              )}`,
+            },
+          ],
+        },
+      );
+      await axios.post(webhookUrl, {
+        text: `Proceso de cobranza completado: ${resumen.exitosos}/${resumen.totalProcesados} exitosos`,
+        blocks,
+        attachments: [
+          {
+            color,
+            text:
+              resumen.fallidos === 0
+                ? '✨ Proceso completado sin errores'
+                : `⚠️ Revisa los ${resumen.fallidos} casos fallidos`,
+          },
+        ],
+      });
+
+      this.logger.log('Resumen enviado a Slack exitosamente');
+    } catch (error) {
+      this.logger.error(`Error al enviar mensaje a Slack: ${error.message}`);
+    }
+  }
+
+  /**
+   * Envía notificación de inicio de proceso
+   */
+  async enviarInicioProcesoCobranza(
+    totalEstudiantes: number,
+    jobId: string,
+    channel: SlackChannel,
+  ): Promise<boolean> {
+    if (!this.isSlackEnabled) {
+      // Si está deshabilitado, no hagas nada y retorna éxito para no romper el flujo.
+      return true;
+    }
+
+    const webhookUrl = this.webhookUrls.get(channel);
+    if (!webhookUrl) {
+      this.logger.error(
+        `Attempted to send a message to an unconfigured channel: "${channel}"`,
+      );
+      return false; // Indica que falló.
+    }
+    try {
+      await axios.post(webhookUrl, {
+        text: `🚀 Iniciando proceso de cobranza para ${totalEstudiantes} estudiantes`,
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `🚀 *Proceso de Cobranza Iniciado*\n\n• Estudiantes: *${totalEstudiantes}*\n• Job ID: \`${jobId}\`\n• Estado: En progreso...`,
+            },
+          },
+        ],
+      });
+    } catch (error) {
+      this.logger.error(`Error al enviar inicio a Slack: ${error.message}`);
     }
   }
 }

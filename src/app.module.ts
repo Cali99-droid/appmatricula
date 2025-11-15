@@ -4,7 +4,7 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { YearsModule } from './years/years.module';
 import { PhaseModule } from './phase/phase.module';
@@ -49,6 +49,9 @@ import { AcademicAssignmentModule } from './academic_structure/academic_assignme
 
 import { AcademicRecordsModule } from './academic_structure/academic_records/academic_records.module';
 import { SlackModule } from './common/slack/slack.module';
+import { SchoolRequestModule } from './school_request/school_request.module';
+import { BullModule } from '@nestjs/bull';
+import { CobranzaProcessor } from './treasury/treasury.processor';
 
 @Module({
   imports: [
@@ -100,8 +103,20 @@ import { SlackModule } from './common/slack/slack.module';
     AcademicAssignmentModule,
     AcademicRecordsModule,
     SlackModule,
+    SchoolRequestModule,
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('REDIS_HOST', 'localhost'),
+          port: configService.get('REDIS_PORT', 6379),
+          // password: configService.get('REDIS_PASSWORD', undefined),
+        },
+      }),
+    }),
   ],
-  providers: [ExistIdConstraint, AuthService],
+  providers: [ExistIdConstraint, AuthService, CobranzaProcessor],
 })
 export class AppModule implements NestModule {
   public configure(consumer: MiddlewareConsumer) {
