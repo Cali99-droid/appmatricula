@@ -2654,7 +2654,7 @@ export class TreasuryService {
       inner join level l on l.id=g.levelId
       inner join user us on us.personId = p.id
       where d.status=0 and isCanceled=0 and ( description="ABRIL" ) and conceptId=2 and en.status="registered"
-      order by student asc limit 4;`,
+      order by student asc;`,
     );
 
     // Agregar job a la cola
@@ -2732,3 +2732,4 @@ export class TreasuryService {
 
   private getDE;
 }
+
