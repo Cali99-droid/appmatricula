@@ -619,7 +619,7 @@ export class EnrollmentService {
           grade,
           level,
           capacity,
-          // previousEnrolls,
+          previousEnrolls,
           currentEnrroll,
           section,
           detailOrigin,
@@ -640,21 +640,21 @@ export class EnrollmentService {
         acc[gradeId].sections.push({
           section,
           capacity,
-          // ratified: previousEnrolls,
-          ratified: 0,
+          ratified: previousEnrolls,
+          //ratified: 0,
           enrollments: currentEnrroll,
-          // vacant: capacity - previousEnrolls - currentEnrroll,
+          vacant: capacity - previousEnrolls - currentEnrroll, //antiguos
 
-          vacant: capacity - currentEnrroll,
+          // vacant: capacity - currentEnrroll, nuevos
           detailOrigin,
         });
         acc[gradeId].capacity += capacity;
-        // acc[gradeId].ratified += previousEnrolls;
-        acc[gradeId].ratified += 0;
+        acc[gradeId].ratified += previousEnrolls;
+        // acc[gradeId].ratified += 0;
         acc[gradeId].enrollments += currentEnrroll;
         acc[gradeId].vacant =
           acc[gradeId].capacity -
-          // acc[gradeId].ratified -
+          acc[gradeId].ratified -
           acc[gradeId].enrollments;
 
         return acc;
@@ -1040,11 +1040,19 @@ export class EnrollmentService {
             },
           },
           ratified: true,
+          status: Status.MATRICULADO,
+          isActive: true,
         },
       });
       const enrollOrigin = await this.enrollmentRepository.find({
-        where: { activityClassroom: { id: originId.id }, ratified: true },
+        where: {
+          activityClassroom: { id: originId.id },
+          ratified: true,
+          status: Status.MATRICULADO,
+          isActive: true,
+        },
       });
+
       /**problema acá destinoID */
       const currentEnrroll = await this.enrollmentRepository.find({
         where: {
@@ -1224,6 +1232,9 @@ export class EnrollmentService {
           },
         },
         ratified: true,
+
+        status: Status.MATRICULADO,
+        isActive: true,
       },
     });
     const enrollOrigin = await this.enrollmentRepository.find({
@@ -1245,6 +1256,8 @@ export class EnrollmentService {
           },
         },
         ratified: true,
+        status: Status.MATRICULADO,
+        isActive: true,
       },
     });
     const currentEnrroll = await this.enrollmentRepository.find({
