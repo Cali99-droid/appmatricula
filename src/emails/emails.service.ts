@@ -510,7 +510,7 @@ export class EmailsService {
             ? options.to //options.to
             : 'carlos.orellano@ae.edu.pe',
         subject: options.subject,
-        // cc: 'soporte@colegioae.freshdesk.com',
+        cc: 'informes@mail.colegioae.com',
         text: options.text,
         html: options.html,
         attachments: options.attachments,
@@ -594,7 +594,7 @@ export class EmailsService {
     pdfBuffer: Buffer,
     codigoDocumento: string,
   ): Promise<boolean> {
-    const subject = '🚨 URGENTE - Pérdida de Vacante - Colegio Albert Einstein';
+    const subject = `Comunicado sobre vacante de ${nombreEstudiante}`;
 
     const html = this.crearHtmlCartaFinal(nombreApoderado, nombreEstudiante);
 
