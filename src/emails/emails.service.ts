@@ -510,7 +510,7 @@ export class EmailsService {
             ? options.to //options.to
             : 'carlos.orellano@ae.edu.pe',
         subject: options.subject,
-        cc: 'carlosjhardel4@gmail.com',
+        // cc: 'soporte@colegioae.freshdesk.com',
         text: options.text,
         html: options.html,
         attachments: options.attachments,
