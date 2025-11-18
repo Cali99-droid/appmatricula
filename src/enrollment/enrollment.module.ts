@@ -18,6 +18,7 @@ import { EnrollmentScheduler } from './schedule/enrollment.scheduler';
 
 import { TreasuryModule } from 'src/treasury/treasury.module';
 import { SectionHistory } from './entities/section-history';
+import { EnrollmentScheduleModule } from 'src/enrollment_schedule/enrollment_schedule.module';
 
 @Module({
   controllers: [EnrollmentController],
@@ -39,6 +40,7 @@ import { SectionHistory } from './entities/section-history';
     FamilyModule,
     ConfigModule,
     TreasuryModule,
+    EnrollmentScheduleModule,
   ],
   exports: [EnrollmentService],
 })

@@ -90,7 +90,6 @@ export class EnrollmentController {
     description: 'ActivityClassroom was created',
   })
   createMany(@Body() updateManyEnrollmentDto: UpdateManyEnrollmentDto) {
-    console.log('first');
     return this.enrollmentService.createMany(updateManyEnrollmentDto);
   }
 
@@ -266,6 +265,7 @@ export class EnrollmentController {
     @Query() query: FindVacantsDto,
   ) {
     // return this.enrollmentService.getVacantsTest();
+
     return this.enrollmentService.getVacants(yearId, query);
     /**calculo para nuevos */
     //return this.enrollmentService.getVacantsAll(yearId, query);

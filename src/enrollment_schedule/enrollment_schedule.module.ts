@@ -9,5 +9,6 @@ import { Year } from 'src/years/entities/year.entity';
   controllers: [EnrollmentScheduleController],
   providers: [EnrollmentScheduleService],
   imports: [TypeOrmModule.forFeature([EnrollmentSchedule, Year])],
+  exports: [EnrollmentScheduleService],
 })
 export class EnrollmentScheduleModule {}

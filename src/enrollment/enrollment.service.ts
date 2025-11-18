@@ -48,6 +48,9 @@ import { User } from 'src/user/entities/user.entity';
 
 import { SlackService } from 'src/common/slack/slack.service';
 import { SlackChannel } from 'src/common/slack/slack.constants';
+import { ScheduleService } from 'src/schedule/schedule.service';
+import { EnrollmentScheduleService } from 'src/enrollment_schedule/enrollment_schedule.service';
+import { TypeEnrollmentSchedule } from 'src/enrollment_schedule/enum/type-enrollment_schedule';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -77,6 +80,7 @@ export class EnrollmentService {
     private readonly treasuryService: TreasuryService,
     private readonly familyService: FamilyService,
     private readonly slackService: SlackService,
+    private readonly enrollmentScheduleService: EnrollmentScheduleService,
   ) {}
   /**env */
   private readonly urlAdmision = this.configService.getOrThrow('API_ADMISION');
@@ -668,6 +672,29 @@ export class EnrollmentService {
     }
   }
 
+  async getVacantsBySchedule(yearId: number, query: FindVacantsDto) {
+    const schedule = await this.enrollmentScheduleService.findOneByDate({
+      currentDate: this.convertISODateToYYYYMMDD(new Date()),
+      type: TypeEnrollmentSchedule.Ratification,
+      yearId: 17,
+    });
+    //TODO hacer que sea dependiente del cronograma, preguntar
+    return schedule;
+  }
+
+  private convertISODateToYYYYMMDD(isoDateString) {
+    const date = new Date(isoDateString);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1; // getMonth() devuelve un índice de mes basado en cero
+    const day = date.getDate();
+
+    // Añadir un cero a la izquierda para los meses y días menores de 10
+    const formattedMonth = month < 10 ? `0${month}` : month;
+    const formattedDay = day < 10 ? `0${day}` : day;
+
+    return `${year}-${formattedMonth}-${formattedDay}`;
+  }
+
   /**Configuracion de ascenso */
   async createAscent(createAscentDto: CreateAscentDto) {
     /**Validaciones */
@@ -824,7 +851,6 @@ export class EnrollmentService {
       }
       /**mas de un destino */
       if (configAscent.length > 1) {
-        console.log('more dest');
         /**tiene mas de un destino, entonces es el aula que se parte*/
         /**calcular las vacantes de sus destinos s*/
 
@@ -885,11 +911,10 @@ export class EnrollmentService {
           },
         },
       });
-      console.log(classrooms);
+
       for (const ac of classrooms) {
         const dest = await this.vacancyCalculation(ac.id);
-        console.log(dest);
-        console.log('entro');
+
         // if (
         //   dest.section === currentEnrrollment.activityClassroom.section ||
         //   dest.hasVacants
@@ -1015,9 +1040,10 @@ export class EnrollmentService {
         year: { id: yearId - 1 },
       },
     });
-
+    console.log(configAscent);
     const origins = configAscent.map((c) => c.originId.id);
     if (configAscent.length === 1) {
+      console.log('un dest');
       /** calcular vacantes */
       const { originId, destinationId } = configAscent[0];
 
@@ -1044,6 +1070,31 @@ export class EnrollmentService {
           isActive: true,
         },
       });
+      /**ADD DEFAULT CODE */
+      const anotherOriginDefault = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: {
+            // id: activityClassrooms[0].id,
+            grade: {
+              // id: ac.grade.id,
+              position: activityClassroom.grade.position - 1,
+            },
+            section: activityClassroom.section,
+            phase: {
+              year: {
+                id: yearId - 1,
+              },
+            },
+            classroom: {
+              campusDetail: { id: activityClassroom.classroom.campusDetail.id },
+            },
+          },
+          ratified: true,
+          status: Status.MATRICULADO,
+          isActive: true,
+        },
+      });
+      console.log('in other', anotherOriginDefault.length);
       const enrollOrigin = await this.enrollmentRepository.find({
         where: {
           activityClassroom: { id: originId.id },
@@ -1067,11 +1118,19 @@ export class EnrollmentService {
       const rtAndEnrInOther = enrolledInOther.filter((item1) =>
         enrollOrigin.some((item2) => item1.student.id === item2.student.id),
       );
+      const rtAndEnrInOtherDefault = anotherOriginDefault.filter((item1) =>
+        enrollOrigin.some((item2) => item1.student.id === item2.student.id),
+      );
       const ratifieds =
-        enrollOrigin.length - rtAndEnr.length - rtAndEnrInOther.length;
+        enrollOrigin.length +
+        anotherOriginDefault.length -
+        rtAndEnr.length -
+        rtAndEnrInOther.length -
+        rtAndEnrInOtherDefault.length;
       // const vacants =
       //   destinationId.classroom.capacity - ratifieds - currentEnrroll.length;
       const vacants = destinationId.classroom.capacity - currentEnrroll.length;
+      console.log(vacants);
       const res: VacantsClassrooms = {
         id: activityClassroom.id,
         gradeId: destinationId.grade.id,
@@ -1313,7 +1372,7 @@ export class EnrollmentService {
       where: {
         phase: {
           year: {
-            id: 16,
+            id: 17,
           },
         },
         grade: { position: gradeId },
@@ -1435,7 +1494,6 @@ export class EnrollmentService {
 
     for (const ac of activityClassrooms) {
       const data = await this.vacancyCalculation(ac.id);
-
       vacants.push(data);
     }
 
