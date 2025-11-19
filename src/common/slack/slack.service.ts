@@ -116,7 +116,7 @@ export class SlackService {
           type: 'header',
           text: {
             type: 'plain_text',
-            text: '📧 Proceso de Cobranza Completado',
+            text: '📧 Proceso Completado',
           },
         },
         {

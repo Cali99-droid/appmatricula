@@ -39,7 +39,7 @@ import { DataAdmision } from 'src/family/interfaces/data-admision';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 import { UpdateExpirationDto } from './dto/update-expiration.dto';
 import { FamilyService } from 'src/family/family.service';
-
+import { v4 as uuidv4 } from 'uuid';
 import { UpdateManyEnrollmentDto } from './dto/update-many-enrollment.dto';
 import { TreasuryService } from 'src/treasury/treasury.service';
 import { SectionHistory } from './entities/section-history';
@@ -51,6 +51,10 @@ import { SlackChannel } from 'src/common/slack/slack.constants';
 import { ScheduleService } from 'src/schedule/schedule.service';
 import { EnrollmentScheduleService } from 'src/enrollment_schedule/enrollment_schedule.service';
 import { TypeEnrollmentSchedule } from 'src/enrollment_schedule/enum/type-enrollment_schedule';
+import { Behavior } from './enum/behavior.enum';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+import { Level } from 'src/level/entities/level.entity';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -81,6 +85,7 @@ export class EnrollmentService {
     private readonly familyService: FamilyService,
     private readonly slackService: SlackService,
     private readonly enrollmentScheduleService: EnrollmentScheduleService,
+    @InjectQueue('enrollment') private enrollQueue: Queue,
   ) {}
   /**env */
   private readonly urlAdmision = this.configService.getOrThrow('API_ADMISION');
@@ -2253,6 +2258,81 @@ export class EnrollmentService {
 
       this.logger.log('Actualización de escuelas completada exitosamente.');
     } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async sendInfoEmail(level: number) {
+    try {
+      let from = 1;
+      let to = 3;
+      let link =
+        'https://drive.google.com/drive/folders/15sv0D4umflxh_pOi-iR7JmUJk5fEu0CX?usp=sharing';
+      if (level == 2) {
+        (from = 3), (to = 9);
+        link =
+          'https://drive.google.com/drive/folders/1Lt8mCcycmATwc_NTETomNz0vuo5A06Nw?usp=sharing';
+      }
+      if (level == 3) {
+        (from = 9), (to = 14);
+        link =
+          'https://drive.google.com/drive/folders/1r9PHZ_vsjrM345Iccdgha5_7JDyLFEsk?usp=sharing';
+      }
+
+      if (level !== 1 && level !== 2 && level !== 3) {
+        throw new BadRequestException('errror');
+      }
+      const jobId = uuidv4();
+      const data = await this.debtRepository.query(
+        `SELECT en.id, st.code, concat(per.lastname, ' ', per.mLastname, ' ', per.name) student,
+          CONCAT( g.name, ' ',ac.section, ' ', l.name) grade,
+          concat(p.lastname, ' ', p.mLastname, ' ', p.name) parent, us.email
+          FROM bk_colegioae.enrollment en
+
+          inner join student st on st.id=en.studentId
+          inner join person per on per.id = st.personId
+          inner join family f on f.id=st.familyId
+          inner join person p on p.id=f.respEnrollment
+          inner join activity_classroom ac on ac.id=en.activityClassroomId
+          inner join grade g on g.id=ac.gradeId
+          inner join level l on l.id=g.levelId
+          inner join user us on us.personId = p.id
+
+          where en.status="registered"  and en.behavior ='normal' and g.position>=${from} and g.position<${to};`,
+      );
+
+      this.logger.log(`Iniciando envio de información`);
+      const job = await this.enrollQueue.add(
+        'enviar-info',
+        {
+          estudianteData: data,
+          enviarEmail: true,
+          jobId,
+          link,
+        },
+        {
+          attempts: 3, // Reintentar hasta 3 veces si falla
+          backoff: {
+            type: 'exponential',
+            delay: 5000, // Esperar 5s, 10s, 20s entre reintentos
+          },
+          removeOnComplete: false, // Mantener jobs completados para consulta
+          removeOnFail: false, // Mantener jobs fallidos para análisis
+        },
+      );
+
+      // Notificar a Slack que el proceso comenzó
+      await this.slackService.sendMessage(
+        SlackChannel.GENERAL,
+        'Iniciando envio de emails',
+      );
+
+      return {
+        jobId,
+        message: `Envio de Emails iniciado. Job ID: ${jobId}. Se procesarán ${data.length} estudiantes en segundo plano.`,
+      };
+    } catch (error) {
+      console.log(error);
       handleDBExceptions(error, this.logger);
     }
   }

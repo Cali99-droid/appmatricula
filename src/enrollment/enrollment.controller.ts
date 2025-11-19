@@ -375,4 +375,16 @@ export class EnrollmentController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.enrollmentService.findOne(+id);
   }
+
+  @Get('send-info-email/:level')
+  @ApiOkResponse({
+    status: 200,
+    description: 'result of consult, hasVacants true or false',
+    //  type: [AvailableClassroom],
+  })
+  @Public()
+  sendInfoEmail(@Param('level', ParseIntPipe) level: number) {
+    // return this.enrollmentService.getVacantsTest();
+    return this.enrollmentService.sendInfoEmail(level);
+  }
 }
