@@ -2287,7 +2287,7 @@ export class EnrollmentService {
         `SELECT en.id, st.code, concat(per.lastname, ' ', per.mLastname, ' ', per.name) student,
           CONCAT( g.name, ' ',ac.section, ' ', l.name) grade,
           concat(p.lastname, ' ', p.mLastname, ' ', p.name) parent, us.email
-          FROM bk_colegioae.enrollment en
+          FROM enrollment en
 
           inner join student st on st.id=en.studentId
           inner join person per on per.id = st.personId
