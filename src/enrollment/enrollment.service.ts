@@ -48,13 +48,13 @@ import { User } from 'src/user/entities/user.entity';
 
 import { SlackService } from 'src/common/slack/slack.service';
 import { SlackChannel } from 'src/common/slack/slack.constants';
-import { ScheduleService } from 'src/schedule/schedule.service';
+
 import { EnrollmentScheduleService } from 'src/enrollment_schedule/enrollment_schedule.service';
 import { TypeEnrollmentSchedule } from 'src/enrollment_schedule/enum/type-enrollment_schedule';
-import { Behavior } from './enum/behavior.enum';
+
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-import { Level } from 'src/level/entities/level.entity';
+
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -92,7 +92,7 @@ export class EnrollmentService {
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),

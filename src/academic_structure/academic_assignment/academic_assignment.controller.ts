@@ -18,7 +18,7 @@ import { TeacherAssignmentResponseDto } from './dto/res-assignment.dto';
 
 @ApiTags('Academic-assignment')
 @Controller('academic-assignment')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 export class AcademicAssignmentController {
   constructor(
     private readonly academicAssignmentService: AcademicAssignmentService,
