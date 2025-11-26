@@ -18,7 +18,7 @@ export function addConstancy(doc: InstanceType<typeof PDFDocument>, data) {
     .fillColor('#2e559d')
     .fontSize(16)
     .font('Times-Bold')
-    .text(`CONSTANCIA DE VACANTE ${data.year}`, {
+    .text(`CONSTANCIA DE VACANTE ${data.enrrollYear}`, {
       align: 'center',
     });
   doc.fillColor('black');
@@ -35,7 +35,7 @@ export function addConstancy(doc: InstanceType<typeof PDFDocument>, data) {
   doc.fontSize(12).font('Times-Roman');
   doc.moveDown(1);
   doc.text(
-    `Que, el Sr(a) ${data.parent} responsable de la matrícula del alumno(a): ${data.children}, ha reservado una VACANTE, para el referido menor en el Nivel: ${data.level} Grado: ${data.grade}, para el Año Académico ${data.year}.`,
+    `Que, el Sr(a) ${data.parent} responsable de la matrícula del alumno(a): ${data.children}, ha reservado una VACANTE, para el referido menor en el Nivel: ${data.level} Grado: ${data.grade}, para el Año Académico ${data.enrrollYear}.`,
     { align: 'justify' },
   );
 
