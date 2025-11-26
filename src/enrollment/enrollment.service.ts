@@ -634,6 +634,7 @@ export class EnrollmentService {
           currentEnrroll,
           section,
           detailOrigin,
+          reserved,
         } = curr;
 
         if (!acc[gradeId]) {
@@ -646,6 +647,7 @@ export class EnrollmentService {
             enrollments: 0,
             vacant: 0,
             sections: [],
+            totalReserved: 0,
           };
         }
         acc[gradeId].sections.push({
@@ -654,19 +656,21 @@ export class EnrollmentService {
           ratified: previousEnrolls,
           //ratified: 0,
           enrollments: currentEnrroll,
-          vacant: capacity - previousEnrolls - currentEnrroll, //antiguos
-
+          vacant: capacity - previousEnrolls - currentEnrroll - reserved, //antiguos
+          totalReserved: reserved,
           // vacant: capacity - currentEnrroll, nuevos
           detailOrigin,
         });
         acc[gradeId].capacity += capacity;
+        acc[gradeId].totalReserved += reserved;
         acc[gradeId].ratified += previousEnrolls;
         // acc[gradeId].ratified += 0;
         acc[gradeId].enrollments += currentEnrroll;
         acc[gradeId].vacant =
           acc[gradeId].capacity -
           acc[gradeId].ratified -
-          acc[gradeId].enrollments;
+          acc[gradeId].enrollments -
+          acc[gradeId].totalReserved;
 
         return acc;
       }, {});
@@ -1329,6 +1333,14 @@ export class EnrollmentService {
     const currentEnrroll = await this.enrollmentRepository.find({
       where: {
         activityClassroom: { id: activityClassroom.id },
+        status: Status.MATRICULADO,
+      },
+    });
+
+    const currentReserved = await this.enrollmentRepository.find({
+      where: {
+        activityClassroom: { id: activityClassroom.id },
+        status: Status.RESERVADO,
       },
     });
 
@@ -1345,9 +1357,11 @@ export class EnrollmentService {
 
     // const vacants =
     //   activityClassroom.classroom.capacity - ratifieds - currentEnrroll.length;
-
+    //!no tiene efecto */
     const vacants =
-      activityClassroom.classroom.capacity - currentEnrroll.length;
+      activityClassroom.classroom.capacity -
+      currentEnrroll.length -
+      currentReserved.length;
 
     const res: VacantsClassrooms = {
       id: activityClassroom.id,
@@ -1358,10 +1372,10 @@ export class EnrollmentService {
       capacity: activityClassroom.classroom.capacity,
       previousEnrolls: ratifieds,
       currentEnrroll: currentEnrroll.length,
+      reserved: currentReserved.length,
       vacants,
       hasVacants: vacants > 0,
       type: 'N',
-
       detailOrigin: {
         id: enrollOrigin[0]?.activityClassroom.id || 0,
         grade: enrollOrigin[0]?.activityClassroom.grade.name || '0',
