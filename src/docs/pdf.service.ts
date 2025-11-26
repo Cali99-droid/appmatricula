@@ -690,6 +690,9 @@ export class PdfService {
       relations: {
         activityClassroom: {
           grade: { level: true },
+          phase: {
+            year: true,
+          },
         },
       },
     });
@@ -697,6 +700,7 @@ export class PdfService {
       throw new NotFoundException(
         `The student does not have a registration with reserved status`,
       );
+    const enrrollYear = enrollment.activityClassroom.phase.year.name;
     const today = new Date(enrollment.createdAt);
     const day = today.getDate();
     const futureDate = new Date(today);
@@ -747,6 +751,7 @@ export class PdfService {
         year,
         level,
         grade,
+        enrrollYear,
       };
       const imageWidth = 250;
       const imageHeight = 100;

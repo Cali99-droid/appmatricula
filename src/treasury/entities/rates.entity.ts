@@ -11,6 +11,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Concept } from './concept.entity';
+import { Year } from 'src/years/entities/year.entity';
 
 @Entity()
 export class Rates {
@@ -39,6 +40,16 @@ export class Rates {
   @ManyToOne(() => Concept)
   @JoinColumn({ name: 'conceptId' })
   concept?: Concept;
+
+  @ManyToOne(() => Year, {
+    nullable: true,
+  })
+  year?: Year;
+
+  @Column({
+    nullable: true,
+  })
+  yearId?: number;
 
   /**TIMESTAMPS */
   @CreateDateColumn({

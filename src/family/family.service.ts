@@ -232,7 +232,7 @@ export class FamilyService {
     }
   }
   async findOne(id: number, user: any) {
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -317,7 +317,7 @@ export class FamilyService {
           return undefined; // O manejar de otra manera según tu lógica
         }
         const { student, activityClassroom, ...enrroll } = item.enrollment.find(
-          (e) => e.isActive === true,
+          (e) => e.isActive === true || e.activityClassroom.grade.id == 14,
         );
 
         if (

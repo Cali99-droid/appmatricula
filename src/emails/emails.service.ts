@@ -27,6 +27,7 @@ import { MailParams } from './interfaces/mail-params.interface';
 import { EmailDetail } from './entities/emailDetail.entity';
 import { getBodyEmail, getText } from './helpers/bodyEmail';
 import { EmailEventLog } from './entities/EmailEventLog,entity';
+import { getSchoolDocumentsEmail } from './helpers/bodyInfo';
 
 interface EmailEventPayload {
   Message?: string;
@@ -529,6 +530,39 @@ export class EmailsService {
       return false;
     }
   }
+
+  async enviarEmailInfo(options: EmailOptions): Promise<boolean> {
+    try {
+      const mailOptions = {
+        from: `"Colegio AE" <informes@mail.colegioae.com>`,
+        to:
+          this.env === 'prod'
+            ? options.to //options.to
+            : 'carlos.orellano@ae.edu.pe',
+        subject: options.subject,
+        //  cc: 'informes@mail.colegioae.com',
+        cc:
+          this.env === 'prod'
+            ? 'informes@mail.colegioae.com' //options.to
+            : 'carlosjhardel4@gmail.com',
+        text: options.text,
+        html: options.html,
+        attachments: options.attachments,
+        replyTo: 'soporte@colegioae.freshdesk.com',
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      this.logger.log(
+        `Email enviado exitosamente a ${options.to}: ${info.messageId}`,
+      );
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `Error al enviar email a ${options.to}: ${error.message}`,
+      );
+      return false;
+    }
+  }
   async enviarCartaCobranza(
     emailDestino: string,
     nombreApoderado: string,
@@ -554,6 +588,28 @@ export class EmailsService {
           path: pdfPath,
         },
       ],
+    });
+  }
+
+  async enviarInfo(
+    emailDestino: string,
+    dataSubject: string,
+    link: string,
+  ): Promise<boolean> {
+    const subject = `Año académico 2026 - ${dataSubject}`;
+
+    const html = getSchoolDocumentsEmail(link);
+
+    return this.enviarEmailInfo({
+      to: emailDestino,
+      subject,
+      html,
+      // attachments: [
+      //   {
+      //     filename: `Carta_Cobranza_${nombreEstudiante.replace(/\s+/g, '_')}.pdf`,
+      //     path: pdfPath,
+      //   },
+      // ],
     });
   }
 

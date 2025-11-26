@@ -41,7 +41,7 @@ import { TransferStudentDto } from './dto/tranfer-student.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
-@Resource('client-test-appae')
+@Resource('appcolegioae')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
@@ -90,7 +90,6 @@ export class EnrollmentController {
     description: 'ActivityClassroom was created',
   })
   createMany(@Body() updateManyEnrollmentDto: UpdateManyEnrollmentDto) {
-    console.log('first');
     return this.enrollmentService.createMany(updateManyEnrollmentDto);
   }
 
@@ -266,9 +265,10 @@ export class EnrollmentController {
     @Query() query: FindVacantsDto,
   ) {
     // return this.enrollmentService.getVacantsTest();
-    //return this.enrollmentService.getVacants(yearId, query);
+
+    return this.enrollmentService.getVacants(yearId, query);
     /**calculo para nuevos */
-    return this.enrollmentService.getVacantsAll(yearId, query);
+    //return this.enrollmentService.getVacantsAll(yearId, query);
   }
 
   @Get('vacants/:yearId/grade/:gradeId/campus/:campusId')
@@ -374,5 +374,17 @@ export class EnrollmentController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.enrollmentService.findOne(+id);
+  }
+
+  @Get('send-info-email/:level')
+  @ApiOkResponse({
+    status: 200,
+    description: 'result of consult, hasVacants true or false',
+    //  type: [AvailableClassroom],
+  })
+  @Public()
+  sendInfoEmail(@Param('level', ParseIntPipe) level: number) {
+    // return this.enrollmentService.getVacantsTest();
+    return this.enrollmentService.sendInfoEmail(level);
   }
 }

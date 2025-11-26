@@ -39,7 +39,7 @@ import { DataAdmision } from 'src/family/interfaces/data-admision';
 import { GetReportEnrrollDto } from './dto/get-report-enrroll.dto';
 import { UpdateExpirationDto } from './dto/update-expiration.dto';
 import { FamilyService } from 'src/family/family.service';
-
+import { v4 as uuidv4 } from 'uuid';
 import { UpdateManyEnrollmentDto } from './dto/update-many-enrollment.dto';
 import { TreasuryService } from 'src/treasury/treasury.service';
 import { SectionHistory } from './entities/section-history';
@@ -48,6 +48,13 @@ import { User } from 'src/user/entities/user.entity';
 
 import { SlackService } from 'src/common/slack/slack.service';
 import { SlackChannel } from 'src/common/slack/slack.constants';
+import { ScheduleService } from 'src/schedule/schedule.service';
+import { EnrollmentScheduleService } from 'src/enrollment_schedule/enrollment_schedule.service';
+import { TypeEnrollmentSchedule } from 'src/enrollment_schedule/enum/type-enrollment_schedule';
+import { Behavior } from './enum/behavior.enum';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+import { Level } from 'src/level/entities/level.entity';
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger('EnrollmentService');
@@ -77,13 +84,15 @@ export class EnrollmentService {
     private readonly treasuryService: TreasuryService,
     private readonly familyService: FamilyService,
     private readonly slackService: SlackService,
+    private readonly enrollmentScheduleService: EnrollmentScheduleService,
+    @InjectQueue('enrollment') private enrollQueue: Queue,
   ) {}
   /**env */
   private readonly urlAdmision = this.configService.getOrThrow('API_ADMISION');
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -133,7 +142,7 @@ export class EnrollmentService {
       const classroom = await this.activityClassroomRepository.findOneByOrFail({
         id: ce.activityClassroomId,
       });
-
+      const year = classroom.phase.year;
       const existEnrroll = await this.enrollmentRepository.findOne({
         where: {
           student: { id: ce.studentId },
@@ -193,7 +202,7 @@ export class EnrollmentService {
           await this.activityClassroomRepository.findOneBy({
             id: ce.activityClassroomId,
           });
-        /**generar deuda */
+        /**generar deuda MATRICULA */
         const levelId = activityClassroom.grade.level.id;
         const campusDetailId = activityClassroom.classroom.campusDetail.id;
 
@@ -201,6 +210,8 @@ export class EnrollmentService {
           where: {
             level: { id: levelId },
             campusDetail: { id: campusDetailId },
+            concept: { id: 1 },
+            yearId: year.id,
           },
           relations: {
             concept: true,
@@ -619,7 +630,7 @@ export class EnrollmentService {
           grade,
           level,
           capacity,
-          // previousEnrolls,
+          previousEnrolls,
           currentEnrroll,
           section,
           detailOrigin,
@@ -640,21 +651,21 @@ export class EnrollmentService {
         acc[gradeId].sections.push({
           section,
           capacity,
-          // ratified: previousEnrolls,
-          ratified: 0,
+          ratified: previousEnrolls,
+          //ratified: 0,
           enrollments: currentEnrroll,
-          // vacant: capacity - previousEnrolls - currentEnrroll,
+          vacant: capacity - previousEnrolls - currentEnrroll, //antiguos
 
-          vacant: capacity - currentEnrroll,
+          // vacant: capacity - currentEnrroll, nuevos
           detailOrigin,
         });
         acc[gradeId].capacity += capacity;
-        // acc[gradeId].ratified += previousEnrolls;
-        acc[gradeId].ratified += 0;
+        acc[gradeId].ratified += previousEnrolls;
+        // acc[gradeId].ratified += 0;
         acc[gradeId].enrollments += currentEnrroll;
         acc[gradeId].vacant =
           acc[gradeId].capacity -
-          // acc[gradeId].ratified -
+          acc[gradeId].ratified -
           acc[gradeId].enrollments;
 
         return acc;
@@ -666,6 +677,29 @@ export class EnrollmentService {
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
+  }
+
+  async getVacantsBySchedule(yearId: number, query: FindVacantsDto) {
+    const schedule = await this.enrollmentScheduleService.findOneByDate({
+      currentDate: this.convertISODateToYYYYMMDD(new Date()),
+      type: TypeEnrollmentSchedule.Ratification,
+      yearId: 17,
+    });
+    //TODO hacer que sea dependiente del cronograma, preguntar
+    return schedule;
+  }
+
+  private convertISODateToYYYYMMDD(isoDateString) {
+    const date = new Date(isoDateString);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1; // getMonth() devuelve un índice de mes basado en cero
+    const day = date.getDate();
+
+    // Añadir un cero a la izquierda para los meses y días menores de 10
+    const formattedMonth = month < 10 ? `0${month}` : month;
+    const formattedDay = day < 10 ? `0${day}` : day;
+
+    return `${year}-${formattedMonth}-${formattedDay}`;
   }
 
   /**Configuracion de ascenso */
@@ -824,7 +858,6 @@ export class EnrollmentService {
       }
       /**mas de un destino */
       if (configAscent.length > 1) {
-        console.log('more dest');
         /**tiene mas de un destino, entonces es el aula que se parte*/
         /**calcular las vacantes de sus destinos s*/
 
@@ -885,11 +918,10 @@ export class EnrollmentService {
           },
         },
       });
-      console.log(classrooms);
+
       for (const ac of classrooms) {
         const dest = await this.vacancyCalculation(ac.id);
-        console.log(dest);
-        console.log('entro');
+
         // if (
         //   dest.section === currentEnrrollment.activityClassroom.section ||
         //   dest.hasVacants
@@ -1018,6 +1050,7 @@ export class EnrollmentService {
 
     const origins = configAscent.map((c) => c.originId.id);
     if (configAscent.length === 1) {
+      console.log('un dest');
       /** calcular vacantes */
       const { originId, destinationId } = configAscent[0];
 
@@ -1040,11 +1073,44 @@ export class EnrollmentService {
             },
           },
           ratified: true,
+          status: Status.MATRICULADO,
+          isActive: true,
         },
       });
-      const enrollOrigin = await this.enrollmentRepository.find({
-        where: { activityClassroom: { id: originId.id }, ratified: true },
+      /**ADD DEFAULT CODE */
+      const anotherOriginDefault = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: {
+            // id: activityClassrooms[0].id,
+            grade: {
+              // id: ac.grade.id,
+              position: activityClassroom.grade.position - 1,
+            },
+            section: activityClassroom.section,
+            phase: {
+              year: {
+                id: yearId - 1,
+              },
+            },
+            classroom: {
+              campusDetail: { id: activityClassroom.classroom.campusDetail.id },
+            },
+          },
+          ratified: true,
+          status: Status.MATRICULADO,
+          isActive: true,
+        },
       });
+
+      const enrollOrigin = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: { id: originId.id },
+          ratified: true,
+          status: Status.MATRICULADO,
+          isActive: true,
+        },
+      });
+
       /**problema acá destinoID */
       const currentEnrroll = await this.enrollmentRepository.find({
         where: {
@@ -1059,11 +1125,19 @@ export class EnrollmentService {
       const rtAndEnrInOther = enrolledInOther.filter((item1) =>
         enrollOrigin.some((item2) => item1.student.id === item2.student.id),
       );
+      const rtAndEnrInOtherDefault = anotherOriginDefault.filter((item1) =>
+        enrollOrigin.some((item2) => item1.student.id === item2.student.id),
+      );
       const ratifieds =
-        enrollOrigin.length - rtAndEnr.length - rtAndEnrInOther.length;
+        enrollOrigin.length +
+        anotherOriginDefault.length -
+        rtAndEnr.length -
+        rtAndEnrInOther.length -
+        rtAndEnrInOtherDefault.length;
       // const vacants =
       //   destinationId.classroom.capacity - ratifieds - currentEnrroll.length;
       const vacants = destinationId.classroom.capacity - currentEnrroll.length;
+
       const res: VacantsClassrooms = {
         id: activityClassroom.id,
         gradeId: destinationId.grade.id,
@@ -1224,6 +1298,9 @@ export class EnrollmentService {
           },
         },
         ratified: true,
+
+        status: Status.MATRICULADO,
+        isActive: true,
       },
     });
     const enrollOrigin = await this.enrollmentRepository.find({
@@ -1245,6 +1322,8 @@ export class EnrollmentService {
           },
         },
         ratified: true,
+        status: Status.MATRICULADO,
+        isActive: true,
       },
     });
     const currentEnrroll = await this.enrollmentRepository.find({
@@ -1269,6 +1348,7 @@ export class EnrollmentService {
 
     const vacants =
       activityClassroom.classroom.capacity - currentEnrroll.length;
+
     const res: VacantsClassrooms = {
       id: activityClassroom.id,
       gradeId: activityClassroom.grade.id,
@@ -1300,7 +1380,7 @@ export class EnrollmentService {
       where: {
         phase: {
           year: {
-            id: 16,
+            id: 17,
           },
         },
         grade: { position: gradeId },
@@ -1422,7 +1502,6 @@ export class EnrollmentService {
 
     for (const ac of activityClassrooms) {
       const data = await this.vacancyCalculation(ac.id);
-
       vacants.push(data);
     }
 
@@ -1478,6 +1557,9 @@ export class EnrollmentService {
     return result;
   }
   async getVacantsGeneral(gradeId: number, yearId: number, campusId: number) {
+    /***NUEVO inicio */
+    let vacantsTot = 0;
+    let capacity = 0;
     const activityClassrooms = await this.activityClassroomRepository.find({
       where: {
         grade: { id: gradeId },
@@ -1495,22 +1577,28 @@ export class EnrollmentService {
       },
     });
 
-    const idsAc = activityClassrooms.map((ac) => ac.id);
+    for (const ac of activityClassrooms) {
+      const data: VacantsClassrooms = await this.calcVacantsToClassroom(ac.id);
+      vacantsTot += data.capacity - data.previousEnrolls - data.currentEnrroll;
+      capacity += data.capacity;
+    }
+    /***NUEVO FIN */
+    // const idsAc = activityClassrooms.map((ac) => ac.id);
 
-    const countEnrroll = await this.enrollmentRepository.count({
-      where: {
-        activityClassroom: {
-          id: In(idsAc),
-        },
-        ratified: true,
-        status: In([
-          Status.PREMATRICULADO,
-          Status.EN_PROCESO,
-          Status.MATRICULADO,
-          Status.RESERVADO,
-        ]),
-      },
-    });
+    // const countEnrroll = await this.enrollmentRepository.count({
+    //   where: {
+    //     activityClassroom: {
+    //       id: In(idsAc),
+    //     },
+    //     ratified: true,
+    //     status: In([
+    //       Status.PREMATRICULADO,
+    //       Status.EN_PROCESO,
+    //       Status.MATRICULADO,
+    //       Status.RESERVADO,
+    //     ]),
+    //   },
+    // });
 
     /**data destino, aulas configuradas para el grado solicitado */
 
@@ -1523,20 +1611,20 @@ export class EnrollmentService {
     //   },
     // });
 
-    const capacities = activityClassrooms.map((ac) => ac.classroom.capacity);
+    // const capacities = activityClassrooms.map((ac) => ac.classroom.capacity);
 
-    const capacity = capacities.reduce(
-      (accumulator, currentValue) => accumulator + currentValue,
-      0,
-    );
+    // const capacity = capacities.reduce(
+    //   (accumulator, currentValue) => accumulator + currentValue,
+    //   0,
+    // );
 
-    const vacants = capacity - countEnrroll;
+    // const vacants = capacity - countEnrroll;
 
     return {
-      hasVacants: vacants > 0,
+      hasVacants: vacantsTot > 0,
       capacity: capacity,
-      enrrolls: countEnrroll,
-      vacants,
+      enrrolls: capacity - vacantsTot,
+      vacants: vacantsTot,
     };
   }
   async getStatusEnrollmentByUser(user: any) {
@@ -2182,6 +2270,81 @@ export class EnrollmentService {
 
       this.logger.log('Actualización de escuelas completada exitosamente.');
     } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async sendInfoEmail(level: number) {
+    try {
+      let from = 1;
+      let to = 3;
+      let link =
+        'https://drive.google.com/drive/folders/15sv0D4umflxh_pOi-iR7JmUJk5fEu0CX?usp=sharing';
+      if (level == 2) {
+        (from = 3), (to = 9);
+        link =
+          'https://drive.google.com/drive/folders/1Lt8mCcycmATwc_NTETomNz0vuo5A06Nw?usp=sharing';
+      }
+      if (level == 3) {
+        (from = 9), (to = 14);
+        link =
+          'https://drive.google.com/drive/folders/1r9PHZ_vsjrM345Iccdgha5_7JDyLFEsk?usp=sharing';
+      }
+
+      if (level !== 1 && level !== 2 && level !== 3) {
+        throw new BadRequestException('errror');
+      }
+      const jobId = uuidv4();
+      const data = await this.debtRepository.query(
+        `SELECT en.id, st.code, concat(per.lastname, ' ', per.mLastname, ' ', per.name) student,
+          CONCAT( g.name, ' ',ac.section, ' ', l.name) grade,
+          concat(p.lastname, ' ', p.mLastname, ' ', p.name) parent, us.email
+          FROM enrollment en
+
+          inner join student st on st.id=en.studentId
+          inner join person per on per.id = st.personId
+          inner join family f on f.id=st.familyId
+          inner join person p on p.id=f.respEnrollment
+          inner join activity_classroom ac on ac.id=en.activityClassroomId
+          inner join grade g on g.id=ac.gradeId
+          inner join level l on l.id=g.levelId
+          inner join user us on us.personId = p.id
+
+          where en.status="registered"  and en.behavior ='normal' and g.position>=${from} and g.position<${to};`,
+      );
+
+      this.logger.log(`Iniciando envio de información`);
+      const job = await this.enrollQueue.add(
+        'enviar-info',
+        {
+          estudianteData: data,
+          enviarEmail: true,
+          jobId,
+          link,
+        },
+        {
+          attempts: 3, // Reintentar hasta 3 veces si falla
+          backoff: {
+            type: 'exponential',
+            delay: 5000, // Esperar 5s, 10s, 20s entre reintentos
+          },
+          removeOnComplete: false, // Mantener jobs completados para consulta
+          removeOnFail: false, // Mantener jobs fallidos para análisis
+        },
+      );
+
+      // Notificar a Slack que el proceso comenzó
+      await this.slackService.sendMessage(
+        SlackChannel.GENERAL,
+        'Iniciando envio de emails',
+      );
+
+      return {
+        jobId,
+        message: `Envio de Emails iniciado. Job ID: ${jobId}. Se procesarán ${data.length} estudiantes en segundo plano.`,
+      };
+    } catch (error) {
+      console.log(error);
       handleDBExceptions(error, this.logger);
     }
   }

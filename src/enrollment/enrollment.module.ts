@@ -15,13 +15,16 @@ import { Debt } from 'src/treasury/entities/debt.entity';
 import { FamilyModule } from 'src/family/family.module';
 import { ConfigModule } from '@nestjs/config';
 import { EnrollmentScheduler } from './schedule/enrollment.scheduler';
-
+import { EnrollmentProcessor } from './enrollment.processor';
 import { TreasuryModule } from 'src/treasury/treasury.module';
 import { SectionHistory } from './entities/section-history';
+import { EnrollmentScheduleModule } from 'src/enrollment_schedule/enrollment_schedule.module';
+import { BullModule } from '@nestjs/bull';
+import { EmailsModule } from 'src/emails/emails.module';
 
 @Module({
   controllers: [EnrollmentController],
-  providers: [EnrollmentService, EnrollmentScheduler],
+  providers: [EnrollmentService, EnrollmentScheduler, EnrollmentProcessor],
   imports: [
     TypeOrmModule.forFeature([
       Enrollment,
@@ -39,6 +42,20 @@ import { SectionHistory } from './entities/section-history';
     FamilyModule,
     ConfigModule,
     TreasuryModule,
+    EnrollmentScheduleModule,
+    EmailsModule,
+    BullModule.registerQueue({
+      name: 'enrollment',
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: 100, // Mantener últimos 100 jobs completados
+        removeOnFail: 50, // Mantener últimos 50 jobs fallidos
+      },
+    }),
   ],
   exports: [EnrollmentService],
 })

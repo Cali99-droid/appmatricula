@@ -1,4 +1,10 @@
-import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { TypeEnrollmentSchedule } from '../enum/type-enrollment_schedule';
 import { ExistId } from 'src/common/validation/exist-id';
 
@@ -20,7 +26,7 @@ export class FindCronogramasDto {
   currentDate?: string;
 
   @IsOptional()
-  @IsString()
+  @IsNumber()
   @ExistId({ tableName: 'year' })
-  yearId?: string;
+  yearId?: number;
 }

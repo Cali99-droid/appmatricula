@@ -157,33 +157,34 @@ export class TransfersService {
         TypeOfDebt.VENCIDA,
       );
 
-      const parent = await this.personService.findOne(
-        createTransferDto.parentId,
-      );
-      if (parent.email) {
-        const student = await this.personService.findOneStudent(
-          createTransferDto.studentId,
-        );
-        const templateParams: EmailTemplateParams = {
-          parentName: `${parent.name} ${parent.lastname}`,
-          studentName: `${student.name} ${student.lastname}`,
-          requestCode: newRequest.requestCode,
-          statusCheckUrl: 'https://colegioae.edu.pe/traslados/consulta', // URL real de tu app
-          hasDebts: resDebt.debts.length > 0,
-        };
+      /**SEND EMAIL */
+      // const parent = await this.personService.findOne(
+      //   createTransferDto.parentId,
+      // );
+      // if (parent.email) {
+      //   const student = await this.personService.findOneStudent(
+      //     createTransferDto.studentId,
+      //   );
+      //   const templateParams: EmailTemplateParams = {
+      //     parentName: `${parent.name} ${parent.lastname}`,
+      //     studentName: `${student.name} ${student.lastname}`,
+      //     requestCode: newRequest.requestCode,
+      //     statusCheckUrl: 'https://colegioae.edu.pe/traslados/consulta', // URL real de tu app
+      //     hasDebts: resDebt.debts.length > 0,
+      //   };
 
-        // 3. Generas el contenido del email
-        const { subject, html } = generateRegistrationEmail(templateParams);
+      //   // 3. Generas el contenido del email
+      //   const { subject, html } = generateRegistrationEmail(templateParams);
 
-        // 4. Envías el correo usando tu servicio existente
-        await this.emailsService.sendEmailWithSES({
-          to: parent.email,
-          subject,
-          html,
-          text: `Su solicitud de traslado ha sido registrada con el código: ${newRequest.requestCode}`, // Versión de texto plano
-        });
-        /**SEND EMAIL */
-      }
+      //   // 4. Envías el correo usando tu servicio existente
+      //   await this.emailsService.sendEmailWithSES({
+      //     to: parent.email,
+      //     subject,
+      //     html,
+      //     text: `Su solicitud de traslado ha sido registrada con el código: ${newRequest.requestCode}`, // Versión de texto plano
+      //   });
+
+      // }
 
       const trackingData = {
         area: RequestTrackingArea.SECRETARY,
@@ -237,7 +238,7 @@ export class TransfersService {
       await this.activityClassroomService.getIdsByLevelIdCampusIdAndCodes(
         campusId,
         levelId,
-        user.resource_access['client-test-appae'].roles,
+        user.resource_access['appcolegioae'].roles,
       );
     const resquestsOptions: any = {
       where: {
@@ -250,8 +251,8 @@ export class TransfersService {
     };
 
     if (
-      user.resource_access['client-test-appae'].roles.includes('secretaria') &&
-      !user.resource_access['client-test-appae'].roles.includes(
+      user.resource_access['appcolegioae'].roles.includes('secretaria') &&
+      !user.resource_access['appcolegioae'].roles.includes(
         'administrador-colegio',
       )
     ) {
@@ -459,7 +460,7 @@ export class TransfersService {
 
   async findMeetingsByUser(user: KeycloakTokenPayload): Promise<any[]> {
     const us = await this.userService.findByEmail(user.email);
-    const roles = user.resource_access['client-test-appae'].roles;
+    const roles = user.resource_access['appcolegioae'].roles;
     let status;
 
     const data = await this.transferMeetingRepository.find({
@@ -479,7 +480,7 @@ export class TransfersService {
       const { administratorState, psychologistState, requestCode } =
         transferRequest;
 
-      if (roles.includes('psicologia-traslados')) {
+      if (roles.includes('psicologia')) {
         status = psychologistState;
       }
       if (roles.includes('cordinador-academico')) {
@@ -636,14 +637,14 @@ export class TransfersService {
         };
 
         // 3. Generas el contenido del email
-        const { subject, html, text } = generateDecisionEmail(emailParams);
+        // const { subject, html, text } = generateDecisionEmail(emailParams);
 
-        await this.emailsService.sendEmailWithSES({
-          to: parent.email,
-          subject,
-          html,
-          text,
-        });
+        // await this.emailsService.sendEmailWithSES({
+        //   to: parent.email,
+        //   subject,
+        //   html,
+        //   text,
+        // });
       }
     }
     const msg =
@@ -669,7 +670,7 @@ export class TransfersService {
     user: KeycloakTokenPayload,
   ): Promise<TransferReport[]> {
     if (
-      user.resource_access['client-test-appae'].roles.includes(
+      user.resource_access['appcolegioae'].roles.includes(
         'cordinador-academico',
       )
     ) {

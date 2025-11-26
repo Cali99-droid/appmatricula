@@ -47,7 +47,7 @@ export class EnrollmentScheduleService {
       }
 
       if (type) {
-        qb = qb.andWhere('cronograma.type = :tipo', { type });
+        qb = qb.andWhere('cronograma.type = :type', { type });
       }
 
       if (currentDate) {
@@ -64,6 +64,33 @@ export class EnrollmentScheduleService {
       }
 
       return qb.getMany();
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async findOneByDate(query: FindCronogramasDto) {
+    try {
+      const { type, currentDate, yearId } = query;
+      let qb =
+        this.enrollmentScheduleRepository.createQueryBuilder('cronograma');
+
+      if (type) {
+        qb = qb.andWhere('cronograma.type = :type', { type });
+      }
+      if (currentDate) {
+        qb = qb.andWhere(
+          'cronograma.startDate <= :currentDate AND cronograma.endDate >= :currentDate',
+          { currentDate },
+        );
+      }
+
+      if (yearId) {
+        qb = qb.andWhere('cronograma.yearId = :yearId', {
+          yearId: `${yearId}`,
+        });
+      }
+      return qb.getOne();
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }

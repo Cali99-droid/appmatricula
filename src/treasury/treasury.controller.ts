@@ -41,7 +41,7 @@ import { KeycloakTokenPayload } from 'src/auth/interfaces/keycloak-token-payload
 import { TypeOfDebt } from './enum/TypeOfDebt.enum';
 import { GetDebtorsReport } from './dto/get-debtors-report.dto';
 @ApiTags('Treasury')
-@Resource('client-test-appae')
+@Resource('appcolegioae')
 @Controller('treasury')
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}

@@ -20,6 +20,7 @@ import { PersonModule } from 'src/person/person.module';
 import { DocsModule } from 'src/docs/docs.module';
 import { EmailsModule } from 'src/emails/emails.module';
 import { BullModule } from '@nestjs/bull';
+import { Year } from 'src/years/entities/year.entity';
 
 @Module({
   controllers: [TreasuryController],
