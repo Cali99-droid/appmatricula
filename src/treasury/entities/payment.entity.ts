@@ -13,6 +13,7 @@ import { Concept } from './concept.entity';
 import { PaymentMethod } from '../enum/PaymentMethod.enum';
 import { Debt } from './debt.entity';
 import { ProcessingStatusInterface } from '../interfaces/ProcessingStatus.interface';
+import { Year } from 'src/years/entities/year.entity';
 
 @Entity()
 export class Payment {
@@ -85,12 +86,23 @@ export class Payment {
   @ManyToOne(() => Concept, { nullable: true })
   @JoinColumn({ name: 'conceptId' })
   concept?: Concept;
+
   @ApiProperty({
     description: 'Id of Student',
   })
   @ManyToOne(() => Student, { nullable: true })
   @JoinColumn({ name: 'studentId' })
   student?: Student;
+
+  @ManyToOne(() => Year, {
+    nullable: true,
+  })
+  year?: Year;
+
+  @Column({
+    nullable: true,
+  })
+  yearId?: number;
 
   /**TIMESTAMPS */
   @CreateDateColumn({

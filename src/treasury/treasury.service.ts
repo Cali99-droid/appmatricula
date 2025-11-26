@@ -184,6 +184,7 @@ export class TreasuryService {
         if (debt.concept.code === 'C001') {
           // Actualizar deuda y matrícula
           await this.finalizeDebtAndEnrollment(debt, enrroll);
+          const year = enrroll.activityClassroom.phase.year;
           const rate = await this.ratesRepository.findOne({
             where: {
               level: { id: enrroll.activityClassroom.grade.level.id },
@@ -191,6 +192,7 @@ export class TreasuryService {
                 id: enrroll.activityClassroom.classroom.campusDetail.id,
               },
               concept: { id: 2 }, // Concepto de mensualidades
+              yearId: year.id,
             },
             relations: {
               concept: true,
@@ -283,11 +285,17 @@ export class TreasuryService {
         student: {
           family: true,
         },
+        activityClassroom: {
+          phase: {
+            year: true,
+          },
+        },
       },
     });
     if (!enrrollOnProccess) {
       throw new BadRequestException('Not available ');
     }
+    const year = enrrollOnProccess.activityClassroom.phase.year;
     const family = await this.familyRepository.findOne({
       where: {
         id: enrrollOnProccess.student.family.id,
@@ -318,11 +326,6 @@ export class TreasuryService {
     }
 
     try {
-      const concept = await this.conceptRepository.findOne({
-        where: {
-          code: 'C003',
-        },
-      });
       // console.log(concept);
       // return;
       const student = enrrollOnProccess.student.person;
@@ -331,6 +334,20 @@ export class TreasuryService {
       const level = grade.level;
       const campus = enrrollOnProccess.activityClassroom.classroom.campusDetail;
       const sendEmail = this.env === 'prod' ? !!resp.user?.email : false;
+      const rateReserved = await this.ratesRepository.findOne({
+        where: {
+          concept: { id: 3 },
+          level: { id: level.id },
+          campusDetail: { id: campus.id },
+          yearId: year.id,
+        },
+        relations: {
+          concept: true,
+        },
+      });
+      if (!rateReserved) {
+        throw new BadRequestException('no existe tarifa');
+      }
       const boletaData = {
         operacion: 'generar_comprobante',
         tipo_de_comprobante: 2,
@@ -346,34 +363,36 @@ export class TreasuryService {
         moneda: 1,
         porcentaje_de_igv: 0,
         total_gravada: '',
-        total_inafecta: concept.total,
-        total: concept.total,
+        total_inafecta: rateReserved.total,
+        total: rateReserved.total,
         enviar_automaticamente_a_la_sunat: true,
         enviar_automaticamente_al_cliente: sendEmail,
         observaciones: `Gracias por su preferencia.`,
         items: [
           {
             unidad_de_medida: 'NIU',
-            codigo: concept.code,
-            descripcion: `${concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} ${section} - ${level.name} - ${campus.name}`,
+            codigo: rateReserved.concept.code,
+            descripcion: `${rateReserved.concept.description} - ${student.name} ${student.lastname} ${student.mLastname} - ${grade.name} ${section} - ${level.name} - ${campus.name}`,
             cantidad: 1,
-            valor_unitario: concept.total,
-            precio_unitario: concept.total,
+            valor_unitario: rateReserved.total,
+            precio_unitario: rateReserved.total,
             descuento: '',
-            subtotal: concept.total,
+            subtotal: rateReserved.total,
             tipo_de_igv: 9,
             igv: 0.0,
-            total: concept.total,
+            total: rateReserved.total,
             anticipo_regularizacion: false,
             anticipo_documento_serie: '',
             anticipo_documento_numero: '',
           },
         ],
       };
+      /**PROBLEMA DE DUPLICADOS */
       const existingPayment = await this.paymentRepository.findOne({
         where: {
-          concept: { id: concept.id },
+          concept: { id: rateReserved.concept.id },
           student: { id: createPaidReservedDto.studentId },
+          yearId: year.id,
         },
       });
 
@@ -391,13 +410,14 @@ export class TreasuryService {
       }
 
       const pay = this.paymentRepository.create({
-        concept: { id: concept.id },
+        concept: { id: rateReserved.concept.id },
         date: new Date(),
         status: true,
-        total: concept.total,
+        total: rateReserved.total,
         student: { id: createPaidReservedDto.studentId },
         user: user.sub,
         receipt: `${serie}-${numero}`,
+        yearId: year.id,
       });
       const newPay = await this.paymentRepository.save(pay);
       // Enviar datos a Nubefact
@@ -425,16 +445,20 @@ export class TreasuryService {
         where: {
           level: { id: level.id },
           campusDetail: { id: campus.id },
+          yearId: year.id,
         },
         relations: {
           concept: true,
         },
       });
+      if (!rate) {
+        throw new BadRequestException('no hay tarifa para matricula');
+      }
       const createdDebtEnrrol = this.debtRepository.create({
         dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
         concept: { id: rate.concept.id },
         student: { id: createPaidReservedDto.studentId },
-        total: rate.total - concept.total,
+        total: rate.total - rateReserved.total,
         status: false,
         description: enrrollOnProccess.code,
         code: `MAT${enrrollOnProccess.code}`,
@@ -770,6 +794,9 @@ export class TreasuryService {
             activityClassroom: {
               grade: { level: true },
               classroom: true,
+              phase: {
+                year: true,
+              },
             },
           },
         },
@@ -2732,4 +2759,3 @@ export class TreasuryService {
 
   private getDE;
 }
-

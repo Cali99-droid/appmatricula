@@ -142,7 +142,7 @@ export class EnrollmentService {
       const classroom = await this.activityClassroomRepository.findOneByOrFail({
         id: ce.activityClassroomId,
       });
-
+      const year = classroom.phase.year;
       const existEnrroll = await this.enrollmentRepository.findOne({
         where: {
           student: { id: ce.studentId },
@@ -202,7 +202,7 @@ export class EnrollmentService {
           await this.activityClassroomRepository.findOneBy({
             id: ce.activityClassroomId,
           });
-        /**generar deuda */
+        /**generar deuda MATRICULA */
         const levelId = activityClassroom.grade.level.id;
         const campusDetailId = activityClassroom.classroom.campusDetail.id;
 
@@ -210,6 +210,8 @@ export class EnrollmentService {
           where: {
             level: { id: levelId },
             campusDetail: { id: campusDetailId },
+            concept: { id: 1 },
+            yearId: year.id,
           },
           relations: {
             concept: true,
