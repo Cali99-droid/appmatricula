@@ -17,6 +17,7 @@ export interface VacantsClassrooms {
   previousEnrolls: number;
   currentEnrroll: number;
   reserved?: number;
+  onProcess?: number;
   vacants: number;
   hasVacants: boolean;
   type: string;

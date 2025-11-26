@@ -635,6 +635,7 @@ export class EnrollmentService {
           section,
           detailOrigin,
           reserved,
+          onProcess,
         } = curr;
 
         if (!acc[gradeId]) {
@@ -646,8 +647,10 @@ export class EnrollmentService {
             ratified: 0,
             enrollments: 0,
             vacant: 0,
-            sections: [],
+            totalPreRegistered: 0,
             totalReserved: 0,
+            totalOnProcces: 0,
+            sections: [],
           };
         }
         acc[gradeId].sections.push({
@@ -656,13 +659,17 @@ export class EnrollmentService {
           ratified: previousEnrolls,
           //ratified: 0,
           enrollments: currentEnrroll,
-          vacant: capacity - previousEnrolls - currentEnrroll - reserved, //antiguos
+          vacant:
+            capacity - previousEnrolls - currentEnrroll - reserved - onProcess, //antiguos
           totalReserved: reserved,
+          totalOnProcces: onProcess,
+          totalPreRegistered: 0,
           // vacant: capacity - currentEnrroll, nuevos
           detailOrigin,
         });
         acc[gradeId].capacity += capacity;
         acc[gradeId].totalReserved += reserved;
+        acc[gradeId].totalOnProcces += onProcess;
         acc[gradeId].ratified += previousEnrolls;
         // acc[gradeId].ratified += 0;
         acc[gradeId].enrollments += currentEnrroll;
@@ -670,7 +677,8 @@ export class EnrollmentService {
           acc[gradeId].capacity -
           acc[gradeId].ratified -
           acc[gradeId].enrollments -
-          acc[gradeId].totalReserved;
+          acc[gradeId].totalReserved -
+          acc[gradeId].totalOnProcces;
 
         return acc;
       }, {});
@@ -1122,6 +1130,20 @@ export class EnrollmentService {
         },
       });
 
+      const currentReserved = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: { id: activityClassroom.id },
+          status: Status.RESERVADO,
+        },
+      });
+
+      const currentOnProcess = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: { id: activityClassroom.id },
+          status: Status.EN_PROCESO,
+        },
+      });
+
       const rtAndEnr = enrollOrigin.filter((item1) =>
         currentEnrroll.some((item2) => item1.student.id === item2.student.id),
       );
@@ -1152,6 +1174,8 @@ export class EnrollmentService {
         previousEnrolls: ratifieds,
         currentEnrroll: currentEnrroll.length,
         vacants,
+        reserved: currentReserved.length,
+        onProcess: currentOnProcess.length,
         hasVacants: vacants > 0,
         type: 'O',
         detailOrigin: {
@@ -1237,6 +1261,20 @@ export class EnrollmentService {
         },
       });
 
+      const currentReserved = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: { id: activityClassroom.id },
+          status: Status.RESERVADO,
+        },
+      });
+
+      const currentOnProcess = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: { id: activityClassroom.id },
+          status: Status.EN_PROCESO,
+        },
+      });
+
       const rtAndEnr = enrollPriority.filter((item1) =>
         currentEnrroll.some((item2) => item1.student.id === item2.student.id),
       );
@@ -1268,6 +1306,8 @@ export class EnrollmentService {
         capacity: activityClassroom.classroom.capacity,
         previousEnrolls: ratifieds,
         currentEnrroll: currentEnrroll.length,
+        reserved: currentReserved.length,
+        onProcess: currentOnProcess.length,
         vacants,
         hasVacants: vacants > 0,
         type: 'P',
@@ -1344,6 +1384,13 @@ export class EnrollmentService {
       },
     });
 
+    const currentOnProcess = await this.enrollmentRepository.find({
+      where: {
+        activityClassroom: { id: activityClassroom.id },
+        status: Status.EN_PROCESO,
+      },
+    });
+
     const rtAndEnr = enrollOrigin.filter((item1) =>
       currentEnrroll.some((item2) => item1.student.id === item2.student.id),
     );
@@ -1373,6 +1420,7 @@ export class EnrollmentService {
       previousEnrolls: ratifieds,
       currentEnrroll: currentEnrroll.length,
       reserved: currentReserved.length,
+      onProcess: currentOnProcess.length,
       vacants,
       hasVacants: vacants > 0,
       type: 'N',
