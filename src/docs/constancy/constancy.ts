@@ -40,8 +40,9 @@ export function addConstancy(doc: InstanceType<typeof PDFDocument>, data) {
   );
 
   doc.moveDown(1);
+  //${data.endVacant}
   doc.text(
-    `Mi representada: I.E.P. “ALBERT EINSTEIN”, reservará la VACANTE hasta la fecha ${data.endVacant}, quién al momento de matricular deberá presentar la documentación completa, que consta de:`,
+    `Mi representada: I.E.P. “ALBERT EINSTEIN”, reservará la VACANTE hasta la fecha 31 de enero del 2026, quién al momento de matricular deberá presentar la documentación completa, que consta de:`,
     { align: 'justify' },
   );
   doc.moveDown(1);
