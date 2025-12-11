@@ -434,7 +434,7 @@ export class TreasuryService {
       const newExpirationDate = new Date('2026-01-31T14:30:00Z');
       /**TODO debe ser hasta el 31 de enero cuando expira antes de la fecha actual*/
       // newExpirationDate.setDate(newExpirationDate.getDate() + 25);
-      newExpirationDate.setDate(newExpirationDate.getDate() + 25);
+      // newExpirationDate.setDate(newExpirationDate.getDate() + 25);
       enrrollOnProccess.status = Status.RESERVADO;
       enrrollOnProccess.isActive = true;
       enrrollOnProccess.reservationExpiration = newExpirationDate;
