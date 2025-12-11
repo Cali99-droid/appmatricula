@@ -447,6 +447,7 @@ export class TreasuryService {
         where: {
           level: { id: level.id },
           campusDetail: { id: campus.id },
+          concept: { id: 1 },
           yearId: year.id,
         },
         relations: {
