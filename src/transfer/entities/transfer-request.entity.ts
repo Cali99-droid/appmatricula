@@ -20,6 +20,7 @@ import { TransferMeeting } from './transfer-meeting.entity';
 export enum TransferType {
   INTERNAL = 'INTERNAL',
   EXTERNAL = 'EXTERNAL',
+  CAMPUS = 'CAMPUS',
 }
 // Enums para los nuevos estados
 export enum MainStatus {

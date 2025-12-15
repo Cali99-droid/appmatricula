@@ -89,7 +89,7 @@ export class BimesterService {
       where: { id: id, status: true },
     });
     if (!bimester)
-      throw new NotFoundException(`Bimester with id ${id} not found`);
+      throw new NotFoundException(`Bimester with id ${id} not active`);
     return bimester;
   }
 

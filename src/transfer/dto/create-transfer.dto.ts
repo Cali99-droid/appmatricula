@@ -12,10 +12,9 @@ import {
 } from 'class-validator';
 import { ExistId } from 'src/common/validation/exist-id';
 
-// Es buena práctica tener los enums en un archivo separado,
-// pero lo incluimos aquí para facilitar la visualización.
 export enum TransferType {
   INTERNAL = 'INTERNAL',
+  CAMPUS = 'CAMPUS',
   EXTERNAL = 'EXTERNAL',
 }
 

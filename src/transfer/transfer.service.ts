@@ -32,16 +32,9 @@ import { EnrollmentService } from 'src/enrollment/enrollment.service';
 import { TreasuryService } from 'src/treasury/treasury.service';
 import { TypeOfDebt } from 'src/treasury/enum/TypeOfDebt.enum';
 import { EmailsService } from 'src/emails/emails.service';
-import {
-  EmailTemplateParams,
-  generateRegistrationEmail,
-} from './helpers/email-request';
 
 import { PersonService } from 'src/person/person.service';
-import {
-  DecisionEmailParams,
-  generateDecisionEmail,
-} from './helpers/email-final';
+import { DecisionEmailParams } from './helpers/email-final';
 import { Status } from 'src/enrollment/enum/status.enum';
 import { SearchTranfersDto } from './dto/search-tranfer.dto';
 import { ActivityClassroomService } from 'src/activity_classroom/activity_classroom.service';
@@ -78,7 +71,6 @@ export class TransfersService {
     private readonly userService: UserService,
     private readonly enrollmentService: EnrollmentService,
     private readonly treasuryService: TreasuryService,
-    private readonly emailsService: EmailsService,
     private readonly activityClassroomService: ActivityClassroomService,
 
     private readonly personService: PersonService,
