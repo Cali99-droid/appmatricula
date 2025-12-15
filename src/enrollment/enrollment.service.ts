@@ -92,7 +92,7 @@ export class EnrollmentService {
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -2114,7 +2114,7 @@ export class EnrollmentService {
       handleDBExceptions(error, this.logger);
     }
   }
-  /**CHANGE CAMPUS */
+  /**CHANGE CAMPUS NOT USED*/
   async transferStudent(
     studentId: number,
     destinationSchool: string,
@@ -2169,6 +2169,32 @@ export class EnrollmentService {
     );
 
     return hs;
+  }
+  /**MARKED AS A TRANSFERRED */
+  async marketAsTransferStudent(studentId: number, user: any) {
+    try {
+      const actualEnroll = await this.findEnrollmentByStudentAndStatus(
+        studentId,
+        Status.MATRICULADO,
+      );
+      if (!actualEnroll) {
+        throw new NotFoundException('Enrollment actual not found');
+      }
+
+      actualEnroll.status = Status.TRASLADADO;
+      await this.enrollmentRepository.save(actualEnroll);
+
+      const hs = await this.studentService.createHistory(
+        ActionType.TRASLADADO,
+        'Traslado externo',
+        user.id,
+        studentId,
+      );
+
+      return hs;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
   }
   /**CRON JOBS RESERVARDOS */
   async updateReservedScript() {

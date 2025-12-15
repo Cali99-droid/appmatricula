@@ -424,7 +424,7 @@ export class PersonService {
         scope = SearchableScope.STUDENT,
         campusId,
       } = advancedSearchDto;
-      const roles = user.resource_access['appcolegioae'].roles;
+      const roles = user.resource_access['client-test-appae'].roles;
 
       const resultsOfSearch = await this.searchPerson(term);
       let enrolllmentAct = [];
