@@ -1246,6 +1246,7 @@ export class EnrollmentService {
         where: {
           activityClassroom: { id: oneDest },
           ratified: true,
+          status:Status.MATRICULADO
         },
       });
 
