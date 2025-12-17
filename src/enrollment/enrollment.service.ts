@@ -1119,7 +1119,7 @@ export class EnrollmentService {
           activityClassroom: { id: originId.id },
           ratified: true,
           status: Status.MATRICULADO,
-          isActive: true,
+         
         },
       });
 
@@ -1260,6 +1260,7 @@ export class EnrollmentService {
       const currentEnrroll = await this.enrollmentRepository.find({
         where: {
           activityClassroom: { id: activityClassroom.id },
+          status:Status.MATRICULADO
         },
       });
 
