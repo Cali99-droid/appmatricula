@@ -1721,7 +1721,8 @@ export class EnrollmentService {
       enrrolls: countEnrroll + countEnrrollAnt,
       vacants: vacants,
       act:countEnrroll,
-      ant:countEnrrollAnt
+      ant:countEnrrollAnt,
+      idsAcT: idsAc
     };
     // return {
     //   hasVacants: vacantsTot > 0,
