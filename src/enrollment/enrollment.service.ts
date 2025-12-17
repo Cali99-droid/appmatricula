@@ -36,7 +36,7 @@ import { Debt } from 'src/treasury/entities/debt.entity';
 import axios from 'axios';
 import { CreateNewEnrollmentDto } from './dto/create-new-enrrol';
 import { DataAdmision } from 'src/family/interfaces/data-admision';
-import { VaReportEnrrollDto } from './dto/get-report-enrroll.dto';
+import { GetReportEnrrollDto, VaReportEnrrollDto } from './dto/get-report-enrroll.dto';
 import { UpdateExpirationDto } from './dto/update-expiration.dto';
 import { FamilyService } from 'src/family/family.service';
 import { v4 as uuidv4 } from 'uuid';
