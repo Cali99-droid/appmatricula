@@ -1713,13 +1713,15 @@ export class EnrollmentService {
       0,
     );
 
-    const vacants = capacity - countEnrroll - countEnrrollAnt ;
+    const vacants = capacity -(countEnrroll + countEnrrollAnt );
     /**NEW CALC */
       return {
       hasVacants: vacants > 0,
       capacity: capacity,
       enrrolls: countEnrroll + countEnrrollAnt,
       vacants: vacants,
+      act:countEnrroll,
+      ant:countEnrrollAnt
     };
     // return {
     //   hasVacants: vacantsTot > 0,
