@@ -1127,6 +1127,7 @@ export class EnrollmentService {
       const currentEnrroll = await this.enrollmentRepository.find({
         where: {
           activityClassroom: { id: destinationId.id },
+          status:Status.MATRICULADO
         },
       });
 
