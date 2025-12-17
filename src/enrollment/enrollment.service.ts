@@ -1672,7 +1672,7 @@ export class EnrollmentService {
         activityClassroom: {
           id: In(idsAc),
         },
-        ratified: true,
+      //  ratified: true,
         status: In([
           Status.PREMATRICULADO,
           Status.EN_PROCESO,
