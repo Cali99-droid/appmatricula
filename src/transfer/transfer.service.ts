@@ -226,12 +226,15 @@ export class TransfersService {
       });
       const { student, person, originClassroom, destinationClassroom, ...res } =
         request;
+        const origin = originClassroom ===null ? `${originClassroom?.grade.name} ${originClassroom?.section}`:null;
+        const dest = destinationClassroom ===null ? `${destinationClassroom?.grade.name} ${destinationClassroom?.section}`:null;
       const formatRequest = {
         ...res,
         studentName: `${student.person.lastname.toLocaleUpperCase()} ${student.person.mLastname.toLocaleUpperCase()} ${student.person.name.toLocaleUpperCase()}`,
         parentName: `${person.lastname.toLocaleUpperCase()} ${person.mLastname.toLocaleUpperCase()} ${person.name.toLocaleUpperCase()}`,
-        originClassroom: `${originClassroom.grade.name} ${originClassroom.section}`,
-        destinationClassroom: `${destinationClassroom.grade.name} ${destinationClassroom.section}`,
+        originClassroom: origin,
+        destinationClassroom: dest,
+
       };
 
       return formatRequest;
