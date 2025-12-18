@@ -1119,7 +1119,7 @@ export class EnrollmentService {
           activityClassroom: { id: originId.id },
           ratified: true,
           status: Status.MATRICULADO,
-          isActive: true,
+         
         },
       });
 
@@ -1127,6 +1127,7 @@ export class EnrollmentService {
       const currentEnrroll = await this.enrollmentRepository.find({
         where: {
           activityClassroom: { id: destinationId.id },
+          status:Status.MATRICULADO
         },
       });
 
@@ -1246,6 +1247,7 @@ export class EnrollmentService {
         where: {
           activityClassroom: { id: oneDest },
           ratified: true,
+          status:Status.MATRICULADO
         },
       });
 
@@ -1258,6 +1260,7 @@ export class EnrollmentService {
       const currentEnrroll = await this.enrollmentRepository.find({
         where: {
           activityClassroom: { id: activityClassroom.id },
+          status:Status.MATRICULADO
         },
       });
 
@@ -1620,8 +1623,8 @@ export class EnrollmentService {
   }
   async getVacantsGeneral(gradeId: number, yearId: number, campusId: number) {
     /***NUEVO inicio */
-    let vacantsTot = 0;
-    let capacity = 0;
+   // let vacantsTot = 0;
+   // let capacity = 0;
     const activityClassrooms = await this.activityClassroomRepository.find({
       where: {
         grade: { id: gradeId },
@@ -1639,28 +1642,61 @@ export class EnrollmentService {
       },
     });
 
-    for (const ac of activityClassrooms) {
-      const data: VacantsClassrooms = await this.calcVacantsToClassroom(ac.id);
-      vacantsTot += data.capacity - data.previousEnrolls - data.currentEnrroll;
-      capacity += data.capacity;
-    }
-    /***NUEVO FIN */
-    // const idsAc = activityClassrooms.map((ac) => ac.id);
+        const activityClassroomsAnt = await this.activityClassroomRepository.find({
+      where: {
+        grade: { id: gradeId-1 },
+        phase: {
+          year: { id: yearId-1 },
+        },
+        classroom: {
+          campusDetail: {
+            id: campusId,
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
 
-    // const countEnrroll = await this.enrollmentRepository.count({
-    //   where: {
-    //     activityClassroom: {
-    //       id: In(idsAc),
-    //     },
-    //     ratified: true,
-    //     status: In([
-    //       Status.PREMATRICULADO,
-    //       Status.EN_PROCESO,
-    //       Status.MATRICULADO,
-    //       Status.RESERVADO,
-    //     ]),
-    //   },
-    // });
+    // for (const ac of activityClassrooms) {
+    //   const data: VacantsClassrooms = await this.calcVacantsToClassroom(ac.id);
+    //   vacantsTot += data.capacity - data.previousEnrolls - data.currentEnrroll;
+    //   capacity += data.capacity;
+    // }
+    /***NUEVO FIN */
+
+    /**NEW CALC */
+    const idsAc = activityClassrooms.map((ac) => ac.id);
+    const idsAcAnt = activityClassroomsAnt.map((ac) => ac.id);
+
+    const countEnrroll = await this.enrollmentRepository.count({
+      where: {
+        activityClassroom: {
+          id: In(idsAc),
+        },
+      //  ratified: true,
+        status: In([
+          Status.PREMATRICULADO,
+          Status.EN_PROCESO,
+          Status.MATRICULADO,
+          Status.RESERVADO,
+        ]),
+      },
+    });
+        const countEnrrollAnt = await this.enrollmentRepository.count({
+      where: {
+        activityClassroom: {
+          id: In(idsAcAnt),
+        },
+        ratified: true,
+        status: In([
+       
+          Status.MATRICULADO,
+     
+        ]),
+      },
+    });
 
     /**data destino, aulas configuradas para el grado solicitado */
 
@@ -1673,27 +1709,37 @@ export class EnrollmentService {
     //   },
     // });
 
-    // const capacities = activityClassrooms.map((ac) => ac.classroom.capacity);
+    const capacities = activityClassrooms.map((ac) => ac.classroom.capacity);
 
-    // const capacity = capacities.reduce(
-    //   (accumulator, currentValue) => accumulator + currentValue,
-    //   0,
-    // );
+    const capacity = capacities.reduce(
+      (accumulator, currentValue) => accumulator + currentValue,
+      0,
+    );
 
-    // const vacants = capacity - countEnrroll;
-
-    return {
-      hasVacants: vacantsTot > 0,
+    const vacants = capacity -(countEnrroll + countEnrrollAnt );
+    /**NEW CALC */
+      return {
+      hasVacants: vacants > 0,
       capacity: capacity,
-      enrrolls: capacity - vacantsTot,
-      vacants: vacantsTot,
+      enrrolls: countEnrroll + countEnrrollAnt,
+      vacants: vacants,
+      act:countEnrroll,
+      ant:countEnrrollAnt,
+      idsAcT: idsAc
     };
+    // return {
+    //   hasVacants: vacantsTot > 0,
+    //   capacity: capacity,
+    //   enrrolls: capacity - vacantsTot,
+    //   vacants: vacantsTot,
+    // };
   }
   async getStatusEnrollmentByUser(user: any) {
     // return {
     //   status: false,
     //   // message: user,
     // };
+   
     const enrollments = await this.enrollmentRepository
       .createQueryBuilder('enrollment')
       .leftJoinAndSelect('enrollment.student', 'student')
