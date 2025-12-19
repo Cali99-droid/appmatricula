@@ -932,18 +932,19 @@ export class EnrollmentService {
       });
 
       for (const ac of classrooms) {
-        const dest = await this.vacancyCalculation(ac.id);
+        // const dest = await this.vacancyCalculation(ac.id);
+        const dest = await this.calcVacantsToClassroom(ac.id);
 
         // if (
         //   dest.section === currentEnrrollment.activityClassroom.section ||
         //   dest.hasVacants
         // ) {
 
-        if (dest.hasVacant) {
+        if (dest.hasVacants) {
           const classroom: AvailableClassroom = {
             id: ac.id,
             name: ac.grade.name + ' ' + ac.section,
-            vacants: dest.vacant,
+            vacants: dest.vacants,
             suggested:
               dest.section === currentEnrrollment.activityClassroom.section
                 ? true
