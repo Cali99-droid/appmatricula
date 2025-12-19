@@ -1406,14 +1406,14 @@ export class EnrollmentService {
     const ratifieds =
       enrollOrigin.length - rtAndEnr.length - rtAndEnrInOther.length;
 
-    // const vacants =
-    //   activityClassroom.classroom.capacity - ratifieds - currentEnrroll.length;
-    //!no tiene efecto  para admision*/
     const vacants =
-      activityClassroom.classroom.capacity -
-      currentEnrroll.length -
-      currentReserved.length -
-      enrollOrigin.length;
+      activityClassroom.classroom.capacity - ratifieds - currentEnrroll.length;
+    //!no tiene efecto  para admision*/
+    // const vacants =
+    //   activityClassroom.classroom.capacity -
+    //   currentEnrroll.length -
+    //   currentReserved.length -
+    //   enrollOrigin.length;
 
     const res: VacantsClassrooms = {
       id: activityClassroom.id,
