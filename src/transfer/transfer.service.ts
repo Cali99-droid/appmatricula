@@ -380,6 +380,7 @@ export class TransfersService {
         meetingDate: meeting[0]?.meetingDate,
         destinationClassroom: dest,
         destinationSchool: destinationSchoolName,
+        destination: dest === null ? destinationSchoolName : dest,
         // type,
         // codeClassroom: `${destinationClassroom.classroom.code}`,
       };
