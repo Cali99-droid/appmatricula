@@ -226,15 +226,20 @@ export class TransfersService {
       });
       const { student, person, originClassroom, destinationClassroom, ...res } =
         request;
-        const origin = originClassroom ===null ? `${originClassroom?.grade.name} ${originClassroom?.section}`:null;
-        const dest = destinationClassroom ===null ? `${destinationClassroom?.grade.name} ${destinationClassroom?.section}`:null;
+      const origin =
+        originClassroom !== null
+          ? `${originClassroom?.grade.name} ${originClassroom?.section}`
+          : null;
+      const dest =
+        destinationClassroom !== null
+          ? `${destinationClassroom?.grade.name} ${destinationClassroom?.section}`
+          : null;
       const formatRequest = {
         ...res,
         studentName: `${student.person.lastname.toLocaleUpperCase()} ${student.person.mLastname.toLocaleUpperCase()} ${student.person.name.toLocaleUpperCase()}`,
         parentName: `${person.lastname.toLocaleUpperCase()} ${person.mLastname.toLocaleUpperCase()} ${person.name.toLocaleUpperCase()}`,
         originClassroom: origin,
         destinationClassroom: dest,
-
       };
 
       return formatRequest;
@@ -333,7 +338,12 @@ export class TransfersService {
     return route.map((r) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { user, createdAt, updatedAt, transferRequest, ...res } = r;
-      const { transferMeeting, destinationClassroom } = transferRequest;
+      const {
+        transferMeeting,
+        destinationClassroom,
+        destinationSchoolName,
+        type,
+      } = transferRequest;
       let meeting = [];
 
       if (
@@ -359,12 +369,19 @@ export class TransfersService {
             : [];
       }
 
+      const dest =
+        destinationClassroom !== null
+          ? `${destinationClassroom?.grade.name} ${destinationClassroom?.section}`
+          : null;
+
       return {
         ...res,
         responsible: `${user.person.lastname} ${user.person.mLastname} ${user.person.name}`,
         meetingDate: meeting[0]?.meetingDate,
-        destinationClassroom: `${destinationClassroom.grade.name} ${destinationClassroom.section}`,
-        codeClassroom: `${destinationClassroom.classroom.code}`,
+        destinationClassroom: dest,
+        destinationSchool: destinationSchoolName,
+        // type,
+        // codeClassroom: `${destinationClassroom.classroom.code}`,
       };
     });
     // // Si está cerrada, la respuesta es directa
