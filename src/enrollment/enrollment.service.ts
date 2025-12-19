@@ -940,7 +940,10 @@ export class EnrollmentService {
         //   dest.hasVacants
         // ) {
 
-        if (dest.hasVacants) {
+        if (
+          dest.hasVacants ||
+          dest.section === currentEnrrollment.activityClassroom.section
+        ) {
           const classroom: AvailableClassroom = {
             id: ac.id,
             name: ac.grade.name + ' ' + ac.section,
@@ -969,7 +972,7 @@ export class EnrollmentService {
       //   name: availableClassroom.grade.name + ' ' + availableClassroom.section,
       // };
       // availables.push(classroom);
-      console.log('normal dest');
+      console.log('normal dest available');
       return availables;
     } catch (error) {
       handleDBExceptions(error, this.logger);
@@ -1367,7 +1370,7 @@ export class EnrollmentService {
           },
         },
         ratified: true,
-        status: Status.MATRICULADO,
+        // status: Status.MATRICULADO,
         isActive: true,
       },
     });
@@ -1405,11 +1408,12 @@ export class EnrollmentService {
 
     // const vacants =
     //   activityClassroom.classroom.capacity - ratifieds - currentEnrroll.length;
-    //!no tiene efecto */
+    //!no tiene efecto  para admision*/
     const vacants =
       activityClassroom.classroom.capacity -
       currentEnrroll.length -
-      currentReserved.length;
+      currentReserved.length -
+      enrollOrigin.length;
 
     const res: VacantsClassrooms = {
       id: activityClassroom.id,
