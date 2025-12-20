@@ -857,7 +857,7 @@ export class EnrollmentService {
       });
       /**un destino */
       if (configAscent.length === 1) {
-        console.log('one dest');
+        console.log('tiene un destino  configurado');
         const { destinationId } = configAscent[0];
         const dest = await this.calcVacantsToClassroom(destinationId.id);
         const classroom: AvailableClassroom = {
@@ -875,7 +875,7 @@ export class EnrollmentService {
       if (configAscent.length > 1) {
         /**tiene mas de un destino, entonces es el aula que se parte*/
         /**calcular las vacantes de sus destinos s*/
-
+        console.log('tiene mas de un destino  configurado');
         for (const co of configAscent) {
           const dest = await this.calcVacantsToClassroom(co.destinationId.id);
 
@@ -975,7 +975,7 @@ export class EnrollmentService {
       //   name: availableClassroom.grade.name + ' ' + availableClassroom.section,
       // };
       // availables.push(classroom);
-      console.log('normal dest available');
+      console.log('no tiene destino configurado');
       return availables;
     } catch (error) {
       handleDBExceptions(error, this.logger);
@@ -1070,6 +1070,7 @@ export class EnrollmentService {
     const origins = configAscent.map((c) => c.originId.id);
     if (configAscent.length === 1) {
       console.log('un dest');
+      console.log('Aula destino recibe un origen');
       /** calcular vacantes */
       const { originId, destinationId } = configAscent[0];
 
@@ -1199,7 +1200,8 @@ export class EnrollmentService {
 
     /**si tiene mas de dos origenes -> buscar cual tiene dos destinos*/
     if (configAscent.length > 1) {
-      console.log('doble dest');
+      console.log('Aula destino recibe dos origenes');
+
       /**verificar cual tiene dos destinos */
       // let hasTwoDest;
       let oneDest;
@@ -1332,7 +1334,7 @@ export class EnrollmentService {
       // console.log('priority', res);
       return res;
     }
-
+    console.log('Aula destino recibe origen por defecto');
     /**calcular vacantes normalmente segun correlacion pero mateniendo a la sede */
     const enrolledInOther = await this.enrollmentRepository.find({
       where: {
