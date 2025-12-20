@@ -8,7 +8,7 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
-import { In, LessThan, MoreThanOrEqual, Raw, Repository } from 'typeorm';
+import { In, LessThan, Raw, Repository } from 'typeorm';
 import { Family } from 'src/family/entities/family.entity';
 import axios from 'axios';
 import { Payment } from './entities/payment.entity';
@@ -545,6 +545,7 @@ export class TreasuryService {
     const parents = [];
     parents.push(family.parentOneId);
     parents.push(family.parentTwoId);
+
     const data = {
       debts: debts,
       resp: family.respEconomic || 'No hay reponsable matrícula ',

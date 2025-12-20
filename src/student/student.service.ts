@@ -20,6 +20,7 @@ import { SearchEstudiantesDto } from './dto/search-student.dto';
 import { ActivityClassroomService } from 'src/activity_classroom/activity_classroom.service';
 import { StudentHistory } from './entities/student_history';
 import { ActionType } from './enum/actionType.enum';
+import { TreasuryService } from 'src/treasury/treasury.service';
 
 @Injectable()
 export class StudentService {
@@ -38,6 +39,7 @@ export class StudentService {
     private readonly studentHistoryRepository: Repository<StudentHistory>,
 
     private activityClassroomService: ActivityClassroomService,
+    private treasuryService: TreasuryService,
   ) {}
   create(createStudentDto: CreateStudentDto) {
     console.log(createStudentDto);
@@ -156,12 +158,25 @@ export class StudentService {
 
     const [results, total] = await query.getManyAndCount();
 
-    let data = results.map((estudiante) => ({
-      ...estudiante,
-      grade: `${estudiante.enrollment[0]?.activityClassroom.grade.name} ${estudiante.enrollment[0]?.activityClassroom.section}`,
-      tieneMatriculaActiva: estudiante.enrollment.length > 0,
-    }));
-    data = data.filter((d) => d.tieneMatriculaActiva);
+    const dataPromises = results.map(async (estudiante) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { enrollment, hasDebt, ...studentData } = estudiante;
+      const lastEnrollment =
+        enrollment && enrollment.length > 0
+          ? enrollment[enrollment.length - 1]
+          : null;
+      return {
+        ...studentData,
+        grade: lastEnrollment
+          ? `${lastEnrollment.activityClassroom?.grade?.name} ${lastEnrollment.activityClassroom?.section}`
+          : '',
+        tieneMatriculaActiva: !!lastEnrollment,
+        hasDebt: (await this.treasuryService.findDebts(estudiante.id)).hasDebt,
+      };
+    });
+    const data = (await Promise.all(dataPromises)).filter(
+      (d) => d.tieneMatriculaActiva,
+    );
     return {
       data,
       total,

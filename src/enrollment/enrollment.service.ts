@@ -54,6 +54,7 @@ import { TypeEnrollmentSchedule } from 'src/enrollment_schedule/enum/type-enroll
 
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { Behavior } from './enum/behavior.enum';
 
 @Injectable()
 export class EnrollmentService {
@@ -197,6 +198,7 @@ export class EnrollmentService {
           dateOfChange: new Date(),
           reservationExpiration: newExpirationDate,
         });
+
         const enrroll = await this.enrollmentRepository.save(enrollment);
         const activityClassroom =
           await this.activityClassroomRepository.findOneBy({
@@ -1403,9 +1405,11 @@ export class EnrollmentService {
     );
 
     // console.log(rtAndEnrInOther.length === 1);
+    ///eSCOGIERON OTRA AULA A LA RECOMENDADa
     const ratifieds =
       enrollOrigin.length - rtAndEnr.length - rtAndEnrInOther.length;
 
+    /**vacants SE USA PARA AULAS DISPONIBLES POR ALUMNO */
     const vacants =
       activityClassroom.classroom.capacity - ratifieds - currentEnrroll.length;
     //!no tiene efecto  para admision*/
@@ -1716,34 +1720,38 @@ export class EnrollmentService {
         message: 'No tiene hijos',
       };
     }
-    const hasDebt = enrollments.some(
-      (enrollment) => enrollment.student.hasDebt === true,
+    const debts = enrollments.filter(
+      async (e) =>
+        (await this.treasuryService.findDebts(e.student.id)).hasDebt === true,
     );
+    // const hasDebt = enrollments.some(
+    //   (enrollment) => enrollment.student.hasDebt === true,
+    // );
 
-    if (hasDebt) {
+    if (debts.length > 0) {
       return {
         status: false,
-        message: 'El usuario tiene un hijo con deuda.',
+        message: 'El usuario tiene hijos con deuda.',
       };
     }
-    // const hascConditional = enrollments.some(
-    //   (enrollment) => enrollment.behavior === Behavior.MATRICULA_CONDICIONADA,
-    // );
-    // if (hascConditional) {
-    //   return {
-    //     status: false,
-    //     message: 'El usuario tiene un hijo que con matricula condicionada.',
-    //   };
-    // }
-    // const hasLoss = enrollments.some(
-    //   (enrollment) => enrollment.behavior === Behavior.PERDIDA_VACANTE,
-    // );
-    // if (hasLoss) {
-    //   return {
-    //     status: false,
-    //     message: 'El usuario tiene un hijo que ha perdido su vacante.',
-    //   };
-    // }
+    const hascConditional = enrollments.some(
+      (enrollment) => enrollment.behavior === Behavior.MATRICULA_CONDICIONADA,
+    );
+    if (hascConditional) {
+      return {
+        status: false,
+        message: 'El usuario tiene un hijo que con matricula condicionada.',
+      };
+    }
+    const hasLoss = enrollments.some(
+      (enrollment) => enrollment.behavior === Behavior.PERDIDA_VACANTE,
+    );
+    if (hasLoss) {
+      return {
+        status: false,
+        message: 'El usuario tiene un hijo que ha perdido su vacante.',
+      };
+    }
     return {
       status: true,
       message: 'El usuario no tiene niguna restricción de matricula.',
