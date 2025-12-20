@@ -775,6 +775,7 @@ export class EnrollmentService {
       .orderBy('enrollment.id', 'DESC')
       .getOne();
     // await this.calcVacantsAc(12);
+
     if (!currentEnrrollment) {
       throw new NotFoundException('Dont exists this data');
     }
@@ -1166,9 +1167,9 @@ export class EnrollmentService {
         rtAndEnr.length -
         rtAndEnrInOther.length -
         rtAndEnrInOtherDefault.length;
-      // const vacants =
-      //   destinationId.classroom.capacity - ratifieds - currentEnrroll.length;
-      const vacants = destinationId.classroom.capacity - currentEnrroll.length;
+      const vacants =
+        destinationId.classroom.capacity - ratifieds - currentEnrroll.length;
+      // const vacants = destinationId.classroom.capacity - currentEnrroll.length;
 
       const res: VacantsClassrooms = {
         id: activityClassroom.id,
