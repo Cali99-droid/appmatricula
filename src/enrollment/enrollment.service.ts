@@ -1169,6 +1169,7 @@ export class EnrollmentService {
         rtAndEnrInOtherDefault.length;
       const vacants =
         destinationId.classroom.capacity - ratifieds - currentEnrroll.length;
+      /** DESCOMENTA LO SIGUINET CUANDO SE DEJEN DE CUIDAR VACANTES YA NO SE CONSIDERAN RETIFICADOS DESCOMENTA LO SIGUINET*/
       // const vacants = destinationId.classroom.capacity - currentEnrroll.length;
 
       const res: VacantsClassrooms = {
@@ -1297,12 +1298,15 @@ export class EnrollmentService {
       // console.log('capacidad', activityClassroom.classroom.capacity);
       // console.log('ratificados', ratifieds);
       // console.log('mat act', currentEnrroll.length);
-      // const vacants =
-      //   activityClassroom.classroom.capacity -
-      //   ratifieds -
-      //   currentEnrroll.length;
+      //SE CONSERVA LA VACANTE DE LOS RATIFICADOS
       const vacants =
-        activityClassroom.classroom.capacity - currentEnrroll.length;
+        activityClassroom.classroom.capacity -
+        ratifieds -
+        currentEnrroll.length;
+
+      //NO SE CONSERVA LA VACANTE DE LOS RATIFICADOS
+      // const vacants =
+      //   activityClassroom.classroom.capacity - currentEnrroll.length;
 
       const res: VacantsClassrooms = {
         id: activityClassroom.id,
