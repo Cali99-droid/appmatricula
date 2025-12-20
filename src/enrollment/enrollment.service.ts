@@ -1720,15 +1720,15 @@ export class EnrollmentService {
         message: 'No tiene hijos',
       };
     }
-    const debts = enrollments.filter(
-      async (e) =>
-        (await this.treasuryService.findDebts(e.student.id)).hasDebt === true,
+    const debtsPromises = await Promise.all(
+      enrollments.map(async (e) => {
+        const { hasDebt } = await this.treasuryService.findDebts(e.student.id);
+        return hasDebt ? e : null;
+      }),
     );
-    // const hasDebt = enrollments.some(
-    //   (enrollment) => enrollment.student.hasDebt === true,
-    // );
+    const debts = debtsPromises.filter((e) => e !== null);
 
-    if (debts.length > 0) {
+    if (debts.length !== 0) {
       return {
         status: false,
         message: 'El usuario tiene hijos con deuda.',

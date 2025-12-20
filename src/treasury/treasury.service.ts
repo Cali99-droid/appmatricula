@@ -2668,7 +2668,7 @@ export class TreasuryService {
     const year = fecha.getFullYear();
     const month = String(fecha.getMonth() + 1).padStart(2, '0');
     const day = String(fecha.getDate()).padStart(2, '0');
-    const shortUuid = uuidv4().split('-')[0].toUpperCase();
+    // const shortUuid = uuidv4().split('-')[0].toUpperCase();
 
     return `COBR-${year}${month}${day}-${estudianteId}`;
   }
@@ -2700,8 +2700,8 @@ export class TreasuryService {
       order by student asc;`,
     );
 
-    // Agregar job a la cola
-    const job = await this.cobranzaQueue.add(
+    // Agregar job a la colaconst job =
+    await this.cobranzaQueue.add(
       'generar-cartas',
       {
         estudianteData: data,

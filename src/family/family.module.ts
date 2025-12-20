@@ -10,6 +10,7 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { User } from 'src/user/entities/user.entity';
 import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { TreasuryModule } from 'src/treasury/treasury.module';
 
 @Module({
   controllers: [FamilyController],
@@ -25,6 +26,7 @@ import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
     ]),
     HttpModule,
     ConfigModule,
+    TreasuryModule,
   ],
   exports: [TypeOrmModule, FamilyService],
 })

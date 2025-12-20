@@ -27,6 +27,7 @@ import { Status } from 'src/enrollment/enum/status.enum';
 import { TypePhase } from 'src/phase/enum/type-phase.enum';
 import { SlackService } from 'src/common/slack/slack.service';
 import { SlackChannel } from 'src/common/slack/slack.constants';
+import { TreasuryService } from 'src/treasury/treasury.service';
 
 @Injectable()
 export class FamilyService {
@@ -48,6 +49,7 @@ export class FamilyService {
     private readonly configService: ConfigService,
 
     private readonly slackService: SlackService,
+    private readonly treasuryService: TreasuryService,
   ) {}
 
   async create(createfamilyDto: CreateFamilyDto) {
@@ -309,41 +311,48 @@ export class FamilyService {
 
     /**TODO Formato temporal */
     const { student, ...rest } = family;
-    const childrens = student
-      .map((item) => {
-        const person = item.person;
-        // Verifica si `enrollment` tiene elementos
-        if (item.enrollment.length === 0) {
-          return undefined; // O manejar de otra manera según tu lógica
-        }
-        const { student, activityClassroom, ...enrroll } = item.enrollment.find(
-          (e) => e.isActive === true || e.activityClassroom.grade.id == 14,
-        );
+    const childrensPromises = student.map(async (item) => {
+      const person = item.person;
+      // Verifica si `enrollment` tiene elementos
+      if (item.enrollment.length === 0) {
+        return undefined; // O manejar de otra manera según tu lógica
+      }
+      const foundEnrollment = item.enrollment.find(
+        (e) => e.isActive === true || e.activityClassroom.grade.id == 14,
+      );
 
-        if (
-          (activityClassroom.grade.position !== 14 &&
-            enrroll.status !== Status.EN_PROCESO) ||
-          enrroll.isActive
-        ) {
-          return {
-            person,
-            ...enrroll,
-            studentId: student.id,
-            photo: student.photo,
-            activityClassroomId: activityClassroom.id,
-            actual:
-              activityClassroom.classroom.campusDetail.name +
-              ' - ' +
-              activityClassroom.grade.level.name +
-              ' - ' +
-              activityClassroom.grade.name +
-              ' ' +
-              activityClassroom.section,
-          };
-        }
-        return undefined; // Opcional, para dejar explícito que devolvemos undefined
-      })
-      .filter((child) => child !== undefined);
+      if (!foundEnrollment) return undefined;
+
+      const { student, activityClassroom, ...enrroll } = foundEnrollment;
+
+      if (
+        (activityClassroom.grade.position !== 14 &&
+          enrroll.status !== Status.EN_PROCESO) ||
+        enrroll.isActive
+      ) {
+        return {
+          person,
+          ...enrroll,
+          studentId: student.id,
+          photo: student.photo,
+          activityClassroomId: activityClassroom.id,
+          actual:
+            activityClassroom.classroom.campusDetail.name +
+            ' - ' +
+            activityClassroom.grade.level.name +
+            ' - ' +
+            activityClassroom.grade.name +
+            ' ' +
+            activityClassroom.section,
+          hasDebt: (await this.treasuryService.findDebts(student.id)).hasDebt,
+        };
+      }
+      return undefined; // Opcional, para dejar explícito que devolvemos undefined
+    });
+
+    const childrens = (await Promise.all(childrensPromises)).filter(
+      (child) => child !== undefined,
+    );
 
     const data = { student: childrens, ...rest };
 

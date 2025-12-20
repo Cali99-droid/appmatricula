@@ -75,7 +75,7 @@ export function addClausesPart2(
 
   //TEXTO DE CLAUSULA SEPTIMA
   const C7_P1A = `La vigencia del Contrato se sujeta al calendario escolar dispuesto para este año para las tres modalidades, el mismo que se inicia`;
-  const C7_P1B = `el ${dayClassStart} de marzo y culmina el ${dayClassEnd} de diciembre de ${year}.`;
+  const C7_P1B = `el ${dayClassStart}  y culmina el ${dayClassEnd} `;
 
   //TEXTO DE CLAUSULA OTAVA
   const C8_P1A = `El PADRE O MADRE DE FAMILIA podrá controlar o verificar, a su propio costo y cargo, la ejecución de los Servicios`;

@@ -59,7 +59,7 @@ export function addContractHeader(
   const C2_P4B = `de parte de la ASOCIACIÓN, sin encontrar ninguna relación de dependencia o vinculación que genere obligaciones en`;
   const C2_P4C = `las actuaciones de la ASOCIACIÓN.`;
   //TEXTO DE CLAUSULA TERCERA
-  const C3_P1A = `3.1	El año académico se inicia el lunes ${dayClassStart} de marzo de ${year} y finaliza el viernes ${dayClassEnd} de diciembre del ${year}, salvo`;
+  const C3_P1A = `3.1	El año académico se inicia el ${dayClassStart} y finaliza el ${dayClassEnd}, salvo`;
   const C3_P1B = `disposiciones del Ministerio de Educación, de la UGEL HUARAZ o autoridad competente que obligue a modificar lo establecido en el presente numeral.`;
   const C3_P2A = `3.2	Los tres niveles educativos (inicial, primaria y secundaria) están organizados en 4 bimestres. Al finalizar cada periodo`;
   const C3_P2B = `académico los alumnos tendrán un periodo corto de descanso.`;
