@@ -288,6 +288,13 @@ export class FamilyService {
         respEconomic: true,
         respAcademic: true,
       },
+      order: {
+        student: {
+          enrollment: {
+            id: 'DESC',
+          },
+        },
+      },
     });
 
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
