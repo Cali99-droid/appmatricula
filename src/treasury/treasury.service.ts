@@ -574,16 +574,16 @@ export class TreasuryService {
         parentTwoId: true,
       },
     });
-    if (!family) {
-      const data = {
-        debts: [],
-        resp: 'No hay reponsable matrícula ',
-        parents: [],
-        hasDebt: true,
-      };
-      return data;
-      throw new NotFoundException('Don´t exist family for this student');
-    }
+    // if (!family) {
+    //   const data = {
+    //     debts: [],
+    //     resp: 'No hay reponsable matrícula ',
+    //     parents: [],
+    //     hasDebt: true,
+    //   };
+    //   return data;
+    //   throw new NotFoundException('Don´t exist family for this student');
+    // }
     let debts = [];
     if (type === TypeOfDebt.VENCIDA) {
       debts = await this.debtRepository.find({
@@ -613,12 +613,12 @@ export class TreasuryService {
       });
     }
     const parents = [];
-    parents.push(family.parentOneId);
-    parents.push(family.parentTwoId);
+    parents.push(family?.parentOneId);
+    parents.push(family?.parentTwoId);
 
     const data = {
       debts: debts,
-      resp: family.respEconomic || 'No hay reponsable matrícula ',
+      resp: family?.respEconomic || 'No hay reponsable matrícula ',
       parents,
       hasDebt: debts.length > 0,
     };
