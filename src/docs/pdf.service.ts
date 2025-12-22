@@ -35,6 +35,7 @@ import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import { TDocumentDefinitions, Content, TableCell } from 'pdfmake/interfaces';
 import * as path from 'path';
 import { Rates } from 'src/treasury/entities/rates.entity';
+import { addCostosTramites } from './contract/costos-tramites';
 (<any>pdfMake).addVirtualFileSystem(pdfFonts);
 export interface CartaCobranzaData {
   fecha: Date;
@@ -725,26 +726,33 @@ export class PdfService {
         },
       );
       addAnexo(doc);
-      doc.image(image1, 55, doc.y - 290, {
-        width: 80,
-        // align: 'center',
-      });
-      // doc.image(image2, 140, doc.y - 290, {
+      // doc.image(image2, 55, doc.y - 390, {
       //   width: 90,
       //   // align: 'center',
       // });
-      doc.image(image3, 55, doc.y - 180, {
-        width: 80,
-        // align: 'center',
-      });
-      doc.image(image4, 140, doc.y - 180, {
-        width: 90,
-        // align: 'center',
-      });
-      doc.image(image5, 55, doc.y - 80, {
-        width: 80,
-        // align: 'center',
-      });
+      // doc.image(image1, 55, doc.y - 290, {
+      //   width: 80,
+      //   // align: 'center',
+      // });
+
+      // doc.image(image3, 55, doc.y - 180, {
+      //   width: 80,
+      //   // align: 'center',
+      // });
+      // doc.image(image4, 140, doc.y - 180, {
+      //   width: 90,
+      //   // align: 'center',
+      // });
+      // doc.image(image5, 55, doc.y - 80, {
+      //   width: 80,
+      //   // align: 'center',
+      // });
+      doc.image(image2, 55, doc.y - 390, { width: 90 });
+      doc.image(image1, 55, doc.y - 290, { width: 80 });
+      doc.image(image3, 55, doc.y - 180, { width: 80 });
+      doc.image(image4, 140, doc.y - 180, { width: 90 });
+      doc.image(image5, 55, doc.y - 80, { width: 80 });
+      addCostosTramites(doc, name, docNumber, nameSon);
       doc.end();
     });
   }

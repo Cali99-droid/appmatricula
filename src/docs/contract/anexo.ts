@@ -19,10 +19,10 @@ export async function addAnexo(doc: InstanceType<typeof PDFDocument>) {
 
   // Datos extraídos del documento WORD
   const tableData = [
-    // {
-    //   col1: '', // Espacio para la imagen
-    //   col2: 'Sede 1: Jr Huaylas Nro. 220 – Independencia\nNivel: Primaria y secundaria',
-    // },
+    {
+      col1: '', // Espacio para la imagen
+      col2: 'Sede 1: Jr Huaylas Nro. 220 – Independencia\nNivel: Primaria y secundaria',
+    },
     {
       col1: '',
       col2: 'Sede 1: Jr. Teresa Gonzales de Fanning Nro. 654\nNivel: Inicial',
