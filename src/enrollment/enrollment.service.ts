@@ -774,7 +774,6 @@ export class EnrollmentService {
       .where('enrollment.studentId = :id', { id: studentId })
       .orderBy('enrollment.id', 'DESC')
       .getOne();
-    // await this.calcVacantsAc(12);
 
     if (!currentEnrrollment) {
       throw new NotFoundException('Dont exists this data');
@@ -928,9 +927,9 @@ export class EnrollmentService {
               id: yearId + 1,
             },
           },
-          classroom: {
-            campusDetail: { id: campusId },
-          },
+          // classroom: {
+          //   campusDetail: { id: campusId },
+          // },
         },
       });
 
@@ -1151,7 +1150,7 @@ export class EnrollmentService {
 
     if (ascentEntriesForDest.length > 0) {
       // ASCENT CONFIG: Grouped promotion logic
-
+      console.log('entro destino');
       type = 'G'; // Grouped
 
       // --- New robust grouping logic ---
@@ -1212,9 +1211,9 @@ export class EnrollmentService {
 
           ratified: true,
 
-          isActive: true,
+          // isActive: true,
 
-          status: Status.MATRICULADO, // Ratified can be in different states
+          status: Status.FINALIZADO, // Ratified can be in different states varia segun el momento en el que cambia su matricula
         },
       });
 
@@ -1253,22 +1252,23 @@ export class EnrollmentService {
 
           phase: { year: { id: yearId - 1 } },
 
-          classroom: {
-            campusDetail: { id: destinationAc.classroom.campusDetail.id },
-          },
+          // classroom: {
+          //   campusDetail: { id: destinationAc.classroom.campusDetail.id },
+          // },
         },
 
         relations: ['grade'],
       });
 
       if (originAc) {
+        console.log('entro deeta');
         const enrollOrigin = await this.enrollmentRepository.count({
           where: {
             activityClassroom: { id: originAc.id },
 
             ratified: true,
-
-            isActive: true,
+            status: Status.FINALIZADO,
+            // isActive: true,
           },
         });
 
@@ -1292,7 +1292,7 @@ export class EnrollmentService {
 
     const vacants =
       destinationAc.classroom.capacity - previousEnrolls - totalCurrentEnrolled;
-
+    console.log('vas', vacants);
     const res: VacantsClassrooms = {
       id: destinationAc.id,
 
