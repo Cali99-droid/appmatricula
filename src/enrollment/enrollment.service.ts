@@ -1227,7 +1227,7 @@ export class EnrollmentService {
           status: Status.FINALIZADO, // Ratified can be in different states varia segun el momento en el que cambia su matricula
         },
       });
-
+      console.log(totalGroupCapacity);
       if (totalGroupCapacity > 0) {
         previousEnrolls = Math.floor(
           (destinationAc.classroom.capacity / totalGroupCapacity) *
@@ -1301,9 +1301,7 @@ export class EnrollmentService {
     previousEnrolls = previousEnrolls - totalCurrentEnrolled;
     const vacants =
       destinationAc.classroom.capacity - previousEnrolls - totalCurrentEnrolled;
-    console.log(destinationAc.classroom.capacity);
-    console.log(previousEnrolls);
-    console.log(totalCurrentEnrolled);
+
     const res: VacantsClassrooms = {
       id: destinationAc.id,
 

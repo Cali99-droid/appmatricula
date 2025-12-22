@@ -96,7 +96,7 @@ export function addClausesPart2(
     .text(`${C6_P9A}`, { width: TEXT_WIDTH, align: 'justify' });
 
   const tableData = [
-    { col1: 'INICIAL', col2: 'PRIMARIA(*)', col3: 'SECUNDARIA' },
+    { col1: 'INICIAL', col2: 'PRIMARIA(*)', col3: 'SECUNDARIA(**)' },
     { col1: '22 Alumnos', col2: '30 Alumnos', col3: '30 Alumnos' },
   ];
   let tableTop = doc.y;
@@ -106,6 +106,14 @@ export function addClausesPart2(
     .fontSize(7)
     .text(
       '(*) En el primer grado de primaria el número máximo será de 32.',
+      50,
+      doc.y + 5,
+      { width: TEXT_WIDTH, align: 'left' },
+    );
+  doc
+    .fontSize(7)
+    .text(
+      '(**) En el primer año de secundaria el número máximo será de 32.',
       50,
       doc.y + 5,
       { width: TEXT_WIDTH, align: 'left' },
