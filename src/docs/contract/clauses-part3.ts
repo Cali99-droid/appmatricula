@@ -9,11 +9,10 @@ export async function addClausesPart3(
   gradeName: string,
   section: string,
   nameSon: string,
-  parentName: string, // NECESITARÁS PASAR ESTO DESDE TU CONTROLADOR (name)
-  parentDocNumber: string, // NECESITARÁS PASAR ESTO DESDE TU CONTROLADOR (docNumber)
+  parentName: string,
+  parentDocNumber: string,
 ) {
-  // Asegurar posición X
-  doc.x = 50;
+  doc.x = 50; // Margen izquierdo fijo
 
   const C11_P1A = `Para todas las cuestiones que no estén expresamente contempladas en el presente Contrato. Ambas partes se someten supletoriamente al Código Civil, LEY N° 29571 Código de protección y defensa del consumidor, LEY N° 26549 Ley de los centros educativos privados, LEY N° 27665 Ley de protección a la economía familiar respecto al pago de pensiones en centros y programas educativos privados, LEY N° 28044 Ley general de educación, LEY N° 29694 Ley que protege a los consumidores de las prácticas abusivas en la selección o adquisición de textos escolares y demás del sistema jurídico que resulten aplicables.`;
 
@@ -57,7 +56,6 @@ export async function addClausesPart3(
   const year = today.getFullYear();
 
   // --- RENDERIZADO ---
-
   doc.moveDown();
   doc
     .font('Helvetica-Bold')
@@ -90,7 +88,6 @@ export async function addClausesPart3(
     });
   doc.font('Helvetica').fontSize(9).text(C13_P1, { align: 'justify' });
 
-  // TABLA ALUMNO: Ajuste de anchos para que el nombre entre
   const tableData = [
     {
       col1: 'NOMBRE',
@@ -108,7 +105,7 @@ export async function addClausesPart3(
     },
   ];
   let tableTop = doc.y;
-  // Anchos modificados: Col1 (Nombre) recibe más espacio (160), resto ajustado
+  // Ajuste de columnas para que el nombre quepa bien
   generateTable(doc, tableData, tableTop, [160, 80, 80, 80, 60]);
   tableTop += 10;
 
@@ -135,16 +132,14 @@ export async function addClausesPart3(
   doc.moveDown();
   doc.font('Helvetica').fontSize(9).text(C14_Final, { align: 'justify' });
 
-  // --- FIRMAS ---
-  doc.moveDown(3); // Espacio para la firma gráfica si la hay
+  // --- FIRMA ---
+  doc.moveDown(3);
 
-  // Posición Y actual
   const signY = doc.y;
-
-  // Línea de firma para el padre
+  // Línea
   doc.moveTo(50, signY).lineTo(200, signY).stroke();
 
-  // Texto debajo de la firma
+  // Texto firma
   doc
     .font('Helvetica-Bold')
     .fontSize(8)
@@ -157,12 +152,12 @@ export async function addClausesPart3(
     .font('Helvetica-Bold')
     .fontSize(8)
     .text(`DNI: ${parentDocNumber}`, 50, signY + 25);
+
+  // Fecha
   doc
     .font('Helvetica-Bold')
     .fontSize(8)
-    .text(`Huaraz, ${day} de ${monthName} del ${year}`, 50, signY + 35);
-
-  // Nota: Si usas la imagen de firma digital, asegúrate de colocarla encima de la línea (signY - altura_imagen)
+    .text(`Huaraz, ${day} de ${monthName} del ${year}`, 50, signY + 45);
 }
 
 export function generateTable(
@@ -176,34 +171,41 @@ export function generateTable(
   y += rowHeight;
 
   data.forEach((row) => {
-    // Texto
     let xText = startX + 2;
+    // lineBreak: false previene saltos inesperados
     doc
       .font('Helvetica-Bold')
       .fontSize(8)
-      .text(row.col1, xText, y + 5, { width: colWidths[0] - 4, align: 'left' });
+      .text(row.col1, xText, y + 5, {
+        width: colWidths[0] - 4,
+        align: 'left',
+        lineBreak: false,
+      });
     xText += colWidths[0];
     doc.text(row.col2, xText, y + 5, {
       width: colWidths[1] - 4,
       align: 'left',
+      lineBreak: false,
     });
     xText += colWidths[1];
     doc.text(row.col3, xText, y + 5, {
       width: colWidths[2] - 4,
       align: 'left',
+      lineBreak: false,
     });
     xText += colWidths[2];
     doc.text(row.col4, xText, y + 5, {
       width: colWidths[3] - 4,
       align: 'left',
+      lineBreak: false,
     });
     xText += colWidths[3];
     doc.text(row.col5, xText, y + 5, {
       width: colWidths[4] - 4,
       align: 'left',
+      lineBreak: false,
     });
 
-    // Líneas
     drawRowLines(doc, y, colWidths, rowHeight);
     y += rowHeight;
   });
@@ -217,15 +219,12 @@ export function drawRowLines(
 ) {
   doc.lineWidth(0.5);
   doc.strokeColor('#000');
-
   const startX = 50;
   const totalWidth = columnWidths.reduce((a, b) => a + b, 0);
   const endX = startX + totalWidth;
 
-  // Línea superior
   doc.moveTo(startX, y).lineTo(endX, y).stroke();
 
-  // Verticales
   let xPos = startX;
   columnWidths.forEach((width) => {
     doc
@@ -237,9 +236,7 @@ export function drawRowLines(
   doc
     .moveTo(xPos, y)
     .lineTo(xPos, y + rowHeight)
-    .stroke(); // Última vertical
-
-  // Línea inferior
+    .stroke();
   doc
     .moveTo(startX, y + rowHeight)
     .lineTo(endX, y + rowHeight)

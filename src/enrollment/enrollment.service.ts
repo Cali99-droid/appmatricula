@@ -1219,15 +1219,16 @@ export class EnrollmentService {
       });
 
       if (totalGroupCapacity > 0) {
-        const proportionalEnrolls = Math.floor(
+        previousEnrolls = Math.floor(
           (destinationAc.classroom.capacity / totalGroupCapacity) *
             totalOriginEnrolled,
         );
-        // A classroom cannot be assigned more students than it can hold.
-        previousEnrolls = Math.min(
-          proportionalEnrolls,
-          destinationAc.classroom.capacity,
-        );
+        // console.log(proportionalEnrolls);
+        // // A classroom cannot be assigned more students than it can hold.
+        // previousEnrolls = Math.min(
+        //   proportionalEnrolls,
+        //   destinationAc.classroom.capacity,
+        // );
       }
 
       detailOrigin = {
@@ -1239,6 +1240,8 @@ export class EnrollmentService {
 
         enrrolls: totalOriginEnrolled,
       };
+      console.log(detailOrigin);
+      console.log(previousEnrolls);
     } else {
       // NO ASCENT CONFIG: Default promotion logic
 

@@ -9,10 +9,8 @@ export function addClausesPart1(
   priceMounth: string,
   campus: string,
 ) {
-  // Asegurar margen izquierdo para evitar desplazamientos por tablas anteriores
   doc.x = 50;
 
-  // --- CLÁUSULA CUARTA ---
   const C4_P1A = `4.1 	El PADRE O MADRE DE FAMILIA se compromete a pagar el monto de matrícula para cada uno de los tres niveles, ascendiente a S/ ${priceEnrollment}.00 y la cuota de ingreso (solo alumnos nuevos) es de S/ ${priceAdmission}.00.`;
   const C4_P2A = `4.2	El PADRE O MADRE DE FAMILIA conoce y acepta el monto anual del servicio educativo, el mismo que es financiado en 10 pensiones mensuales:`;
   const C4_P3A = `4.3	El PADRE O MADRE DE FAMILIA declara haber recibido información suficiente, clara y accesible sobre la infraestructura de los locales de la ASOCIACIÓN señalados en el Anexo 1, así como sobre los criterios y características del servicio educativo que determinan el costo de las pensiones durante el año académico.`;
@@ -26,7 +24,6 @@ export function addClausesPart1(
   const C4_P8A = `4.8	Si bien el incumplimiento de pago no impedirá el acceso del Alumno a los servicios educativos señalados en el presente Contrato durante el periodo académico en curso, el Colegio podrá retener la entrega de certificados de estudios y constancias administrativas no indispensables para la continuidad educativa, hasta que la deuda sea totalmente cancelada.`;
   const C4_P9A = `4.9	El atraso en el pago de dos (2) pensiones o más, previa comunicación escrita al PADRE O MADRE DE FAMILIA y otorgamiento de un plazo razonable para la regularización de la deuda, podrá ocasionar la pérdida de la vacante asignada al Alumno para el año académico siguiente, sin afectar el desarrollo del periodo académico en curso ni los derechos ya adquiridos.`;
 
-  // --- CLÁUSULA QUINTA (CORREGIDA SIN SIMBOLOS RAROS) ---
   const C5_P1A = `5.1 	Cumplir fielmente con el objeto del presente Contrato.`;
   const C5_P2A = `5.2 	Cumplir con el Plan de Estudio de acuerdo a lo señalado en el presente Contrato.`;
   const C5_P3A = `5.3 	Informar al PADRE O MADRE DE FAMILIA al final de cada bimestre, sobre los resultados del proceso educativo del alumno.`;
@@ -50,7 +47,6 @@ export function addClausesPart1(
     .fontSize(9)
     .text('MODALIDAD PRESENCIAL O SEMIPRESENCIAL');
 
-  // Tabla de Precios
   const tableData = [
     {
       col1: 'Nivel',
@@ -81,7 +77,7 @@ export function addClausesPart1(
   doc.font('Helvetica').fontSize(9).text(C4_P3A, { align: 'justify' });
   doc.font('Helvetica').fontSize(9).text(C4_P4A, { align: 'justify' });
 
-  // Tabla de Cronograma Pagos
+  // Tabla Cronograma
   const tableData2 = [
     { col1: 'Cuota', col2: 'Vencimiento', col3: 'Cuota', col4: 'Vencimiento' },
     {
@@ -150,19 +146,10 @@ export function generateTable(doc: PDFKit.PDFDocument, data: any[], y: number) {
     doc
       .font('Helvetica-Bold')
       .fontSize(9)
-      .text(row.col1, 55, y + 5);
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(9)
-      .text(row.col2, 155, y + 5);
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(9)
-      .text(row.col3, 255, y + 5);
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(9)
-      .text(row.col4, 355, y + 5);
+      .text(row.col1, 55, y + 5, { width: 90, lineBreak: false });
+    doc.text(row.col2, 155, y + 5, { width: 90, lineBreak: false });
+    doc.text(row.col3, 255, y + 5, { width: 90, lineBreak: false });
+    doc.text(row.col4, 355, y + 5, { width: 90, lineBreak: false });
     drawRowLines(doc, y, columnWidths, rowHeight, 450);
     y += rowHeight;
   });
@@ -180,19 +167,10 @@ export function generateTable2(
     doc
       .font('Helvetica-Bold')
       .fontSize(9)
-      .text(row.col1, 65, y + 5);
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(9)
-      .text(row.col2, 165, y + 5);
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(9)
-      .text(row.col3, 275, y + 5);
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(9)
-      .text(row.col4, 385, y + 5);
+      .text(row.col1, 65, y + 5, { width: 100, lineBreak: false });
+    doc.text(row.col2, 165, y + 5, { width: 100, lineBreak: false });
+    doc.text(row.col3, 275, y + 5, { width: 100, lineBreak: false });
+    doc.text(row.col4, 385, y + 5, { width: 100, lineBreak: false });
     drawRowLines(doc, y, columnWidths, rowHeight, 490);
     y += rowHeight;
   });
