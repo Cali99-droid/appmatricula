@@ -1157,7 +1157,7 @@ export class TreasuryService {
     codeEnrroll: string,
   ) {
     const debts = [];
-    const targetYear = 2025; // Año fijo para las deudas
+    const targetYear = 2026; // Año fijo para las deudas
 
     for (let month = 2; month <= 11; month++) {
       const dateEnd = new Date(targetYear, month + 1, 0); // Último día del mes
