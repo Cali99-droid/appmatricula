@@ -34,9 +34,9 @@ export function addClausesPart2(
   const C7_P1A = `La vigencia del Contrato se sujeta al calendario escolar dispuesto para este año para las tres modalidades, el mismo que se inicia el lunes 9 de marzo del 2026 y culmina el viernes 18 de diciembre del 2026.`;
   const C8_P1A = `El PADRE O MADRE DE FAMILIA podrá controlar o verificar, a su propio costo y cargo, la ejecución de los Servicios, comprometiéndose a tratar en primera instancia y de manera directa cualquier deficiencia, queja o reclamo ante la sede del Colegio, a efectos de encontrar la mejor solución posible.`;
   const C9_P1A = `El Colegio brindará los siguientes servicios de apoyo al Estudiante:`;
-  const C9_P2A = `9.1	Servicio de Tópico de Primeros Auxilios`;
-  const C9_P3A = `9.2	Servicio de Psicología Educativa`;
-  const C9_P4A = `9.3	Servicio de Área Recreativa y/o Campo Deportivo`;
+  const C9_P2A = `9.1 Servicio de Tópico de Primeros Auxilios`;
+  const C9_P3A = `9.2 Servicio de Psicología Educativa`;
+  const C9_P4A = `9.3 Servicio de Área Recreativa y/o Campo Deportivo`;
   const C10_P1A = `En el caso que una o varias cláusulas contenidas en el Contrato puedan ser consideradas incompatibles y/o inválida con alguna disposición legal, vigente o futura, dicha incompatibilidad y/o invalidez no afectará a las restantes, las que mantendrán su plena vigencia debiéndose interpretar aquellas cláusulas incompatibles o inválidas como inexistentes.`;
 
   // --- RENDERIZADO ---
