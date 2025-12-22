@@ -113,7 +113,7 @@ export function addCostosTramites(
   doc.x = 50; // Reiniciar X nuevamente
   doc
     .font('Helvetica')
-    .fontSize(8)
+    .fontSize(10)
     .text(
       'Estos trámites de solicitud de documentos se realizan con la Secretaría Académica del Colegio Albert Einstein – Huaraz al correo: soporte@colegioae.freshdesk.com o en el Jr. Huaylas Nro 245, y serán entregados de acuerdo a la demanda, el orden de solicitud y la disponibilidad de la plataforma del Ministerio de Educación y del SIAGIE.',
       { align: 'justify', width: TEXT_WIDTH },
