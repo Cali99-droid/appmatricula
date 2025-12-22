@@ -886,7 +886,7 @@ export class EnrollmentService {
           /**dest.section === currentEnrrollment.activityClassroom.section ||
             dest.detailOrigin.section ===
               currentEnrrollment.activityClassroom.section */
-          if (dest.hasVacants) {
+          if (dest.vacants >= 0) {
             const classroom: AvailableClassroom = {
               id: co.destinationId.id,
               name:
@@ -1354,8 +1354,9 @@ export class EnrollmentService {
     });
 
     for (const ac of classrooms) {
-      const acv = await this.vacancyCalculation(ac.id);
-      if (acv.hasVacant) {
+      // const acv = await this.vacancyCalculation(ac.id);
+      const acv = await this.calcVacantsToClassroom(ac.id);
+      if (acv.hasVacants) {
         availableClassrooms.push(ac);
       }
     }
