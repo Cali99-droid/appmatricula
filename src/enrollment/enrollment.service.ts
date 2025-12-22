@@ -674,6 +674,7 @@ export class EnrollmentService {
         acc[gradeId].totalReserved += reserved;
         acc[gradeId].totalOnProcces += onProcess;
         acc[gradeId].ratified += previousEnrolls;
+        acc[gradeId].totalPreRegistered += totalPreRegistered;
         // acc[gradeId].ratified += 0;
         acc[gradeId].enrollments += currentEnrroll;
         acc[gradeId].vacant =
@@ -681,6 +682,7 @@ export class EnrollmentService {
           acc[gradeId].ratified -
           acc[gradeId].enrollments -
           acc[gradeId].totalReserved -
+          acc[gradeId].totalPreRegistered -
           acc[gradeId].totalOnProcces;
 
         return acc;
@@ -860,6 +862,7 @@ export class EnrollmentService {
         console.log('tiene un destino  configurado');
         const { destinationId } = configAscent[0];
         const dest = await this.calcVacantsToClassroom(destinationId.id);
+
         const classroom: AvailableClassroom = {
           id: destinationId.id,
           name: destinationId.grade.name + ' ' + destinationId.section,
@@ -878,7 +881,7 @@ export class EnrollmentService {
         console.log('tiene mas de un destino  configurado');
         for (const co of configAscent) {
           const dest = await this.calcVacantsToClassroom(co.destinationId.id);
-
+          console.log('destinos', dest);
           //dest.hasVacants
           /**dest.section === currentEnrrollment.activityClassroom.section ||
             dest.detailOrigin.section ===
@@ -1240,6 +1243,7 @@ export class EnrollmentService {
 
         enrrolls: totalOriginEnrolled,
       };
+      console.log(detailOrigin);
     } else {
       // NO ASCENT CONFIG: Default promotion logic
 
