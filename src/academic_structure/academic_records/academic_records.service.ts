@@ -428,7 +428,7 @@ export class AcademicRecordsService {
           activityClassroom: {
             id: activityClassroomId,
           },
-          status: Status.MATRICULADO,
+          status: In([Status.MATRICULADO, Status.FINALIZADO]),
         },
         relations: [
           'student',
@@ -580,7 +580,7 @@ export class AcademicRecordsService {
           activityClassroom: {
             id: activityClassroomId, //cambio clave aqui, {grade: {level: {id:1}}}
           },
-          status: Status.MATRICULADO,
+          status: In([Status.MATRICULADO, Status.FINALIZADO]),
         },
         relations: [
           'student',
@@ -895,7 +895,7 @@ export class AcademicRecordsService {
             activityClassroom: {
               id: ac.id,
             },
-            status: Status.MATRICULADO,
+            status: In([Status.MATRICULADO, Status.FINALIZADO]),
           },
           relations: [
             'student',
