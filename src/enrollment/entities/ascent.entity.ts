@@ -1,7 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ActivityClassroom } from 'src/activity_classroom/entities/activity_classroom.entity';
 import { Year } from 'src/years/entities/year.entity';
-import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity()
 export class Ascent {
@@ -26,4 +33,17 @@ export class Ascent {
   })
   @JoinColumn({ name: 'yearId' })
   year?: Year;
+
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+  })
+  updatedAt: Date;
 }

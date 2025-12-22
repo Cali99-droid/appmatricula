@@ -49,7 +49,6 @@ export class EnrollmentProcessor {
   async procesarInfor(job: Job<any>) {
     const { estudianteData, enviarEmail, jobId, link } = job.data;
     const startTime = Date.now();
-    console.log('chambiando');
     this.logger.log(
       `[Job ${jobId}] Iniciando procesamiento de ${estudianteData.length} estudiantes`,
     );

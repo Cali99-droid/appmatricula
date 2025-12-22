@@ -12,6 +12,7 @@ import {
   MainStatus,
   ProcessState,
   TransferRequest,
+  TransferType,
 } from './entities/transfer-request.entity';
 import { CreateTransferDto } from './dto/create-transfer.dto';
 import { handleDBExceptions } from 'src/common/helpers/handleDBException';
@@ -46,7 +47,7 @@ import {
 import { CreateRequestTrackingDto } from './dto/create-request-tracking.dto';
 
 // import { customAlphabet } from 'nanoid';
-
+const CONCEPT_EXTERNAL_ID = 5;
 @Injectable()
 export class TransfersService {
   private readonly s3Client = new S3Client({
@@ -102,6 +103,22 @@ export class TransfersService {
     user: KeycloakTokenPayload,
   ): Promise<TransferRequest> {
     try {
+      if (createTransferDto.type === TransferType.EXTERNAL) {
+        /**TRASLADO EXTERNO */
+        if (!createTransferDto.destinationSchoolName) {
+          throw new BadRequestException(
+            'Se requiere el nombre del colegio destino ',
+          );
+        }
+        const hasDebt = await this.hasDebts(createTransferDto.studentId);
+        if (hasDebt) {
+          throw new BadRequestException(
+            'El estudiante tiene deudas, cancelar en tesoreria',
+          );
+        }
+        const req = this.createExternalRequest(createTransferDto, user);
+        return req;
+      }
       const actualEnroll =
         await this.enrollmentService.findEnrollmentByStudentAndStatus(
           createTransferDto.studentId,
@@ -144,10 +161,10 @@ export class TransfersService {
         `${actualEnroll.code}TR${code}`,
       );
       /**VERIFY DEBTS */
-      const resDebt = await this.treasuryService.findDebts(
-        createTransferDto.studentId,
-        TypeOfDebt.VENCIDA,
-      );
+      // const resDebt = await this.treasuryService.findDebts(
+      //   createTransferDto.studentId,
+      //   TypeOfDebt.VENCIDA,
+      // );
 
       /**SEND EMAIL */
       // const parent = await this.personService.findOne(
@@ -209,12 +226,20 @@ export class TransfersService {
       });
       const { student, person, originClassroom, destinationClassroom, ...res } =
         request;
+      const origin =
+        originClassroom !== null
+          ? `${originClassroom?.grade.name} ${originClassroom?.section}`
+          : null;
+      const dest =
+        destinationClassroom !== null
+          ? `${destinationClassroom?.grade.name} ${destinationClassroom?.section}`
+          : null;
       const formatRequest = {
         ...res,
         studentName: `${student.person.lastname.toLocaleUpperCase()} ${student.person.mLastname.toLocaleUpperCase()} ${student.person.name.toLocaleUpperCase()}`,
         parentName: `${person.lastname.toLocaleUpperCase()} ${person.mLastname.toLocaleUpperCase()} ${person.name.toLocaleUpperCase()}`,
-        originClassroom: `${originClassroom.grade.name} ${originClassroom.section}`,
-        destinationClassroom: `${destinationClassroom.grade.name} ${destinationClassroom.section}`,
+        originClassroom: origin,
+        destinationClassroom: dest,
       };
 
       return formatRequest;
@@ -313,7 +338,12 @@ export class TransfersService {
     return route.map((r) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { user, createdAt, updatedAt, transferRequest, ...res } = r;
-      const { transferMeeting, destinationClassroom } = transferRequest;
+      const {
+        transferMeeting,
+        destinationClassroom,
+        destinationSchoolName,
+        type,
+      } = transferRequest;
       let meeting = [];
 
       if (
@@ -339,12 +369,20 @@ export class TransfersService {
             : [];
       }
 
+      const dest =
+        destinationClassroom !== null
+          ? `${destinationClassroom?.grade.name} ${destinationClassroom?.section}`
+          : null;
+
       return {
         ...res,
         responsible: `${user.person.lastname} ${user.person.mLastname} ${user.person.name}`,
         meetingDate: meeting[0]?.meetingDate,
-        destinationClassroom: `${destinationClassroom.grade.name} ${destinationClassroom.section}`,
-        codeClassroom: `${destinationClassroom.classroom.code}`,
+        destinationClassroom: dest,
+        destinationSchool: destinationSchoolName,
+        destination: dest === null ? destinationSchoolName : dest,
+        // type,
+        // codeClassroom: `${destinationClassroom.classroom.code}`,
       };
     });
     // // Si está cerrada, la respuesta es directa
@@ -728,10 +766,24 @@ export class TransfersService {
   /**UPLOAD ACTA */
   async finalizeWithAct(id: number, file: Buffer, user: KeycloakTokenPayload) {
     try {
+      const us = await this.userService.findByEmail(user.email);
+      const request = await this.transferRequestRepository.findOne({
+        where: { id },
+      });
       if (!file) {
         throw new BadRequestException('Need a file');
       }
-      const us = await this.userService.findByEmail(user.email);
+      if (request.type === TransferType.EXTERNAL) {
+        const debts = await this.treasuryService.findDebtByConcept(
+          request.studentId,
+          CONCEPT_EXTERNAL_ID,
+        );
+        if (debts.length > 0) {
+          throw new BadRequestException(
+            'Falta cancelar el derecho de traslado externo ',
+          );
+        }
+      }
       // const webpImage = await sharp(file).webp().toBuffer();
       const nameAct = `${Date.now()}.pdf`;
       await this.s3Client.send(
@@ -745,18 +797,22 @@ export class TransfersService {
 
       const urlS3 = this.configService.getOrThrow('AWS_URL_BUCKET');
       const urlPDF = `${urlS3}colegio/actas/${nameAct}`;
-      const request = await this.transferRequestRepository.findOne({
-        where: { id },
-      });
 
       request.agreementActUrl = urlPDF;
       request.mainStatus = MainStatus.CLOSED;
-      await this.enrollmentService.changeSection(
-        request.studentId,
-        request.destinationClassroomId,
-        user,
-        request.enrollCode,
-      );
+
+      if (request.type === TransferType.EXTERNAL) {
+        this.enrollmentService.marketAsTransferStudent(request.studentId, us);
+        this.treasuryService.cancelDebts(request.studentId);
+      } else {
+        await this.enrollmentService.changeSection(
+          request.studentId,
+          request.destinationClassroomId,
+          user,
+          request.enrollCode,
+        );
+      }
+
       const trackingData = {
         area: RequestTrackingArea.SECRETARY,
         transferRequestId: request.id,
@@ -770,5 +826,58 @@ export class TransfersService {
     } catch (error) {
       handleDBExceptions(error, this.logger);
     }
+  }
+
+  /**PRIVATE FUNCTIONS */
+  async createExternalRequest(
+    createTransferDto: CreateTransferDto,
+    user: KeycloakTokenPayload,
+  ) {
+    try {
+      const us = await this.userService.findByEmail(user.email);
+      const id = await this.generateRequestCode();
+      const code = id ? Number(id[0].id) + 1 : 1;
+      const newRequest = this.transferRequestRepository.create({
+        ...createTransferDto,
+        user: { id: us.id },
+        requestCode: `TRAS-EXT-${code.toString().padStart(4, '0')}`,
+        personId: createTransferDto.parentId,
+        enrollCode: `TRAS-EXT-${code}`,
+      });
+      const request = await this.transferRequestRepository.save(newRequest);
+
+      /**generate debt */
+      const concept =
+        await this.treasuryService.getConcept(CONCEPT_EXTERNAL_ID);
+      const debt = await this.treasuryService.generateDebt(
+        concept,
+        createTransferDto.studentId,
+        `TRAS-EXT-${code.toString().padStart(4, '0')}`,
+      );
+      /**END create debt */
+      const trackingData = {
+        area: RequestTrackingArea.SECRETARY,
+        transferRequestId: request.id,
+        userId: us.id,
+        notes: 'Creado: solicitud de traslado externo',
+        status: ProcessStateTracking.REGISTERED,
+        arrivalDate: new Date(),
+      };
+      await this.createRequestTracking(trackingData);
+      return request;
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
+
+  async hasDebts(studentId: number) {
+    const data = await this.treasuryService.findDebts(
+      studentId,
+      TypeOfDebt.VENCIDA,
+    );
+
+    const { hasDebt } = data;
+
+    return hasDebt;
   }
 }

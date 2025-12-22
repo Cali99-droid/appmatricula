@@ -53,6 +53,9 @@ export class User {
   @JoinColumn({ name: 'personId' })
   person: Person;
 
+  @Column({ nullable: true })
+  personId?: number;
+
   // @OneToMany(() => Permission, (permission) => permission.user, {
   //   // cascade: true,
   //   eager: true,

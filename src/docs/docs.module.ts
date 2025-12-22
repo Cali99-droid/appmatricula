@@ -14,6 +14,7 @@ import { Person } from 'src/person/entities/person.entity';
 import { Year } from 'src/years/entities/year.entity';
 import { Level } from 'src/level/entities/level.entity';
 import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
+import { Rates } from 'src/treasury/entities/rates.entity';
 
 @Module({
   controllers: [DocsController],
@@ -29,6 +30,7 @@ import { CampusDetail } from 'src/campus_detail/entities/campus_detail.entity';
       Year,
       Level,
       CampusDetail,
+      Rates,
     ]),
     HttpModule,
     ConfigModule,

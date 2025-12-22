@@ -7,6 +7,8 @@ import {
   PrimaryGeneratedColumn,
   JoinColumn,
   OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Classroom } from '../../classroom/entities/classroom.entity';
 import { Phase } from '../../phase/entities/phase.entity';
@@ -90,4 +92,17 @@ export class ActivityClassroom {
 
   // @OneToMany(() => Course, (sh) => sh.activityClassroom)
   // course?: Course[];
+
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+  })
+  updatedAt: Date;
 }

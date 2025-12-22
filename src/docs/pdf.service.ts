@@ -34,6 +34,8 @@ import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import { TDocumentDefinitions, Content, TableCell } from 'pdfmake/interfaces';
 import * as path from 'path';
+import { Rates } from 'src/treasury/entities/rates.entity';
+import { addCostosTramites } from './contract/costos-tramites';
 (<any>pdfMake).addVirtualFileSystem(pdfFonts);
 export interface CartaCobranzaData {
   fecha: Date;
@@ -75,6 +77,8 @@ export class PdfService {
     private readonly campusDetailRepository: Repository<CampusDetail>,
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
+    @InjectRepository(Rates)
+    private readonly ratesRepository: Repository<Rates>,
 
     private readonly httpService: HttpService,
 
@@ -435,8 +439,17 @@ export class PdfService {
       },
     });
 
+    const enrollment = await this.enrollmentRepositoy.findOne({
+      where: { student: { id: idStudent } },
+      order: {
+        id: 'DESC',
+      },
+    });
+
     if (!student)
       throw new NotFoundException(`Student with id ${idStudent} not found`);
+    if (!enrollment)
+      throw new NotFoundException(`Student with not have enrollment`);
     if (!student.family)
       throw new NotFoundException(`This student does not have family`);
     if (!student.family.respEnrollment)
@@ -464,12 +477,41 @@ export class PdfService {
         phase: { year: true },
       },
     });
+    const year = classRoom.phase.year;
+    const costEnrollment = await this.ratesRepository.findOne({
+      where: {
+        campusDetail: { id: classRoom.classroom.campusDetail.id },
+        level: { id: classRoom.grade.level.id },
+        concept: { id: 1 },
+        yearId: year.id,
+      },
+    });
+
+    const costIn = await this.ratesRepository.findOne({
+      where: {
+        campusDetail: { id: classRoom.classroom.campusDetail.id },
+        level: { id: classRoom.grade.level.id },
+        concept: { id: 4 },
+        yearId: year.id,
+      },
+    });
+    const costPens = await this.ratesRepository.findOne({
+      where: {
+        campusDetail: { id: classRoom.classroom.campusDetail.id },
+        level: { id: classRoom.grade.level.id },
+        concept: { id: 2 },
+        yearId: year.id,
+      },
+    });
     if (!classRoom)
       throw new NotFoundException(`This classroom does not exist`);
-    const year = await this.yearRepository.findOne({
-      where: { status: true },
-    });
-    if (!year) throw new NotFoundException(`There is no active year`);
+
+    if (!costIn || !costEnrollment || !costPens)
+      throw new NotFoundException(`some cost are not configured`);
+    // const year = await this.yearRepository.findOne({
+    //   where: { status: true },
+    // });
+    // if (!year) throw new NotFoundException(`There is no active year`);
 
     const numContra = `${classRoom.classroom.campusDetail.name.toUpperCase()} - ${classRoom.grade.level.name.toUpperCase()} - ${classRoom.grade.name.toUpperCase()} - ${
       classRoom.section
@@ -482,34 +524,55 @@ export class PdfService {
     const district = dataCity.district;
     const province = dataCity.province;
     const department = dataCity.region;
-    const yearName = classRoom.phase.year.name;
-    const dayClassStart = '10';
-    const dayClassEnd = '17';
-    const priceEnrollment = '350';
-    const priceAdmission = '350';
+    const yearName = year.name;
+    // const dayClassStart = year.startDate.toDateString();
+    // const dayClassEnd = year.endDate.toDateString();
+    const startDate = new Date(year.startDate);
+    const dayClassStart = format(
+      new Date(
+        startDate.getUTCFullYear(),
+        startDate.getUTCMonth(),
+        startDate.getUTCDate(),
+      ),
+      "EEEE d 'de' MMMM 'del' yyyy",
+      { locale: es },
+    );
+    const endDate = new Date(year.endDate);
+    const dayClassEnd = format(
+      new Date(
+        endDate.getUTCFullYear(),
+        endDate.getUTCMonth(),
+        endDate.getUTCDate(),
+      ),
+      "EEEE d 'de' MMMM 'del' yyyy",
+      { locale: es },
+    );
+    const priceEnrollment = costEnrollment.total.toString();
+    const priceAdmission = costIn.total.toString();
     const levelName = classRoom.grade.level.name.toUpperCase();
     const gradeName = classRoom.grade.name.toUpperCase();
     const section = classRoom.section.toUpperCase();
-    let priceYear: any;
-    let priceMounth: any;
+    const priceYear: any = costPens.total * 10;
+    const priceMounth: any = costPens.total;
+
     const campus = classRoom.classroom.campusDetail.name.toUpperCase();
     const email = student.family.respEnrollment.user?.email;
     const cellPhone = student.family.respEnrollment.cellPhone;
     const nameSon = `${student.person.lastname} ${student.person.mLastname}, ${student.person.name}`;
 
-    //para calcular el precio por nivel
-    if (classRoom.grade.level.id === 1) {
-      priceYear = '3900';
-      priceMounth = '390';
-    }
-    if (classRoom.grade.level.id === 2) {
-      priceYear = '4000';
-      priceMounth = '400';
-    }
-    if (classRoom.grade.level.id === 3) {
-      priceYear = '4200';
-      priceMounth = '420';
-    }
+    // //para calcular el precio por nivel
+    // if (classRoom.grade.level.id === 1) {
+    //   priceYear = '3900';
+    //   priceMounth = '390';
+    // }
+    // if (classRoom.grade.level.id === 2) {
+    //   priceYear = '4000';
+    //   priceMounth = '400';
+    // }
+    // if (classRoom.grade.level.id === 3) {
+    //   priceYear = '4200';
+    //   priceMounth = '420';
+    // }
     return new Promise(async (resolve) => {
       const doc = new PDFDocument({
         size: 'A4',
@@ -558,43 +621,82 @@ export class PdfService {
         gradeName,
         section,
         nameSon,
+        name,
+        docNumber,
       );
       const pageWidth = doc.page.width;
       const margin = 100;
       const imageWidth = 120;
+      const today = new Date();
+      const day = today.getDate();
+      const months = [
+        'enero',
+        'febrero',
+        'marzo',
+        'abril',
+        'mayo',
+        'junio',
+        'julio',
+        'agosto',
+        'septiembre',
+        'octubre',
+        'noviembre',
+        'diciembre',
+      ];
+      const monthName = months[today.getMonth()];
+      const year = today.getFullYear();
       doc.moveDown();
       doc.moveDown();
       doc.moveDown();
-      doc
-        .font('Helvetica')
-        .fontSize(9)
-        .text(`________________________`, {
-          align: 'left',
-          width: doc.page.width - margin * 2 - imageWidth,
-        });
-      doc
-        .font('Helvetica')
-        .fontSize(6)
-        .text(`${name}`, {
-          align: 'left',
-          width: doc.page.width - margin * 2 - imageWidth,
-        });
-      // doc.moveDown();
       // doc
       //   .font('Helvetica')
       //   .fontSize(9)
-      //   .text(`NOMBRES:…………………………………………………`, {
+      //   .text(`________________________`, {
       //     align: 'left',
       //     width: doc.page.width - margin * 2 - imageWidth,
       //   });
-      doc.moveDown();
+      const signY = doc.y;
+      doc.moveTo(50, signY).lineTo(200, signY).stroke();
+
       doc
-        .font('Helvetica')
-        .fontSize(7)
-        .text(`                    ${typeDoc.toUpperCase()}: ${docNumber}`, {
-          align: 'left',
-          width: doc.page.width - margin * 2 - imageWidth,
-        });
+        .font('Helvetica-Bold')
+        .fontSize(8)
+        .text('PADRE O MADRE DE FAMILIA', 50, signY + 5);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(8)
+        .text(`NOMBRES: ${name}`, 50, signY + 15);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(8)
+        .text(`DNI: ${docNumber}`, 50, signY + 25);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(8)
+        .text(`Huaraz, ${day} de ${monthName} del ${year}`, 50, signY + 45);
+      // doc
+      //   .font('Helvetica')
+      //   .fontSize(6)
+      //   .text(`${name}`, {
+      //     align: 'left',
+      //     width: doc.page.width - margin * 2 - imageWidth,
+      //   });
+      // // doc.moveDown();
+      // // doc
+      // //   .font('Helvetica')
+      // //   .fontSize(9)
+      // //   .text(`NOMBRES:…………………………………………………`, {
+      // //     align: 'left',
+      // //     width: doc.page.width - margin * 2 - imageWidth,
+      // //   });
+      // doc.moveDown();
+      // doc
+      //   .font('Helvetica')
+      //   .fontSize(7)
+      //   .text(`                    ${typeDoc.toUpperCase()}: ${docNumber}`, {
+      //     align: 'left',
+      //     width: doc.page.width - margin * 2 - imageWidth,
+      //   });
       const fullUrl = this.configService.getOrThrow('FULL_URL_S3');
       // const imageUrlSignature = `https://caebucket.s3.us-west-2.amazonaws.com/colegio/1713420896762.webp`;
       const imageUrlSignature = `${fullUrl}contrato/signature.jpg`;
@@ -624,26 +726,33 @@ export class PdfService {
         },
       );
       addAnexo(doc);
-      doc.image(image1, 55, doc.y - 250, {
-        width: 80,
-        // align: 'center',
-      });
-      doc.image(image2, 140, doc.y - 250, {
-        width: 90,
-        // align: 'center',
-      });
-      doc.image(image3, 55, doc.y - 150, {
-        width: 80,
-        // align: 'center',
-      });
-      doc.image(image4, 140, doc.y - 150, {
-        width: 90,
-        // align: 'center',
-      });
-      doc.image(image5, 55, doc.y - 50, {
-        width: 80,
-        // align: 'center',
-      });
+      // doc.image(image2, 55, doc.y - 390, {
+      //   width: 90,
+      //   // align: 'center',
+      // });
+      // doc.image(image1, 55, doc.y - 290, {
+      //   width: 80,
+      //   // align: 'center',
+      // });
+
+      // doc.image(image3, 55, doc.y - 180, {
+      //   width: 80,
+      //   // align: 'center',
+      // });
+      // doc.image(image4, 140, doc.y - 180, {
+      //   width: 90,
+      //   // align: 'center',
+      // });
+      // doc.image(image5, 55, doc.y - 80, {
+      //   width: 80,
+      //   // align: 'center',
+      // });
+      doc.image(image2, 55, doc.y - 390, { width: 90 });
+      doc.image(image1, 55, doc.y - 290, { width: 80 });
+      doc.image(image3, 55, doc.y - 180, { width: 80 });
+      doc.image(image4, 140, doc.y - 180, { width: 90 });
+      doc.image(image5, 55, doc.y - 80, { width: 80 });
+      addCostosTramites(doc, name, docNumber, nameSon);
       doc.end();
     });
   }

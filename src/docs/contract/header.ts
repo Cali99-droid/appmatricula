@@ -1,19 +1,22 @@
 import * as PDFDocument from 'pdfkit';
+
 export function addContractHeader(
   doc: InstanceType<typeof PDFDocument>,
   numContra: string,
-  nombre: string,
+  name: string,
   typeDoc: string,
-  dni: string,
-  domicilio: string,
-  distrito: string,
-  provincia: string,
-  departamento: string,
-  year: string,
+  docNumber: string,
+  address: string,
+  district: string,
+  province: string,
+  department: string,
+  yearName: string,
   dayClassStart: string,
   dayClassEnd: string,
 ) {
-  //TEXTO DEL PRIMER PARRAFO
+  const X_MARGIN = 50;
+
+  // --- TEXTOS ---
   const P1A =
     'con RUC N° 20531084587, con domicilio en Jr. Huaylas N° 220 interior 224, Distrito';
   const P1B =
@@ -22,7 +25,7 @@ export function addContractHeader(
     'Sifuentes, identificado con DNI 07524459 en su calidad de DIRECTOR EJECUTIVO con poderes inscritos en la Partida';
   const P1D =
     'Electrónica N° 11064876 del Registro de Personas Jurídicas de Huaraz, a quien en lo sucesivo se le denominará la “ASOCIACIÓN”.';
-  //TEXTO DEL SEGUNDO PARRAFO
+
   const P2A = `Y de la otra parte:`;
   const P2B = `identificado con ${typeDoc} Nro.`;
   const P2C = `con domicilio en`;
@@ -30,58 +33,45 @@ export function addContractHeader(
   const P2E = ' Provincia de';
   const P2F = ' Departamento de';
   const P2G =
-    'en su calidad de Padre o Madre del menor, a quien en lo sucesivo se le denominará';
+    'en su calidad de Padre o Madre o Apoderado del estudiante, a quien en lo sucesivo se le denominará indistintamente';
   const P2H = '“PADRE O MADRE DE FAMILIA”.';
-  //TEXTO DE CLAUSULA PRIMERA
-  const C1_P1A = `1.1	La Asociación Educativa Luz y Ciencia es propietaria del Colegio Albert Einstein – Huaraz,`;
-  const C1_P1B = `es una asociación sin fines de lucro dedicada a la gestión, ejecución y proyección de servicios educativos.`;
-  const C1_P2A = `1.2	El presente Contrato se celebra en virtud de la oferta educativa brindada por la ASOCIACIÓN y la decisión de libre`;
-  const C1_P2B = `voluntad del PADRE O MADRE DE FAMILIA, de contratar los servicios educativos en el modo y forma contemplados `;
-  const C1_P2C = `en el presente contrato, en base a información clara, relevante y suficiente que se explican en el presente documento y`;
-  const C1_P2D = `en información obrante en el portal institucional de la ASOCIACIÓN (http://www.ae.edu.pe/),siendo que el PADRE O MADRE DE FAMILIA manifiesta haber leído y entendido en su integridad la información proporcionada.`;
-  const C1_P3A = `1.3	La ASOCIACIÓN ha desarrollado su plan de estudio ${year} en concordancia con la normatividad vigente y su adaptación`;
-  const C1_P3B = `a la posibilidad de una educación semipresencial. La elaboración del nuevo plan de estudio; así como la implementación`;
-  const C1_P3C = `en las diferentes modalidades han sido llevadas a cabo mediante la asesoría de instituciones y expertos en pedagogía`;
-  const C1_P3D = `de primer nivel, así como una adecuada capacitación de los docentes y personal administrativo del Colegio y será`;
-  const C1_P3E = `aplicada en cumplimiento de las disposiciones legales vigentes.`;
-  const C1_P4A = `1.4	La modalidad de estudio PRESENCIAL O SEMIPRESENCIAL que adopte el COLEGIO por periodo, será respetando`;
-  const C1_P4B = `los lineamientos de la autoridad educativas (MINEDU, UGEL, DREA, ETC) y de salud (MINSA), esta será oportunamente`;
-  const C1_P4C = `comunicada al PADRE O MADRE DE FAMILIA, el cual se compromete a respetarla y cumplirla.La modalidad de estudio corresponde a una decisión institucional, por lo que su determinación no está sujeta a consulta o aprobación del PADRE O MADRE DE FAMILIA.`;
-  //TEXTO DE CLAUSULA SEGUNDA
-  const C2_P1A = `2.1	Por el presente Contrato La ASOCIACIÓN se obliga a prestar a favor del niño, niña o adolescente (en adelante el`;
-  const C2_P1B = `“ALUMNO”) sus servicios de educación en el nivel inicial, primaria, secundaria, de acuerdo con el nivel educativo del`;
-  const C2_P1C = `ALUMNO, en adelante los “SERVICIOS”.`;
-  const C2_P2A = `2.2	La modalidad PRESENCIAL o SEMI PRESENCIAL se desarrollarán cumpliendo los protocolos de seguridad y salud`;
-  const C2_P2B = `que la autoridad sanitaria establezca para los colegios a nivel nacional y, siempre y cuando, exista dicha disposición.`;
-  const C2_P3A = `2.3	Los Servicios serán brindados de acuerdo con el plan de estudio de la ASOCIACIÓN el mismo que ha sido informado a`;
-  const C2_P3B = `los Padres o Madres de Familia en su oportunidad, declarando el PADRE O MADRE DE FAMILIA mediante la presente conocer en su integridad.`;
-  const C2_P4A = `2.4	El presente contrato y sus cláusulas gozan de plena autonomía respecto de contratos suscritos con fechas anteriores`;
-  const C2_P4B = `de parte de la ASOCIACIÓN, sin encontrar ninguna relación de dependencia o vinculación que genere obligaciones en`;
-  const C2_P4C = `las actuaciones de la ASOCIACIÓN.`;
-  //TEXTO DE CLAUSULA TERCERA
-  const C3_P1A = `3.1	El año académico se inicia el lunes ${dayClassStart} de marzo de ${year} y finaliza el viernes ${dayClassEnd} de diciembre del ${year}, salvo`;
-  const C3_P1B = `disposiciones del Ministerio de Educación, de la UGEL HUARAZ o autoridad competente que obligue a modificar lo establecido en el presente numeral.`;
-  const C3_P2A = `3.2	Los tres niveles educativos (inicial, primaria y secundaria) están organizados en 4 bimestres. Al finalizar cada periodo`;
-  const C3_P2B = `académico los alumnos tendrán un periodo corto de descanso.`;
+
+  // --- CLAUSULAS TEXTOS ---
+  const C1_P1A = `1.1\tLa Asociación Educativa Luz y Ciencia es propietaria del Colegio Albert Einstein – Huaraz, es una asociación sin fines de lucro dedicada a la gestión, ejecución y proyección de servicios educativos.`;
+  const C1_P2A = `1.2\tEl presente Contrato se celebra en virtud de la oferta educativa brindada por la ASOCIACIÓN y la decisión de libre voluntad del PADRE O MADRE DE FAMILIA, de contratar los servicios educativos en el modo y forma contemplados en el presente contrato, en base a información clara, relevante y suficiente que se explican en el presente documento y en información obrante en el portal institucional de la ASOCIACIÓN (http://www.ae.edu.pe/).`;
+  const C1_P3A = `1.3\tLa ASOCIACIÓN ha desarrollado su plan de estudio ${yearName} en concordancia con la normatividad vigente y su adecuación a la posibilidad de una educación semipresencial requerida por las autoridades correspondientes. La elaboración del nuevo plan de estudio; así como la implementación en las diferentes modalidades han sido llevadas a cabo mediante la asesoría de instituciones y expertos en pedagogía de primer nivel, así como una adecuada capacitación de los docentes y personal administrativo del Colegio y será aplicada en cumplimiento de las disposiciones legales vigentes.`;
+  const C1_P4A = `1.4\tLa modalidad de estudio PRESENCIAL O SEMIPRESENCIAL que adopte el COLEGIO por periodo académico se realizará respetando los lineamientos de las autoridades educativas y de salud competentes (MINEDU, DREA, UGEL, ETC y MINSA), garantizando en todo momento la continuidad del servicio educativo y el cumplimiento de los objetivos académicos. Dicha modalidad será comunicada oportunamente al PADRE O MADRE DE FAMILIA, el cual se compromete a respetarla y cumplirla.`;
+
+  const C2_P1A = `2.1\tPor el presente Contrato La ASOCIACIÓN se obliga a prestar a favor del niño, niña o adolescente (en adelante el “ESTUDIANTE”) sus servicios de educación en el nivel inicial, primaria, secundaria, de acuerdo con el nivel educativo del ESTUDIANTE, en adelante los “SERVICIOS”.`;
+  const C2_P2A = `2.2\tLa modalidad PRESENCIAL o SEMI PRESENCIAL se desarrollarán cumpliendo los protocolos de seguridad y salud dispuestos por la autoridad competente establecida para los colegios a nivel nacional y, siempre y cuando, exista dicha disposición.`;
+  const C2_P3A = `2.3\tLos Servicios serán brindados de acuerdo con el plan de estudio de la ASOCIACIÓN el mismo que ha sido informado a los Padres o Madres de Familia en su oportunidad, declarando el PADRE O MADRE DE FAMILIA haber recibido información suficiente y accesible sobre dicho plan de estudios.`;
+  const C2_P4A = `2.4\tEl presente contrato y sus cláusulas gozan de plena autonomía respecto de contratos suscritos con fechas anteriores de parte de la ASOCIACIÓN, sin encontrar ninguna relación de dependencia o vinculación que genere obligaciones en las actuaciones de la ASOCIACIÓN, sin perjuicio de los derechos ya adquiridos por el ESTUDIANTE conforme a la normativa vigente.`;
+
+  const C3_P1A = `3.1\tEl año académico se inicia el ${dayClassStart} y finaliza el ${dayClassEnd}, salvo disposiciones del Ministerio de Educación, de la UGEL HUARAZ o autoridad competente que obligue a modificar lo establecido en el presente numeral, lo cual será oportunamente comunicado al PADRE O MADRE DE FAMILIA.`;
+  const C3_P2A = `3.2\tLos tres niveles educativos (inicial, primaria y secundaria) están organizados en 4 bimestres. Al finalizar cada periodo académico los alumnos tendrán un periodo corto de descanso, conforme al cronograma académico presentado a continuación.`;
+
+  // --- RENDERIZADO ---
   doc
     .font('Helvetica-Bold')
-    .fontSize(9)
+    .fontSize(10)
     .text('CONTRATO DE PRESTACIÓN DE SERVICIOS EDUCATIVOS', {
       align: 'center',
     });
-  doc.moveDown();
+  doc.moveDown(0.5);
   doc
     .font('Helvetica-Bold')
-    .fontSize(9)
-    .text(`N° ${numContra}-${year}`, { align: 'center' });
-  // PARRAFO 1
-  doc.moveDown(2);
+    .fontSize(10)
+    .text(`N° ${numContra}-${yearName}-ASELUC-C`, { align: 'center' });
+
+  // Párrafo 1
+  doc.moveDown(1.5);
+  doc.x = X_MARGIN;
   doc
     .font('Helvetica')
     .fontSize(9)
     .text(
       'Conste por el presente documento, el Contrato de Prestación de Servicios Educativos (en adelante, el “',
-      { continued: true },
+      { continued: true, align: 'justify' },
     );
   doc.font('Helvetica-Bold').fontSize(9).text('CONTRATO', { continued: true });
   doc.font('Helvetica').fontSize(9).text('”) que celebran de una parte: ');
@@ -95,111 +85,181 @@ export function addContractHeader(
     .font('Helvetica')
     .fontSize(9)
     .text(`${P1A} ${P1B} ${P1C} ${P1D}`, { align: 'justify' });
-  // PARRAFO 2
+
+  // Párrafo 2
   doc.moveDown();
   doc.font('Helvetica').fontSize(9).text(`${P2A} `, { continued: true });
+  doc.font('Helvetica-Bold').fontSize(9).text(`${name} `, { continued: true });
+  doc.font('Helvetica').fontSize(9).text(`${P2B} `, { continued: true });
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text(`${nombre} `, { continued: true });
-  doc.font('Helvetica').fontSize(9).text(`${P2B} `, { continued: true });
-  doc.font('Helvetica-Bold').fontSize(9).text(`${dni}, `, { continued: true });
+    .text(`${docNumber}, `, { continued: true });
   doc.font('Helvetica').fontSize(9).text(`${P2C} `, { continued: true });
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text(`${domicilio}, `, { continued: true });
+    .text(`${address}, `, { continued: true });
   doc.font('Helvetica').fontSize(9).text(`${P2D} `, { continued: true });
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text(`${distrito}, `, { continued: true });
+    .text(`${district}, `, { continued: true });
   doc.font('Helvetica').fontSize(9).text(`${P2E} `, { continued: true });
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text(`${provincia}, `, { continued: true });
+    .text(`${province}, `, { continued: true });
   doc.font('Helvetica').fontSize(9).text(`${P2F} `, { continued: true });
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text(`${departamento}, `, { continued: true });
+    .text(`${department}, `, { continued: true });
   doc.font('Helvetica').fontSize(9).text(`${P2G} `, { continued: true });
   doc.font('Helvetica-Bold').fontSize(9).text(`${P2H}`, { align: 'justify' });
 
-  // CLAUSULA PRIMERA
+  // CLÁUSULAS
   doc.moveDown();
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text('CLÁUSULA PRIMERA', { continued: true, underline: true });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('. - ANTECEDENTES.', { underline: false });
-  doc
-    .font('Helvetica')
-    .fontSize(9)
-    .text(`${C1_P1A} ${C1_P1B}`, { align: 'justify' });
-  doc
-    .font('Helvetica')
-    .fontSize(9)
-    .text(`${C1_P2A} ${C1_P2B} ${C1_P2C} ${C1_P2D}`, { align: 'justify' });
-  doc
-    .font('Helvetica')
-    .fontSize(9)
-    .text(`${C1_P3A} ${C1_P3B} ${C1_P3C} ${C1_P3D} ${C1_P3E}`, {
-      align: 'justify',
-    });
-  doc
-    .font('Helvetica')
-    .fontSize(9)
-    .text(`${C1_P4A} ${C1_P4B} ${C1_P4C}`, { align: 'justify' });
+    .text('CLÁUSULA PRIMERA. - ANTECEDENTES.', { underline: true });
+  doc.font('Helvetica').fontSize(9).text(C1_P1A, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C1_P2A, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C1_P3A, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C1_P4A, { align: 'justify' });
 
-  // CLAUSULA SEGUNDA
   doc.moveDown();
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text('CLÁUSULA SEGUNDA', { continued: true, underline: true });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('. - OBJETO.', { underline: false });
-  doc
-    .font('Helvetica')
-    .fontSize(9)
-    .text(`${C2_P1A} ${C2_P1B} ${C2_P1C}`, { align: 'justify' });
-  doc
-    .font('Helvetica')
-    .fontSize(9)
-    .text(`${C2_P2A} ${C2_P2B}`, { align: 'justify' });
-  doc.font('Helvetica').fontSize(9).text(`${C2_P3A} ${C2_P3B}`, {
-    align: 'justify',
-  });
-  doc
-    .font('Helvetica')
-    .fontSize(9)
-    .text(`${C2_P4A} ${C2_P4B} ${C2_P4C}`, { align: 'justify' });
-  // CLAUSULA SEGUNDA
+    .text('CLÁUSULA SEGUNDA. - OBJETO.', { underline: true });
+  doc.font('Helvetica').fontSize(9).text(C2_P1A, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C2_P2A, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C2_P3A, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C2_P4A, { align: 'justify' });
+
   doc.moveDown();
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('CLÁUSULA TERCERA', { continued: true, underline: true });
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
     .text(
-      '. - DEL CRONOGRAMA PARA LA PRESTACIÓN DE LOS SERVICIOS EDUCATIVOS.',
-      { underline: false },
+      'CLÁUSULA TERCERA. - DEL CRONOGRAMA PARA LA PRESTACIÓN DE LOS SERVICIOS EDUCATIVOS.',
+      { underline: true },
     );
+  doc.font('Helvetica').fontSize(9).text(C3_P1A, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C3_P2A, { align: 'justify' });
+
+  // --- TABLAS ---
+  doc.moveDown(0.5);
   doc
-    .font('Helvetica')
-    .fontSize(9)
-    .text(`${C3_P1A} ${C3_P1B}`, { align: 'justify' });
+    .font('Helvetica-Bold')
+    .fontSize(8)
+    .text('ORGANIZACIÓN DE LOS BIMESTRES', { align: 'left' });
+
+  const cronogramaData = [
+    { col1: 'Bimestre', col2: 'Inicia', col3: 'Finaliza' },
+    { col1: '1er Bimestre', col2: '09-mar', col3: '08-may' },
+    { col1: '2do Bimestre', col2: '18-may', col3: '17-jul' },
+    { col1: '3er Bimestre', col2: '03-ago', col3: '02-oct' },
+    { col1: '4to Bimestre', col2: '12-oct', col3: '18-dic' },
+  ];
+
+  generateTableWithLines(doc, cronogramaData, doc.y, [120, 80, 80]);
+
+  doc.moveDown();
+
+  // *** CORRECCIÓN: Evitar título huérfano ***
+  // Si queda poco espacio (ej. menos de 120 puntos), forzar nueva página para VACACIONES
+  if (doc.y > doc.page.height - 120) {
+    doc.addPage();
+    // Restablecer margen superior si es necesario, aunque addPage lo hace por defecto
+    doc.y = 50;
+  }
+
+  doc.font('Helvetica-Bold').fontSize(8).text('VACACIONES', { align: 'left' });
+
+  const vacationData = [
+    { col1: 'Periodo Vacacional', col2: 'Inicia', col3: 'Finaliza' },
+    { col1: '1er', col2: '11-may', col3: '15-may' },
+    { col1: '2do', col2: '20-jul', col3: '31-jul' },
+    { col1: '3er', col2: '05-oct', col3: '09-oct' },
+  ];
+
+  generateTableWithLines(doc, vacationData, doc.y, [120, 80, 80]);
+}
+
+function generateTableWithLines(
+  doc: PDFKit.PDFDocument,
+  data: any[],
+  y: number,
+  colWidths: number[],
+) {
+  const rowHeight = 15;
+  const startX = 55;
+
+  y += 5; // Espacio inicial
+
+  data.forEach((row) => {
+    // Verificar si necesitamos nueva página para la FILA
+    if (y + rowHeight > doc.page.height - 50) {
+      doc.addPage();
+      y = 50;
+    }
+
+    doc.font('Helvetica').fontSize(9);
+    doc.text(row.col1, startX + 5, y + 4, {
+      width: colWidths[0] - 10,
+      align: 'left',
+      lineBreak: false,
+    });
+    doc.text(row.col2, startX + colWidths[0] + 5, y + 4, {
+      width: colWidths[1] - 10,
+      align: 'center',
+      lineBreak: false,
+    });
+    doc.text(row.col3, startX + colWidths[0] + colWidths[1] + 5, y + 4, {
+      width: colWidths[2] - 10,
+      align: 'center',
+      lineBreak: false,
+    });
+
+    drawHeaderRowLines(doc, y, colWidths, rowHeight, startX);
+    y += rowHeight;
+  });
+  doc.y = y; // Actualizar cursor
+}
+
+function drawHeaderRowLines(
+  doc: PDFKit.PDFDocument,
+  y: number,
+  columnWidths: number[],
+  rowHeight: number,
+  startX: number,
+) {
+  doc.lineWidth(0.5);
+  doc.strokeColor('#000');
+
+  const totalWidth = columnWidths.reduce((a, b) => a + b, 0);
   doc
-    .font('Helvetica')
-    .fontSize(9)
-    .text(`${C3_P2A} ${C3_P2B}`, { align: 'justify' });
+    .moveTo(startX, y)
+    .lineTo(startX + totalWidth, y)
+    .stroke(); // Top
+
+  let xPos = startX;
+  columnWidths.forEach((width) => {
+    doc
+      .moveTo(xPos, y)
+      .lineTo(xPos, y + rowHeight)
+      .stroke();
+    xPos += width;
+  });
+  doc
+    .moveTo(xPos, y)
+    .lineTo(xPos, y + rowHeight)
+    .stroke(); // Last vertical
+  doc
+    .moveTo(startX, y + rowHeight)
+    .lineTo(startX + totalWidth, y + rowHeight)
+    .stroke(); // Bottom
 }

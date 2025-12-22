@@ -84,7 +84,7 @@ export class CreateTransferDto {
     example: 2,
     type: Number,
   })
-  @ValidateIf((o) => o.type === TransferType.EXTERNAL)
+  @ValidateIf((o) => o.type === TransferType.CAMPUS)
   @IsInt({ message: 'El ID de la sede destino debe ser un número entero.' })
   @IsNotEmpty({
     message: 'La sede destino es obligatoria para traslados externos.',

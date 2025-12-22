@@ -201,6 +201,34 @@ export class AuthService {
         // );
       }
     }
+    console.log(userBD);
+    if (userBD.personId === null) {
+      const existPerson = await this.personRepository.findOneBy({
+        docNumber: user.dni,
+      });
+      if (!existPerson) {
+        const person = this.personRepository.create({
+          name: user.given_name.toLocaleUpperCase(),
+          lastname:
+            user.family_name.split(' ')[0].toLocaleUpperCase() ||
+            user.family_name.toLocaleUpperCase(),
+          mLastname:
+            user.family_name.split(' ')[1]?.toLocaleUpperCase() ||
+            user.family_name.toLocaleUpperCase(),
+          docNumber: user.dni,
+        });
+        const newPerson = await this.personRepository.save(person);
+        userBD.personId = newPerson.id;
+
+        await this.userRepository.save(userBD);
+        let roles = [];
+        if (user.resource_access['appcolegioae']) {
+          roles = user.resource_access['appcolegioae'].roles;
+        }
+        const menu = this.generateMenu(roles);
+        return menu;
+      }
+    }
 
     if (userBD.sub === null || userBD.sub === '') {
       userBD.sub = user.sub;

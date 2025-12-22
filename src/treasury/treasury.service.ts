@@ -8,7 +8,7 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Debt } from './entities/debt.entity';
-import { In, LessThan, MoreThanOrEqual, Raw, Repository } from 'typeorm';
+import { In, LessThan, Raw, Repository } from 'typeorm';
 import { Family } from 'src/family/entities/family.entity';
 import axios from 'axios';
 import { Payment } from './entities/payment.entity';
@@ -184,7 +184,11 @@ export class TreasuryService {
         if (debt.concept.code === 'C001') {
           // Actualizar deuda y matrícula
           await this.finalizeDebtAndEnrollment(debt, enrroll);
+          console.log(enrroll.activityClassroom.grade.level.id);
+          console.log(enrroll.activityClassroom.classroom.campusDetail.id);
+
           const year = enrroll.activityClassroom.phase.year;
+          console.log(year.id);
           const rate = await this.ratesRepository.findOne({
             where: {
               level: { id: enrroll.activityClassroom.grade.level.id },
@@ -515,7 +519,7 @@ export class TreasuryService {
     if (!family) {
       throw new NotFoundException('Don´t exist family for this student');
     }
-    let debts;
+    let debts = [];
     if (type === TypeOfDebt.VENCIDA) {
       debts = await this.debtRepository.find({
         where: {
@@ -545,14 +549,27 @@ export class TreasuryService {
     const parents = [];
     parents.push(family.parentOneId);
     parents.push(family.parentTwoId);
+
     const data = {
       debts: debts,
       resp: family.respEconomic || 'No hay reponsable matrícula ',
       parents,
+      hasDebt: debts.length > 0,
     };
     return data;
   }
+  async findDebtByConcept(studentId: number, conceptId: number) {
+    const debts = await this.debtRepository.find({
+      where: {
+        student: { id: studentId },
+        concept: { id: conceptId },
+        status: false,
+        isCanceled: false,
+      },
+    });
 
+    return debts;
+  }
   async searchDebtsByDate(studentId: number, date: Date = new Date()) {
     const debts = await this.debtRepository.find({
       where: {
@@ -786,6 +803,11 @@ export class TreasuryService {
               status: Status.MATRICULADO,
             },
           },
+          {
+            enrollment: {
+              status: Status.FINALIZADO,
+            },
+          },
         ],
         status: false,
       },
@@ -805,6 +827,13 @@ export class TreasuryService {
         },
         discount: true,
       },
+      order: {
+        student: {
+          enrollment: {
+            id: 'DESC',
+          },
+        },
+      },
     });
 
     if (!debt) {
@@ -822,6 +851,7 @@ export class TreasuryService {
     }
 
     const enrroll = debt.student.enrollment[0];
+
     // const student = debt.student.person;
     const level = enrroll.activityClassroom.grade.level;
     const campus = enrroll.activityClassroom.classroom.campusDetail;
@@ -848,24 +878,24 @@ export class TreasuryService {
         serie = `BB${campus.id}${level.id}`;
       }
     }
-    if (debt.concept.code === 'C005') {
-      // Si es traslado se procede a cancelar las deudas del mes
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+    // if (debt.concept.code === 'C005') {
+    //   // Si es traslado se procede a cancelar las deudas del mes
+    //   const today = new Date();
+    //   today.setHours(0, 0, 0, 0);
 
-      const debts = await this.debtRepository.find({
-        where: {
-          isCanceled: true,
-          dateEnd: MoreThanOrEqual(today),
-        },
-      });
+    //   const debts = await this.debtRepository.find({
+    //     where: {
+    //       isCanceled: true,
+    //       dateEnd: MoreThanOrEqual(today),
+    //     },
+    //   });
 
-      for (const debt of debts) {
-        debt.isCanceled = true;
-      }
+    //   for (const debt of debts) {
+    //     debt.isCanceled = true;
+    //   }
 
-      await this.debtRepository.save(debts);
-    }
+    //   await this.debtRepository.save(debts);
+    // }
 
     if (createPaidDto.parentId) {
       client = await this.personService.findOne(createPaidDto.parentId);
@@ -1002,6 +1032,8 @@ export class TreasuryService {
         where: {
           concept: { id: debt.concept.id },
           student: { id: debt.student.id },
+          status: true,
+          debt: { id: debt.id },
         },
         relations: {
           debt: true,
@@ -2655,7 +2687,7 @@ export class TreasuryService {
     const year = fecha.getFullYear();
     const month = String(fecha.getMonth() + 1).padStart(2, '0');
     const day = String(fecha.getDate()).padStart(2, '0');
-    const shortUuid = uuidv4().split('-')[0].toUpperCase();
+    // const shortUuid = uuidv4().split('-')[0].toUpperCase();
 
     return `COBR-${year}${month}${day}-${estudianteId}`;
   }
@@ -2687,8 +2719,8 @@ export class TreasuryService {
       order by student asc;`,
     );
 
-    // Agregar job a la cola
-    const job = await this.cobranzaQueue.add(
+    // Agregar job a la colaconst job =
+    await this.cobranzaQueue.add(
       'generar-cartas',
       {
         estudianteData: data,
@@ -2760,5 +2792,21 @@ export class TreasuryService {
     }
   }
 
-  private getDE;
+  async cancelDebts(studentId: number) {
+    try {
+      const debts = await this.debtRepository.find({
+        where: {
+          isCanceled: false,
+          status: false,
+          studentId,
+        },
+      });
+      for (const debt of debts) {
+        debt.isCanceled = true;
+      }
+      await this.debtRepository.save(debts);
+    } catch (error) {
+      handleDBExceptions(error, this.logger);
+    }
+  }
 }
