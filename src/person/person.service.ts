@@ -507,10 +507,9 @@ export class PersonService {
         .leftJoinAndSelect(
           'student.enrollment',
           'enrollment',
-          'enrollment.status = :statusRe',
+          'enrollment.status IN (:...statuses)',
           {
-            statusRe: 'registered',
-            // statusRe: 'finalized',
+            statuses: ['registered', 'finalized'],
           },
         )
         // .leftJoinAndSelect('student.family', 'family')
