@@ -620,6 +620,8 @@ export class PdfService {
         gradeName,
         section,
         nameSon,
+        name,
+        docNumber,
       );
       const pageWidth = doc.page.width;
       const margin = 100;
