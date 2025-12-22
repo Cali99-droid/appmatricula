@@ -510,6 +510,7 @@ export class PersonService {
           'enrollment.status = :statusRe',
           {
             statusRe: 'registered',
+            // statusRe: 'finalized',
           },
         )
         // .leftJoinAndSelect('student.family', 'family')

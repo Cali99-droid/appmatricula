@@ -9,12 +9,14 @@ export async function addClausesPart3(
   gradeName: string,
   section: string,
   nameSon: string,
+  parentName: string, // NECESITARÁS PASAR ESTO DESDE TU CONTROLADOR (name)
+  parentDocNumber: string, // NECESITARÁS PASAR ESTO DESDE TU CONTROLADOR (docNumber)
 ) {
-  // --- CLÁUSULA DÉCIMO PRIMERA: LEY ---
-  const C11_P1A = `Para todas las cuestiones que no estén expresamente contempladas en el presente Contrato.`;
-  const C11_P1B = `Ambas partes se someten supletoriamente al Código Civil, LEY N° 29571 Código de protección y defensa del consumidor, LEY N° 26549 Ley de los centros educativos privados, LEY N° 27665 Ley de protección a la economía familiar respecto al pago de pensiones en centros y programas educativos privados, LEY N° 28044 Ley general de educación, LEY N° 29694 Ley que protege a los consumidores de las prácticas abusivas en la selección o adquisición de textos escolares y demás del sistema jurídico que resulten aplicables.`;
+  // Asegurar posición X
+  doc.x = 50;
 
-  // --- CLÁUSULA DÉCIMO SEGUNDA: JURISDICCIÓN Y CONTROVERSIAS ---
+  const C11_P1A = `Para todas las cuestiones que no estén expresamente contempladas en el presente Contrato. Ambas partes se someten supletoriamente al Código Civil, LEY N° 29571 Código de protección y defensa del consumidor, LEY N° 26549 Ley de los centros educativos privados, LEY N° 27665 Ley de protección a la economía familiar respecto al pago de pensiones en centros y programas educativos privados, LEY N° 28044 Ley general de educación, LEY N° 29694 Ley que protege a los consumidores de las prácticas abusivas en la selección o adquisición de textos escolares y demás del sistema jurídico que resulten aplicables.`;
+
   const C12_P1 = `12.1	Todas las controversias que pudieran derivarse del Contrato, incluidas las que se refieren a su nulidad o invalidez, serán resueltas en primer lugar, mediante trato directo entre las Partes, las mismas que se comprometen a hacer sus mejores esfuerzos para encontrar una solución amigable, dentro de un plazo de 10 (diez) días naturales desde que alguna de las partes solicite por escrito el inicio del trato directo.`;
   const C12_P2 = `12.2	Si las Partes no lograsen solucionar la controversia dentro del plazo establecido en el párrafo precedente y, siendo la intención de las Partes que los problemas que pudieran presentarse con relación al cumplimiento del Contrato se resuelven de la manera más rápida posible, se conviene desde ahora que cualquier litigio, controversia o reclamación entre ellas, relativa a su interpretación, ejecución o validez, será resuelta mediante un arbitraje de derecho.`;
   const C12_P3 = `12.3	El arbitraje será llevado por árbitro único elegido por el Centro de Arbitraje de la Cámara de Comercio de Huaraz (el “Centro”) a solicitud de parte.`;
@@ -22,11 +24,9 @@ export async function addClausesPart3(
   const C12_P5 = `12.5	En caso el Centro no pueda responder a la solicitud de arbitraje dentro del plazo de 10 días el arbitraje será Ad-hoc bajo sus propias reglas.`;
   const C12_P6 = `12.6 	En caso de deudas por servicios educativos prestados efectivamente a mérito del presente contrato la Asociación Educativa Luz y Ciencia interpondrá las demandas de obligación de dar suma de dinero ante el poder judicial de la jurisdicción de la provincia de Huaraz.`;
 
-  // --- CLÁUSULA DÉCIMO TERCERA: DATOS ALUMNO ---
   const C13_P1 = `El PADRE O MADRE DE FAMILIA, conoce las obligaciones económicas, aspectos pedagógicos del SERVICIO, voluntariamente matricula a sus hijos:`;
   const C13_P2 = `Una vez seleccionado el local en el presente documento no podrá variarse dicha información hasta la culminación del presente contrato.`;
 
-  // --- CLÁUSULA DÉCIMO CUARTA: DOMICILIO ---
   const C14_P1 = `14.1	Para la validez de todas las comunicaciones y notificaciones de las Partes, con motivo de la ejecución del presente Contrato, éstas señalan como sus respectivos domicilios los indicados en la introducción de este documento.`;
   const C14_P2 = `14.2	De igual manera, las Partes declaran como correos electrónicos válidos para notificaciones de cualquier tipo como parte de este CONTRATO los siguientes:`;
   const C14_P2_Colegio = `- El Colegio: soporte@colegioae.freshdesk.com`;
@@ -36,7 +36,7 @@ export async function addClausesPart3(
   const C14_P4 = `14.4	El cambio de domicilio o de la dirección de correo electrónico de cualquiera de las Partes surtirá efecto a partir del siguiente día hábil de recibida la comunicación por la otra Parte con cualquier medio escrito.`;
   const C14_Final = `En señal de conformidad, ratificación y reconocimiento de ser fiel reflejo de voluntades libremente expresadas, El Colegio firma el presente Contrato y el PADRE O MADRE DE FAMILIA brinda su conformidad presentando este contrato debidamente firmado presencialmente al colegio.`;
 
-  // OBTENER FECHA
+  // FECHA
   const months = [
     'enero',
     'febrero',
@@ -56,50 +56,41 @@ export async function addClausesPart3(
   const monthName = months[today.getMonth()];
   const year = today.getFullYear();
 
-  // --- RENDERIZADO AL PDF ---
+  // --- RENDERIZADO ---
 
-  // DÉCIMO PRIMERA
   doc.moveDown();
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text('CLÁUSULA DÉCIMO PRIMERA', { continued: true, underline: true });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('. - APLICACIÓN SUPLETORIA DE LA LEY.', { underline: false });
-  doc.font('Helvetica').fontSize(9).text(`${C11_P1A}`, { align: 'justify' });
-  doc.font('Helvetica').fontSize(9).text(`${C11_P1B}`, { align: 'justify' });
+    .text('CLÁUSULA DÉCIMO PRIMERA. - APLICACIÓN SUPLETORIA DE LA LEY.', {
+      underline: true,
+    });
+  doc.font('Helvetica').fontSize(9).text(C11_P1A, { align: 'justify' });
 
-  // DÉCIMO SEGUNDA
   doc.moveDown();
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text('CLÁUSULA DÉCIMO SEGUNDA', { continued: true, underline: true });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('. - JURISDICCIÓN Y CONTROVERSIAS', { underline: false });
-  doc.font('Helvetica').fontSize(9).text(`${C12_P1}`, { align: 'justify' });
-  doc.font('Helvetica').fontSize(9).text(`${C12_P2}`, { align: 'justify' });
-  doc.font('Helvetica').fontSize(9).text(`${C12_P3}`, { align: 'justify' });
-  doc.font('Helvetica').fontSize(9).text(`${C12_P4}`, { align: 'justify' });
-  doc.font('Helvetica').fontSize(9).text(`${C12_P5}`, { align: 'justify' });
-  doc.font('Helvetica').fontSize(9).text(`${C12_P6}`, { align: 'justify' });
+    .text('CLÁUSULA DÉCIMO SEGUNDA. - JURISDICCIÓN Y CONTROVERSIAS', {
+      underline: true,
+    });
+  doc.font('Helvetica').fontSize(9).text(C12_P1, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C12_P2, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C12_P3, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C12_P4, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C12_P5, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C12_P6, { align: 'justify' });
 
-  // DÉCIMO TERCERA
   doc.moveDown();
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text('CLÁUSULA DÉCIMO TERCERA', { continued: true, underline: true });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('. - DE LOS DATOS DEL ALUMNO MATRICULADO', { underline: false });
-  doc.font('Helvetica').fontSize(9).text(`${C13_P1}`, { align: 'justify' });
+    .text('CLÁUSULA DÉCIMO TERCERA. - DE LOS DATOS DEL ALUMNO MATRICULADO', {
+      underline: true,
+    });
+  doc.font('Helvetica').fontSize(9).text(C13_P1, { align: 'justify' });
 
+  // TABLA ALUMNO: Ajuste de anchos para que el nombre entre
   const tableData = [
     {
       col1: 'NOMBRE',
@@ -114,66 +105,106 @@ export async function addClausesPart3(
       col3: levelName,
       col4: gradeName,
       col5: section,
-    }, // Ajuste de orden según pdf anterior o gusto
+    },
   ];
   let tableTop = doc.y;
-  generateTable(doc, tableData, tableTop);
+  // Anchos modificados: Col1 (Nombre) recibe más espacio (160), resto ajustado
+  generateTable(doc, tableData, tableTop, [160, 80, 80, 80, 60]);
   tableTop += 10;
 
-  doc.fontSize(7).text(`${C13_P2}`, 50, doc.y + 5);
-
-  // DÉCIMO CUARTA
-  doc.moveDown();
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('CLÁUSULA DÉCIMO CUARTA', { continued: true, underline: true });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('. - DOMICILIO', { underline: false });
-  doc.font('Helvetica').fontSize(9).text(`${C14_P1}`, { align: 'justify' });
-  doc.font('Helvetica').fontSize(9).text(`${C14_P2}`, { align: 'justify' });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text(`${C14_P2_Colegio}`, { align: 'justify' });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text(`${C14_P2_Padre}`, { align: 'justify' });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text(`${C14_P2_Cel}`, { align: 'justify' });
-  doc.font('Helvetica').fontSize(9).text(`${C14_P3}`, { align: 'justify' });
-  doc.font('Helvetica').fontSize(9).text(`${C14_P4}`, { align: 'justify' });
+  doc.fontSize(7).text(C13_P2, 50, doc.y + 5);
 
   doc.moveDown();
-  doc.font('Helvetica').fontSize(9).text(`${C14_Final}`, { align: 'justify' });
-
-  doc.moveDown(2);
   doc
-    .font('Helvetica')
+    .font('Helvetica-Bold')
     .fontSize(9)
-    .text(`Huaraz, ${day} de ${monthName} del ${year}`, { align: 'right' });
+    .text('CLÁUSULA DÉCIMO CUARTA. - DOMICILIO', { underline: true });
+  doc.font('Helvetica').fontSize(9).text(C14_P1, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C14_P2, { align: 'justify' });
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(9)
+    .text(C14_P2_Colegio, { align: 'justify' });
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(9)
+    .text(C14_P2_Padre, { align: 'justify' });
+  doc.font('Helvetica-Bold').fontSize(9).text(C14_P2_Cel, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C14_P3, { align: 'justify' });
+  doc.font('Helvetica').fontSize(9).text(C14_P4, { align: 'justify' });
+  doc.moveDown();
+  doc.font('Helvetica').fontSize(9).text(C14_Final, { align: 'justify' });
+
+  // --- FIRMAS ---
+  doc.moveDown(3); // Espacio para la firma gráfica si la hay
+
+  // Posición Y actual
+  const signY = doc.y;
+
+  // Línea de firma para el padre
+  doc.moveTo(50, signY).lineTo(200, signY).stroke();
+
+  // Texto debajo de la firma
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(8)
+    .text('PADRE O MADRE DE FAMILIA', 50, signY + 5);
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(8)
+    .text(`NOMBRES: ${parentName}`, 50, signY + 15);
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(8)
+    .text(`DNI: ${parentDocNumber}`, 50, signY + 25);
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(8)
+    .text(`Huaraz, ${day} de ${monthName} del ${year}`, 50, signY + 35);
+
+  // Nota: Si usas la imagen de firma digital, asegúrate de colocarla encima de la línea (signY - altura_imagen)
 }
 
-export function generateTable(doc: PDFKit.PDFDocument, data: any[], y: number) {
-  const columnWidths = [100, 100, 100, 100]; // Ajustar según necesidad visual
+export function generateTable(
+  doc: PDFKit.PDFDocument,
+  data: any[],
+  y: number,
+  colWidths: number[],
+) {
   const rowHeight = 15;
+  const startX = 50;
   y += rowHeight;
+
   data.forEach((row) => {
-    // Nota: El orden visual en el codigo anterior ponía nombre al final, aquí lo he puesto primero para calzar, ajusta indices si prefieres.
+    // Texto
+    let xText = startX + 2;
     doc
       .font('Helvetica-Bold')
-      .fontSize(9)
-      .text(row.col1, 55, y + 5); // Nombre
-    doc.text(row.col2, 155, y + 5); // Sede
-    doc.text(row.col3, 255, y + 5); // Nivel
-    doc.text(row.col4, 355, y + 5); // Grado
-    // Falta Seccion visualmente si hay 5 columnas, ajusta widths si es necesario.
-    drawRowLines(doc, y, columnWidths, rowHeight);
+      .fontSize(8)
+      .text(row.col1, xText, y + 5, { width: colWidths[0] - 4, align: 'left' });
+    xText += colWidths[0];
+    doc.text(row.col2, xText, y + 5, {
+      width: colWidths[1] - 4,
+      align: 'left',
+    });
+    xText += colWidths[1];
+    doc.text(row.col3, xText, y + 5, {
+      width: colWidths[2] - 4,
+      align: 'left',
+    });
+    xText += colWidths[2];
+    doc.text(row.col4, xText, y + 5, {
+      width: colWidths[3] - 4,
+      align: 'left',
+    });
+    xText += colWidths[3];
+    doc.text(row.col5, xText, y + 5, {
+      width: colWidths[4] - 4,
+      align: 'left',
+    });
+
+    // Líneas
+    drawRowLines(doc, y, colWidths, rowHeight);
     y += rowHeight;
   });
 }
@@ -186,8 +217,16 @@ export function drawRowLines(
 ) {
   doc.lineWidth(0.5);
   doc.strokeColor('#000');
-  doc.moveTo(50, y).lineTo(450, y).stroke();
-  let xPos = 50;
+
+  const startX = 50;
+  const totalWidth = columnWidths.reduce((a, b) => a + b, 0);
+  const endX = startX + totalWidth;
+
+  // Línea superior
+  doc.moveTo(startX, y).lineTo(endX, y).stroke();
+
+  // Verticales
+  let xPos = startX;
   columnWidths.forEach((width) => {
     doc
       .moveTo(xPos, y)
@@ -198,9 +237,11 @@ export function drawRowLines(
   doc
     .moveTo(xPos, y)
     .lineTo(xPos, y + rowHeight)
-    .stroke();
+    .stroke(); // Última vertical
+
+  // Línea inferior
   doc
-    .moveTo(50, y + rowHeight)
-    .lineTo(450, y + rowHeight)
+    .moveTo(startX, y + rowHeight)
+    .lineTo(endX, y + rowHeight)
     .stroke();
 }
