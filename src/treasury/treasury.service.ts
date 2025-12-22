@@ -184,7 +184,11 @@ export class TreasuryService {
         if (debt.concept.code === 'C001') {
           // Actualizar deuda y matrícula
           await this.finalizeDebtAndEnrollment(debt, enrroll);
+          console.log(enrroll.activityClassroom.grade.level.id);
+          console.log(enrroll.activityClassroom.classroom.campusDetail.id);
+
           const year = enrroll.activityClassroom.phase.year;
+          console.log(year.id);
           const rate = await this.ratesRepository.findOne({
             where: {
               level: { id: enrroll.activityClassroom.grade.level.id },
@@ -823,6 +827,13 @@ export class TreasuryService {
         },
         discount: true,
       },
+      order: {
+        student: {
+          enrollment: {
+            id: 'DESC',
+          },
+        },
+      },
     });
 
     if (!debt) {
@@ -1020,6 +1031,8 @@ export class TreasuryService {
         where: {
           concept: { id: debt.concept.id },
           student: { id: debt.student.id },
+          status: true,
+          debt: { id: debt.id },
         },
         relations: {
           debt: true,

@@ -61,7 +61,7 @@ export function addContractHeader(
   doc
     .font('Helvetica-Bold')
     .fontSize(10)
-    .text(`N° ${numContra}-2026-ASELUC-C`, { align: 'center' });
+    .text(`N° ${numContra}-${yearName}-ASELUC-C`, { align: 'center' });
 
   // Párrafo 1
   doc.moveDown(1.5);
