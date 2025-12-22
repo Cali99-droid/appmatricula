@@ -172,7 +172,7 @@ export class StudentService {
           : '',
         tieneMatriculaActiva: !!lastEnrollment,
         hasDebt:
-          (await this.treasuryService.findDebtByConcept(estudiante.id, 1))
+          (await this.treasuryService.findDebtByConcept(estudiante.id, 2))
             .length > 0,
       };
     });

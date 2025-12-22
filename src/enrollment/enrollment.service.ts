@@ -1603,7 +1603,7 @@ export class EnrollmentService {
       enrollments.map(async (e) => {
         const debts = await this.treasuryService.findDebtByConcept(
           e.student.id,
-          1,
+          2,
         );
         return debts.length > 0 ? e : null;
       }),
