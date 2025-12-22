@@ -689,9 +689,9 @@ export class StudentService {
       .leftJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
       .leftJoinAndSelect('activityClassroom.grade', 'grade');
     query.andWhere(
-      'enrollment.status = :statusRe AND enrollment.activityClassroomId IN (:...ids)',
+      'enrollment.status IN  (:...statusRe) AND enrollment.activityClassroomId IN (:...ids)',
       {
-        statusRe: 'registered',
+        statusRe: ['registered', 'finalized'],
         ids: classroomsIds,
       },
     );
