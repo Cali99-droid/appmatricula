@@ -799,6 +799,11 @@ export class TreasuryService {
               status: Status.MATRICULADO,
             },
           },
+          {
+            enrollment: {
+              status: Status.FINALIZADO,
+            },
+          },
         ],
         status: false,
       },
