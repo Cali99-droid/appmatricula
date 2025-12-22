@@ -634,6 +634,10 @@ export class TreasuryService {
                 // student: { id: debt.student.id },
                 status: Status.EXPIRADO,
               },
+              {
+                // student: { id: debt.student.id },
+                status: Status.FINALIZADO,
+              },
             ],
           },
         },
