@@ -6,6 +6,9 @@ export function addClausesPart2(
   dayClassStart: string,
   dayClassEnd: string,
 ) {
+  // Asegurar margen izquierdo correcto
+  doc.x = 50;
+
   // --- CLÁUSULA SEXTA: OBLIGACIONES Y DECLARACIONES ---
   const C6_Intro = `Por medio del presente Contrato, el PADRE O MADRE DE FAMILIA declara lo siguiente:`;
 
@@ -42,13 +45,13 @@ export function addClausesPart2(
 
   const C6_P14A = `6.14	Que el incumplimiento de cualquiera de estas declaraciones por parte del PADRE O MADRE DE FAMILIA facultará al Colegio a adoptar las medidas internas que correspondan, de manera proporcional y conforme a su normativa interna, así como, de ser el caso y conforme a la legislación vigente, a poner los hechos en conocimiento de las autoridades competentes.`;
 
-  // --- CLÁUSULA SÉPTIMA: PLAZO ---
-  const C7_P1A = `La vigencia del Contrato se sujeta al calendario escolar dispuesto para este año para las tres modalidades, el mismo que se inicia el ${dayClassStart} y culmina el ${dayClassEnd}.`;
+  // --- CLÁUSULA SÉPTIMA: PLAZO (TEXTO EXACTO DEL PDF 2026) ---
+  const C7_P1A = `La vigencia del Contrato se sujeta al calendario escolar dispuesto para este año para las tres modalidades, el mismo que se inicia el lunes 9 de marzo del 2026 y culmina el viernes 18 de diciembre del 2026.`;
 
   // --- CLÁUSULA OCTAVA: SUPERVISIÓN ---
   const C8_P1A = `El PADRE O MADRE DE FAMILIA podrá controlar o verificar, a su propio costo y cargo, la ejecución de los Servicios, comprometiéndose a tratar en primera instancia y de manera directa cualquier deficiencia, queja o reclamo ante la sede del Colegio, a efectos de encontrar la mejor solución posible.`;
 
-  // --- CLÁUSULA NOVENA: APOYO (MODIFICADA 2026) ---
+  // --- CLÁUSULA NOVENA: APOYO (ACTUALIZADA 2026) ---
   const C9_P1A = `El Colegio brindará los siguientes servicios de apoyo al Estudiante:`;
   const C9_P2A = `9.1	Servicio de Tópico de Primeros Auxilios`;
   const C9_P3A = `9.2	Servicio de Psicología Educativa`;
@@ -64,13 +67,10 @@ export function addClausesPart2(
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text('CLÁUSULA SEXTA', { continued: true, underline: true });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('. - OBLIGACIONES Y DECLARACIONES DEL PADRE O MADRE DE FAMILIA', {
-      underline: false,
-    });
+    .text(
+      'CLÁUSULA SEXTA. - OBLIGACIONES Y DECLARACIONES DEL PADRE O MADRE DE FAMILIA',
+      { underline: true },
+    );
   doc.font('Helvetica').fontSize(9).text(`${C6_Intro}`, { align: 'justify' });
   doc.font('Helvetica').fontSize(9).text(`${C6_P1A}`, { align: 'justify' });
   doc.font('Helvetica').fontSize(9).text(`${C6_P2A}`, { align: 'justify' });
@@ -87,12 +87,16 @@ export function addClausesPart2(
 
   // Tabla Alumnos
   doc.font('Helvetica').fontSize(9).text(`${C6_P9A}`, { align: 'justify' });
+
   const tableData = [
     { col1: 'INICIAL', col2: 'PRIMARIA(*)', col3: 'SECUNDARIA' },
     { col1: '22 Alumnos', col2: '30 Alumnos', col3: '30 Alumnos' },
   ];
   let tableTop = doc.y;
-  generateTable(doc, tableData, tableTop);
+
+  // Usamos anchos definidos para que las líneas cuadren bien
+  generateTable(doc, tableData, tableTop, [100, 100, 100]);
+
   tableTop += 10;
   doc
     .fontSize(7)
@@ -119,12 +123,8 @@ export function addClausesPart2(
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text('CLÁUSULA SÉPTIMA', { continued: true, underline: true });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('. - DEL PLAZO DE EJECUCIÓN DEL SERVICIO', {
-      underline: false,
+    .text('CLÁUSULA SÉPTIMA. - DEL PLAZO DE EJECUCIÓN DEL SERVICIO', {
+      underline: true,
     });
   doc.font('Helvetica').fontSize(9).text(`${C7_P1A}`, { align: 'justify' });
 
@@ -133,12 +133,8 @@ export function addClausesPart2(
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text('CLÁUSULA OCTAVA', { continued: true, underline: true });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('. - DE LA SUPERVISIÓN DE LOS SERVICIOS', {
-      underline: false,
+    .text('CLÁUSULA OCTAVA. - DE LA SUPERVISIÓN DE LOS SERVICIOS', {
+      underline: true,
     });
   doc.font('Helvetica').fontSize(9).text(`${C8_P1A}`, { align: 'justify' });
 
@@ -147,12 +143,8 @@ export function addClausesPart2(
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text('CLÁUSULA NOVENA', { continued: true, underline: true });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('. - DE LOS SERVICIOS DE APOYO AL ESTUDIANTE', {
-      underline: false,
+    .text('CLÁUSULA NOVENA. - DE LOS SERVICIOS DE APOYO AL ESTUDIANTE', {
+      underline: true,
     });
   doc.font('Helvetica').fontSize(9).text(`${C9_P1A}`, { align: 'justify' });
   doc.font('Helvetica').fontSize(9).text(`${C9_P2A}`, { align: 'justify' });
@@ -164,38 +156,44 @@ export function addClausesPart2(
   doc
     .font('Helvetica-Bold')
     .fontSize(9)
-    .text('CLÁUSULA DÉCIMA', { continued: true, underline: true });
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9)
-    .text('. - INCOMPATIBILIDAD DE CLÁUSULAS', {
-      underline: false,
+    .text('CLÁUSULA DÉCIMA. - INCOMPATIBILIDAD DE CLÁUSULAS', {
+      underline: true,
     });
   doc.font('Helvetica').fontSize(9).text(`${C10_P1A}`, { align: 'justify' });
 }
 
-export function generateTable(doc: PDFKit.PDFDocument, data: any[], y: number) {
-  const columnWidths = [100, 100, 100];
+export function generateTable(
+  doc: PDFKit.PDFDocument,
+  data: any[],
+  y: number,
+  columnWidths: number[],
+) {
   const rowHeight = 15;
+  const startX = 50; // Margen izquierdo consistente
   y += rowHeight;
+
   data.forEach((row) => {
+    // Dibujar texto
     doc
       .font('Helvetica-Bold')
       .fontSize(9)
-      .text(row.col1, 55, y + 5);
+      .text(row.col1, startX + 5, y + 5);
     doc
       .font('Helvetica-Bold')
       .fontSize(9)
-      .text(row.col2, 155, y + 5);
+      .text(row.col2, startX + columnWidths[0] + 5, y + 5);
     doc
       .font('Helvetica-Bold')
       .fontSize(9)
-      .text(row.col3, 255, y + 5);
+      .text(row.col3, startX + columnWidths[0] + columnWidths[1] + 5, y + 5);
+
+    // Dibujar líneas
     drawRowLines(doc, y, columnWidths, rowHeight);
     y += rowHeight;
   });
 }
 
+// Función actualizada para dibujar líneas correctamente
 export function drawRowLines(
   doc: PDFKit.PDFDocument,
   y: number,
@@ -204,8 +202,18 @@ export function drawRowLines(
 ) {
   doc.lineWidth(0.5);
   doc.strokeColor('#000');
-  doc.moveTo(50, y).lineTo(350, y).stroke();
-  let xPos = 50;
+
+  const startX = 50;
+  const totalWidth = columnWidths.reduce((a, b) => a + b, 0); // Ancho total dinámico
+
+  // Línea superior
+  doc
+    .moveTo(startX, y)
+    .lineTo(startX + totalWidth, y)
+    .stroke();
+
+  // Líneas verticales
+  let xPos = startX;
   columnWidths.forEach((width) => {
     doc
       .moveTo(xPos, y)
@@ -213,12 +221,15 @@ export function drawRowLines(
       .stroke();
     xPos += width;
   });
+  // Última línea vertical
   doc
     .moveTo(xPos, y)
     .lineTo(xPos, y + rowHeight)
     .stroke();
+
+  // Línea inferior
   doc
-    .moveTo(50, y + rowHeight)
-    .lineTo(350, y + rowHeight)
+    .moveTo(startX, y + rowHeight)
+    .lineTo(startX + totalWidth, y + rowHeight)
     .stroke();
 }
