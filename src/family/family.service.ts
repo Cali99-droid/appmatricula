@@ -318,15 +318,17 @@ export class FamilyService {
 
     /**TODO Formato temporal */
     const { student, ...rest } = family;
+
     const childrensPromises = student.map(async (item) => {
       const person = item.person;
       // Verifica si `enrollment` tiene elementos
       if (item.enrollment.length === 0) {
         return undefined; // O manejar de otra manera según tu lógica
       }
-      const foundEnrollment = item.enrollment.find(
-        (e) => e.isActive === true || e.activityClassroom.grade.id == 14,
-      );
+      // const foundEnrollment = item.enrollment.find(
+      //   (e) => e.isActive === true || e.activityClassroom.grade.id == 14,
+      // );
+      const foundEnrollment = item.enrollment[0];
 
       if (!foundEnrollment) return undefined;
 
