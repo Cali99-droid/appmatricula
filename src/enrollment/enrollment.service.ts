@@ -1660,10 +1660,11 @@ export class EnrollmentService {
           TypeOfDebt.VENCIDA,
           2,
         );
-        return data.hasDebt;
+
+        return data;
       }),
     );
-    const debts = debtsPromises.filter((e) => e !== null);
+    const debts = debtsPromises.filter((e) => e.hasDebt === true);
 
     if (debts.length !== 0) {
       return {
