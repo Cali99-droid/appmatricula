@@ -21,6 +21,7 @@ import { ActivityClassroomService } from 'src/activity_classroom/activity_classr
 import { StudentHistory } from './entities/student_history';
 import { ActionType } from './enum/actionType.enum';
 import { TreasuryService } from 'src/treasury/treasury.service';
+import { TypeOfDebt } from 'src/treasury/enum/TypeOfDebt.enum';
 
 @Injectable()
 export class StudentService {
@@ -171,9 +172,13 @@ export class StudentService {
           ? `${lastEnrollment.activityClassroom?.grade?.name} ${lastEnrollment.activityClassroom?.section}`
           : '',
         tieneMatriculaActiva: !!lastEnrollment,
-        hasDebt:
-          (await this.treasuryService.findDebtByConcept(estudiante.id, 2))
-            .length > 0,
+        hasDebt: (
+          await this.treasuryService.findDebtsHelpAux(
+            estudiante.id,
+            TypeOfDebt.VENCIDA,
+            2,
+          )
+        ).hasDebt,
       };
     });
     const data = (await Promise.all(dataPromises)).filter(

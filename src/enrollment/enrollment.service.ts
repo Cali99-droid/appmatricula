@@ -55,6 +55,7 @@ import { TypeEnrollmentSchedule } from 'src/enrollment_schedule/enum/type-enroll
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { Behavior } from './enum/behavior.enum';
+import { TypeOfDebt } from 'src/treasury/enum/TypeOfDebt.enum';
 
 @Injectable()
 export class EnrollmentService {
@@ -1654,11 +1655,12 @@ export class EnrollmentService {
     }
     const debtsPromises = await Promise.all(
       enrollments.map(async (e) => {
-        const debts = await this.treasuryService.findDebtByConcept(
+        const data = await this.treasuryService.findDebtsHelpAux(
           e.student.id,
+          TypeOfDebt.VENCIDA,
           2,
         );
-        return debts.length > 0 ? e : null;
+        return data.hasDebt;
       }),
     );
     const debts = debtsPromises.filter((e) => e !== null);

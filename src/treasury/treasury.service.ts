@@ -558,6 +558,65 @@ export class TreasuryService {
     };
     return data;
   }
+  async findDebtsHelpAux(
+    studentId: number,
+    type: TypeOfDebt = TypeOfDebt.PENDIENTE,
+    conceptId: number,
+  ) {
+    const family = await this.familyRepository.findOne({
+      where: {
+        student: { id: studentId },
+      },
+      relations: {
+        respEconomic: true,
+        respEnrollment: true,
+        parentOneId: true,
+        parentTwoId: true,
+      },
+    });
+    if (!family) {
+      throw new NotFoundException('Don´t exist family for this student');
+    }
+    let debts = [];
+    if (type === TypeOfDebt.VENCIDA) {
+      debts = await this.debtRepository.find({
+        where: {
+          student: { id: studentId },
+          dateEnd: LessThan(new Date()),
+          status: false,
+          isCanceled: false,
+          concept: { id: conceptId },
+        },
+        relations: {
+          concept: true,
+          discount: true,
+        },
+      });
+    } else {
+      debts = await this.debtRepository.find({
+        where: {
+          student: { id: studentId },
+          status: false,
+          isCanceled: false,
+        },
+        relations: {
+          concept: true,
+          discount: true,
+        },
+      });
+    }
+    const parents = [];
+    parents.push(family.parentOneId);
+    parents.push(family.parentTwoId);
+
+    const data = {
+      debts: debts,
+      resp: family.respEconomic || 'No hay reponsable matrícula ',
+      parents,
+      hasDebt: debts.length > 0,
+    };
+    return data;
+  }
   async findDebtByConcept(studentId: number, conceptId: number) {
     const debts = await this.debtRepository.find({
       where: {
