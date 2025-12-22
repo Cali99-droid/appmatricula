@@ -638,6 +638,7 @@ export class EnrollmentService {
           detailOrigin,
           reserved,
           onProcess,
+          totalPreRegistered,
         } = curr;
 
         if (!acc[gradeId]) {
@@ -665,7 +666,7 @@ export class EnrollmentService {
             capacity - previousEnrolls - currentEnrroll - reserved - onProcess, //antiguos
           totalReserved: reserved,
           totalOnProcces: onProcess,
-          totalPreRegistered: 0,
+          totalPreRegistered: totalPreRegistered,
           // vacant: capacity - currentEnrroll, nuevos
           detailOrigin,
         });
@@ -1239,8 +1240,6 @@ export class EnrollmentService {
 
         enrrolls: totalOriginEnrolled,
       };
-      console.log(detailOrigin);
-      console.log(previousEnrolls);
     } else {
       // NO ASCENT CONFIG: Default promotion logic
 
@@ -1261,7 +1260,6 @@ export class EnrollmentService {
       });
 
       if (originAc) {
-        console.log('entro deeta');
         const enrollOrigin = await this.enrollmentRepository.count({
           where: {
             activityClassroom: { id: originAc.id },
@@ -1292,7 +1290,7 @@ export class EnrollmentService {
 
     const vacants =
       destinationAc.classroom.capacity - previousEnrolls - totalCurrentEnrolled;
-    console.log('vas', vacants);
+
     const res: VacantsClassrooms = {
       id: destinationAc.id,
 
@@ -1306,9 +1304,10 @@ export class EnrollmentService {
 
       capacity: destinationAc.classroom.capacity,
 
-      previousEnrolls,
+      previousEnrolls: previousEnrolls - totalCurrentEnrolled,
+      totalPreRegistered: currentPreMatriculado,
 
-      currentEnrroll: totalCurrentEnrolled,
+      currentEnrroll: currentEnrroll,
 
       reserved: currentReserved,
 

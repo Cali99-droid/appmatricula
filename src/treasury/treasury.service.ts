@@ -851,6 +851,7 @@ export class TreasuryService {
     }
 
     const enrroll = debt.student.enrollment[0];
+
     // const student = debt.student.person;
     const level = enrroll.activityClassroom.grade.level;
     const campus = enrroll.activityClassroom.classroom.campusDetail;
