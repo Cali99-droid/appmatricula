@@ -1601,8 +1601,11 @@ export class EnrollmentService {
     }
     const debtsPromises = await Promise.all(
       enrollments.map(async (e) => {
-        const { hasDebt } = await this.treasuryService.findDebts(e.student.id);
-        return hasDebt ? e : null;
+        const debts = await this.treasuryService.findDebtByConcept(
+          e.student.id,
+          1,
+        );
+        return debts.length > 0 ? e : null;
       }),
     );
     const debts = debtsPromises.filter((e) => e !== null);

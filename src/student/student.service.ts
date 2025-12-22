@@ -171,7 +171,9 @@ export class StudentService {
           ? `${lastEnrollment.activityClassroom?.grade?.name} ${lastEnrollment.activityClassroom?.section}`
           : '',
         tieneMatriculaActiva: !!lastEnrollment,
-        hasDebt: (await this.treasuryService.findDebts(estudiante.id)).hasDebt,
+        hasDebt:
+          (await this.treasuryService.findDebtByConcept(estudiante.id, 1))
+            .length > 0,
       };
     });
     const data = (await Promise.all(dataPromises)).filter(
