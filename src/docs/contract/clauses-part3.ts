@@ -12,30 +12,29 @@ export async function addClausesPart3(
   parentName: string,
   parentDocNumber: string,
 ) {
-  doc.x = 50; // Margen izquierdo fijo
+  doc.x = 50;
 
   const C11_P1A = `Para todas las cuestiones que no estén expresamente contempladas en el presente Contrato. Ambas partes se someten supletoriamente al Código Civil, LEY N° 29571 Código de protección y defensa del consumidor, LEY N° 26549 Ley de los centros educativos privados, LEY N° 27665 Ley de protección a la economía familiar respecto al pago de pensiones en centros y programas educativos privados, LEY N° 28044 Ley general de educación, LEY N° 29694 Ley que protege a los consumidores de las prácticas abusivas en la selección o adquisición de textos escolares y demás del sistema jurídico que resulten aplicables.`;
 
-  const C12_P1 = `12.1	Todas las controversias que pudieran derivarse del Contrato, incluidas las que se refieren a su nulidad o invalidez, serán resueltas en primer lugar, mediante trato directo entre las Partes, las mismas que se comprometen a hacer sus mejores esfuerzos para encontrar una solución amigable, dentro de un plazo de 10 (diez) días naturales desde que alguna de las partes solicite por escrito el inicio del trato directo.`;
-  const C12_P2 = `12.2	Si las Partes no lograsen solucionar la controversia dentro del plazo establecido en el párrafo precedente y, siendo la intención de las Partes que los problemas que pudieran presentarse con relación al cumplimiento del Contrato se resuelven de la manera más rápida posible, se conviene desde ahora que cualquier litigio, controversia o reclamación entre ellas, relativa a su interpretación, ejecución o validez, será resuelta mediante un arbitraje de derecho.`;
-  const C12_P3 = `12.3	El arbitraje será llevado por árbitro único elegido por el Centro de Arbitraje de la Cámara de Comercio de Huaraz (el “Centro”) a solicitud de parte.`;
-  const C12_P4 = `12.4	El arbitraje se realizará de acuerdo con las normas establecidas en el Reglamento del Centro y normas (leyes, reglamentos y demás dispositivos) que regulan el arbitraje en el Perú. El laudo arbitral deberá señalar a quién le corresponden los gastos y costos correspondientes al arbitraje. El lugar del arbitraje será en la ciudad de Huaraz y el español será el idioma que se utilizará en el procedimiento arbitral.`;
-  const C12_P5 = `12.5	En caso el Centro no pueda responder a la solicitud de arbitraje dentro del plazo de 10 días el arbitraje será Ad-hoc bajo sus propias reglas.`;
-  const C12_P6 = `12.6 	En caso de deudas por servicios educativos prestados efectivamente a mérito del presente contrato la Asociación Educativa Luz y Ciencia interpondrá las demandas de obligación de dar suma de dinero ante el poder judicial de la jurisdicción de la provincia de Huaraz.`;
+  const C12_P1 = `12.1\tTodas las controversias que pudieran derivarse del Contrato, incluidas las que se refieren a su nulidad o invalidez, serán resueltas en primer lugar, mediante trato directo entre las Partes, las mismas que se comprometen a hacer sus mejores esfuerzos para encontrar una solución amigable, dentro de un plazo de 10 (diez) días naturales desde que alguna de las partes solicite por escrito el inicio del trato directo.`;
+  const C12_P2 = `12.2\tSi las Partes no lograsen solucionar la controversia dentro del plazo establecido en el párrafo precedente y, siendo la intención de las Partes que los problemas que pudieran presentarse con relación al cumplimiento del Contrato se resuelven de la manera más rápida posible, se conviene desde ahora que cualquier litigio, controversia o reclamación entre ellas, relativa a su interpretación, ejecución o validez, será resuelta mediante un arbitraje de derecho.`;
+  const C12_P3 = `12.3\tEl arbitraje será llevado por árbitro único elegido por el Centro de Arbitraje de la Cámara de Comercio de Huaraz (el “Centro”) a solicitud de parte.`;
+  const C12_P4 = `12.4\tEl arbitraje se realizará de acuerdo con las normas establecidas en el Reglamento del Centro y normas (leyes, reglamentos y demás dispositivos) que regulan el arbitraje en el Perú. El laudo arbitral deberá señalar a quién le corresponden los gastos y costos correspondientes al arbitraje. El lugar del arbitraje será en la ciudad de Huaraz y el español será el idioma que se utilizará en el procedimiento arbitral.`;
+  const C12_P5 = `12.5\tEn caso el Centro no pueda responder a la solicitud de arbitraje dentro del plazo de 10 días el arbitraje será Ad-hoc bajo sus propias reglas.`;
+  const C12_P6 = `12.6 \tEn caso de deudas por servicios educativos prestados efectivamente a mérito del presente contrato la Asociación Educativa Luz y Ciencia interpondrá las demandas de obligación de dar suma de dinero ante el poder judicial de la jurisdicción de la provincia de Huaraz.`;
 
   const C13_P1 = `El PADRE O MADRE DE FAMILIA, conoce las obligaciones económicas, aspectos pedagógicos del SERVICIO, voluntariamente matricula a sus hijos:`;
   const C13_P2 = `Una vez seleccionado el local en el presente documento no podrá variarse dicha información hasta la culminación del presente contrato.`;
 
-  const C14_P1 = `14.1	Para la validez de todas las comunicaciones y notificaciones de las Partes, con motivo de la ejecución del presente Contrato, éstas señalan como sus respectivos domicilios los indicados en la introducción de este documento.`;
-  const C14_P2 = `14.2	De igual manera, las Partes declaran como correos electrónicos válidos para notificaciones de cualquier tipo como parte de este CONTRATO los siguientes:`;
+  const C14_P1 = `14.1\tPara la validez de todas las comunicaciones y notificaciones de las Partes, con motivo de la ejecución del presente Contrato, éstas señalan como sus respectivos domicilios los indicados en la introducción de este documento.`;
+  const C14_P2 = `14.2\tDe igual manera, las Partes declaran como correos electrónicos válidos para notificaciones de cualquier tipo como parte de este CONTRATO los siguientes:`;
   const C14_P2_Colegio = `- El Colegio: soporte@colegioae.freshdesk.com`;
   const C14_P2_Padre = `- Email del padre o madre de familia: ${email || ''}`;
   const C14_P2_Cel = `- Nro. de Celular: ${telp || ''}`;
-  const C14_P3 = `14.3	Las Partes declaran que la sola recepción de un correo electrónico en su bandeja de entrada se considerará como válida computándose los plazos a partir de dicha recepción.`;
-  const C14_P4 = `14.4	El cambio de domicilio o de la dirección de correo electrónico de cualquiera de las Partes surtirá efecto a partir del siguiente día hábil de recibida la comunicación por la otra Parte con cualquier medio escrito.`;
+  const C14_P3 = `14.3\tLas Partes declaran que la sola recepción de un correo electrónico en su bandeja de entrada se considerará como válida computándose los plazos a partir de dicha recepción.`;
+  const C14_P4 = `14.4\tEl cambio de domicilio o de la dirección de correo electrónico de cualquiera de las Partes surtirá efecto a partir del siguiente día hábil de recibida la comunicación por la otra Parte con cualquier medio escrito.`;
   const C14_Final = `En señal de conformidad, ratificación y reconocimiento de ser fiel reflejo de voluntades libremente expresadas, El Colegio firma el presente Contrato y el PADRE O MADRE DE FAMILIA brinda su conformidad presentando este contrato debidamente firmado presencialmente al colegio.`;
 
-  // FECHA
   const months = [
     'enero',
     'febrero',
@@ -105,7 +104,6 @@ export async function addClausesPart3(
     },
   ];
   let tableTop = doc.y;
-  // Ajuste de columnas para que el nombre quepa bien
   generateTable(doc, tableData, tableTop, [160, 80, 80, 80, 60]);
   tableTop += 10;
 
@@ -135,29 +133,30 @@ export async function addClausesPart3(
   // --- FIRMA ---
   doc.moveDown(3);
 
-  const signY = doc.y;
-  // Línea
-  doc.moveTo(50, signY).lineTo(200, signY).stroke();
+  // Asegurar que la firma no se corte si está al final de la página
+  if (doc.y + 60 > doc.page.height - 50) {
+    doc.addPage();
+  }
 
-  // Texto firma
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(8)
-    .text('PADRE O MADRE DE FAMILIA', 50, signY + 5);
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(8)
-    .text(`NOMBRES: ${parentName}`, 50, signY + 15);
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(8)
-    .text(`DNI: ${parentDocNumber}`, 50, signY + 25);
+  // const signY = doc.y;
+  // doc.moveTo(50, signY).lineTo(200, signY).stroke();
 
-  // Fecha
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(8)
-    .text(`Huaraz, ${day} de ${monthName} del ${year}`, 50, signY + 45);
+  // doc
+  //   .font('Helvetica-Bold')
+  //   .fontSize(8)
+  //   .text('PADRE O MADRE DE FAMILIA', 50, signY + 5);
+  // doc
+  //   .font('Helvetica-Bold')
+  //   .fontSize(8)
+  //   .text(`NOMBRES: ${parentName}`, 50, signY + 15);
+  // doc
+  //   .font('Helvetica-Bold')
+  //   .fontSize(8)
+  //   .text(`DNI: ${parentDocNumber}`, 50, signY + 25);
+  // doc
+  //   .font('Helvetica-Bold')
+  //   .fontSize(8)
+  //   .text(`Huaraz, ${day} de ${monthName} del ${year}`, 50, signY + 45);
 }
 
 export function generateTable(
@@ -171,8 +170,13 @@ export function generateTable(
   y += rowHeight;
 
   data.forEach((row) => {
+    // Check page break
+    if (y + rowHeight > doc.page.height - 50) {
+      doc.addPage();
+      y = 50;
+    }
+
     let xText = startX + 2;
-    // lineBreak: false previene saltos inesperados
     doc
       .font('Helvetica-Bold')
       .fontSize(8)
@@ -209,6 +213,7 @@ export function generateTable(
     drawRowLines(doc, y, colWidths, rowHeight);
     y += rowHeight;
   });
+  doc.y = y;
 }
 
 export function drawRowLines(

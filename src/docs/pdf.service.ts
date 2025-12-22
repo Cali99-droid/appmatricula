@@ -626,39 +626,76 @@ export class PdfService {
       const pageWidth = doc.page.width;
       const margin = 100;
       const imageWidth = 120;
+      const today = new Date();
+      const day = today.getDate();
+      const months = [
+        'enero',
+        'febrero',
+        'marzo',
+        'abril',
+        'mayo',
+        'junio',
+        'julio',
+        'agosto',
+        'septiembre',
+        'octubre',
+        'noviembre',
+        'diciembre',
+      ];
+      const monthName = months[today.getMonth()];
+      const year = today.getFullYear();
       doc.moveDown();
       doc.moveDown();
       doc.moveDown();
-      doc
-        .font('Helvetica')
-        .fontSize(9)
-        .text(`________________________`, {
-          align: 'left',
-          width: doc.page.width - margin * 2 - imageWidth,
-        });
-      doc
-        .font('Helvetica')
-        .fontSize(6)
-        .text(`${name}`, {
-          align: 'left',
-          width: doc.page.width - margin * 2 - imageWidth,
-        });
-      // doc.moveDown();
       // doc
       //   .font('Helvetica')
       //   .fontSize(9)
-      //   .text(`NOMBRES:…………………………………………………`, {
+      //   .text(`________________________`, {
       //     align: 'left',
       //     width: doc.page.width - margin * 2 - imageWidth,
       //   });
-      doc.moveDown();
+      const signY = doc.y;
+      doc.moveTo(50, signY).lineTo(200, signY).stroke();
+
       doc
-        .font('Helvetica')
-        .fontSize(7)
-        .text(`                    ${typeDoc.toUpperCase()}: ${docNumber}`, {
-          align: 'left',
-          width: doc.page.width - margin * 2 - imageWidth,
-        });
+        .font('Helvetica-Bold')
+        .fontSize(8)
+        .text('PADRE O MADRE DE FAMILIA', 50, signY + 5);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(8)
+        .text(`NOMBRES: ${name}`, 50, signY + 15);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(8)
+        .text(`DNI: ${docNumber}`, 50, signY + 25);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(8)
+        .text(`Huaraz, ${day} de ${monthName} del ${year}`, 50, signY + 45);
+      // doc
+      //   .font('Helvetica')
+      //   .fontSize(6)
+      //   .text(`${name}`, {
+      //     align: 'left',
+      //     width: doc.page.width - margin * 2 - imageWidth,
+      //   });
+      // // doc.moveDown();
+      // // doc
+      // //   .font('Helvetica')
+      // //   .fontSize(9)
+      // //   .text(`NOMBRES:…………………………………………………`, {
+      // //     align: 'left',
+      // //     width: doc.page.width - margin * 2 - imageWidth,
+      // //   });
+      // doc.moveDown();
+      // doc
+      //   .font('Helvetica')
+      //   .fontSize(7)
+      //   .text(`                    ${typeDoc.toUpperCase()}: ${docNumber}`, {
+      //     align: 'left',
+      //     width: doc.page.width - margin * 2 - imageWidth,
+      //   });
       const fullUrl = this.configService.getOrThrow('FULL_URL_S3');
       // const imageUrlSignature = `https://caebucket.s3.us-west-2.amazonaws.com/colegio/1713420896762.webp`;
       const imageUrlSignature = `${fullUrl}contrato/signature.jpg`;
@@ -688,23 +725,23 @@ export class PdfService {
         },
       );
       addAnexo(doc);
-      doc.image(image1, 55, doc.y - 250, {
+      doc.image(image1, 55, doc.y - 290, {
         width: 80,
         // align: 'center',
       });
-      doc.image(image2, 140, doc.y - 250, {
-        width: 90,
-        // align: 'center',
-      });
-      doc.image(image3, 55, doc.y - 150, {
+      // doc.image(image2, 140, doc.y - 290, {
+      //   width: 90,
+      //   // align: 'center',
+      // });
+      doc.image(image3, 55, doc.y - 180, {
         width: 80,
         // align: 'center',
       });
-      doc.image(image4, 140, doc.y - 150, {
+      doc.image(image4, 140, doc.y - 180, {
         width: 90,
         // align: 'center',
       });
-      doc.image(image5, 55, doc.y - 50, {
+      doc.image(image5, 55, doc.y - 80, {
         width: 80,
         // align: 'center',
       });

@@ -1214,7 +1214,7 @@ export class EnrollmentService {
 
           isActive: true,
 
-          // status: Status.MATRICULADO, // Ratified can be in different states
+          status: Status.MATRICULADO, // Ratified can be in different states
         },
       });
 
