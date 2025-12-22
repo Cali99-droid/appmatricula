@@ -608,7 +608,7 @@ export class PdfService {
         levelName,
         priceYear,
         priceMounth,
-        campus,
+        // campus,
       );
       addClausesPart2(doc, yearName, dayClassStart, dayClassEnd);
       addClausesPart3(

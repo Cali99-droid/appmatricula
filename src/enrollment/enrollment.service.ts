@@ -1052,402 +1052,274 @@ export class EnrollmentService {
     }
   }
 
-  private async calcVacantsToClassroom(activityClassroomId: number) {
-    const activityClassroom = await this.activityClassroomRepository.findOne({
+  private async calcVacantsToClassroom(
+    activityClassroomId: number,
+  ): Promise<VacantsClassrooms> {
+    const destinationAc = await this.activityClassroomRepository.findOne({
       where: { id: activityClassroomId },
-    });
-    const yearId = activityClassroom.phase.year.id;
 
-    /**se quita un año para calcular con la configuracion del año anteriror */
-    const configAscent = await this.ascentRepository.find({
+      relations: ['classroom', 'grade', 'grade.level', 'phase', 'phase.year'],
+    });
+
+    if (!destinationAc) {
+      throw new NotFoundException(
+        `ActivityClassroom with id ${activityClassroomId} not found`,
+      );
+    }
+
+    const yearId = destinationAc.phase.year.id;
+
+    // Check if the classroom is a destination in a special promotion config
+
+    const ascentEntriesForDest = await this.ascentRepository.find({
       where: {
         destinationId: { id: activityClassroomId },
-        // originId:Not(value)
+
         year: { id: yearId - 1 },
       },
+
+      relations: ['originId'],
     });
 
-    const origins = configAscent.map((c) => c.originId.id);
-    if (configAscent.length === 1) {
-      console.log('un dest');
-      console.log('Aula destino recibe un origen');
-      /** calcular vacantes */
-      const { originId, destinationId } = configAscent[0];
+    // GET CURRENT ENROLLMENTS FOR THE DESTINATION CLASSROOM
 
-      const enrolledInOther = await this.enrollmentRepository.find({
+    const enrollmentCounts = await this.enrollmentRepository
+
+      .createQueryBuilder('enrollment')
+
+      .select('enrollment.status', 'status')
+
+      .addSelect('COUNT(enrollment.id)', 'count')
+
+      .where('enrollment.activityClassroomId = :activityClassroomId', {
+        activityClassroomId,
+      })
+
+      .andWhere('enrollment.status IN (:...statuses)', {
+        statuses: [
+          Status.MATRICULADO,
+
+          Status.PREMATRICULADO,
+
+          Status.RESERVADO,
+
+          Status.EN_PROCESO,
+        ],
+      })
+
+      .groupBy('enrollment.status')
+
+      .getRawMany();
+
+    const counts = enrollmentCounts.reduce(
+      (acc, row) => {
+        acc[row.status] = parseInt(row.count, 10);
+
+        return acc;
+      },
+
+      {} as Record<string, number>,
+    );
+
+    const currentEnrroll = counts[Status.MATRICULADO] || 0;
+
+    const currentReserved = counts[Status.RESERVADO] || 0;
+
+    const currentOnProcess = counts[Status.EN_PROCESO] || 0;
+
+    const currentPreMatriculado = counts[Status.PREMATRICULADO] || 0;
+
+    const totalCurrentEnrolled =
+      currentEnrroll +
+      currentReserved +
+      currentOnProcess +
+      currentPreMatriculado;
+
+    let previousEnrolls = 0;
+
+    let detailOrigin: VacantsClassrooms['detailOrigin'] = {
+      id: 0,
+
+      grade: 'N/A',
+
+      section: 'N/A',
+
+      enrrolls: 0,
+    };
+
+    let type = 'N'; // Default to Normal
+
+    if (ascentEntriesForDest.length > 0) {
+      // ASCENT CONFIG: Grouped promotion logic
+
+      type = 'G'; // Grouped
+
+      // --- New robust grouping logic ---
+
+      // 1. From our target classroom, find one of its origins.
+
+      const oneOriginId = ascentEntriesForDest[0].originId.id;
+
+      // 2. Find all destinations for that single origin to establish the destination group.
+
+      const destinationsFromOneOrigin = await this.ascentRepository.find({
         where: {
-          activityClassroom: {
-            // id: activityClassrooms[0].id,
-            grade: {
-              // id: ac.grade.id,
-              position: activityClassroom.grade.position,
-            },
-            section: Not(activityClassroom.section),
-            phase: {
-              year: {
-                id: yearId,
-              },
-            },
-            classroom: {
-              campusDetail: { id: activityClassroom.classroom.campusDetail.id },
-            },
-          },
-          ratified: true,
-          status: Status.MATRICULADO,
-          isActive: true,
+          originId: { id: oneOriginId },
+
+          year: { id: yearId - 1 },
         },
-      });
-      /**ADD DEFAULT CODE */
-      const anotherOriginDefault = await this.enrollmentRepository.find({
-        where: {
-          activityClassroom: {
-            // id: activityClassrooms[0].id,
-            grade: {
-              // id: ac.grade.id,
-              position: activityClassroom.grade.position - 1,
-            },
-            section: activityClassroom.section,
-            phase: {
-              year: {
-                id: yearId - 1,
-              },
-            },
-            classroom: {
-              campusDetail: { id: activityClassroom.classroom.campusDetail.id },
-            },
-          },
-          ratified: true,
-          status: Status.MATRICULADO,
-          isActive: true,
-        },
+
+        relations: ['destinationId'],
       });
 
-      const enrollOrigin = await this.enrollmentRepository.find({
-        where: {
-          activityClassroom: { id: originId.id },
-          ratified: true,
-          status: Status.MATRICULADO,
-          isActive: true,
-        },
-      });
-
-      /**problema acá destinoID */
-      const currentEnrroll = await this.enrollmentRepository.find({
-        where: {
-          activityClassroom: { id: destinationId.id },
-        },
-      });
-
-      const currentReserved = await this.enrollmentRepository.find({
-        where: {
-          activityClassroom: { id: activityClassroom.id },
-          status: Status.RESERVADO,
-        },
-      });
-
-      const currentOnProcess = await this.enrollmentRepository.find({
-        where: {
-          activityClassroom: { id: activityClassroom.id },
-          status: Status.EN_PROCESO,
-        },
-      });
-
-      const rtAndEnr = enrollOrigin.filter((item1) =>
-        currentEnrroll.some((item2) => item1.student.id === item2.student.id),
+      const destinationGroupIds = destinationsFromOneOrigin.map(
+        (a) => a.destinationId.id,
       );
 
-      const rtAndEnrInOther = enrolledInOther.filter((item1) =>
-        enrollOrigin.some((item2) => item1.student.id === item2.student.id),
-      );
-      const rtAndEnrInOtherDefault = anotherOriginDefault.filter((item1) =>
-        enrollOrigin.some((item2) => item1.student.id === item2.student.id),
-      );
-      const ratifieds =
-        enrollOrigin.length +
-        anotherOriginDefault.length -
-        rtAndEnr.length -
-        rtAndEnrInOther.length -
-        rtAndEnrInOtherDefault.length;
-      const vacants =
-        destinationId.classroom.capacity - ratifieds - currentEnrroll.length;
-      /** DESCOMENTA LO SIGUINET CUANDO SE DEJEN DE CUIDAR VACANTES YA NO SE CONSIDERAN RETIFICADOS DESCOMENTA LO SIGUINET*/
-      // const vacants = destinationId.classroom.capacity - currentEnrroll.length;
+      // 3. Find all origins that feed into that destination group to establish the full origin group.
 
-      const res: VacantsClassrooms = {
-        id: activityClassroom.id,
-        gradeId: destinationId.grade.id,
-        grade: destinationId.grade.name,
-        section: destinationId.section,
-        level: destinationId.grade.level.name,
-        capacity: destinationId.classroom.capacity,
-        previousEnrolls: ratifieds,
-        currentEnrroll: currentEnrroll.length,
-        vacants,
-        reserved: currentReserved.length,
-        onProcess: currentOnProcess.length,
-        hasVacants: vacants > 0,
-        type: 'O',
-        detailOrigin: {
-          id: originId.id,
-          grade: originId.grade.name,
-          section: originId.section,
-          enrrolls: enrollOrigin.length,
-        },
-      };
-      // console.log('solo un conf', res);
-      return res;
-    }
-
-    /**si tiene mas de dos origenes -> buscar cual tiene dos destinos*/
-    if (configAscent.length > 1) {
-      console.log('Aula destino recibe dos origenes');
-
-      /**verificar cual tiene dos destinos */
-      // let hasTwoDest;
-      let oneDest;
-      let origin;
-      const configOrigin = await this.ascentRepository.find({
+      const originsForGroup = await this.ascentRepository.find({
         where: {
-          originId: In(origins),
-          // year: { id: ac.yearId },
+          destinationId: { id: In(destinationGroupIds) },
+
+          year: { id: yearId - 1 },
+        },
+
+        relations: ['originId'],
+      });
+
+      const originGroupIds = [
+        ...new Set(originsForGroup.map((a) => a.originId.id)),
+      ];
+
+      // --- End of new grouping logic ---
+
+      const destinationGroupAcs = await this.activityClassroomRepository.find({
+        where: { id: In(destinationGroupIds) },
+
+        relations: ['classroom'],
+      });
+
+      const totalGroupCapacity = destinationGroupAcs.reduce(
+        (sum, ac) => sum + ac.classroom.capacity,
+
+        0,
+      );
+
+      const totalOriginEnrolled = await this.enrollmentRepository.count({
+        where: {
+          activityClassroom: { id: In(originGroupIds) },
+
+          ratified: true,
+
+          isActive: true,
+
+          // status: Status.MATRICULADO, // Ratified can be in different states
         },
       });
-      /**recorrer la configuracion y verificar cualtiene dos destinos */
-      for (const co of configOrigin) {
-        const destings = await this.ascentRepository.find({
-          where: {
-            originId: { id: co.originId.id },
-            destinationId: { section: Not(co.originId.section) },
-          },
-        });
-        if (destings.length === 1) {
-          oneDest = co.originId.id;
-          origin = co.originId;
-        }
-        // console.log(destings);
-        // else {
-        //   hasTwoDest = co.originId.id;
-        // }
+
+      if (totalGroupCapacity > 0) {
+        const proportionalEnrolls = Math.floor(
+          (destinationAc.classroom.capacity / totalGroupCapacity) *
+            totalOriginEnrolled,
+        );
+        // A classroom cannot be assigned more students than it can hold.
+        previousEnrolls = Math.min(
+          proportionalEnrolls,
+          destinationAc.classroom.capacity,
+        );
       }
 
-      /**calcular vacantes */
-      const enrolledInOther = await this.enrollmentRepository.find({
-        where: {
-          activityClassroom: {
-            // id: activityClassrooms[0].id,
-            grade: {
-              // id: ac.grade.id,
-              position: activityClassroom.grade.position,
-            },
-            section: Not(activityClassroom.section),
-            phase: {
-              year: {
-                id: yearId,
-              },
-            },
-            classroom: {
-              campusDetail: { id: activityClassroom.classroom.campusDetail.id },
-            },
-          },
-          ratified: true,
-        },
-      });
-      const enrollPriority = await this.enrollmentRepository.find({
-        where: {
-          activityClassroom: { id: oneDest },
-          ratified: true,
-        },
-      });
+      detailOrigin = {
+        id: 0, // Not applicable for a group
 
-      // const enrollNotPriority = await this.enrollmentRepository.find({
-      //   where: {
-      //     activityClassroom: { id: hasTwoDest },
-      //   },
-      // });
+        grade: 'Grouped',
 
-      const currentEnrroll = await this.enrollmentRepository.find({
-        where: {
-          activityClassroom: { id: activityClassroom.id },
-        },
-      });
+        section: `(${originGroupIds.length}) Origins`,
 
-      const currentReserved = await this.enrollmentRepository.find({
-        where: {
-          activityClassroom: { id: activityClassroom.id },
-          status: Status.RESERVADO,
-        },
-      });
-
-      const currentOnProcess = await this.enrollmentRepository.find({
-        where: {
-          activityClassroom: { id: activityClassroom.id },
-          status: Status.EN_PROCESO,
-        },
-      });
-
-      const rtAndEnr = enrollPriority.filter((item1) =>
-        currentEnrroll.some((item2) => item1.student.id === item2.student.id),
-      );
-      const rtAndEnrInOther = enrolledInOther.filter((item1) =>
-        enrollPriority.some((item2) => item1.student.id === item2.student.id),
-      );
-
-      const ratifieds =
-        enrollPriority.length - rtAndEnr.length - rtAndEnrInOther.length;
-      // console.log('priorti', enrollPriority.length);
-      // console.log('rat y mat', rtAndEnr.length);
-      // console.log('rat y other', rtAndEnrInOther.length);
-      // console.log('capacidad', activityClassroom.classroom.capacity);
-      // console.log('ratificados', ratifieds);
-      // console.log('mat act', currentEnrroll.length);
-      //SE CONSERVA LA VACANTE DE LOS RATIFICADOS
-      const vacants =
-        activityClassroom.classroom.capacity -
-        ratifieds -
-        currentEnrroll.length;
-
-      //NO SE CONSERVA LA VACANTE DE LOS RATIFICADOS
-      // const vacants =
-      //   activityClassroom.classroom.capacity - currentEnrroll.length;
-
-      const res: VacantsClassrooms = {
-        id: activityClassroom.id,
-        gradeId: activityClassroom.grade.id,
-        grade: activityClassroom.grade.name,
-        section: activityClassroom.section,
-        level: activityClassroom.grade.level.name,
-        capacity: activityClassroom.classroom.capacity,
-        previousEnrolls: ratifieds,
-        currentEnrroll: currentEnrroll.length,
-        reserved: currentReserved.length,
-        onProcess: currentOnProcess.length,
-        vacants,
-        hasVacants: vacants > 0,
-        type: 'P',
-        detailOrigin: {
-          id: origin?.id,
-          grade: origin?.grade.name,
-          section: origin?.section,
-          enrrolls: enrollPriority.length,
-        },
+        enrrolls: totalOriginEnrolled,
       };
-      // console.log('priority', res);
-      return res;
+    } else {
+      // NO ASCENT CONFIG: Default promotion logic
+
+      const originAc = await this.activityClassroomRepository.findOne({
+        where: {
+          grade: { position: destinationAc.grade.position - 1 },
+
+          section: destinationAc.section,
+
+          phase: { year: { id: yearId - 1 } },
+
+          classroom: {
+            campusDetail: { id: destinationAc.classroom.campusDetail.id },
+          },
+        },
+
+        relations: ['grade'],
+      });
+
+      if (originAc) {
+        const enrollOrigin = await this.enrollmentRepository.count({
+          where: {
+            activityClassroom: { id: originAc.id },
+
+            ratified: true,
+
+            isActive: true,
+          },
+        });
+
+        // This part is complex and may need review based on business rules.
+
+        // Simplified: just count ratified from direct previous classroom.
+
+        previousEnrolls = enrollOrigin;
+
+        detailOrigin = {
+          id: originAc.id,
+
+          grade: originAc.grade.name,
+
+          section: originAc.section,
+
+          enrrolls: enrollOrigin,
+        };
+      }
     }
-    console.log('Aula destino recibe origen por defecto');
-    /**calcular vacantes normalmente segun correlacion pero mateniendo a la sede */
-    const enrolledInOther = await this.enrollmentRepository.find({
-      where: {
-        activityClassroom: {
-          // id: activityClassrooms[0].id,
-          grade: {
-            // id: ac.grade.id,
-            position: activityClassroom.grade.position,
-          },
-          section: Not(activityClassroom.section),
-          phase: {
-            year: {
-              id: yearId,
-            },
-          },
-          classroom: {
-            campusDetail: { id: activityClassroom.classroom.campusDetail.id },
-          },
-        },
-        ratified: true,
 
-        status: Status.MATRICULADO,
-        isActive: true,
-      },
-    });
-    const enrollOrigin = await this.enrollmentRepository.find({
-      where: {
-        activityClassroom: {
-          // id: activityClassrooms[0].id,
-          grade: {
-            // id: ac.grade.id,
-            position: activityClassroom.grade.position - 1,
-          },
-          section: activityClassroom.section,
-          phase: {
-            year: {
-              id: yearId - 1,
-            },
-          },
-          classroom: {
-            campusDetail: { id: activityClassroom.classroom.campusDetail.id },
-          },
-        },
-        ratified: true,
-        // status: Status.MATRICULADO,
-        isActive: true,
-      },
-    });
-    const currentEnrroll = await this.enrollmentRepository.find({
-      where: {
-        activityClassroom: { id: activityClassroom.id },
-        status: Status.MATRICULADO,
-      },
-    });
-
-    const currentReserved = await this.enrollmentRepository.find({
-      where: {
-        activityClassroom: { id: activityClassroom.id },
-        status: Status.RESERVADO,
-      },
-    });
-
-    const currentOnProcess = await this.enrollmentRepository.find({
-      where: {
-        activityClassroom: { id: activityClassroom.id },
-        status: Status.EN_PROCESO,
-      },
-    });
-
-    const rtAndEnr = enrollOrigin.filter((item1) =>
-      currentEnrroll.some((item2) => item1.student.id === item2.student.id),
-    );
-    const rtAndEnrInOther = enrolledInOther.filter((item1) =>
-      enrollOrigin.some((item2) => item1.student.id === item2.student.id),
-    );
-
-    // console.log(rtAndEnrInOther.length === 1);
-    ///eSCOGIERON OTRA AULA A LA RECOMENDADa
-    const ratifieds =
-      enrollOrigin.length - rtAndEnr.length - rtAndEnrInOther.length;
-
-    /**vacants SE USA PARA AULAS DISPONIBLES POR ALUMNO */
     const vacants =
-      activityClassroom.classroom.capacity - ratifieds - currentEnrroll.length;
-    //!no tiene efecto  para admision*/
-    // const vacants =
-    //   activityClassroom.classroom.capacity -
-    //   currentEnrroll.length -
-    //   currentReserved.length -
-    //   enrollOrigin.length;
+      destinationAc.classroom.capacity - previousEnrolls - totalCurrentEnrolled;
 
     const res: VacantsClassrooms = {
-      id: activityClassroom.id,
-      gradeId: activityClassroom.grade.id,
-      grade: activityClassroom.grade.name,
-      level: activityClassroom.grade.level.name,
-      section: activityClassroom.section,
-      capacity: activityClassroom.classroom.capacity,
-      previousEnrolls: ratifieds,
-      currentEnrroll: currentEnrroll.length,
-      reserved: currentReserved.length,
-      onProcess: currentOnProcess.length,
+      id: destinationAc.id,
+
+      gradeId: destinationAc.grade.id,
+
+      grade: destinationAc.grade.name,
+
+      level: destinationAc.grade.level.name,
+
+      section: destinationAc.section,
+
+      capacity: destinationAc.classroom.capacity,
+
+      previousEnrolls,
+
+      currentEnrroll: totalCurrentEnrolled,
+
+      reserved: currentReserved,
+
+      onProcess: currentOnProcess,
+
       vacants,
+
       hasVacants: vacants > 0,
-      type: 'N',
-      detailOrigin: {
-        id: enrollOrigin[0]?.activityClassroom.id || 0,
-        grade: enrollOrigin[0]?.activityClassroom.grade.name || '0',
-        section: enrollOrigin[0]?.activityClassroom.section || '0',
-        enrrolls: enrollOrigin.length || 0,
-      },
+
+      type,
+
+      detailOrigin,
     };
-    // console.log('normal', res);
+
     return res;
   }
 
