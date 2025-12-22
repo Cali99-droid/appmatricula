@@ -663,7 +663,12 @@ export class EnrollmentService {
           //ratified: 0,
           enrollments: currentEnrroll,
           vacant:
-            capacity - previousEnrolls - currentEnrroll - reserved - onProcess, //antiguos
+            capacity -
+            previousEnrolls -
+            currentEnrroll -
+            reserved -
+            onProcess -
+            totalPreRegistered, //antiguos
           totalReserved: reserved,
           totalOnProcces: onProcess,
           totalPreRegistered: totalPreRegistered,
@@ -881,7 +886,7 @@ export class EnrollmentService {
         console.log('tiene mas de un destino  configurado');
         for (const co of configAscent) {
           const dest = await this.calcVacantsToClassroom(co.destinationId.id);
-          console.log('destinos', dest);
+          console.log(dest);
           //dest.hasVacants
           /**dest.section === currentEnrrollment.activityClassroom.section ||
             dest.detailOrigin.section ===
@@ -917,6 +922,8 @@ export class EnrollmentService {
         }
         return availables;
       }
+
+      console.log(configAscent);
       /**Normal available */
       const campusId =
         currentEnrrollment.activityClassroom.classroom.campusDetail.id;
@@ -1291,10 +1298,12 @@ export class EnrollmentService {
         };
       }
     }
-
+    previousEnrolls = previousEnrolls - totalCurrentEnrolled;
     const vacants =
       destinationAc.classroom.capacity - previousEnrolls - totalCurrentEnrolled;
-
+    console.log(destinationAc.classroom.capacity);
+    console.log(previousEnrolls);
+    console.log(totalCurrentEnrolled);
     const res: VacantsClassrooms = {
       id: destinationAc.id,
 
@@ -1308,7 +1317,7 @@ export class EnrollmentService {
 
       capacity: destinationAc.classroom.capacity,
 
-      previousEnrolls: previousEnrolls - totalCurrentEnrolled,
+      previousEnrolls: previousEnrolls,
       totalPreRegistered: currentPreMatriculado,
 
       currentEnrroll: currentEnrroll,
