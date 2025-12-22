@@ -575,6 +575,13 @@ export class TreasuryService {
       },
     });
     if (!family) {
+      const data = {
+        debts: [],
+        resp: 'No hay reponsable matrícula ',
+        parents: [],
+        hasDebt: true,
+      };
+      return data;
       throw new NotFoundException('Don´t exist family for this student');
     }
     let debts = [];
@@ -651,7 +658,7 @@ export class TreasuryService {
     endDate: string,
     userId: number,
   ) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio'].some((role) =>
       roles.includes(role),

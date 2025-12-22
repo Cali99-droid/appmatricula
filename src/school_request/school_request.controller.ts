@@ -13,7 +13,7 @@ import { UpdateSchoolRequestDto } from './dto/update-school_request.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { Resource } from 'nest-keycloak-connect';
 @ApiTags('School-request')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 @Controller('school-request')
 export class SchoolRequestController {
   constructor(private readonly schoolRequestService: SchoolRequestService) {}

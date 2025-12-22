@@ -145,7 +145,7 @@ export class ActivityClassroomService {
   async searchParams(searchClassroomsDto: SearchClassroomsDto, user: any) {
     try {
       const { yearId, phaseId, campusId, levelId } = searchClassroomsDto;
-      const roles = user.resource_access['appcolegioae'].roles;
+      const roles = user.resource_access['client-test-appae'].roles;
       // Obtener el usuario con las relaciones necesarias
       const us = await this.userRepository.findOne({
         where: {
@@ -231,7 +231,7 @@ export class ActivityClassroomService {
       });
       return classrooms;
     } catch (error) {
-      handleDBExceptions(this.logger, error);
+      handleDBExceptions(error, this.logger);
     }
   }
   async searchClassrooms(searchClassroomsDto: SearchClassroomsDto) {
