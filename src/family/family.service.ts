@@ -234,7 +234,7 @@ export class FamilyService {
     }
   }
   async findOne(id: number, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -390,7 +390,7 @@ export class FamilyService {
     });
 
     if (!family) throw new NotFoundException(`Family with id ${id} not found`);
-    console.log('llamo');
+
     return family;
   }
   async update(id: number, updateFamilyDto: UpdateFamilyDto) {

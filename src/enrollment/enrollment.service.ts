@@ -94,7 +94,7 @@ export class EnrollmentService {
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -555,7 +555,9 @@ export class EnrollmentService {
       const activityClassrooms = await this.activityClassroomRepository.find({
         where: whereCondition,
       });
-
+      // const data: VacantsClassrooms = await this.calcVacantsToClassroom(175);
+      // console.log(data);
+      // vacants.push(data);
       for (const ac of activityClassrooms) {
         // const enrrollmentRatified = await this.enrollmentRepository.find({
         //   where: {
@@ -640,15 +642,18 @@ export class EnrollmentService {
           reserved,
           onProcess,
           totalPreRegistered,
+          inOthers,
         } = curr;
 
         if (!acc[gradeId]) {
           acc[gradeId] = {
             // gradeId,
+
             grade,
             level,
             capacity: 0,
             ratified: 0,
+            inOthers: 0,
             enrollments: 0,
             vacant: 0,
             totalPreRegistered: 0,
@@ -673,12 +678,14 @@ export class EnrollmentService {
           totalReserved: reserved,
           totalOnProcces: onProcess,
           totalPreRegistered: totalPreRegistered,
+          inOthers: inOthers,
           // vacant: capacity - currentEnrroll, nuevos
           detailOrigin,
         });
         acc[gradeId].capacity += capacity;
         acc[gradeId].totalReserved += reserved;
         acc[gradeId].totalOnProcces += onProcess;
+        acc[gradeId].inOthers += inOthers;
         acc[gradeId].ratified += previousEnrolls;
         acc[gradeId].totalPreRegistered += totalPreRegistered;
         // acc[gradeId].ratified += 0;
@@ -690,6 +697,13 @@ export class EnrollmentService {
           acc[gradeId].totalReserved -
           acc[gradeId].totalPreRegistered -
           acc[gradeId].totalOnProcces;
+        // acc[gradeId].vacant =
+        //   acc[gradeId].capacity -
+        //   acc[gradeId].ratified -
+        //   acc[gradeId].enrollments -
+        //   acc[gradeId].totalReserved -
+        //   acc[gradeId].totalPreRegistered -
+        //   acc[gradeId].totalOnProcces;
 
         return acc;
       }, {});
@@ -1093,6 +1107,20 @@ export class EnrollmentService {
     });
 
     // GET CURRENT ENROLLMENTS FOR THE DESTINATION CLASSROOM
+    const currentEnrollments = await this.enrollmentRepository.find({
+      where: {
+        status: In([
+          Status.MATRICULADO,
+
+          Status.PREMATRICULADO,
+
+          Status.RESERVADO,
+
+          Status.EN_PROCESO,
+        ]),
+        activityClassroom: { id: activityClassroomId },
+      },
+    });
 
     const enrollmentCounts = await this.enrollmentRepository
 
@@ -1147,6 +1175,7 @@ export class EnrollmentService {
       currentPreMatriculado;
 
     let previousEnrolls = 0;
+    let inOthers = 0;
 
     let detailOrigin: VacantsClassrooms['detailOrigin'] = {
       id: 0,
@@ -1228,7 +1257,7 @@ export class EnrollmentService {
           status: Status.FINALIZADO, // Ratified can be in different states varia segun el momento en el que cambia su matricula
         },
       });
-      console.log(totalGroupCapacity);
+
       if (totalGroupCapacity > 0) {
         previousEnrolls = Math.floor(
           (destinationAc.classroom.capacity / totalGroupCapacity) *
@@ -1254,7 +1283,7 @@ export class EnrollmentService {
       console.log(detailOrigin);
     } else {
       // NO ASCENT CONFIG: Default promotion logic
-
+      console.log('NO ASCENT CONFIG');
       const originAc = await this.activityClassroomRepository.findOne({
         where: {
           grade: { position: destinationAc.grade.position - 1 },
@@ -1298,11 +1327,39 @@ export class EnrollmentService {
           enrrolls: enrollOrigin,
         };
       }
+
+      const enrrollInOther = await this.enrollmentRepository.find({
+        where: {
+          activityClassroom: {
+            section: Not(In([originAc?.section])),
+            grade: { position: destinationAc.grade.position - 1 },
+            phase: { year: { id: yearId - 1 } },
+          },
+          ratified: true,
+          status: Status.FINALIZADO,
+
+          // isActive: true,
+        },
+      });
+
+      const currentsId = currentEnrollments.map((ce) => ce.student.id);
+      const enrrollInOtherIds = enrrollInOther.map((ce) => ce.student.id);
+
+      inOthers = currentsId.filter((current) =>
+        enrrollInOtherIds.includes(current),
+      ).length;
+      previousEnrolls = previousEnrolls - totalCurrentEnrolled + inOthers;
+      if (originAc === null) {
+        previousEnrolls = 0;
+      }
     }
-    previousEnrolls = previousEnrolls - totalCurrentEnrolled;
+
     const vacants =
       destinationAc.classroom.capacity - previousEnrolls - totalCurrentEnrolled;
-
+    // console.log(destinationAc.classroom.capacity);
+    // console.log(previousEnrolls);
+    // console.log(totalCurrentEnrolled);
+    // console.log(inOthers);
     const res: VacantsClassrooms = {
       id: destinationAc.id,
 
@@ -1326,7 +1383,7 @@ export class EnrollmentService {
       onProcess: currentOnProcess,
 
       vacants,
-
+      inOthers,
       hasVacants: vacants > 0,
 
       type,
@@ -1494,7 +1551,7 @@ export class EnrollmentService {
         acc[item.grade].totalReserved += item.reserved;
         acc[item.grade].vacant += item.vacant;
 
-        // Agregar la sección específica
+        // TODO corregir nombres
         acc[item.grade].sections.push({
           section: item.section,
           capacity: item.capacity,
@@ -1666,7 +1723,7 @@ export class EnrollmentService {
     );
     const debts = debtsPromises.filter((e) => e.hasDebt === true);
 
-    if (debts.length !== 0) {
+    if (debts.length > 0) {
       return {
         status: false,
         message: 'El usuario tiene hijos con deuda.',
@@ -2424,4 +2481,78 @@ export class EnrollmentService {
   //     throw new BadRequestException('No tiene Matricula activa el estudiante');
   //   }
   // }
+
+  async generateDebt() {
+    const enrlls = await this.enrollmentRepository
+      .createQueryBuilder('enrollment')
+      .innerJoinAndSelect('enrollment.student', 'student')
+      .innerJoinAndSelect('enrollment.activityClassroom', 'activityClassroom')
+      .innerJoinAndSelect('activityClassroom.grade', 'grade')
+      .innerJoinAndSelect('grade.level', 'level')
+      .innerJoinAndSelect('activityClassroom.classroom', 'classroom')
+      .innerJoinAndSelect('classroom.campusDetail', 'campusDetail')
+      .innerJoinAndSelect('activityClassroom.phase', 'phase')
+      .innerJoinAndSelect('phase.year', 'year')
+      .where('enrollment.status = :status', {
+        status: Status.PREMATRICULADO,
+      })
+      .andWhere(
+        `NOT EXISTS (
+          SELECT 1 
+          FROM debt d 
+          WHERE d.studentId = student.id 
+          AND d.conceptId = :conceptId 
+          AND d.status = :debtStatus
+        )`,
+        { conceptId: 1, debtStatus: 0 },
+      )
+      .getMany();
+
+    const debtsToCreate = [];
+    for (const en of enrlls) {
+      const levelId = en.activityClassroom.grade.level.id;
+      const campusDetailId = en.activityClassroom.classroom.campusDetail.id;
+      const yearId = en.activityClassroom.phase.year.id;
+
+      const rate = await this.ratesRepository.findOne({
+        where: {
+          level: { id: levelId },
+          campusDetail: { id: campusDetailId },
+          concept: { id: 1 },
+          yearId: yearId,
+        },
+        relations: {
+          concept: true,
+        },
+      });
+
+      if (!rate) {
+        this.logger.warn(
+          `Rate not found for levelId: ${levelId}, campusDetailId: ${campusDetailId}, yearId: ${yearId}. Skipping debt generation for enrollment code: ${en.code}`,
+        );
+        continue;
+      }
+
+      const dateEnd = new Date();
+      const createdDebt = this.debtRepository.create({
+        dateEnd: new Date(dateEnd.setDate(dateEnd.getDate() + 30)),
+        concept: { id: rate.concept.id },
+        student: { id: en.student.id },
+        total: rate.total,
+        status: false,
+        description: en.code,
+        code: `MAT${en.code}`,
+        isCanceled: false,
+      });
+
+      debtsToCreate.push(createdDebt);
+    }
+
+    if (debtsToCreate.length > 0) {
+      await this.debtRepository.save(debtsToCreate);
+    }
+    console.log(debtsToCreate.length);
+    /**GENERAR DEUDA */
+    return debtsToCreate;
+  }
 }

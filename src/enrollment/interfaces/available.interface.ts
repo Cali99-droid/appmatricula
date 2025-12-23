@@ -20,6 +20,7 @@ export interface VacantsClassrooms {
   reserved?: number;
   onProcess?: number;
   vacants: number;
+  inOthers: number;
   hasVacants: boolean;
   type: string;
   detailOrigin: DetailOrigin;

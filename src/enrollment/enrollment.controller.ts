@@ -41,7 +41,7 @@ import { TransferStudentDto } from './dto/tranfer-student.dto';
 
 @ApiTags('Enrollment')
 @Controller('enrollment')
-@Resource('appcolegioae')
+@Resource('client-test-appae')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
@@ -386,5 +386,12 @@ export class EnrollmentController {
   sendInfoEmail(@Param('level', ParseIntPipe) level: number) {
     // return this.enrollmentService.getVacantsTest();
     return this.enrollmentService.sendInfoEmail(level);
+  }
+
+  @Get('test-info/test/uuui')
+  @Public()
+  test() {
+    // return this.enrollmentService.getVacantsTest();
+    return this.enrollmentService.generateDebt();
   }
 }
