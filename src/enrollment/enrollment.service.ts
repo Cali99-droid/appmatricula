@@ -1973,7 +1973,7 @@ export class EnrollmentService {
     const enrollments = await this.enrollmentRepository.find({
       where: {
         activityClassroom: { id: In(classroomIds) },
-        status,
+        status: In([status, Status.FINALIZADO]),
       },
       order: {
         student: {

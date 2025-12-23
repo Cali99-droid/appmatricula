@@ -474,13 +474,15 @@ export class EmailsService {
     filename: string,
   ): Promise<void> {
     try {
+      const from = 'informes@mail.colegioae.com';
       const mailOptions = {
-        from: `"Colegio AE" <${this.configService.getOrThrow<string>('AWS_SES_FROM')}>`,
+        from: `"Colegio AE" <${from}>`,
         to: this.env === 'prod' ? to : 'carlos.orellano@ae.edu.pe',
         subject,
         text: 'Boleta de Notas',
         html: body,
         replyTo: 'soporte@colegioae.freshdesk.com',
+        bcc: 'informes@mail.colegioae.com',
         attachments: [
           {
             // filename,

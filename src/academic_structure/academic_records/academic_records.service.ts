@@ -775,10 +775,16 @@ export class AcademicRecordsService {
           where: {
             activityClassroom: {
               grade: {
-                id: In([10, 11, 12, 13, 14]),
+                level: {
+                  id: In([1, 2]),
+                },
+              },
+              phase: {
+                id: 3,
               },
             },
-            status: Status.MATRICULADO,
+
+            status: Status.FINALIZADO,
           },
           relations: {
             student: {
@@ -798,7 +804,10 @@ export class AcademicRecordsService {
       ]);
 
       console.log(`Total de estudiantes: ${enrollments.length}`);
-
+      // return {
+      //   msg: `Total de estudiantes: ${enrollments.length}`,
+      //   msgb: `Total de estudiantes: ${bimesters.length}`,
+      // };
       // 2. Configuración de envío
       const BATCH_SIZE = 5; // Emails por lote
       const DELAY_BETWEEN_BATCHES = 1000; // 1 segundo entre lotes
