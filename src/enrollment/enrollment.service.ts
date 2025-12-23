@@ -94,7 +94,7 @@ export class EnrollmentService {
 
   /**PREMATRICULAR */
   async create(createEnrollmentDto: CreateEnrollChildrenDto, user: any) {
-    const roles = user.resource_access['appcolegioae'].roles;
+    const roles = user.resource_access['client-test-appae'].roles;
 
     const isAuth = ['administrador-colegio', 'secretaria'].some((role) =>
       roles.includes(role),
@@ -1270,7 +1270,7 @@ export class EnrollmentService {
         //   destinationAc.classroom.capacity,
         // );
       }
-
+      previousEnrolls = previousEnrolls - totalCurrentEnrolled;
       detailOrigin = {
         id: 0, // Not applicable for a group
 
@@ -1280,7 +1280,6 @@ export class EnrollmentService {
 
         enrrolls: totalOriginEnrolled,
       };
-      console.log(detailOrigin);
     } else {
       // NO ASCENT CONFIG: Default promotion logic
       console.log('NO ASCENT CONFIG');
