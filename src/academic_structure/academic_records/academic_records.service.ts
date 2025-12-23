@@ -755,7 +755,7 @@ export class AcademicRecordsService {
       studentName: studentName.toUpperCase(),
       classroom: classroom.toUpperCase(),
       areas: areasDto,
-      bimesterName: 'I Bimestre',
+      bimesterName: 'IV Bimestre',
       attendance: {
         tardinessUnjustified: [0, 0, 0, 0],
         tardinessJustified: [0, 0, 0, 0],
@@ -776,7 +776,7 @@ export class AcademicRecordsService {
             activityClassroom: {
               grade: {
                 level: {
-                  id: In([1, 2]),
+                  id: In([3]),
                 },
               },
               phase: {
