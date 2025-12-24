@@ -1579,8 +1579,8 @@ export class EnrollmentService {
   }
   async getVacantsGeneral(gradeId: number, yearId: number, campusId: number) {
     /***NUEVO inicio */
-    // let vacantsTot = 0;
-    // let capacity = 0;
+    let vacantsTot = 0;
+    let capacity = 0;
     const activityClassrooms = await this.activityClassroomRepository.find({
       where: {
         grade: { id: gradeId },
@@ -1598,93 +1598,93 @@ export class EnrollmentService {
       },
     });
 
-    const activityClassroomsAnt = await this.activityClassroomRepository.find({
-      where: {
-        grade: { id: gradeId - 1 },
-        phase: {
-          year: { id: yearId - 1 },
-        },
-        classroom: {
-          campusDetail: {
-            id: campusId,
-          },
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    // for (const ac of activityClassrooms) {
-    //   const data: VacantsClassrooms = await this.calcVacantsToClassroom(ac.id);
-    //   vacantsTot += data.capacity - data.previousEnrolls - data.currentEnrroll;
-    //   capacity += data.capacity;
-    // }
-    /***NUEVO FIN */
-
-    /**NEW CALC */
-    const idsAc = activityClassrooms.map((ac) => ac.id);
-    const idsAcAnt = activityClassroomsAnt.map((ac) => ac.id);
-
-    const countEnrroll = await this.enrollmentRepository.count({
-      where: {
-        activityClassroom: {
-          id: In(idsAc),
-        },
-        //  ratified: true,
-        status: In([
-          Status.PREMATRICULADO,
-          Status.EN_PROCESO,
-          Status.MATRICULADO,
-          Status.RESERVADO,
-        ]),
-      },
-    });
-    const countEnrrollAnt = await this.enrollmentRepository.count({
-      where: {
-        activityClassroom: {
-          id: In(idsAcAnt),
-        },
-        ratified: true,
-        status: In([Status.MATRICULADO]),
-      },
-    });
-
-    /**data destino, aulas configuradas para el grado solicitado */
-
-    // const activityClassroomsDest = await this.activityClassroomRepository.find({
+    // const activityClassroomsAnt = await this.activityClassroomRepository.find({
     //   where: {
-    //     grade: { id: gradeId },
+    //     grade: { id: gradeId - 1 },
     //     phase: {
-    //       year: { id: yearId },
+    //       year: { id: yearId - 1 },
     //     },
+    //     classroom: {
+    //       campusDetail: {
+    //         id: campusId,
+    //       },
+    //     },
+    //   },
+    //   select: {
+    //     id: true,
     //   },
     // });
 
-    const capacities = activityClassrooms.map((ac) => ac.classroom.capacity);
+    for (const ac of activityClassrooms) {
+      const data: VacantsClassrooms = await this.calcVacantsToClassroom(ac.id);
+      vacantsTot += data.vacants;
+      capacity += data.capacity;
+    }
+    /***NUEVO FIN */
 
-    const capacity = capacities.reduce(
-      (accumulator, currentValue) => accumulator + currentValue,
-      0,
-    );
-
-    const vacants = capacity - (countEnrroll + countEnrrollAnt);
     /**NEW CALC */
-    return {
-      hasVacants: vacants > 0,
-      capacity: capacity,
-      enrrolls: countEnrroll + countEnrrollAnt,
-      vacants: vacants,
-      act: countEnrroll,
-      ant: countEnrrollAnt,
-      idsAcT: idsAc,
-    };
+    // const idsAc = activityClassrooms.map((ac) => ac.id);
+    // const idsAcAnt = activityClassroomsAnt.map((ac) => ac.id);
+
+    // const countEnrroll = await this.enrollmentRepository.count({
+    //   where: {
+    //     activityClassroom: {
+    //       id: In(idsAc),
+    //     },
+    //     //  ratified: true,
+    //     status: In([
+    //       Status.PREMATRICULADO,
+    //       Status.EN_PROCESO,
+    //       Status.MATRICULADO,
+    //       Status.RESERVADO,
+    //     ]),
+    //   },
+    // });
+    // const countEnrrollAnt = await this.enrollmentRepository.count({
+    //   where: {
+    //     activityClassroom: {
+    //       id: In(idsAcAnt),
+    //     },
+    //     ratified: true,
+    //     status: In([Status.MATRICULADO]),
+    //   },
+    // });
+
+    // /**data destino, aulas configuradas para el grado solicitado */
+
+    // // const activityClassroomsDest = await this.activityClassroomRepository.find({
+    // //   where: {
+    // //     grade: { id: gradeId },
+    // //     phase: {
+    // //       year: { id: yearId },
+    // //     },
+    // //   },
+    // // });
+
+    // const capacities = activityClassrooms.map((ac) => ac.classroom.capacity);
+
+    // const capacity = capacities.reduce(
+    //   (accumulator, currentValue) => accumulator + currentValue,
+    //   0,
+    // );
+
+    // const vacants = capacity - (countEnrroll + countEnrrollAnt);
+    // /**NEW CALC */
     // return {
-    //   hasVacants: vacantsTot > 0,
+    //   hasVacants: vacants > 0,
     //   capacity: capacity,
-    //   enrrolls: capacity - vacantsTot,
-    //   vacants: vacantsTot,
+    //   enrrolls: countEnrroll + countEnrrollAnt,
+    //   vacants: vacants,
+    //   act: countEnrroll,
+    //   ant: countEnrrollAnt,
+    //   idsAcT: idsAc,
     // };
+    return {
+      hasVacants: vacantsTot > 0,
+      capacity: capacity,
+      enrrolls: capacity - vacantsTot,
+      vacants: vacantsTot,
+    };
   }
   async getStatusEnrollmentByUser(user: any) {
     // return {
