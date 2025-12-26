@@ -1351,7 +1351,7 @@ export class EnrollmentService {
             phase: { year: { id: yearId } },
           },
           ratified: true,
-          // status: Status.FINALIZADO,
+          status: Status.FINALIZADO,
 
           // isActive: true,
         },
