@@ -1370,7 +1370,7 @@ export class EnrollmentService {
       ).length;
 
       //**quienes de la D se fueron a otro grado */
-      previousEnrolls = previousEnrolls - totalCurrentEnrolled - inOthers;
+      previousEnrolls = previousEnrolls - totalCurrentEnrolled;
       if (originAc === null) {
         previousEnrolls = 0;
       }
