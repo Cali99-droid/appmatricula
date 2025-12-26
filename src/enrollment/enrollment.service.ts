@@ -1270,6 +1270,9 @@ export class EnrollmentService {
         //   destinationAc.classroom.capacity,
         // );
       }
+      console.log('abajo calculo');
+      console.log(previousEnrolls);
+      console.log(totalCurrentEnrolled);
       previousEnrolls = previousEnrolls - totalCurrentEnrolled;
       detailOrigin = {
         id: 0, // Not applicable for a group
@@ -1298,9 +1301,18 @@ export class EnrollmentService {
 
         relations: ['grade'],
       });
-
+      let enrollsOrigins = [];
       if (originAc) {
         const enrollOrigin = await this.enrollmentRepository.count({
+          where: {
+            activityClassroom: { id: originAc.id },
+
+            ratified: true,
+            status: Status.FINALIZADO,
+            // isActive: true,
+          },
+        });
+        enrollsOrigins = await this.enrollmentRepository.find({
           where: {
             activityClassroom: { id: originAc.id },
 
@@ -1326,29 +1338,40 @@ export class EnrollmentService {
           enrrolls: enrollOrigin,
         };
       }
-
+      /**de mi misma seccion, quines estan matriculados en otras secciones */
       const enrrollInOther = await this.enrollmentRepository.find({
         where: {
           activityClassroom: {
+            // section: Not(In([originAc?.section])),
             section: Not(In([originAc?.section])),
-            grade: { position: destinationAc.grade.position - 1 },
-            phase: { year: { id: yearId - 1 } },
+            grade: { position: destinationAc.grade.position },
+            phase: { year: { id: yearId } },
           },
           ratified: true,
-          status: Status.FINALIZADO,
+          // status: Status.FINALIZADO,
 
           // isActive: true,
         },
       });
+      /**maytrticulado en aula origen */
+      const enrollsOriginsIds = enrollsOrigins.map((ce) => ce.student.id);
 
-      const currentsId = currentEnrollments.map((ce) => ce.student.id);
+      /**buscar en otras secciones */
+      /**matriculados en las demas secciones, menos en la correspondiente */
       const enrrollInOtherIds = enrrollInOther.map((ce) => ce.student.id);
 
-      inOthers = currentsId.filter((current) =>
-        enrrollInOtherIds.includes(current),
+      // const currentsId = currentEnrollments.map((ce) => ce.student.id);
+      /**filtrar para saber quienes se fueron a otra seccion */
+      inOthers = enrrollInOtherIds.filter((current) =>
+        enrollsOriginsIds.includes(current),
       ).length;
-      previousEnrolls = previousEnrolls - totalCurrentEnrolled + inOthers;
+
+      //**quienes de la D se fueron a otro grado */
+      previousEnrolls = previousEnrolls - totalCurrentEnrolled - inOthers;
       if (originAc === null) {
+        previousEnrolls = 0;
+      }
+      if (previousEnrolls < 0) {
         previousEnrolls = 0;
       }
     }
@@ -1357,7 +1380,7 @@ export class EnrollmentService {
       destinationAc.classroom.capacity - previousEnrolls - totalCurrentEnrolled;
     // console.log(destinationAc.classroom.capacity);
     // console.log(previousEnrolls);
-    // console.log(totalCurrentEnrolled);
+
     // console.log(inOthers);
     const res: VacantsClassrooms = {
       id: destinationAc.id,

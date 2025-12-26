@@ -260,6 +260,7 @@ export class EnrollmentController {
     status: 200,
     description: 'Detail Vacants',
   })
+  @Public()
   findVacants(
     @Param('yearId', ParseIntPipe) yearId: number,
     @Query() query: FindVacantsDto,
