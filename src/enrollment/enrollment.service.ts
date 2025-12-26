@@ -1274,6 +1274,9 @@ export class EnrollmentService {
       console.log(previousEnrolls);
       console.log(totalCurrentEnrolled);
       previousEnrolls = previousEnrolls - totalCurrentEnrolled;
+      if (previousEnrolls < 0) {
+        previousEnrolls = 0;
+      }
       detailOrigin = {
         id: 0, // Not applicable for a group
 
