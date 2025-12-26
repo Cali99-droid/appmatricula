@@ -421,7 +421,11 @@ export class ActivityClassroomService {
         where: {
           id,
           enrollment: {
-            status: In([Status.MATRICULADO, Status.FINALIZADO]),
+            status: In([
+              Status.MATRICULADO,
+              Status.FINALIZADO,
+              Status.RETIRADO,
+            ]),
           },
         },
         order: {
